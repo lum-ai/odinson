@@ -202,11 +202,11 @@ object Shell extends App {
       val docID = doc.getField("docId").stringValue
       println(s"Doc $docID (score = ${hit.score})")
       val spans = hit.matches.map(_.span).toVector
-      val captures = hit.matches.map(_.captures).toVector
-      // FIXME print statements used for debugging, please remove
+      val captures = hit.matches.flatMap(_.captures).toVector
+      // FIXME: print statements used for debugging, please remove
       println("spans: " + spans)
       println("captures: " + captures)
-      val res = ConsoleHighlighter.highlight(reader = indexReader, docID = hit.doc, spans = spans)
+      val res = ConsoleHighlighter.highlight(reader = indexReader, docId = hit.doc, spans = spans, captures = captures)
       println(res)
       println()
     }

@@ -57,6 +57,7 @@ object IndexDocuments extends App with LazyLogging {
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(dir, writerConfig)
 
+  // serialized org.clulab.processors.Document or Document json
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
   // NOTE indexes the documents in parallel
   for (f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par) {

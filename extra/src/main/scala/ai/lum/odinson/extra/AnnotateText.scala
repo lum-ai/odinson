@@ -1,34 +1,41 @@
 package ai.lum.odinson.extra
 
 import java.io.File
-import org.clulab.processors.clu.BioCluProcessor
+import org.clulab.processors.Processor
+import org.clulab.processors.clu.{ CluProcessor, BioCluProcessor }
+import org.clulab.serialization.json._
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.common.Serializer
+//import ai.lum.common.Serializer
 
 object AnnotateText extends App with LazyLogging {
 
   val config = ConfigFactory.load()
-  val textDir = config[File]("odinson.textDir")
-  val docsDir = config[File]("odinson.docsDir")
+  val textDir: File = config[File]("odinson.textDir")
+  val docsDir: File = config[File]("odinson.docsDir")
+  val processorType = config[String]("odinson.extra.processorType")
 
-  val processor = new BioCluProcessor
+  val processor: Processor = processorType match {
+    case "CluProcessor" => new CluProcessor
+    case "BioCluProcessor" => new BioCluProcessor
+  }
+
   processor.annotate("this") // load all required models
 
   // NOTE parses the documents in parallel
   for (f <- textDir.listFilesByWildcard("*.txt").toSeq.par) {
-    val docFile = new File(docsDir, f.getBaseName() + ".ser")
+    val docFile = new File(docsDir, f.getBaseName() + ".json")
     if (docFile.exists()) {
-      logger.info(s"${docFile.getCanonicalPath()} already exists")
+      logger.warn(s"${docFile.getCanonicalPath} already exists")
     } else {
-      logger.info(s"annotating ${f.getCanonicalPath()}")
+      logger.info(s"annotating ${f.getCanonicalPath}")
       val text = f.readString()
       val doc = processor.annotate(text)
       // use file base name as document id
       doc.id = Some(f.getBaseName())
-      Serializer.serialize(doc, docFile)
+      doc.saveJSON(docFile, pretty = true)
     }
   }
 
