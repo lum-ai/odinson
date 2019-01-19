@@ -58,7 +58,11 @@ class QueryParser(
   }
 
   val mentionPattern: P[Ast.Pattern] = {
-    P("@" ~ Literals.string).map(Ast.MentionPattern)
+    // NOTE: Arg name is optional
+    P("@" ~ (Literals.javaIdentifier ~ ":").? ~ Literals.string).map{
+      case (Some(argName), label) => Ast.MentionPattern(argName = Some(argName), label = label)
+      case (None, label) => Ast.MentionPattern(argName = None, label = label)
+    }
   }
 
   val namedCapturePattern: P[Ast.Pattern] = {
@@ -177,6 +181,7 @@ class QueryParser(
       case (traversal, Some(GreedyQuantifier(n, None)))    => Ast.ConcatenatedTraversal(repeat(traversal, n) :+ Ast.KleeneStarTraversal(traversal))
       case (traversal, Some(GreedyQuantifier(m, Some(n)))) if m == n => Ast.ConcatenatedTraversal(repeat(traversal, n))
       case (traversal, Some(GreedyQuantifier(m, Some(n)))) if m < n => Ast.ConcatenatedTraversal(repeat(traversal, m) ++ repeat(Ast.OptionalTraversal(traversal), n - m))
+      case _ => throw new Exception("Unrecognized quantifier")
     }
   }
 
@@ -274,7 +279,7 @@ class QueryParser(
   }
 
   val stringFieldConstraint: P[Ast.Constraint] = {
-    P(fieldName ~ StringIn("=", "!=").! ~ stringMatcher ~ "~".!.?).map {
+    P(fieldName ~ StringIn("=", "!=").! ~ stringMatcher ~ QueryParser.FUZZY_SYMBOL.!.?).map {
       case (name, "=",  matcher, None)    => Ast.FieldConstraint(name, matcher)
       case (name, "!=", matcher, None)    => Ast.NegatedConstraint(Ast.FieldConstraint(name, matcher))
       case (name, "=",  matcher, Some(_)) => Ast.FuzzyConstraint(name, matcher)
@@ -300,4 +305,8 @@ class QueryParser(
     P(Literals.regex.map(Ast.RegexMatcher))
   }
 
+}
+
+object QueryParser {
+  val FUZZY_SYMBOL = "~"
 }
