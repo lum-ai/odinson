@@ -49,12 +49,14 @@ class QueryCompiler(
   def mkOdinQuery(ast: Ast.Pattern): OdinQuery = ast match {
 
     case Ast.ConstraintPattern(constraint) =>
+      // compile a token constraint
       mkConstraintQuery(constraint)
 
-    case Ast.NamedPattern(pattern, name) =>
+    case Ast.NamedCapturePattern(name, pattern) =>
+      // wrap the pattern in a named capture
       new OdinQueryNamedCapture(mkOdinQuery(pattern), name)
 
-    case Ast.OrPattern(patterns) =>
+    case Ast.DisjunctivePattern(patterns) =>
       // separate zero-width queries from the rest
       val (zs, qs) = patterns.map(mkOdinQuery).distinct.partition {
         case q: AllNGramsQuery if q.n == 0 => true
@@ -71,7 +73,7 @@ class QueryCompiler(
           new OdinOrQuery(zs.head +: qs, defaultTokenField)
       }
 
-    case Ast.ConcatPattern(patterns) =>
+    case Ast.ConcatenatedPattern(patterns) =>
       val clauses = patterns.map(mkOdinQuery).filter {
         case q: AllNGramsQuery if q.n == 0 => false
         case q@_ => true
@@ -82,10 +84,10 @@ class QueryCompiler(
         case qs => new OdinConcatQuery(qs, defaultTokenField, sentenceLengthField)
       }
 
-    case Ast.RangePattern(pattern@_, 0, 0, _) =>
+    case Ast.GreedyRepetitionPattern(pattern@_, 0, Some(0)) =>
       new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
 
-    case Ast.RangePattern(pattern, 0, 1, _) => // TODO support greedy/lazy option
+    case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) => // TODO support greedy/lazy option
       mkOdinQuery(pattern) match {
         case q: AllNGramsQuery if q.n == 0 => q
         case one =>
@@ -96,7 +98,7 @@ class QueryCompiler(
           new OdinOrQuery(clauses, defaultTokenField)
       }
 
-    case Ast.RangePattern(pattern, 0, max, quantifierType) =>
+    case Ast.GreedyRepetitionPattern(pattern, 0, max) =>
       mkOdinQuery(pattern) match {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
@@ -108,22 +110,22 @@ class QueryCompiler(
           new OdinOrQuery(clauses, defaultTokenField)
       }
 
-    case Ast.RangePattern(pattern, 1, 1, _) =>
+    case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
       mkOdinQuery(pattern)
 
-    case Ast.RangePattern(Ast.ConstraintPattern(Ast.Wildcard), n, m, _) if n == m =>
+    case Ast.GreedyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, m) if n == m =>
       new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
 
-    case Ast.RangePattern(pattern, min, max, quantifierType) =>
+    case Ast.GreedyRepetitionPattern(pattern, min, max) =>
       mkOdinQuery(pattern) match {
         case q: AllNGramsQuery if q.n == 0 => q
         case q => new OdinRangeQuery(q, min, max, quantifierType)
       }
 
-    case Ast.DocStartAssertion =>
+    case Ast.AssertionPattern(Ast.SentenceStartAssertion) =>
       new DocStartQuery(defaultTokenField)
 
-    case Ast.DocEndAssertion =>
+    case Ast.AssertionPattern(Ast.SentenceEndAssertion) =>
       new DocEndQuery(defaultTokenField, sentenceLengthField)
 
     case Ast.GraphTraversalPattern(src, tr, dst) =>
@@ -161,24 +163,24 @@ class QueryCompiler(
       val spanQuery = new SpanMultiTermQueryWrapper(fuzzyQuery)
       new OdinQueryWrapper(maybeMask(spanQuery))
 
-    case Ast.OrConstraint(constraints) =>
+    case Ast.DisjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
         case Seq() => sys.error("OR without clauses")
         case Seq(clause) => clause
         case clauses => new OdinOrQuery(clauses, defaultTokenField)
       }
 
-    case Ast.AndConstraint(constraints) =>
+    case Ast.ConjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
         case Seq() => sys.error("AND without clauses")
         case Seq(clause) => clause
         case clauses => new OdinTermAndQuery(clauses, defaultTokenField)
       }
 
-    case Ast.NotConstraint(Ast.NotConstraint(constraint)) =>
+    case Ast.NegatedConstraint(Ast.NegatedConstraint(constraint)) =>
       mkConstraintQuery(constraint)
 
-    case Ast.NotConstraint(constraint) =>
+    case Ast.NegatedConstraint(constraint) =>
       val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
       val exclude = mkConstraintQuery(constraint)
       new OdinNotQuery(include, exclude, defaultTokenField)
@@ -211,7 +213,7 @@ class QueryCompiler(
       case m => Outgoing(m)
     }
 
-    case Ast.OrTraversal(traversals) =>
+    case Ast.DisjunctiveTraversal(traversals) =>
       traversals.map(mkGraphTraversal).distinct.partition(_ == NoTraversal) match {
         case (Seq(), Seq()) => sys.error("OR without clauses")
         case (Seq(), gts) =>
@@ -228,7 +230,7 @@ class QueryCompiler(
           }
       }
 
-    case Ast.ConcatTraversal(traversals) =>
+    case Ast.ConcatenatedTraversal(traversals) =>
       traversals.map(mkGraphTraversal).filter(_ != NoTraversal) match {
         case Seq() => NoTraversal
         case Seq(gt) => gt

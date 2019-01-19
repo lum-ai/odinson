@@ -12,22 +12,28 @@ object Ast {
   case object Wildcard extends Constraint
   case class FieldConstraint(name: String, matcher: Matcher) extends Constraint
   case class FuzzyConstraint(name: String, matcher: StringMatcher) extends Constraint
-  case class NotConstraint(constraint: Constraint) extends Constraint
-  case class AndConstraint(constraints: List[Constraint]) extends Constraint
-  case class OrConstraint(constraints: List[Constraint]) extends Constraint
+  case class NegatedConstraint(constraint: Constraint) extends Constraint
+  case class ConjunctiveConstraint(constraints: List[Constraint]) extends Constraint
+  case class DisjunctiveConstraint(constraints: List[Constraint]) extends Constraint
+
+  sealed trait Assertion
+  case object SentenceStartAssertion extends Assertion
+  case object SentenceEndAssertion extends Assertion
+  case class PositiveLookaheadAssertion(pattern: Pattern) extends Assertion
+  case class NegativeLookaheadAssertion(pattern: Pattern) extends Assertion
+  case class PositiveLookbehindAssertion(pattern: Pattern) extends Assertion
+  case class NegativeLookbehindAssertion(pattern: Pattern) extends Assertion
 
   sealed trait Pattern
-  case object DocStartAssertion extends Pattern
-  case object DocEndAssertion extends Pattern
   case class ConstraintPattern(constraint: Constraint) extends Pattern
-  case class ConcatPattern(patterns: List[Pattern]) extends Pattern
-  case class OrPattern(patterns: List[Pattern]) extends Pattern
-  case class NamedPattern(pattern: Pattern, name: String) extends Pattern
-  case class RangePattern(pattern: Pattern, min: Int, max: Int, quantifierType: QuantifierType) extends Pattern {
-    require(min >= 0, "min can't be negative")
-    require(min <= max, "min must be <= max")
-  }
+  case class AssertionPattern(assertion: Assertion) extends Pattern
+  case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
+  case class DisjunctivePattern(patterns: List[Pattern]) extends Pattern
+  case class NamedCapturePattern(name: String, pattern: Pattern) extends Pattern
+  case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
+  case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
+  case class MentionPattern(name: String) extends Pattern
 
   sealed trait Traversal
   case object NoTraversal extends Traversal
@@ -35,8 +41,8 @@ object Ast {
   case object IncomingWildcard extends Traversal
   case class IncomingTraversal(matcher: Matcher) extends Traversal
   case class OutgoingTraversal(matcher: Matcher) extends Traversal
-  case class ConcatTraversal(traversals: List[Traversal]) extends Traversal
-  case class OrTraversal(traversals: List[Traversal]) extends Traversal
+  case class ConcatenatedTraversal(traversals: List[Traversal]) extends Traversal
+  case class DisjunctiveTraversal(traversals: List[Traversal]) extends Traversal
   case class OptionalTraversal(traversal: Traversal) extends Traversal
   case class KleeneStarTraversal(traversal: Traversal) extends Traversal
 
