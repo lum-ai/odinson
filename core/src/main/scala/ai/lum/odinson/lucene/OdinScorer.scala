@@ -42,6 +42,11 @@ class OdinScorer(
       val endPos = spans.endPosition()
       assert(endPos != Spans.NO_MORE_POSITIONS)
       assert((startPos != prevStartPos) || (endPos >= prevEndPos), "decreased endPos="+endPos)
+      // if we already found a span starting at this position then discard it
+      // because we only want to keep the longest
+      if (startPos == prevStartPos) {
+        collectedSpans.remove(collectedSpans.indices.last)
+      }
       collectedSpans += spans.spanWithCaptures // collect span
       numMatches += 1
       if (docScorer == null) {  // scores not required
