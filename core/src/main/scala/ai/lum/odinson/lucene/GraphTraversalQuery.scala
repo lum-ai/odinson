@@ -97,11 +97,6 @@ class GraphTraversalSpans(
 
   override def namedCaptures: List[NamedCapture] = topPositionCaptures
 
-  private var _groupIndex: Int = 1
-  private var _groupStride: Int = 0
-  override def groupIndex: Int = _groupIndex
-  override def groupStride: Int = _groupStride
-
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
     graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
@@ -118,11 +113,9 @@ class GraphTraversalSpans(
   def nextStartPosition(): Int = {
     atFirstInCurrentDoc = false
     if (pq.size() > 0) {
-      val SpanWithCaptures(span, captures, grpIndex, grpStride) = pq.pop()
+      val SpanWithCaptures(span, captures) = pq.pop()
       matchStart = span.start
       matchEnd = span.end
-      _groupIndex = grpIndex
-      _groupStride = grpStride
       topPositionCaptures = captures
     } else {
       matchStart = NO_MORE_POSITIONS
@@ -130,6 +123,15 @@ class GraphTraversalSpans(
       topPositionCaptures = Nil
     }
     matchStart
+  }
+
+  // FIXME this is repeated in OdinConcatQuery
+  private def getAllSpansWithCaptures(spans: OdinSpans): Seq[SpanWithCaptures] = {
+    val buffer = ArrayBuffer.empty[SpanWithCaptures]
+    while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
+      buffer += spans.spanWithCaptures
+    }
+    buffer
   }
 
   private def mkInvIndex(spans: Seq[SpanWithCaptures]): Map[Int, Seq[SpanWithCaptures]] = {
@@ -148,8 +150,8 @@ class GraphTraversalSpans(
       dstSpans: OdinSpans
   ): Seq[SpanWithCaptures] = {
     val results: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
-    val dstIndex = mkInvIndex(OdinSpans.getAllSpansWithCaptures(dstSpans))
-    for (src <- OdinSpans.getAllSpansWithCaptures(srcSpans)) {
+    val dstIndex = mkInvIndex(getAllSpansWithCaptures(dstSpans))
+    for (src <- getAllSpansWithCaptures(srcSpans)) {
       val dsts = traversal.traverseFrom(graph, src.span.interval)
       results ++= dsts.flatMap(dstIndex)
         .map(r => r.copy(captures = src.captures ++ r.captures)) // accumulate named captures

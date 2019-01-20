@@ -70,6 +70,4 @@ class OdinSpansNamedCapture(
   override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
   override def namedCaptures: List[NamedCapture] = (captureName, span) :: spans.namedCaptures
-  override def groupIndex: Int = spans.groupIndex
-  override def groupStride: Int = spans.groupStride
 }

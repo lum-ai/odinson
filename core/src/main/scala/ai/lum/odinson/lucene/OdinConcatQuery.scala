@@ -2,11 +2,11 @@ package ai.lum.odinson.lucene
 
 import java.util.{ List => JList, Map => JMap, Set => JSet }
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
-import QuantifierType._
 
 class OdinConcatQuery(
     val clauses: List[OdinQuery],
@@ -86,12 +86,6 @@ class OdinConcatQuery(
 
     override def namedCaptures: List[NamedCapture] = topPositionCaptures
 
-    private var _groupIndex: Int = 1
-    private var _groupStride: Int = 0
-
-    override def groupIndex: Int = _groupIndex
-    override def groupStride: Int = _groupStride
-
     def twoPhaseCurrentDocMatches(): Boolean = {
       oneExhaustedInCurrentDoc = false
       pq = QueueByPosition.mkPositionQueue(concatSpans(subSpans))
@@ -107,11 +101,9 @@ class OdinConcatQuery(
     def nextStartPosition(): Int = {
       atFirstInCurrentDoc = false
       if (pq.size() > 0) {
-        val SpanWithCaptures(span, captures, grpIndex, grpStride) = pq.pop()
+        val SpanWithCaptures(span, captures) = pq.pop()
         matchStart = span.start
         matchEnd = span.end
-        _groupIndex = grpIndex
-        _groupStride = grpStride
         topPositionCaptures = captures
       } else {
         matchStart = NO_MORE_POSITIONS
@@ -119,6 +111,14 @@ class OdinConcatQuery(
         topPositionCaptures = Nil
       }
       matchStart
+    }
+
+    private def getAllSpansWithCaptures(spans: OdinSpans): Seq[SpanWithCaptures] = {
+      val buffer = ArrayBuffer.empty[SpanWithCaptures]
+      while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
+        buffer += spans.spanWithCaptures
+      }
+      buffer
     }
 
     private def concatSpansPair(
@@ -133,26 +133,14 @@ class OdinConcatQuery(
         k <- keys
         l <- lhsGrouped(k)
         r <- rhsGrouped(k)
-        span = Span(l.span.start, r.span.end)
-        captures = l.captures ++ r.captures
-      } yield {
-        if (r.groupStride == 1) {
-          // if the rhs group is of size 1 then avoid
-          // multiplying the lhs group by its stride
-          SpanWithCaptures(span, captures, l.groupIndex, l.groupStride)
-        } else {
-          val groupIndex = l.groupIndex * l.groupStride + r.groupIndex
-          val groupStride = l.groupStride * r.groupStride
-          SpanWithCaptures(span, captures, groupIndex, groupStride)
-        }
-      }
+      } yield SpanWithCaptures(Span(l.span.start, r.span.end), l.captures ++ r.captures)
     }
 
     private def concatSpans(spans: Array[OdinSpans]): Seq[SpanWithCaptures] = {
       var results: Seq[SpanWithCaptures] = null
       var numWildcards: Int = 0
       if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
-        return OdinSpans.getAllSpansWithCaptures(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
+        return getAllSpansWithCaptures(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
       }
       for (s <- spans) {
         s match {
@@ -166,18 +154,13 @@ class OdinConcatQuery(
               results = for {
                 r <- results
                 if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-                span = Span(r.span.start, r.span.end + numWildcards)
-              } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+              } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
               numWildcards = 0
             }
             results = for {
               r <- results
-              ends = r.span.end + s.min to numWordsPerDoc.get(docID()).toInt
-              (end, i) <- ends.zipWithIndex
-              span = Span(r.span.start, end)
-              groupIndex = r.groupIndex * r.groupStride + (if (s.quantifierType == Lazy) i else ends.size - i - 1)
-              groupStride = r.groupStride * ends.size
-            } yield SpanWithCaptures(span, r.captures, groupIndex, groupStride)
+              end <- r.span.end + s.min to numWordsPerDoc.get(docID()).toInt
+            } yield SpanWithCaptures(Span(r.span.start, end), r.captures)
           // optimize exact repetitions of wildcards
           case s: OdinRangeSpans if s.spans.isInstanceOf[AllNGramsSpans] && s.min == s.max =>
             numWildcards += s.spans.asInstanceOf[AllNGramsSpans].n * s.min
@@ -189,8 +172,7 @@ class OdinConcatQuery(
               results = for {
                 r <- results
                 if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-                span = Span(r.span.start, r.span.end + numWildcards)
-              } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+              } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
               numWildcards = 0
             }
             var newResults: Seq[SpanWithCaptures] = Vector.empty
@@ -198,8 +180,7 @@ class OdinConcatQuery(
               val rs = for {
                 r <- results
                 if r.span.end + n <= numWordsPerDoc.get(docID())
-                span = Span(r.span.start, r.span.end + n)
-              } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+              } yield SpanWithCaptures(Span(r.span.start, r.span.end + n), r.captures)
               newResults ++= rs
             }
             results = newResults
@@ -213,8 +194,7 @@ class OdinConcatQuery(
               results = for {
                 r <- results
                 if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-                span = Span(r.span.start, r.span.end + numWildcards)
-              } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+              } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
               numWildcards = 0
             }
             // evaluate clauses
@@ -226,16 +206,14 @@ class OdinConcatQuery(
                   for {
                     r <- originalResults
                     if r.span.end + n <= numWordsPerDoc.get(docID())
-                    span = Span(r.span.start, r.span.end + n)
-                  } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+                  } yield SpanWithCaptures(Span(r.span.start, r.span.end + n), r.captures)
                 case s: OdinRangeSpans if results != null && s.spans.isInstanceOf[AllNGramsSpans] && s.max == Int.MaxValue =>
                   for {
                     r <- results
                     end <- r.span.end + s.min until numWordsPerDoc.get(docID()).toInt
-                    span = Span(r.span.start, end)
-                  } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+                  } yield SpanWithCaptures(Span(r.span.start, end), r.captures)
                 case c =>
-                  concatSpansPair(originalResults, OdinSpans.getAllSpansWithCaptures(c))
+                  concatSpansPair(originalResults, getAllSpansWithCaptures(c))
               }
               results ++= newResults
             }
@@ -243,14 +221,13 @@ class OdinConcatQuery(
           case s =>
             if (results == null) {
               // these are our first spans
-              results = OdinSpans.getAllSpansWithCaptures(s)
+              results = getAllSpansWithCaptures(s)
               // prepend wildcards if needed
               if (numWildcards > 0) {
                 results = for {
                   r <- results
                   if r.span.start - numWildcards >= 0
-                  span = Span(r.span.start - numWildcards, r.span.end)
-                } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+                } yield SpanWithCaptures(Span(r.span.start - numWildcards, r.span.end), r.captures)
                 numWildcards = 0
               }
             } else {
@@ -259,11 +236,10 @@ class OdinConcatQuery(
                 results = for {
                   r <- results
                   if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-                  span = Span(r.span.start, r.span.end + numWildcards)
-                } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+                } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
                 numWildcards = 0
               }
-              results = concatSpansPair(results, OdinSpans.getAllSpansWithCaptures(s))
+              results = concatSpansPair(results, getAllSpansWithCaptures(s))
             }
             if (results.isEmpty) return Seq.empty
         }
@@ -273,8 +249,7 @@ class OdinConcatQuery(
         results = for {
           r <- results
           if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-          span = Span(r.span.start, r.span.end + numWildcards)
-        } yield SpanWithCaptures(span, r.captures, r.groupIndex, r.groupStride)
+        } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
       }
       results
     }

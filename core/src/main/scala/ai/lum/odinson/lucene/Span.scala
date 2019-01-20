@@ -18,9 +18,4 @@ object Span {
 
 }
 
-case class SpanWithCaptures(
-  span: Span,
-  captures: List[NamedCapture],
-  groupIndex: Int,
-  groupStride: Int
-)
+case class SpanWithCaptures(span: Span, captures: List[NamedCapture])

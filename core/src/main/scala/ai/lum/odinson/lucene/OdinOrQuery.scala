@@ -61,7 +61,7 @@ class OdinOrQuery(
       }
       val subSpans = new ArrayBuffer[OdinSpans](clauses.size)
       for (weight <- subWeights) {
-        val subSpan = weight.getSpans(context, requiredPostings)
+        val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinSpans]
         if (subSpan != null) {
           subSpans += subSpan
         }
@@ -73,20 +73,23 @@ class OdinOrQuery(
         assert(s.isInstanceOf[OdinSpans])
         return s.asInstanceOf[OdinSpans]
       }
-      new OdinOrSpans(subSpans.toArray)
+      val byDocQueue = new DisiPriorityQueue(subSpans.length)
+      for (spans <- subSpans) {
+        byDocQueue.add(new DisiWrapper(spans))
+      }
+      val byPositionQueue = new SpanPositionQueue(subSpans.length) // when empty use -1
+      new OdinOrSpans(subSpans.toArray, byDocQueue, byPositionQueue)
     }
 
   }
 
 }
 
-class OdinOrSpans(val subSpans: Array[OdinSpans]) extends OdinSpans {
-
-  val byDocQueue = new DisiPriorityQueue(subSpans.length)
-  for (spans <- subSpans) {
-    byDocQueue.add(new DisiWrapper(spans))
-  }
-  val byPositionQueue = new SpanPositionQueue(subSpans.length) // when empty use -1
+class OdinOrSpans(
+    val subSpans: Array[OdinSpans],
+    val byDocQueue: DisiPriorityQueue,
+    val byPositionQueue: SpanPositionQueue
+) extends OdinSpans {
 
   private var topPositionSpans: OdinSpans = null
 

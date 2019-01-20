@@ -1,7 +1,5 @@
 package ai.lum.odinson.compiler
 
-import ai.lum.odinson.lucene.QuantifierType._
-
 object Ast {
 
   sealed trait Matcher

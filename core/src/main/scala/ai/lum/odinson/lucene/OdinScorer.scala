@@ -16,7 +16,7 @@ class OdinScorer(
   private var lastScoredDoc: Int = -1  // last doc we called setFreqCurrentDoc() for
 
   // stores the Spans found in the current document
-  private var collectedSpans: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
+  private val collectedSpans: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
 
   def getSpans(): OdinSpans = spans
   def docID(): Int = spans.docID()
@@ -54,17 +54,6 @@ class OdinScorer(
       prevEndPos = endPos
       startPos = spans.nextStartPosition()
     } while (startPos != Spans.NO_MORE_POSITIONS)
-
-    // Get the matching spans which start earliest
-    val filteredSpans = new ArrayBuffer[SpanWithCaptures](collectedSpans.length)
-    val groupedSpans = collectedSpans.groupBy(_.span.start)
-    for (k <- groupedSpans.keys.toSeq.sorted) {
-      val swc = groupedSpans(k).minBy(_.groupIndex)
-      if (filteredSpans.isEmpty || filteredSpans.last.span.end <= swc.span.start) {
-        filteredSpans.append(swc)
-      }
-    }
-    collectedSpans = filteredSpans
 
     assert(spans.startPosition() == Spans.NO_MORE_POSITIONS, "incorrect final start position, " + spans)
     assert(spans.endPosition() == Spans.NO_MORE_POSITIONS, "incorrect final end position, " + spans)

@@ -43,14 +43,14 @@ object OdinResults {
     var totalHitCount = 0
     var availHitCount = 0
     var maxScore = Float.MinValue
-    for (shardIDX <- shardHits.indices) {
+    for (shardIDX <- 0 until shardHits.length) {
       val shard = shardHits(shardIDX)
       // totalHits can be non-zero even if no hits were
       // collected, when searchAfter was used:
       totalHitCount += shard.totalHits
       if (shard.scoreDocs != null && shard.scoreDocs.length > 0) {
         availHitCount += shard.scoreDocs.length
-        queue.add(new ShardRef(shardIDX, ! setShardIndex))
+        queue.add(new ShardRef(shardIDX, setShardIndex == false))
         maxScore = math.max(maxScore, shard.maxScore)
       }
     }

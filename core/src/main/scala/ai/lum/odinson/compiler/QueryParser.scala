@@ -3,7 +3,6 @@ package ai.lum.odinson.compiler
 import fastparse.noApi._
 import Whitespace._
 import Ast._
-import ai.lum.odinson.lucene.QuantifierType._
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields

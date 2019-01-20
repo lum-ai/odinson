@@ -122,7 +122,4 @@ class OdinSpanContainingSpans(val subSpans: Array[OdinSpans]) extends Conjunctio
   // (this is the main purpose of using this class, instead of org.apache.lucene.search.spans.SpanContainingQuery)
   override def namedCaptures: List[NamedCapture] = bigSpans.namedCaptures
 
-  override def groupIndex: Int = bigSpans.groupIndex
-  override def groupStride: Int = bigSpans.groupStride
-
 }

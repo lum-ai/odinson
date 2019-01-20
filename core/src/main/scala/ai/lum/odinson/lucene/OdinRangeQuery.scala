@@ -5,13 +5,11 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import QuantifierType._
 
 class OdinRangeQuery(
     val query: OdinQuery,
     val min: Int,
-    val max: Int,
-    val quantifierType: QuantifierType
+    val max: Int
 ) extends OdinQuery { self =>
 
   require(min > 0, "min must be positive")
@@ -29,7 +27,7 @@ class OdinRangeQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinQuery]
     if (query != rewritten) {
-      new OdinRangeQuery(rewritten, min, max, quantifierType)
+      new OdinRangeQuery(rewritten, min, max)
     } else {
       super.rewrite(reader)
     }
@@ -38,14 +36,13 @@ class OdinRangeQuery(
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val weight = query.createWeight(searcher, false).asInstanceOf[OdinWeight]
     val terms = if (needsScores) OdinQuery.getTermContexts(weight) else null
-    new OdinRangeWeight(weight, searcher, terms, quantifierType)
+    new OdinRangeWeight(weight, searcher, terms)
   }
 
   class OdinRangeWeight(
       val weight: OdinWeight,
       searcher: IndexSearcher,
-      terms: JMap[Term, TermContext],
-      val quantifierType: QuantifierType
+      terms: JMap[Term, TermContext]
   ) extends OdinWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -58,7 +55,7 @@ class OdinRangeQuery(
 
     def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
       val spans = weight.getSpans(context, requiredPostings)
-      if (spans == null) null else new OdinRangeSpans(spans, min, max, quantifierType)
+      if (spans == null) null else new OdinRangeSpans(spans, min, max)
     }
 
   }
@@ -68,8 +65,7 @@ class OdinRangeQuery(
 class OdinRangeSpans(
     val spans: OdinSpans,
     val min: Int,
-    val max: Int,
-    val quantifierType: QuantifierType
+    val max: Int
 ) extends OdinSpans {
 
   import DocIdSetIterator._
@@ -219,24 +215,5 @@ class OdinRangeSpans(
     }
     NO_MORE_POSITIONS
   }
-
-  // spans are in the same group if they start in the same position
-  // the number of spans that can start in the same position is defined
-  // by the size of the stretch and the max number of repetitions
-  override def groupStride: Int = {
-    var size = 1
-    if (min < max) {
-      size -= min
-      size += math.min(max, stretch.length - startIndex)
-    }
-    size
-  }
-
-  // returns the order index of the current span in its group
-  // for example, X{2,4} has 3 spans in its group and the indices are
-  // 0 for the span (2,5), 1 for the span (2, 4), and 2 for the span (2,3)
-  // note that this example is greedy, if it was lazy then the indices would be in reverse order
-  // 0 for the span (2,3), 1 for the span (2, 4), and 2 for the span (2,5)
-  override def groupIndex: Int = if (quantifierType == Lazy) numReps - min else groupStride - numReps - min
 
 }
