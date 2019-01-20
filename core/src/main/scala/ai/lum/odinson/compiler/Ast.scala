@@ -25,15 +25,15 @@ object Ast {
   case class NegativeLookbehindAssertion(pattern: Pattern) extends Assertion
 
   sealed trait Pattern
-  case class ConstraintPattern(constraint: Constraint) extends Pattern
   case class AssertionPattern(assertion: Assertion) extends Pattern
-  case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
+  case class ConstraintPattern(constraint: Constraint) extends Pattern
   case class DisjunctivePattern(patterns: List[Pattern]) extends Pattern
+  case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
   case class NamedCapturePattern(name: String, pattern: Pattern) extends Pattern
-  case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
-  case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
-  case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
   case class MentionPattern(argName: Option[String], label: String) extends Pattern
+  case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
+  case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
+  case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
 
   sealed trait Traversal
   case object NoTraversal extends Traversal
