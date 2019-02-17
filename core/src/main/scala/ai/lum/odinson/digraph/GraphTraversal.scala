@@ -15,6 +15,7 @@ trait GraphTraversal {
   def traverseFrom(graph: DirectedGraph, span: Span): Seq[Int] = traverseFrom(graph, span.interval)
 }
 
+/** a no-op traversal */
 case object NoTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
   override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
@@ -22,6 +23,7 @@ case object NoTraversal extends GraphTraversal {
   override def traverseFrom(graph: DirectedGraph, span: Span): Seq[Int] = span.interval
 }
 
+/** a traversal that always fails */
 case object FailTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
   override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
@@ -100,12 +102,14 @@ case class Union(val traversals: List[GraphTraversal]) extends GraphTraversal {
   }
 }
 
+/** a traversal that is optional */
 case class Optional(val traversal: GraphTraversal) extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     startNode +: traversal.traverseFrom(graph, startNode)
   }
 }
 
+/** a traversal that matches zero or more times. */
 case class KleeneStar(val traversal: GraphTraversal) extends GraphTraversal {
 
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {

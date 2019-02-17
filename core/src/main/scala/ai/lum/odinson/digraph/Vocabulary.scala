@@ -5,8 +5,10 @@ import java.nio.charset.StandardCharsets.UTF_8
 import scala.collection.mutable
 import ai.lum.common.FileUtils._
 
-/**
- * This vocabulary is meant for the labels of the edges of the dependency graph.
+/** This vocabulary is meant for the labels of the edges of the dependency graph.
+ *  This object maps a term_id (int) to a symbol (string).
+ *  It is thread-safe. Note that id assignment is sensitive to the order in which terms
+ *  are added to the vocabulary.
  */
 class Vocabulary(
     private val idToTerm: mutable.ArrayBuffer[String],
