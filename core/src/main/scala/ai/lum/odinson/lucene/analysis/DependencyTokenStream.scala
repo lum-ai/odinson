@@ -1,4 +1,4 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.analysis
 
 import scala.annotation.tailrec
 import org.apache.lucene.analysis.TokenStream

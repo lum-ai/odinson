@@ -22,7 +22,7 @@ import com.typesafe.config.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.common.Serializer
-import ai.lum.odinson.lucene.DependencyTokenStream
+import ai.lum.odinson.lucene.analysis.DependencyTokenStream
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 
 
