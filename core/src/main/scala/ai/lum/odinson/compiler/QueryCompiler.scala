@@ -23,7 +23,7 @@ class QueryCompiler(
   val parser = new QueryParser(allTokenFields, defaultTokenField, lowerCaseQueriesToDefaultField)
 
   def compile(pattern: String): OdinQuery = {
-    val ast = parser.parse(pattern)
+    val ast = parser.parseQuery(pattern)
     val query = mkOdinQuery(ast)
     query.getOrElse(new FailQuery(defaultTokenField))
   }

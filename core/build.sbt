@@ -12,7 +12,7 @@ libraryDependencies ++= {
     "org.apache.lucene" % "lucene-queryparser" % luceneVersion,
     "org.apache.lucene" % "lucene-highlighter" % luceneVersion,
     "com.ibm.icu" % "icu4j" % "54.1",
-    "com.lihaoyi" %% "fastparse" % "1.0.0",
+    "com.lihaoyi" %% "fastparse" % "2.1.0",
     "com.twitter" %% "chill" % "0.9.3"
   )
 
