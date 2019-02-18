@@ -1,11 +1,12 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities.Similarity.SimScorer
+import ai.lum.odinson.lucene._
 
-class OdinScorer(
+class OdinsonScorer(
     weight: OdinWeight,
     val spans: OdinSpans,
     val docScorer: SimScorer

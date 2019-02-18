@@ -6,6 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities._
+import ai.lum.odinson.lucene.search._
 
 /**
  * The Weight interface provides an internal representation of the Query
@@ -36,11 +37,11 @@ abstract class OdinWeight(
     if (simWeight != null) simWeight.normalize(queryNorm, boost)
   }
 
-  def scorer(context: LeafReaderContext): OdinScorer = {
+  def scorer(context: LeafReaderContext): OdinsonScorer = {
     val spans = getSpans(context, Postings.POSITIONS)
     if (spans == null) return null
     val docScorer = getSimScorer(context)
-    new OdinScorer(this, spans, docScorer)
+    new OdinsonScorer(this, spans, docScorer)
   }
 
   def getSimScorer(context: LeafReaderContext): Similarity.SimScorer = {
