@@ -1,12 +1,13 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import java.util.Collection
 import java.util.concurrent.ExecutorService
 import scala.collection.JavaConverters._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
+import ai.lum.odinson.lucene._
 
-class OdinIndexSearcher(
+class OdinsonIndexSearcher(
     context: IndexReaderContext,
     executor: ExecutorService
 ) extends IndexSearcher(context, executor) {
