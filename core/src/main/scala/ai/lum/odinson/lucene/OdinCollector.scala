@@ -3,6 +3,7 @@ package ai.lum.odinson.lucene
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.util.PriorityQueue
+import ai.lum.odinson.lucene.search._
 import OdinCollector._
 
 
@@ -59,10 +60,10 @@ abstract class OdinCollector(
 
   abstract class OdinLeafCollector extends LeafCollector {
 
-    protected var scorer: OdinScorer = null
+    protected var scorer: OdinsonScorer = null
 
     override def setScorer(scorer: Scorer): Unit = scorer match {
-      case s: OdinScorer => this.scorer = s
+      case s: OdinsonScorer => this.scorer = s
       case _ => sys.error("unsupported scorer")
     }
 

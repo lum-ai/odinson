@@ -15,6 +15,7 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.highlighter.ConsoleHighlighter
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.BuildInfo
 
 
@@ -60,7 +61,7 @@ object Shell extends App {
 
   // setup searcher
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
-  val indexSearcher = new OdinIndexSearcher(indexReader)
+  val indexSearcher = new OdinsonIndexSearcher(indexReader)
 
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r

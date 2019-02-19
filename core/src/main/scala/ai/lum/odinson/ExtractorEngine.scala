@@ -15,12 +15,13 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search._
 
 
 class ExtractorEngine(val indexDir: Path) {
 
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
-  val indexSearcher = new OdinIndexSearcher(indexReader)
+  val indexSearcher = new OdinsonIndexSearcher(indexReader)
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */

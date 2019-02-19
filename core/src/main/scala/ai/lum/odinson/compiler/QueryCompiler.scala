@@ -23,9 +23,9 @@ class QueryCompiler(
   val parser = new QueryParser(allTokenFields, defaultTokenField, lowerCaseQueriesToDefaultField)
 
   def compile(pattern: String): OdinQuery = {
-    val ast = parser.parse(pattern)
+    val ast = parser.parseQuery(pattern)
     val query = mkOdinQuery(ast)
-    query.get
+    query.getOrElse(new FailQuery(defaultTokenField))
   }
 
   /**
@@ -122,7 +122,63 @@ class QueryCompiler(
 
     case Ast.LazyRepetitionPattern(_, _, _) => ???
 
-    case Ast.GreedyRepetitionPattern(_, _, _) => ???
+    case Ast.GreedyRepetitionPattern(pattern@_, 0, Some(0)) =>
+      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      Some(q)
+
+    case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
+      mkOdinQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case one =>
+          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+          // If there is a zero-width query, it should be the first clause.
+          // This is a convention we follow to be able to identify optional clauses easily.
+          val clauses = List(zero, one)
+          new OdinOrQuery(clauses, defaultTokenField)
+      }
+
+    case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
+      mkOdinQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q =>
+          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+          val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue)
+          // If there is a zero-width query, it should be the first clause.
+          // This is a convention we follow to be able to identify optional clauses easily.
+          val clauses = List(zero, oneOrMore)
+          new OdinOrQuery(clauses, defaultTokenField)
+      }
+
+    case Ast.GreedyRepetitionPattern(pattern, 0, Some(max)) =>
+      mkOdinQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q =>
+          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+          val oneOrMore = new OdinRangeQuery(q, 1, max)
+          // If there is a zero-width query, it should be the first clause.
+          // This is a convention we follow to be able to identify optional clauses easily.
+          val clauses = List(zero, oneOrMore)
+          new OdinOrQuery(clauses, defaultTokenField)
+      }
+
+    case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
+      mkOdinQuery(pattern)
+
+    case Ast.GreedyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, Some(m)) if n == m =>
+      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
+      Some(q)
+
+    case Ast.GreedyRepetitionPattern(pattern, min, None) =>
+      mkOdinQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q => new OdinRangeQuery(q, min, Int.MaxValue)
+      }
+
+    case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
+      mkOdinQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q => new OdinRangeQuery(q, min, max)
+      }
 
   }
 

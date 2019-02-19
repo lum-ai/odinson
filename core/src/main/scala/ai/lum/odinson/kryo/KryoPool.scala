@@ -4,6 +4,10 @@ import java.io.{ OutputStream, ByteArrayOutputStream }
 import com.twitter.chill.{ ScalaKryoInstantiator, KryoPool, SerDeState }
 import com.esotericsoftware.kryo.io.{ UnsafeInput, UnsafeOutput }
 
+/** This is our fast serializer/deserializer for java objects.
+ *  Odinson uses it for deserializing the dependency graph
+ *  stored in the lucene index as a docvalue.
+ */
 class OdinKryoPool(poolSize: Int) extends KryoPool(poolSize) {
 
   private val ki = new ScalaKryoInstantiator

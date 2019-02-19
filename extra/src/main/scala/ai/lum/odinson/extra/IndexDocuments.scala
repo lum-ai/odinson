@@ -25,7 +25,7 @@ import com.typesafe.config.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.common.Serializer
-import ai.lum.odinson.lucene.DependencyTokenStream
+import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 
 
@@ -33,21 +33,24 @@ object IndexDocuments extends App with LazyLogging {
 
   val config = ConfigFactory.load()
   val indexDir = config[Path]("odinson.indexDir")
-  val docsDir = config[File]("odinson.docsDir")
+  val docsDir  = config[File]("odinson.docsDir")
   val documentIdField = config[String]("odinson.index.documentIdField")
   val sentenceIdField = config[String]("odinson.index.sentenceIdField")
-  val sentenceLengthField = config[String]("odinson.index.sentenceLengthField")
-  val wordTokenField = config[String]("odinson.index.wordTokenField")
-  val lowerCaseTokenField = config[String]("odinson.index.lowerCaseTokenField")
-  val lemmaTokenField = config[String]("odinson.index.lemmaTokenField")
-  val tagTokenField = config[String]("odinson.index.tagTokenField")
-  val chunkTokenField = config[String]("odinson.index.chunkTokenField")
-  val entityTokenField = config[String]("odinson.index.entityTokenField")
-  val incomingTokenField = config[String]("odinson.index.incomingTokenField")
-  val outgoingTokenField = config[String]("odinson.index.outgoingTokenField")
-  val dependenciesField = config[String]("odinson.index.dependenciesField")
-  val dependenciesVocabularyFile = config[File]("odinson.index.dependenciesVocabulary")
-  val sortedDocValuesFieldMaxSize = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
+  val sentenceLengthField  = config[String]("odinson.index.sentenceLengthField")
+  val rawTokenField        = config[String]("odinson.index.rawTokenField")
+  val wordTokenField       = config[String]("odinson.index.wordTokenField")
+  val normalizedTokenField = config[String]("odinson.index.normalizedTokenField")
+  // TODO lowerCaseTokenField is now deprecated and should be removed ASAP
+  val lowerCaseTokenField  = config[String]("odinson.index.lowerCaseTokenField")
+  val lemmaTokenField      = config[String]("odinson.index.lemmaTokenField")
+  val posTagTokenField     = config[String]("odinson.index.posTagTokenField")
+  val chunkTokenField      = config[String]("odinson.index.chunkTokenField")
+  val entityTokenField     = config[String]("odinson.index.entityTokenField")
+  val incomingTokenField   = config[String]("odinson.index.incomingTokenField")
+  val outgoingTokenField   = config[String]("odinson.index.outgoingTokenField")
+  val dependenciesField    = config[String]("odinson.index.dependenciesField")
+  val dependenciesVocabularyFile   = config[File]("odinson.index.dependenciesVocabulary")
+  val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
 
   implicit val formats = DefaultFormats
@@ -124,16 +127,26 @@ object IndexDocuments extends App with LazyLogging {
     sent.add(new StoredField(documentIdField, docId))
     sent.add(new StoredField(sentenceIdField, sentId))
     sent.add(new NumericDocValuesField(sentenceLengthField, s.size))
-    sent.add(textfield(wordTokenField, s.words, Store.YES))
-    sent.add(textfield(lowerCaseTokenField, s.words.map(_.toLowerCase)))
-    if (s.tags.isDefined) sent.add(textfield(tagTokenField, s.tags.get))
-    if (s.lemmas.isDefined) sent.add(textfield(lemmaTokenField, s.lemmas.get))
-    if (s.entities.isDefined) sent.add(textfield(entityTokenField, s.entities.get))
-    if (s.chunks.isDefined) sent.add(textfield(chunkTokenField, s.chunks.get))
+    sent.add(new TextField(rawTokenField, new OdinsonTokenStream(s.raw)))
+    sent.add(new TextField(wordTokenField, new OdinsonTokenStream(s.words)))
+    sent.add(new TextField(normalizedTokenField, new NormalizedTokenStream(s.raw, s.words)))
+    sent.add(new TextField(lowerCaseTokenField, new OdinsonTokenStream(s.words.map(_.toLowerCase))))
+    if (s.tags.isDefined) {
+      sent.add(new TextField(posTagTokenField, new OdinsonTokenStream(s.tags.get)))
+    }
+    if (s.lemmas.isDefined) {
+      sent.add(new TextField(lemmaTokenField, new OdinsonTokenStream(s.lemmas.get)))
+    }
+    if (s.entities.isDefined) {
+      sent.add(new TextField(entityTokenField, new OdinsonTokenStream(s.entities.get)))
+    }
+    if (s.chunks.isDefined) {
+      sent.add(new TextField(chunkTokenField, new OdinsonTokenStream(s.chunks.get)))
+    }
     if (s.dependencies.isDefined) {
       val deps = s.dependencies.get
-      sent.add(textfield(incomingTokenField, deps.incomingEdges))
-      sent.add(textfield(outgoingTokenField, deps.outgoingEdges))
+      sent.add(new TextField(incomingTokenField, new DependencyTokenStream(deps.incomingEdges)))
+      sent.add(new TextField(outgoingTokenField, new DependencyTokenStream(deps.outgoingEdges)))
       val bytes = mkDirectedGraph(deps, dependenciesVocabulary).toBytes
       if (bytes.length <= sortedDocValuesFieldMaxSize) {
         sent.add(new SortedDocValuesField(dependenciesField, new BytesRef(bytes)))
