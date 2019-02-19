@@ -22,7 +22,7 @@ class OdinsonIndexSearcher(
 
   def odinSearch(query: OdinQuery, n: Int): OdinResults = odinSearch(null, query, n)
 
-  def odinSearch(after: OdinScoreDoc, query: OdinQuery, numHits: Int): OdinResults = {
+  def odinSearch(after: OdinsonScoreDoc, query: OdinQuery, numHits: Int): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
       after == null || after.doc < limit,
