@@ -1,4 +1,4 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap }
 import scala.collection.JavaConverters._
@@ -6,7 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities._
-import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene._
 
 /**
  * The Weight interface provides an internal representation of the Query

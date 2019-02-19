@@ -5,6 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.lucene.search._
 
 class OdinRangeQuery(
     val query: OdinQuery,

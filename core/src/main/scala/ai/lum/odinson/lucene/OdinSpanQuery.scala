@@ -4,6 +4,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.lucene.search._
 
 /** Wraps an OdinQuery in a SpanQuery */
 class OdinSpanQuery(val query: OdinQuery) extends SpanQuery {
