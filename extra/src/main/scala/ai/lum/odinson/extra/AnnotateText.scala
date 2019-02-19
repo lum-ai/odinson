@@ -68,7 +68,7 @@ object AnnotateText extends App with LazyLogging {
   }
 
   // NOTE parses the documents in parallel
-  for (f <- textDir.listFilesByRegex(pattern = "\\.(txt|nxml)$", caseSensitive = false, recursive = true).toSeq.par) {
+  for (f <- textDir.listFilesByRegex(pattern = ".*\\.(txt|nxml)$", caseSensitive = false, recursive = true).toSeq.par) {
     //val docFile = new File(docsDir, f.getBaseName() + ".json")
     val docFile = new File(docsDir, f.getBaseName() + ".ser")
     if (docFile.exists()) {
