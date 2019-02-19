@@ -1,8 +1,9 @@
 package ai.lum.odinson.extra
 
-import java.io.File
+import java.io._
 import java.nio.file.Path
 import java.util.Collection
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
@@ -17,6 +18,8 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.clulab.struct.{ DirectedGraph => ProcessorsDirectedGraph }
 import org.clulab.processors.{ Sentence, Document => ProcessorsDocument }
 import org.clulab.serialization.json.JSONSerializer
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.ConfigFactory
 import ai.lum.common.ConfigUtils._
@@ -47,6 +50,8 @@ object IndexDocuments extends App with LazyLogging {
   val sortedDocValuesFieldMaxSize = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
 
+  implicit val formats = DefaultFormats
+
   // we will populate this vocabulary with the dependencies
   // and we will dump it at the end
   val dependenciesVocabulary = Vocabulary.empty
@@ -74,19 +79,27 @@ object IndexDocuments extends App with LazyLogging {
 
 
 
-
-
-  def deserializeDoc(f: File): ProcessorsDocument = f.getExtension.toLowerCase match {
-    case "json" => JSONSerializer.toDocument(f)
-    case "ser" => Serializer.deserialize[ProcessorsDocument](f)
+  def deserializeDoc(f: File): ProcessorsDocument = f.getName.toLowerCase match {
+    case json if json.endsWith(".json") => JSONSerializer.toDocument(f)
+    case ser if ser.endsWith(".ser") => Serializer.deserialize[ProcessorsDocument](f)
+      // NOTE: we're assuming this is
+    case gz if gz.endsWith("json.gz") =>
+      val contents: String = GzipUtils.uncompress(f)
+      val jast = parse(contents)
+      JSONSerializer.toDocument(jast)
     case other =>
       throw new Exception(s"Cannot deserialize ${f.getName} to org.clulab.processors.Document. Unsupported extension '$other'")
+  }
+
+  def generateUUID: String = {
+    java.util.UUID.randomUUID().toString
   }
 
   // generates a lucene document per sentence
   def mkDocumentBlock(d: ProcessorsDocument): Collection[Document] = {
     // FIXME what should we do if the document has no id?
-    val docId = d.id.getOrElse("UNKNOWN")
+    val docId = d.id.getOrElse(generateUUID)
+
     val block = ArrayBuffer.empty[Document]
     for ((s, i) <- d.sentences.zipWithIndex) {
       if (s.size <= maxNumberOfTokensPerSentence) {
