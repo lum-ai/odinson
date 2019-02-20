@@ -7,11 +7,12 @@ import scala.util.control.NonFatal
 import scala.collection.immutable.ListMap
 import jline.console.ConsoleReader
 import jline.console.history.FileHistory
-import jline.console.completer.StringsCompleter
+import jline.console.completer.{ ArgumentCompleter, StringsCompleter }
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.index.DirectoryReader
 import com.typesafe.config._
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.FileUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.highlighter.ConsoleHighlighter
 import ai.lum.odinson.lucene._
@@ -39,6 +40,7 @@ object Shell extends App {
   val prompt = config[String]("odinson.shell.prompt")
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
   val history = new FileHistory(config[File]("odinson.shell.history"))
+  val dependenciesVocabulary = config[File]("odinson.index.dependenciesVocabulary")
 
   // we must flush the history before exiting
   sys.addShutdownHook {
@@ -52,12 +54,23 @@ object Shell extends App {
   def fmt(n: Int): String = intFormatter.format(n)
   def fmt(n: Float): String = numFormatter.format(n)
 
+  // retrieve dependencies
+  val dependencies = dependenciesVocabulary
+    .readString()
+    .lines
+    .flatMap(dep => Seq(s">$dep", s"<$dep"))
+
+  // autocomplete
+  val autoCompleteOptions = dependencies.toList ++ commands.keys.toList
+  val completer = new ArgumentCompleter(new StringsCompleter(autoCompleteOptions: _*))
+  completer.setStrict(false)
+
   // setup console
   val reader = new ConsoleReader
   reader.setPrompt(prompt)
   reader.setHistory(history)
   reader.setExpandEvents(false)
-  reader.addCompleter(new StringsCompleter(commands.keys.toSeq:_*))
+  reader.addCompleter(completer)
 
   // setup searcher
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
