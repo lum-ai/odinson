@@ -1,12 +1,13 @@
 package ai.lum.odinson.compiler
 
+import com.ibm.icu.text.Normalizer2
 import fastparse._
 import ScriptWhitespace._
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields
     val defaultTokenField: String,   // the name of the default token field
-    val lowerCaseQueriesToDefaultField: Boolean
+    val normalizeQueriesToDefaultField: Boolean
 ) {
 
   // parser's entry point
@@ -215,19 +216,29 @@ class QueryParser(
     P(explicitConstraint | defaultFieldConstraint)
   }
 
+  // unicode/case normalization
+  private val normalizer = Normalizer2.getNFKCCasefoldInstance()
+  private def maybeNormalize(s: String): String = {
+    if (normalizeQueriesToDefaultField) normalizer.normalize(s) else s
+  }
+
   def defaultFieldConstraint[_: P]: P[Ast.Constraint] = {
     P(defaultFieldRegexConstraint | defaultFieldStringConstraint)
   }
 
   def defaultFieldStringConstraint[_: P]: P[Ast.Constraint] = {
-    P(stringMatcher ~ "~".!.?).map {
-      case (matcher, None)    => Ast.FieldConstraint(defaultTokenField, matcher)
-      case (matcher, Some(_)) => Ast.FuzzyConstraint(defaultTokenField, matcher)
+    P(Literals.string ~ "~".!.?).map {
+      case (string, None) =>
+        Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(maybeNormalize(string)))
+      case (string, Some(_)) =>
+        Ast.FuzzyConstraint(defaultTokenField, Ast.StringMatcher(maybeNormalize(string)))
     }
   }
 
   def defaultFieldRegexConstraint[_: P]: P[Ast.Constraint] = {
-    P(regexMatcher).map(matcher => Ast.FieldConstraint(defaultTokenField, matcher))
+    P(Literals.regex).map { regex =>
+      Ast.FieldConstraint(defaultTokenField, Ast.RegexMatcher(maybeNormalize(regex)))
+    }
   }
 
   def explicitConstraint[_: P]: P[Ast.Constraint] = {
