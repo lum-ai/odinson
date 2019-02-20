@@ -68,7 +68,7 @@ object Shell extends App {
   val matchSettingsScope = """^:settings\s+([\w\.-]+)$""".r
 
   var query: OdinQuery = null
-  var after: OdinScoreDoc = null
+  var after: OdinsonScoreDoc = null
   var shownHits: Int = 0
   var totalHits: Int = 0
 

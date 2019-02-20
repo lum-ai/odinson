@@ -9,7 +9,7 @@ import OdinCollector._
 
 
 abstract class OdinCollector(
-    protected val pq: PriorityQueue[OdinScoreDoc]
+    protected val pq: PriorityQueue[OdinsonScoreDoc]
 ) extends Collector {
 
   def this(numHits: Int) = {
@@ -20,7 +20,7 @@ abstract class OdinCollector(
   }
 
   protected var totalHits: Int = 0
-  protected var pqTop: OdinScoreDoc = null
+  protected var pqTop: OdinsonScoreDoc = null
 
   override def needsScores(): Boolean = true
 
@@ -37,7 +37,7 @@ abstract class OdinCollector(
     }
     // We know that start < pqsize, so just fix howMany.
     val fixedHowMany = math.min(size - start, howMany)
-    val results = new Array[OdinScoreDoc](fixedHowMany)
+    val results = new Array[OdinsonScoreDoc](fixedHowMany)
     // pq's pop() returns the 'least' element in the queue, therefore need
     // to discard the first ones, until we reach the requested range.
     // Note that this loop will usually not be executed, since the common usage
@@ -55,7 +55,7 @@ abstract class OdinCollector(
     new OdinResults(totalHits, results)
   }
 
-  protected def populateResults(results: Array[OdinScoreDoc], howMany: Int): Unit = {
+  protected def populateResults(results: Array[OdinsonScoreDoc], howMany: Int): Unit = {
   }
 
   abstract class OdinLeafCollector extends LeafCollector {
@@ -77,7 +77,7 @@ object OdinCollector {
 
   def create(numHits: Int): OdinCollector = create(numHits, null)
 
-  def create(numHits: Int, after: OdinScoreDoc): OdinCollector = {
+  def create(numHits: Int, after: OdinsonScoreDoc): OdinCollector = {
     require(numHits > 0, "numHits must be > 0")
     if (after == null) {
       new SimpleOdinCollector(numHits)
@@ -90,14 +90,14 @@ object OdinCollector {
   class OdinHitsQueue(
       size: Int,
       prePopulate: Boolean
-  ) extends PriorityQueue[OdinScoreDoc](size, prePopulate) {
+  ) extends PriorityQueue[OdinsonScoreDoc](size, prePopulate) {
 
-    override protected def getSentinelObject(): OdinScoreDoc = {
+    override protected def getSentinelObject(): OdinsonScoreDoc = {
       // Always set the doc Id to MAX_VALUE so that it won't be favored by lessThan.
-      new OdinScoreDoc(Int.MaxValue, Float.NegativeInfinity)
+      new OdinsonScoreDoc(Int.MaxValue, Float.NegativeInfinity)
     }
 
-    override protected def lessThan(hitA: OdinScoreDoc, hitB: OdinScoreDoc): Boolean = {
+    override protected def lessThan(hitA: OdinsonScoreDoc, hitB: OdinsonScoreDoc): Boolean = {
       if (hitA.score == hitB.score) {
         hitA.doc > hitB.doc
       } else {
@@ -138,7 +138,7 @@ object OdinCollector {
 
   class PagingOdinCollector(
       numHits: Int,
-      after: OdinScoreDoc
+      after: OdinsonScoreDoc
   ) extends OdinCollector(numHits) {
 
     private var collectedHits: Int = 0

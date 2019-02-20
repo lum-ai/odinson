@@ -1,8 +1,9 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import org.apache.lucene.search.ScoreDoc
+import ai.lum.odinson.lucene._
 
-class OdinScoreDoc(
+class OdinsonScoreDoc(
     doc: Int,
     score: Float,
     shardIndex: Int = -1,

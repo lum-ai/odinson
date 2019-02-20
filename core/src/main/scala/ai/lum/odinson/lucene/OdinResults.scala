@@ -1,14 +1,15 @@
 package ai.lum.odinson.lucene
 
 import org.apache.lucene.util.PriorityQueue
+import ai.lum.odinson.lucene.search._
 
 class OdinResults(
     val totalHits: Int,
-    val scoreDocs: Array[OdinScoreDoc],
+    val scoreDocs: Array[OdinsonScoreDoc],
     var maxScore: Float
 ) {
 
-  def this(totalHits: Int, scoreDocs: Array[OdinScoreDoc]) = {
+  def this(totalHits: Int, scoreDocs: Array[OdinsonScoreDoc]) = {
     this(totalHits, scoreDocs, Float.NaN)
   }
 
@@ -60,9 +61,9 @@ object OdinResults {
     }
 
     // https://github.com/apache/lucene-solr/blob/branch_6_6/lucene/core/src/java/org/apache/lucene/search/TopDocs.java#L288
-    var hits: Array[OdinScoreDoc] = Array.empty
+    var hits: Array[OdinsonScoreDoc] = Array.empty
     if (availHitCount > start) {
-      hits = new Array[OdinScoreDoc](math.min(size, availHitCount - start))
+      hits = new Array[OdinsonScoreDoc](math.min(size, availHitCount - start))
       val requestedResultWindow = start + size
       val numIterOnHits = math.min(availHitCount, requestedResultWindow)
       var hitUpto = 0
@@ -99,7 +100,7 @@ object OdinResults {
     new OdinResults(totalHitCount, hits, maxScore)
   }
 
-  def tieBreakLessThan(first: ShardRef, firstDoc: OdinScoreDoc, second: ShardRef, secondDoc: OdinScoreDoc): Boolean = {
+  def tieBreakLessThan(first: ShardRef, firstDoc: OdinsonScoreDoc, second: ShardRef, secondDoc: OdinsonScoreDoc): Boolean = {
     val firstShardIndex = first.getShardIndex(firstDoc)
     val secondShardIndex = second.getShardIndex(secondDoc)
     // Tie break: earlier shard wins
@@ -116,7 +117,7 @@ object OdinResults {
   }
 
   class ShardRef(val shardIndex: Int, val useScoreDocIndex: Boolean, var hitIndex: Int = 0) {
-    def getShardIndex(scoreDoc: OdinScoreDoc): Int = {
+    def getShardIndex(scoreDoc: OdinsonScoreDoc): Int = {
       if (useScoreDocIndex) {
         require(
           scoreDoc.shardIndex >= 0,
@@ -134,7 +135,7 @@ object OdinResults {
   class ScoreMergeSortQueue(results: Array[OdinResults])
   extends PriorityQueue[ShardRef](results.length) {
 
-    val shardHits: Array[Array[OdinScoreDoc]] = results.map(_.scoreDocs)
+    val shardHits: Array[Array[OdinsonScoreDoc]] = results.map(_.scoreDocs)
 
     def lessThan(first: ShardRef, second: ShardRef): Boolean = {
       assert(first != second)
