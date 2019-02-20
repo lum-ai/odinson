@@ -87,7 +87,7 @@ object AnnotateText extends App with LazyLogging {
         case Success(_) =>
           logger.info(s"Annotated ${f.getCanonicalPath}")
         case Failure(e) =>
-          logger.error(s"Failed to process ${f.getName}")
+          logger.error(s"Failed to process ${f.getName}", e)
       }
 
     }
