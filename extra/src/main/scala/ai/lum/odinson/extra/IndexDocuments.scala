@@ -78,8 +78,8 @@ object IndexDocuments extends App with LazyLogging {
     } match {
       case Success(_) =>
         logger.info(s"Indexed ${f.getName}")
-      case Failure(_) =>
-        logger.error(s"Failed to index ${f.getName}")
+      case Failure(e) =>
+        logger.error(s"Failed to index ${f.getName}", e)
     }
 
   }
