@@ -1,6 +1,6 @@
 package ai.lum.odinson.digraph
 
-import ai.lum.odinson.kryo.OdinKryoPool
+import ai.lum.odinson.serialization.OdinKryoPool
 
 /** Represents a directed graph (i.e. dependency parse).
  *

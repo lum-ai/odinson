@@ -1,4 +1,4 @@
-package ai.lum.odinson.kryo
+package ai.lum.odinson.serialization
 
 import java.io.{ OutputStream, ByteArrayOutputStream }
 import com.twitter.chill.{ ScalaKryoInstantiator, KryoPool, SerDeState }
