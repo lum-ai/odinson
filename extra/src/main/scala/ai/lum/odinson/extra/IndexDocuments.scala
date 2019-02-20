@@ -42,8 +42,6 @@ object IndexDocuments extends App with LazyLogging {
   val rawTokenField        = config[String]("odinson.index.rawTokenField")
   val wordTokenField       = config[String]("odinson.index.wordTokenField")
   val normalizedTokenField = config[String]("odinson.index.normalizedTokenField")
-  // TODO lowerCaseTokenField is now deprecated and should be removed ASAP
-  val lowerCaseTokenField  = config[String]("odinson.index.lowerCaseTokenField")
   val lemmaTokenField      = config[String]("odinson.index.lemmaTokenField")
   val posTagTokenField     = config[String]("odinson.index.posTagTokenField")
   val chunkTokenField      = config[String]("odinson.index.chunkTokenField")
@@ -140,7 +138,6 @@ object IndexDocuments extends App with LazyLogging {
     // we want to index and store the words for displaying in the shell
     sent.add(new TextField(wordTokenField, s.words.mkString(" "), Store.YES))
     sent.add(new TextField(normalizedTokenField, new NormalizedTokenStream(s.raw, s.words)))
-    sent.add(new TextField(lowerCaseTokenField, new OdinsonTokenStream(s.words.map(_.toLowerCase))))
     if (s.tags.isDefined) {
       sent.add(new TextField(posTagTokenField, new OdinsonTokenStream(s.tags.get)))
     }

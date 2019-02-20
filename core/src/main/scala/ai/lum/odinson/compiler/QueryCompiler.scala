@@ -17,10 +17,10 @@ class QueryCompiler(
     val incomingTokenField: String,
     val outgoingTokenField: String,
     val dependenciesVocabulary: Vocabulary,
-    val lowerCaseQueriesToDefaultField: Boolean
+    val normalizeQueriesToDefaultField: Boolean
 ) {
 
-  val parser = new QueryParser(allTokenFields, defaultTokenField, lowerCaseQueriesToDefaultField)
+  val parser = new QueryParser(allTokenFields, defaultTokenField, normalizeQueriesToDefaultField)
 
   def compile(pattern: String): OdinQuery = {
     val ast = parser.parseQuery(pattern)
@@ -399,7 +399,7 @@ object QueryCompiler {
       config[String]("incomingTokenField"),
       config[String]("outgoingTokenField"),
       Vocabulary.fromFile(config[File]("dependenciesVocabulary")),
-      config[Boolean]("lowerCaseQueriesToDefaultField")
+      config[Boolean]("normalizeQueriesToDefaultField")
     )
   }
 
