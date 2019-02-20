@@ -137,7 +137,8 @@ object IndexDocuments extends App with LazyLogging {
     sent.add(new StoredField(sentenceIdField, sentId))
     sent.add(new NumericDocValuesField(sentenceLengthField, s.size))
     sent.add(new TextField(rawTokenField, new OdinsonTokenStream(s.raw)))
-    sent.add(new TextField(wordTokenField, new OdinsonTokenStream(s.words)))
+    // we want to index and store the words for displaying in the shell
+    sent.add(new TextField(wordTokenField, s.words.mkString(" "), Store.YES))
     sent.add(new TextField(normalizedTokenField, new NormalizedTokenStream(s.raw, s.words)))
     sent.add(new TextField(lowerCaseTokenField, new OdinsonTokenStream(s.words.map(_.toLowerCase))))
     if (s.tags.isDefined) {
