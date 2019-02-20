@@ -16,17 +16,19 @@ class QueryParser(
 
   // grammar's top-level symbol
   def odinsonPattern[_: P]: P[Ast.Pattern] = {
-    P(Start ~ (graphTraversalPattern | surfacePattern) ~ End)
+    P(Start ~ graphTraversalPattern ~ End)
+  }
+
+  def graphTraversalPattern[_: P]: P[Ast.Pattern] = {
+    P(surfacePattern ~ (disjunctiveTraversal ~ surfacePattern).rep).map {
+      case (src, rest) => rest.foldLeft(src) {
+        case (lhs, (tr, rhs)) => Ast.GraphTraversalPattern(lhs, tr, rhs)
+      }
+    }
   }
 
   def surfacePattern[_: P]: P[Ast.Pattern] = {
     P(disjunctivePattern)
-  }
-
-  def graphTraversalPattern[_: P]: P[Ast.Pattern] = {
-    P(atomicPattern ~ disjunctiveTraversal ~ atomicPattern).map {
-      case (lhs, tr, rhs) => Ast.GraphTraversalPattern(lhs, tr, rhs)
-    }
   }
 
   def disjunctivePattern[_: P]: P[Ast.Pattern] = {
