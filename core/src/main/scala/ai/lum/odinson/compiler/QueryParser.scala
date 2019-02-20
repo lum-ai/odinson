@@ -299,7 +299,9 @@ class QueryParser(
 
   // any value in `allTokenFields` is a valid field name
   def fieldName[_: P]: P[String] = {
-    P(StringIn("word", "raw")).!
+    P(Literals.javaIdentifier).flatMap { identifier =>
+      if (allTokenFields contains identifier) Pass(identifier) else Fail
+    }
   }
 
   def anyMatcher[_: P]: P[Ast.Matcher] = {
