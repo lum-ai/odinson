@@ -28,6 +28,8 @@ import ai.lum.common.Serializer
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 
+import scala.util.{ Failure, Success, Try }
+
 
 object IndexDocuments extends App with LazyLogging {
 
@@ -69,10 +71,17 @@ object IndexDocuments extends App with LazyLogging {
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
   // NOTE indexes the documents in parallel
   for (f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par) {
-    logger.info(s"Indexing ${f.getName}")
-    val doc = deserializeDoc(f)
-    val block = mkDocumentBlock(doc)
-    writer.addDocuments(block)
+    Try {
+      val doc = deserializeDoc(f)
+      val block = mkDocumentBlock(doc)
+      writer.addDocuments(block)
+    } match {
+      case Success(_) =>
+        logger.info(s"Indexed ${f.getName}")
+      case Failure(_) =>
+        logger.error(s"Failed to index ${f.getName}")
+    }
+
   }
 
   dependenciesVocabulary.dumpToFile(dependenciesVocabularyFile)
