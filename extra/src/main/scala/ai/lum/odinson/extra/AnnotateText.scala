@@ -28,6 +28,12 @@ object AnnotateText extends App with LazyLogging {
     case "BioCluProcessor" => new BioCluProcessor
   }
 
+  // create output directory if it does not exist
+  if (!docsDir.exists) {
+    logger.warn(s"Making directory $docsDir")
+    docsDir.mkdirs()
+  }
+
   val scienceUtils = new ScienceUtils
 
   def preprocessText(text:String):String = {
