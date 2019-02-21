@@ -1,4 +1,4 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, TreeMap, Collection }
 import scala.collection.JavaConverters._
