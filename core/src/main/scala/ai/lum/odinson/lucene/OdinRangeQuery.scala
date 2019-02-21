@@ -6,6 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 
 class OdinRangeQuery(
     val query: OdinsonQuery,
@@ -54,7 +55,7 @@ class OdinRangeQuery(
       weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
       if (spans == null) null else new OdinRangeSpans(spans, min, max)
     }
@@ -64,10 +65,10 @@ class OdinRangeQuery(
 }
 
 class OdinRangeSpans(
-    val spans: OdinSpans,
+    val spans: OdinsonSpans,
     val min: Int,
     val max: Int
-) extends OdinSpans {
+) extends OdinsonSpans {
 
   import DocIdSetIterator._
   import Spans._

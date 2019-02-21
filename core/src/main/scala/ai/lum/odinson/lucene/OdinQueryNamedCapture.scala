@@ -5,6 +5,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 
 class OdinQueryNamedCapture(
     val query: OdinsonQuery,
@@ -48,7 +49,7 @@ class OdinWeightNamedCapture(
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
     if (spans == null) null else new OdinSpansNamedCapture(spans, captureName)
   }
@@ -56,9 +57,9 @@ class OdinWeightNamedCapture(
 }
 
 class OdinSpansNamedCapture(
-    val spans: OdinSpans,
+    val spans: OdinsonSpans,
     val captureName: String
-) extends OdinSpans {
+) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
   def docID(): Int = spans.docID()

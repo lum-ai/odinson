@@ -5,6 +5,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 
 class DocEndQuery(
     val defaultTokenField: String,
@@ -32,7 +33,7 @@ class DocEndQuery(
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val reader = context.reader
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
       new DocEndSpans(reader, numWordsPerDoc)
@@ -45,7 +46,7 @@ class DocEndQuery(
 class DocEndSpans(
     val reader: IndexReader,
     val numWordsPerDoc: NumericDocValues
-) extends OdinSpans {
+) extends OdinsonSpans {
 
   import DocIdSetIterator._
   import Spans._

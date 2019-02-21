@@ -2,9 +2,10 @@ package ai.lum.odinson.lucene.util
 
 import org.apache.lucene.util.PriorityQueue
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search.spans._
 
-class SpanPositionQueue(maxSize: Int) extends PriorityQueue[OdinSpans](maxSize, false) {
-  protected def lessThan(s1: OdinSpans, s2: OdinSpans): Boolean = {
+class SpanPositionQueue(maxSize: Int) extends PriorityQueue[OdinsonSpans](maxSize, false) {
+  protected def lessThan(s1: OdinsonSpans, s2: OdinsonSpans): Boolean = {
     val start1 = s1.startPosition()
     val start2 = s2.startPosition()
     if (start1 < start2) true

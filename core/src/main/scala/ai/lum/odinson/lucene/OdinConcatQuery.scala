@@ -55,8 +55,8 @@ class OdinConcatQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
-      val subSpans = new Array[OdinSpans](clauses.size)
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+      val subSpans = new Array[OdinsonSpans](clauses.size)
       var i = 0
       for (weight <- subWeights) {
         val subSpan = weight.getSpans(context, requiredPostings)
@@ -74,7 +74,7 @@ class OdinConcatQuery(
   }
 
   class OdinConcatSpans(
-      val subSpans: Array[OdinSpans],
+      val subSpans: Array[OdinsonSpans],
       val reader: IndexReader,
       getNumWordsPerDoc: => NumericDocValues // call-by-name
   ) extends ConjunctionSpans {
@@ -116,7 +116,7 @@ class OdinConcatQuery(
       matchStart
     }
 
-    private def getAllSpansWithCaptures(spans: OdinSpans): Seq[SpanWithCaptures] = {
+    private def getAllSpansWithCaptures(spans: OdinsonSpans): Seq[SpanWithCaptures] = {
       val buffer = ArrayBuffer.empty[SpanWithCaptures]
       while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
         buffer += spans.spanWithCaptures
@@ -139,7 +139,7 @@ class OdinConcatQuery(
       } yield SpanWithCaptures(Span(l.span.start, r.span.end), l.captures ++ r.captures)
     }
 
-    private def concatSpans(spans: Array[OdinSpans]): Seq[SpanWithCaptures] = {
+    private def concatSpans(spans: Array[OdinsonSpans]): Seq[SpanWithCaptures] = {
       var results: Seq[SpanWithCaptures] = null
       var numWildcards: Int = 0
       if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {

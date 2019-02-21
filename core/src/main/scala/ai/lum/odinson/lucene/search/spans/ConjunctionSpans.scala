@@ -9,7 +9,7 @@ import ai.lum.odinson.lucene._
  * This is a port of org.apache.lucene.search.spans.ConjunctionSpans
  * We had to do this because the original is not a public class.
  */
-trait ConjunctionSpans extends OdinSpans {
+trait ConjunctionSpans extends OdinsonSpans {
 
   import DocIdSetIterator._
 
@@ -20,7 +20,7 @@ trait ConjunctionSpans extends OdinSpans {
   def endPosition(): Int = if (atFirstInCurrentDoc) -1 else matchEnd
 
   // a subclass needs to implement these two methods
-  def subSpans: Array[OdinSpans]
+  def subSpans: Array[OdinsonSpans]
   def twoPhaseCurrentDocMatches(): Boolean
 
   // a first start position is available in current doc for nextStartPosition

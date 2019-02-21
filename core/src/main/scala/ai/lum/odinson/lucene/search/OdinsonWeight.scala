@@ -7,6 +7,7 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities._
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search.spans._
 
 /**
  * The Weight interface provides an internal representation of the Query
@@ -27,7 +28,7 @@ abstract class OdinsonWeight(
   val simWeight: Similarity.SimWeight = OdinsonWeight.buildSimWeight(query, searcher, termContexts, similarity)
 
   def extractTermContexts(contexts: JMap[Term, TermContext]): Unit
-  def getSpans(ctx: LeafReaderContext, requiredPostings: Postings): OdinSpans
+  def getSpans(ctx: LeafReaderContext, requiredPostings: Postings): OdinsonSpans
 
   def getValueForNormalization(): Float = {
     if (simWeight == null) 1.0f else simWeight.getValueForNormalization()

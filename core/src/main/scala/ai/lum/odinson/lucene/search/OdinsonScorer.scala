@@ -5,10 +5,11 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities.Similarity.SimScorer
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search.spans._
 
 class OdinsonScorer(
     weight: OdinsonWeight,
-    val spans: OdinSpans,
+    val spans: OdinsonSpans,
     val docScorer: SimScorer
 ) extends Scorer(weight) {
 
@@ -19,7 +20,7 @@ class OdinsonScorer(
   // stores the Spans found in the current document
   private val collectedSpans: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
 
-  def getSpans(): OdinSpans = spans
+  def getSpans(): OdinsonSpans = spans
   def docID(): Int = spans.docID()
   def iterator(): DocIdSetIterator = spans
   override def twoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()

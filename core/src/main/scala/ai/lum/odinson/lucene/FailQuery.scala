@@ -5,6 +5,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 
 class FailQuery(val field: String) extends OdinsonQuery { self =>
 
@@ -27,7 +28,7 @@ class FailQuery(val field: String) extends OdinsonQuery { self =>
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = null
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = null
 
   }
 

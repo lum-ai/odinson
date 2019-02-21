@@ -1,6 +1,7 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search.spans
 
 import org.apache.lucene.search.spans.Spans
+import ai.lum.odinson.lucene._
 
 /**
  * Iterates through combinations of start/end positions per-doc.
@@ -11,7 +12,7 @@ import org.apache.lucene.search.spans.Spans
  *
  * (copied from lucene documentation)
  */
-abstract class OdinSpans extends Spans {
+abstract class OdinsonSpans extends Spans {
 
   def span = Span(startPosition(), endPosition())
 

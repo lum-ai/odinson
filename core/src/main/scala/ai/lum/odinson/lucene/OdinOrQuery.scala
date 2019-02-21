@@ -8,6 +8,7 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 
 class OdinOrQuery(
@@ -56,14 +57,14 @@ class OdinOrQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val terms = context.reader().terms(field)
       if (terms == null) {
         return null // field does not exist
       }
-      val subSpans = new ArrayBuffer[OdinSpans](clauses.size)
+      val subSpans = new ArrayBuffer[OdinsonSpans](clauses.size)
       for (weight <- subWeights) {
-        val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinSpans]
+        val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinsonSpans]
         if (subSpan != null) {
           subSpans += subSpan
         }
@@ -72,8 +73,8 @@ class OdinOrQuery(
         return null
       } else if (subSpans.length == 1) {
         val s = subSpans(0)
-        assert(s.isInstanceOf[OdinSpans])
-        return s.asInstanceOf[OdinSpans]
+        assert(s.isInstanceOf[OdinsonSpans])
+        return s.asInstanceOf[OdinsonSpans]
       }
       val byDocQueue = new DisiPriorityQueue(subSpans.length)
       for (spans <- subSpans) {
@@ -88,12 +89,12 @@ class OdinOrQuery(
 }
 
 class OdinOrSpans(
-    val subSpans: Array[OdinSpans],
+    val subSpans: Array[OdinsonSpans],
     val byDocQueue: DisiPriorityQueue,
     val byPositionQueue: SpanPositionQueue
-) extends OdinSpans {
+) extends OdinsonSpans {
 
-  private var topPositionSpans: OdinSpans = null
+  private var topPositionSpans: OdinsonSpans = null
 
   def nextDoc(): Int = {
     topPositionSpans = null
@@ -178,7 +179,7 @@ class OdinOrSpans(
     // add all matching Spans at current doc to byPositionQueue
     var listAtCurrentDoc = byDocQueue.topList()
     while (listAtCurrentDoc != null) {
-      var spansAtDoc = listAtCurrentDoc.spans.asInstanceOf[OdinSpans]
+      var spansAtDoc = listAtCurrentDoc.spans.asInstanceOf[OdinsonSpans]
       if (lastDocTwoPhaseMatched == listAtCurrentDoc.doc) { // matched by DisjunctionDisiApproximation
         if (listAtCurrentDoc.twoPhaseView != null) { // matched by approximation
           if (listAtCurrentDoc.lastApproxNonMatchDoc == listAtCurrentDoc.doc) { // matches() returned false

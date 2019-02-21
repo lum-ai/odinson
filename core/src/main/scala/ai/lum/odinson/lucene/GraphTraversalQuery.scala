@@ -68,7 +68,7 @@ class GraphTraversalQuery(
       dstWeight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val reader = context.reader
       val srcSpans = srcWeight.getSpans(context, requiredPostings)
       val dstSpans = dstWeight.getSpans(context, requiredPostings)
@@ -82,7 +82,7 @@ class GraphTraversalQuery(
 }
 
 class GraphTraversalSpans(
-    val subSpans: Array[OdinSpans],
+    val subSpans: Array[OdinsonSpans],
     val traversal: GraphTraversal,
     val graphPerDoc: SortedDocValues
 ) extends ConjunctionSpans {
@@ -129,7 +129,7 @@ class GraphTraversalSpans(
   }
 
   // FIXME this is repeated in OdinConcatQuery
-  private def getAllSpansWithCaptures(spans: OdinSpans): Seq[SpanWithCaptures] = {
+  private def getAllSpansWithCaptures(spans: OdinsonSpans): Seq[SpanWithCaptures] = {
     val buffer = ArrayBuffer.empty[SpanWithCaptures]
     while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
       buffer += spans.spanWithCaptures
@@ -149,8 +149,8 @@ class GraphTraversalSpans(
   private def matchPairs(
       graph: DirectedGraph,
       traversal: GraphTraversal,
-      srcSpans: OdinSpans,
-      dstSpans: OdinSpans
+      srcSpans: OdinsonSpans,
+      dstSpans: OdinsonSpans
   ): Seq[SpanWithCaptures] = {
     val results: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
     val dstIndex = mkInvIndex(getAllSpansWithCaptures(dstSpans))

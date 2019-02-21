@@ -5,6 +5,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 import Spans._
 
 class OdinNotQuery(
@@ -56,7 +57,7 @@ class OdinNotQuery(
       includeWeight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val includeSpans = includeWeight.getSpans(context, requiredPostings)
       if (includeSpans == null) return null
       val excludeSpans = excludeWeight.getSpans(context, requiredPostings)

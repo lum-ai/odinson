@@ -55,12 +55,12 @@ class OdinTermAndQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val terms = context.reader().terms(field)
       if (terms == null) {
         return null // field does not exist
       }
-      val subSpans = new Array[OdinSpans](clauses.size)
+      val subSpans = new Array[OdinsonSpans](clauses.size)
       var i = 0
       for (weight <- subWeights) {
         val subSpan = weight.getSpans(context, requiredPostings)
@@ -76,7 +76,7 @@ class OdinTermAndQuery(
 
   }
 
-  class OdinTermAndSpans(val subSpans: Array[OdinSpans]) extends ConjunctionSpans {
+  class OdinTermAndSpans(val subSpans: Array[OdinsonSpans]) extends ConjunctionSpans {
 
     import Spans._
 

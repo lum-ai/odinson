@@ -5,6 +5,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 
 /** Wraps a SpanQuery to add OdinsonQuery functionality. */
 class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
@@ -45,14 +46,14 @@ class OdinWeightWrapper(
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
     if (spans == null) null else new OdinSpansWrapper(spans)
   }
 
 }
 
-class OdinSpansWrapper(val spans: Spans) extends OdinSpans {
+class OdinSpansWrapper(val spans: Spans) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
   def docID(): Int = spans.docID()

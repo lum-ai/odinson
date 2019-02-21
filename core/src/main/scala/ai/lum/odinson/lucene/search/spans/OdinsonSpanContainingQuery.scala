@@ -59,17 +59,17 @@ class OdinsonSpanContainingWeight(
     littleWeight.extractTermContexts(contexts)
   }
 
-  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinSpans = {
-    val bigSpans = bigWeight.getSpans(context, requiredPostings).asInstanceOf[OdinSpans]
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    val bigSpans = bigWeight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
     if (bigSpans == null) return null
-    val littleSpans = littleWeight.getSpans(context, requiredPostings).asInstanceOf[OdinSpans]
+    val littleSpans = littleWeight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
     if (littleSpans == null) return null
     new OdinsonSpanContainingSpans(Array(bigSpans, littleSpans))
   }
 
 }
 
-class OdinsonSpanContainingSpans(val subSpans: Array[OdinSpans]) extends ConjunctionSpans {
+class OdinsonSpanContainingSpans(val subSpans: Array[OdinsonSpans]) extends ConjunctionSpans {
 
   import Spans._
 
