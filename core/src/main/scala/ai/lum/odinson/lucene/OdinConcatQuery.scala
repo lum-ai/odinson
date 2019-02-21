@@ -8,6 +8,7 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.util._
 
 class OdinConcatQuery(
     val clauses: List[OdinQuery],

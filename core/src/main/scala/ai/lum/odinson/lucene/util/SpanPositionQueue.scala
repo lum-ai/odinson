@@ -1,6 +1,7 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.util
 
 import org.apache.lucene.util.PriorityQueue
+import ai.lum.odinson.lucene._
 
 class SpanPositionQueue(maxSize: Int) extends PriorityQueue[OdinSpans](maxSize, false) {
   protected def lessThan(s1: OdinSpans, s2: OdinSpans): Boolean = {
