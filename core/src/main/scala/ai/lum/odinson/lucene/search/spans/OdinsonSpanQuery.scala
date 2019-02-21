@@ -7,14 +7,14 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
 /** Wraps an OdinsonQuery in a SpanQuery */
-class OdinSpanQuery(val query: OdinsonQuery) extends SpanQuery {
+class OdinsonSpanQuery(val query: OdinsonQuery) extends SpanQuery {
 
   override def hashCode: Int = query.hashCode
 
-  def canEqual(a: Any): Boolean = a.isInstanceOf[OdinSpanQuery]
+  def canEqual(a: Any): Boolean = a.isInstanceOf[OdinsonSpanQuery]
 
   override def equals(that: Any): Boolean = that match {
-    case that: OdinSpanQuery => that.canEqual(this) && this.hashCode == that.hashCode
+    case that: OdinsonSpanQuery => that.canEqual(this) && this.hashCode == that.hashCode
     case _ => false
   }
 
@@ -25,7 +25,7 @@ class OdinSpanQuery(val query: OdinsonQuery) extends SpanQuery {
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (rewritten != query) {
-      new OdinSpanQuery(rewritten)
+      new OdinsonSpanQuery(rewritten)
     } else {
       super.rewrite(reader)
     }
@@ -34,12 +34,12 @@ class OdinSpanQuery(val query: OdinsonQuery) extends SpanQuery {
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): SpanWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
-    new OdinSpanWeight(this, searcher, termContexts, weight)
+    new OdinsonSpanWeight(this, searcher, termContexts, weight)
   }
 
 }
 
-class OdinSpanWeight(
+class OdinsonSpanWeight(
   val query: SpanQuery,
   val searcher: IndexSearcher,
   val termContexts: JMap[Term, TermContext],
