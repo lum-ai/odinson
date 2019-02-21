@@ -9,7 +9,7 @@ import ai.lum.odinson.lucene.search._
 class DocEndQuery(
     val defaultTokenField: String,
     val sentenceLengthField: String
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(defaultTokenField)
 

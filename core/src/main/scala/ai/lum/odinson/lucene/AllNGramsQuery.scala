@@ -10,7 +10,7 @@ class AllNGramsQuery(
     val defaultTokenField: String,
     val sentenceLengthField: String,
     val n: Int
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(defaultTokenField, n)
 

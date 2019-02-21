@@ -6,8 +6,8 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
-/** Wraps a SpanQuery to add OdinQuery functionality. */
-class OdinQueryWrapper(val query: SpanQuery) extends OdinQuery {
+/** Wraps a SpanQuery to add OdinsonQuery functionality. */
+class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 
   override def hashCode: Int = mkHash(query)
 
@@ -33,7 +33,7 @@ class OdinQueryWrapper(val query: SpanQuery) extends OdinQuery {
 }
 
 class OdinWeightWrapper(
-    query: OdinQuery,
+    query: OdinsonQuery,
     searcher: IndexSearcher,
     termContexts: JMap[Term, TermContext],
     val weight: SpanWeight

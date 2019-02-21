@@ -9,9 +9,9 @@ import ai.lum.common.JavaCollectionUtils._
 import ai.lum.odinson.lucene.search._
 
 class OdinTermAndQuery(
-    val clauses: List[OdinQuery],
+    val clauses: List[OdinsonQuery],
     val field: String
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(field, clauses)
 
@@ -23,7 +23,7 @@ class OdinTermAndQuery(
   def getField(): String = field
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinQuery])
+    val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinsonQuery])
     if (clauses != rewritten) {
       new OdinTermAndQuery(rewritten, field)
     } else {
@@ -36,7 +36,7 @@ class OdinTermAndQuery(
       needsScores: Boolean
   ): OdinWeight = {
     val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinWeight]).asJava
-    val terms = if (needsScores) OdinQuery.getTermContexts(subWeights) else null
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinTermAndWeight(subWeights, searcher, terms)
   }
 

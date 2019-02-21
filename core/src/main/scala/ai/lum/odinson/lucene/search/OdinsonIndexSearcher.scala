@@ -15,14 +15,14 @@ class OdinsonIndexSearcher(
   def this(r: IndexReader, e: ExecutorService) = this(r.getContext(), e)
   def this(r: IndexReader) = this(r, null)
 
-  def odinSearch(query: OdinQuery): OdinResults = {
+  def odinSearch(query: OdinsonQuery): OdinResults = {
     val n = readerContext.reader().maxDoc()
     odinSearch(null, query, n)
   }
 
-  def odinSearch(query: OdinQuery, n: Int): OdinResults = odinSearch(null, query, n)
+  def odinSearch(query: OdinsonQuery, n: Int): OdinResults = odinSearch(null, query, n)
 
-  def odinSearch(after: OdinsonScoreDoc, query: OdinQuery, numHits: Int): OdinResults = {
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
       after == null || after.doc < limit,

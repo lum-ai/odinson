@@ -6,8 +6,8 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
-/** Wraps an OdinQuery in a SpanQuery */
-class OdinSpanQuery(val query: OdinQuery) extends SpanQuery {
+/** Wraps an OdinsonQuery in a SpanQuery */
+class OdinSpanQuery(val query: OdinsonQuery) extends SpanQuery {
 
   override def hashCode: Int = query.hashCode
 
@@ -23,7 +23,7 @@ class OdinSpanQuery(val query: OdinQuery) extends SpanQuery {
   def toString(field: String): String = s"OdinSpanQuery(${query.toString(field)})"
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = query.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (rewritten != query) {
       new OdinSpanQuery(rewritten)
     } else {
@@ -33,7 +33,7 @@ class OdinSpanQuery(val query: OdinQuery) extends SpanQuery {
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): SpanWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
-    val termContexts = OdinQuery.getTermContexts(weight)
+    val termContexts = OdinsonQuery.getTermContexts(weight)
     new OdinSpanWeight(this, searcher, termContexts, weight)
   }
 

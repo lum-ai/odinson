@@ -7,9 +7,9 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
 class OdinQueryNamedCapture(
-    val query: OdinQuery,
+    val query: OdinsonQuery,
     val captureName: String
-) extends OdinQuery {
+) extends OdinsonQuery {
 
   override def hashCode: Int = mkHash(query, captureName)
 
@@ -19,12 +19,12 @@ class OdinQueryNamedCapture(
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
-    val termContexts = OdinQuery.getTermContexts(weight)
+    val termContexts = OdinsonQuery.getTermContexts(weight)
     new OdinWeightNamedCapture(this, searcher, termContexts, weight, captureName)
   }
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = query.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
       new OdinQueryNamedCapture(rewritten, captureName)
     } else {
@@ -35,7 +35,7 @@ class OdinQueryNamedCapture(
 }
 
 class OdinWeightNamedCapture(
-    query: OdinQuery,
+    query: OdinsonQuery,
     searcher: IndexSearcher,
     termContexts: JMap[Term, TermContext],
     val weight: OdinWeight,

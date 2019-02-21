@@ -15,10 +15,10 @@ import ai.lum.odinson.lucene.util._
 class GraphTraversalQuery(
     val defaultTokenField: String,
     val dependenciesField: String,
-    val src: OdinQuery,
+    val src: OdinsonQuery,
     val traversal: GraphTraversal,
-    val dst: OdinQuery
-) extends OdinQuery { self =>
+    val dst: OdinsonQuery
+) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
   override def hashCode: Int = mkHash(defaultTokenField, src, dst, traversal)
@@ -33,8 +33,8 @@ class GraphTraversalQuery(
   def getField(): String = defaultTokenField
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinQuery]
-    val rewrittenDst = dst.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinsonQuery]
+    val rewrittenDst = dst.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (src != rewrittenSrc || dst != rewrittenDst) {
       new GraphTraversalQuery(defaultTokenField, dependenciesField, rewrittenSrc, traversal, rewrittenDst)
     } else {
@@ -45,7 +45,7 @@ class GraphTraversalQuery(
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val srcWeight = src.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
     val dstWeight = dst.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
-    val terms = if (needsScores) OdinQuery.getTermContexts(srcWeight, dstWeight) else null
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(srcWeight, dstWeight) else null
     new GraphTraversalWeight(srcWeight, dstWeight, traversal, searcher, terms)
   }
 

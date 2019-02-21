@@ -48,11 +48,11 @@ class ExtractorEngine(val indexDir: Path) {
   }
 
 
-  def query(q: OdinQuery, n: Int): OdinResults = {
+  def query(q: OdinsonQuery, n: Int): OdinResults = {
     indexSearcher.odinSearch(q, n)
   }
 
-  def query(q: OdinQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+  def query(q: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
     indexSearcher.odinSearch(after, q, n)
   }
 
@@ -60,7 +60,7 @@ class ExtractorEngine(val indexDir: Path) {
     query(compiler.compile(oq, pq), indexReader.numDocs())
   }
 
-  def query(q: OdinQuery): OdinResults = {
+  def query(q: OdinsonQuery): OdinResults = {
     query(q, indexReader.numDocs())
   }
 
@@ -76,7 +76,7 @@ class ExtractorEngine(val indexDir: Path) {
     query(compiler.compile(oq, pq), n, new OdinsonScoreDoc(afterDoc, afterScore))
   }
 
-  def query(q: OdinQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
+  def query(q: OdinsonQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
     query(q, n, new OdinsonScoreDoc(afterDoc, afterScore))
   }
 

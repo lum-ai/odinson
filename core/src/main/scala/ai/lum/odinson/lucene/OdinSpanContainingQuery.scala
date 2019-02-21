@@ -7,9 +7,9 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
 class OdinSpanContainingQuery(
-    val big: OdinQuery,   // the main query
-    val little: OdinQuery // the filter
-) extends OdinQuery {
+    val big: OdinsonQuery,   // the main query
+    val little: OdinsonQuery // the filter
+) extends OdinsonQuery {
 
   override def hashCode: Int = mkHash(big, little)
 
@@ -24,13 +24,13 @@ class OdinSpanContainingQuery(
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinWeight]
     val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinWeight]
-    val termContexts = if (needsScores) OdinQuery.getTermContexts(bigWeight, littleWeight) else null
+    val termContexts = if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
     new OdinSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
   }
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewrittenBig = big.rewrite(reader).asInstanceOf[OdinQuery]
-    val rewrittenLittle = little.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewrittenBig = big.rewrite(reader).asInstanceOf[OdinsonQuery]
+    val rewrittenLittle = little.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (big != rewrittenBig || little != rewrittenLittle) {
       new OdinSpanContainingQuery(rewrittenBig, rewrittenLittle)
     } else {
@@ -41,7 +41,7 @@ class OdinSpanContainingQuery(
 }
 
 class OdinSpanContainingWeight(
-  query: OdinQuery,
+  query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
   val bigWeight: OdinWeight,

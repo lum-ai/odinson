@@ -8,10 +8,10 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
 class OdinRangeQuery(
-    val query: OdinQuery,
+    val query: OdinsonQuery,
     val min: Int,
     val max: Int
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   require(min > 0, "min must be positive")
   require(min <= max, "min can't be bigger than max")
@@ -26,7 +26,7 @@ class OdinRangeQuery(
   def getField(): String = query.getField()
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = query.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
       new OdinRangeQuery(rewritten, min, max)
     } else {
@@ -36,7 +36,7 @@ class OdinRangeQuery(
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val weight = query.createWeight(searcher, false).asInstanceOf[OdinWeight]
-    val terms = if (needsScores) OdinQuery.getTermContexts(weight) else null
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinRangeWeight(weight, searcher, terms)
   }
 

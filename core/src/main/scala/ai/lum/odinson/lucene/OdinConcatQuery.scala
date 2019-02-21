@@ -11,10 +11,10 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.util._
 
 class OdinConcatQuery(
-    val clauses: List[OdinQuery],
+    val clauses: List[OdinsonQuery],
     val defaultTokenField: String,
     val sentenceLengthField: String
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(defaultTokenField, clauses)
 
@@ -26,7 +26,7 @@ class OdinConcatQuery(
   def getField(): String = defaultTokenField
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinQuery])
+    val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinsonQuery])
     if (clauses != rewritten) {
       new OdinConcatQuery(rewritten, defaultTokenField, sentenceLengthField)
     } else {
@@ -36,7 +36,7 @@ class OdinConcatQuery(
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
     val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinWeight]).asJava
-    val terms = if (needsScores) OdinQuery.getTermContexts(subWeights) else null
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinConcatWeight(subWeights, searcher, terms)
   }
 

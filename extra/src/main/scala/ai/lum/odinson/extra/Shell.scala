@@ -80,7 +80,7 @@ object Shell extends App {
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
   val matchSettingsScope = """^:settings\s+([\w\.-]+)$""".r
 
-  var query: OdinQuery = null
+  var query: OdinsonQuery = null
   var after: OdinsonScoreDoc = null
   var shownHits: Int = 0
   var totalHits: Int = 0

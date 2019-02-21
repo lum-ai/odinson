@@ -6,7 +6,7 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search._
 
-class FailQuery(val field: String) extends OdinQuery { self =>
+class FailQuery(val field: String) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(field)
 

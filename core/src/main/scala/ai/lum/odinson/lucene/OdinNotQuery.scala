@@ -8,10 +8,10 @@ import ai.lum.odinson.lucene.search._
 import Spans._
 
 class OdinNotQuery(
-    val include: OdinQuery,
-    val exclude: OdinQuery,
+    val include: OdinsonQuery,
+    val exclude: OdinsonQuery,
     val field: String
-) extends OdinQuery { self =>
+) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(include, exclude)
 
@@ -22,8 +22,8 @@ class OdinNotQuery(
   def getField(): String = field
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewrittenInclude = include.rewrite(reader).asInstanceOf[OdinQuery]
-    val rewrittenExclude = exclude.rewrite(reader).asInstanceOf[OdinQuery]
+    val rewrittenInclude = include.rewrite(reader).asInstanceOf[OdinsonQuery]
+    val rewrittenExclude = exclude.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (rewrittenInclude != include || rewrittenExclude != exclude) {
       new OdinNotQuery(rewrittenInclude, rewrittenExclude, field)
     } else {
@@ -37,7 +37,7 @@ class OdinNotQuery(
   ): OdinWeight = {
     val includeWeight = include.createWeight(searcher, false).asInstanceOf[OdinWeight]
     val excludeWeight = exclude.createWeight(searcher, false).asInstanceOf[OdinWeight]
-    val terms = OdinQuery.getTermContexts(includeWeight, excludeWeight)
+    val terms = OdinsonQuery.getTermContexts(includeWeight, excludeWeight)
     new OdinNotWeight(searcher, terms, includeWeight, excludeWeight)
   }
 

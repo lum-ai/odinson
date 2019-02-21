@@ -23,9 +23,9 @@ class QueryCompiler(
 
   val parser = new QueryParser(allTokenFields, defaultTokenField, normalizeQueriesToDefaultField)
 
-  def compile(pattern: String): OdinQuery = {
+  def compile(pattern: String): OdinsonQuery = {
     val ast = parser.parseQuery(pattern)
-    val query = mkOdinQuery(ast)
+    val query = mkOdinsonQuery(ast)
     query.getOrElse(new FailQuery(defaultTokenField))
   }
 
@@ -34,7 +34,7 @@ class QueryCompiler(
     * @param odinsonPattern An Odison pattern.
     * @param parentQuery An optional Lucene query string meant to filter the documents to which the odinsonPattern is applied.
     */
-  def compile(odinsonPattern: String, parentQuery: Option[String]): OdinQuery = {
+  def compile(odinsonPattern: String, parentQuery: Option[String]): OdinsonQuery = {
     val oq = compile(odinsonPattern)
     if (parentQuery.isEmpty) {
       oq
@@ -47,8 +47,8 @@ class QueryCompiler(
     }
   }
 
-  /** Constructs an OdinQuery from an AST. */
-  def mkOdinQuery(ast: Ast.Pattern): Option[OdinQuery] = ast match {
+  /** Constructs an OdinsonQuery from an AST. */
+  def mkOdinsonQuery(ast: Ast.Pattern): Option[OdinsonQuery] = ast match {
 
     // zero-width assertions
 
@@ -76,7 +76,7 @@ class QueryCompiler(
     // disjunctive patterns
 
     case Ast.DisjunctivePattern(patterns) =>
-      patterns.flatMap(mkOdinQuery).distinct match {
+      patterns.flatMap(mkOdinsonQuery).distinct match {
         case Seq() => None
         case Seq(q) => Some(q)
         case clauses =>
@@ -87,7 +87,7 @@ class QueryCompiler(
     // pattern concatenation
 
     case Ast.ConcatenatedPattern(patterns) =>
-      patterns.flatMap(mkOdinQuery) match {
+      patterns.flatMap(mkOdinsonQuery) match {
         case Seq() => None
         case Seq(q) => Some(q)
         case clauses =>
@@ -98,7 +98,7 @@ class QueryCompiler(
     // named captures
 
     case Ast.NamedCapturePattern(name, pattern) =>
-      mkOdinQuery(pattern).map(q => new OdinQueryNamedCapture(q, name))
+      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name))
 
     // mentions
 
@@ -108,11 +108,11 @@ class QueryCompiler(
 
     case Ast.GraphTraversalPattern(src, tr, dst) =>
       mkGraphTraversal(tr) match {
-        case NoTraversal => mkOdinQuery(src)
+        case NoTraversal => mkOdinsonQuery(src)
         case FailTraversal => None
         case traversal =>
-          val srcQuery = mkOdinQuery(src).map(q => addConstraint(q, mkStartConstraint(traversal)))
-          val dstQuery = mkOdinQuery(dst).map(q => addConstraint(q, mkEndConstraint(traversal)))
+          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(traversal)))
+          val dstQuery = mkOdinsonQuery(dst).map(q => addConstraint(q, mkEndConstraint(traversal)))
           if (srcQuery.isDefined && dstQuery.isDefined) {
             val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, srcQuery.get, traversal, dstQuery.get)
             Some(q)
@@ -128,7 +128,7 @@ class QueryCompiler(
       Some(q)
 
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
-      mkOdinQuery(pattern).map {
+      mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case one =>
           val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
@@ -139,7 +139,7 @@ class QueryCompiler(
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
-      mkOdinQuery(pattern).map {
+      mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
@@ -151,7 +151,7 @@ class QueryCompiler(
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(max)) =>
-      mkOdinQuery(pattern).map {
+      mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
@@ -163,27 +163,27 @@ class QueryCompiler(
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
-      mkOdinQuery(pattern)
+      mkOdinsonQuery(pattern)
 
     case Ast.GreedyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, Some(m)) if n == m =>
       val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
       Some(q)
 
     case Ast.GreedyRepetitionPattern(pattern, min, None) =>
-      mkOdinQuery(pattern).map {
+      mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q => new OdinRangeQuery(q, min, Int.MaxValue)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
-      mkOdinQuery(pattern).map {
+      mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q => new OdinRangeQuery(q, min, max)
       }
 
   }
 
-  def addConstraint(query: OdinQuery, constraint: Option[OdinQuery]): OdinQuery = {
+  def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {
     (query, constraint) match {
       case (q, None) => q
       case (q: AllNGramsQuery, Some(c)) if q.n == 1 => c
@@ -191,7 +191,7 @@ class QueryCompiler(
     }
   }
 
-  def mkConstraintQuery(ast: Ast.Constraint): OdinQuery = ast match {
+  def mkConstraintQuery(ast: Ast.Constraint): OdinsonQuery = ast match {
 
     case Ast.FieldConstraint(name, Ast.StringMatcher(string)) =>
       val spanTermQuery = new SpanTermQuery(new Term(name, string))
@@ -309,7 +309,7 @@ class QueryCompiler(
   }
 
   // makes a constraint for the start of a graph traversal
-  def mkStartConstraint(gt: GraphTraversal): Option[OdinQuery] = gt match {
+  def mkStartConstraint(gt: GraphTraversal): Option[OdinsonQuery] = gt match {
     case NoTraversal => None
     case FailTraversal => Some(new FailQuery(defaultTokenField))
     case IncomingWildcard => None
@@ -346,7 +346,7 @@ class QueryCompiler(
   }
 
   // makes a constraint for the end of a graph traversal
-  def mkEndConstraint(gt: GraphTraversal): Option[OdinQuery] = gt match {
+  def mkEndConstraint(gt: GraphTraversal): Option[OdinsonQuery] = gt match {
     case NoTraversal => None
     case FailTraversal => Some(new FailQuery(defaultTokenField))
     case IncomingWildcard => None

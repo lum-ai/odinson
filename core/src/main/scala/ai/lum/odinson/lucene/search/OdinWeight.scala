@@ -16,7 +16,7 @@ import ai.lum.odinson.lucene._
  * (copied from lucene documentation)
  */
 abstract class OdinWeight(
-    val query: OdinQuery,
+    val query: OdinsonQuery,
     val searcher: IndexSearcher,
     val termContexts: JMap[Term, TermContext]
 ) extends Weight(query) {
@@ -70,7 +70,7 @@ abstract class OdinWeight(
 object OdinWeight {
 
   def buildSimWeight(
-      query: OdinQuery,
+      query: OdinsonQuery,
       searcher: IndexSearcher,
       termContexts: JMap[Term, TermContext],
       similarity: Similarity
