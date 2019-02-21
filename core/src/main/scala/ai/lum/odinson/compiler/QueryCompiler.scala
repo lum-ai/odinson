@@ -188,7 +188,7 @@ class QueryCompiler(
     (query, constraint) match {
       case (q, None) => q
       case (q: AllNGramsQuery, Some(c)) if q.n == 1 => c
-      case (q, Some(c)) => new OdinSpanContainingQuery(q, c)
+      case (q, Some(c)) => new OdinsonSpanContainingQuery(q, c)
     }
   }
 

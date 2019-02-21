@@ -7,7 +7,7 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 
-class OdinSpanContainingQuery(
+class OdinsonSpanContainingQuery(
     val big: OdinsonQuery,   // the main query
     val little: OdinsonQuery // the filter
 ) extends OdinsonQuery {
@@ -26,14 +26,14 @@ class OdinSpanContainingQuery(
     val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val termContexts = if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
-    new OdinSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
+    new OdinsonSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
   }
 
   override def rewrite(reader: IndexReader): Query = {
     val rewrittenBig = big.rewrite(reader).asInstanceOf[OdinsonQuery]
     val rewrittenLittle = little.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (big != rewrittenBig || little != rewrittenLittle) {
-      new OdinSpanContainingQuery(rewrittenBig, rewrittenLittle)
+      new OdinsonSpanContainingQuery(rewrittenBig, rewrittenLittle)
     } else {
       super.rewrite(reader)
     }
@@ -41,7 +41,7 @@ class OdinSpanContainingQuery(
 
 }
 
-class OdinSpanContainingWeight(
+class OdinsonSpanContainingWeight(
   query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
@@ -64,12 +64,12 @@ class OdinSpanContainingWeight(
     if (bigSpans == null) return null
     val littleSpans = littleWeight.getSpans(context, requiredPostings).asInstanceOf[OdinSpans]
     if (littleSpans == null) return null
-    new OdinSpanContainingSpans(Array(bigSpans, littleSpans))
+    new OdinsonSpanContainingSpans(Array(bigSpans, littleSpans))
   }
 
 }
 
-class OdinSpanContainingSpans(val subSpans: Array[OdinSpans]) extends ConjunctionSpans {
+class OdinsonSpanContainingSpans(val subSpans: Array[OdinSpans]) extends ConjunctionSpans {
 
   import Spans._
 
