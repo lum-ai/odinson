@@ -5,16 +5,16 @@ import org.apache.lucene.search._
 import org.apache.lucene.util.PriorityQueue
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
-import OdinCollector._
+import OdinsonCollector._
 
 
 
-abstract class OdinCollector(
+abstract class OdinsonCollector(
     protected val pq: PriorityQueue[OdinsonScoreDoc]
 ) extends Collector {
 
   def this(numHits: Int) = {
-    this(new OdinHitsQueue(numHits, true))
+    this(new OdinsonHitsQueue(numHits, true))
     // HitQueue implements getSentinelObject to return a ScoreDoc, so we know
     // that at this point top() is already initialized.
     pqTop = pq.top()
@@ -74,21 +74,21 @@ abstract class OdinCollector(
 
 
 
-object OdinCollector {
+object OdinsonCollector {
 
-  def create(numHits: Int): OdinCollector = create(numHits, null)
+  def create(numHits: Int): OdinsonCollector = create(numHits, null)
 
-  def create(numHits: Int, after: OdinsonScoreDoc): OdinCollector = {
+  def create(numHits: Int, after: OdinsonScoreDoc): OdinsonCollector = {
     require(numHits > 0, "numHits must be > 0")
     if (after == null) {
-      new SimpleOdinCollector(numHits)
+      new SimpleOdinsonCollector(numHits)
     } else {
-      new PagingOdinCollector(numHits, after)
+      new PagingOdinsonCollector(numHits, after)
     }
   }
 
 
-  class OdinHitsQueue(
+  class OdinsonHitsQueue(
       size: Int,
       prePopulate: Boolean
   ) extends PriorityQueue[OdinsonScoreDoc](size, prePopulate) {
@@ -109,7 +109,7 @@ object OdinCollector {
   }
 
 
-  class SimpleOdinCollector(numHits: Int) extends OdinCollector(numHits) {
+  class SimpleOdinsonCollector(numHits: Int) extends OdinsonCollector(numHits) {
 
     def getLeafCollector(context: LeafReaderContext): LeafCollector = {
       val docBase = context.docBase
@@ -137,10 +137,10 @@ object OdinCollector {
   }
 
 
-  class PagingOdinCollector(
+  class PagingOdinsonCollector(
       numHits: Int,
       after: OdinsonScoreDoc
-  ) extends OdinCollector(numHits) {
+  ) extends OdinsonCollector(numHits) {
 
     private var collectedHits: Int = 0
 

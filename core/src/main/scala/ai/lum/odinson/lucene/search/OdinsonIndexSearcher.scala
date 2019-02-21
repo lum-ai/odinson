@@ -29,9 +29,9 @@ class OdinsonIndexSearcher(
       s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
     )
     val cappedNumHits = math.min(numHits, limit)
-    val manager = new CollectorManager[OdinCollector, OdinResults] {
-      def newCollector(): OdinCollector = OdinCollector.create(cappedNumHits, after)
-      def reduce(collectors: Collection[OdinCollector]): OdinResults = {
+    val manager = new CollectorManager[OdinsonCollector, OdinResults] {
+      def newCollector(): OdinsonCollector = OdinsonCollector.create(cappedNumHits, after)
+      def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
         val results = collectors.iterator.asScala.map(_.odinResults).toArray
         OdinResults.merge(0, cappedNumHits, results, true)
       }
