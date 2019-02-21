@@ -8,6 +8,7 @@ import com.typesafe.config._
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 
 class QueryCompiler(

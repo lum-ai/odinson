@@ -1,4 +1,4 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search.spans
 
 import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._

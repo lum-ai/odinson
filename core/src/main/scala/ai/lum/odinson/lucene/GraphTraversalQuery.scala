@@ -7,6 +7,7 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 
 /** Traverses the graph from `src` to `dst` following the traversal pattern.

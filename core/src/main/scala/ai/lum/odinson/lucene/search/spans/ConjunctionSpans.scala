@@ -1,8 +1,9 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search.spans
 
 import java.util.Arrays
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.lucene._
 
 /**
  * This is a port of org.apache.lucene.search.spans.ConjunctionSpans
