@@ -1,11 +1,11 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
 import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinRangeQuery(
