@@ -34,17 +34,17 @@ class OdinConcatQuery(
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
-    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinWeight]).asJava
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
     val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinConcatWeight(subWeights, searcher, terms)
   }
 
   class OdinConcatWeight(
-      val subWeights: JList[OdinWeight],
+      val subWeights: JList[OdinsonWeight],
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
-  ) extends OdinWeight(self, searcher, terms) {
+  ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       for (weight <- subWeights) weight.extractTerms(terms)

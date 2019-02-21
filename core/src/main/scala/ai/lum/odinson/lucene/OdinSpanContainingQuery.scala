@@ -21,9 +21,9 @@ class OdinSpanContainingQuery(
     s"$b containing $l"
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
-    val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinWeight]
-    val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val termContexts = if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
     new OdinSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
   }
@@ -44,9 +44,9 @@ class OdinSpanContainingWeight(
   query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
-  val bigWeight: OdinWeight,
-  val littleWeight: OdinWeight
-) extends OdinWeight(query, searcher, termContexts) {
+  val bigWeight: OdinsonWeight,
+  val littleWeight: OdinsonWeight
+) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = {
     bigWeight.extractTerms(terms)

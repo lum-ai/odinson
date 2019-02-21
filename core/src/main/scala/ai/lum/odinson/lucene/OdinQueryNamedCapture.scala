@@ -17,8 +17,8 @@ class OdinQueryNamedCapture(
 
   def toString(field: String): String = s"NamedCapture(${query.toString(field)},$captureName)"
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
     new OdinWeightNamedCapture(this, searcher, termContexts, weight, captureName)
   }
@@ -38,9 +38,9 @@ class OdinWeightNamedCapture(
     query: OdinsonQuery,
     searcher: IndexSearcher,
     termContexts: JMap[Term, TermContext],
-    val weight: OdinWeight,
+    val weight: OdinsonWeight,
     val captureName: String
-) extends OdinWeight(query, searcher, termContexts) {
+) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
 

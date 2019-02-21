@@ -36,13 +36,13 @@ abstract class OdinsonQuery extends Query {
 
 object OdinsonQuery {
 
-  def getTermContexts(weights: OdinWeight*): JMap[Term, TermContext] = {
+  def getTermContexts(weights: OdinsonWeight*): JMap[Term, TermContext] = {
     val terms = new TreeMap[Term, TermContext]()
     weights.foreach(_.extractTermContexts(terms))
     terms
   }
 
-  def getTermContexts(weights: Collection[OdinWeight]): JMap[Term, TermContext] = {
+  def getTermContexts(weights: Collection[OdinsonWeight]): JMap[Term, TermContext] = {
     val terms = new TreeMap[Term, TermContext]()
     for (w <- weights.iterator().asScala) {
       w.extractTermContexts(terms)

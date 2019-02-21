@@ -14,14 +14,14 @@ class DocStartQuery(val field: String) extends OdinsonQuery { self =>
 
   def getField(): String = field
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     new DocStartWeight(searcher, null)
   }
 
   class DocStartWeight(
       searcher: IndexSearcher,
       termContexts: JMap[Term, TermContext]
-  ) extends OdinWeight(self, searcher, termContexts) {
+  ) extends OdinsonWeight(self, searcher, termContexts) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       terms.addAll(termContexts.keySet)

@@ -15,7 +15,7 @@ class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 
   def toString(field: String): String = s"Wrapped(${query.toString(field)})"
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[SpanWeight]
     val termContexts = SpanQuery.getTermContexts(weight)
     new OdinWeightWrapper(this, searcher, termContexts, weight)
@@ -37,7 +37,7 @@ class OdinWeightWrapper(
     searcher: IndexSearcher,
     termContexts: JMap[Term, TermContext],
     val weight: SpanWeight
-) extends OdinWeight(query, searcher, termContexts) {
+) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
 

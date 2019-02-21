@@ -42,20 +42,20 @@ class GraphTraversalQuery(
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
-    val srcWeight = src.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
-    val dstWeight = dst.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val srcWeight = src.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+    val dstWeight = dst.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(srcWeight, dstWeight) else null
     new GraphTraversalWeight(srcWeight, dstWeight, traversal, searcher, terms)
   }
 
   class GraphTraversalWeight(
-      val srcWeight: OdinWeight,
-      val dstWeight: OdinWeight,
+      val srcWeight: OdinsonWeight,
+      val dstWeight: OdinsonWeight,
       val traversal: GraphTraversal,
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
-  ) extends OdinWeight(self, searcher, terms) {
+  ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       srcWeight.extractTerms(terms)

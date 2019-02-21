@@ -32,7 +32,7 @@ class OdinSpanQuery(val query: OdinsonQuery) extends SpanQuery {
   }
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): SpanWeight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinWeight]
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
     new OdinSpanWeight(this, searcher, termContexts, weight)
   }
@@ -43,7 +43,7 @@ class OdinSpanWeight(
   val query: SpanQuery,
   val searcher: IndexSearcher,
   val termContexts: JMap[Term, TermContext],
-  val weight: OdinWeight
+  val weight: OdinsonWeight
 ) extends SpanWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)

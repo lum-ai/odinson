@@ -7,7 +7,7 @@ import org.apache.lucene.search.similarities.Similarity.SimScorer
 import ai.lum.odinson.lucene._
 
 class OdinsonScorer(
-    weight: OdinWeight,
+    weight: OdinsonWeight,
     val spans: OdinSpans,
     val docScorer: SimScorer
 ) extends Scorer(weight) {

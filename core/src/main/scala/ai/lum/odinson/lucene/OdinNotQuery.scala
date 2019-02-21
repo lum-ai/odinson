@@ -34,9 +34,9 @@ class OdinNotQuery(
   override def createWeight(
       searcher: IndexSearcher,
       needsScores: Boolean
-  ): OdinWeight = {
-    val includeWeight = include.createWeight(searcher, false).asInstanceOf[OdinWeight]
-    val excludeWeight = exclude.createWeight(searcher, false).asInstanceOf[OdinWeight]
+  ): OdinsonWeight = {
+    val includeWeight = include.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val excludeWeight = exclude.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val terms = OdinsonQuery.getTermContexts(includeWeight, excludeWeight)
     new OdinNotWeight(searcher, terms, includeWeight, excludeWeight)
   }
@@ -44,9 +44,9 @@ class OdinNotQuery(
   class OdinNotWeight(
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext],
-      val includeWeight: OdinWeight,
-      val excludeWeight: OdinWeight
-  ) extends OdinWeight(self, searcher, terms) {
+      val includeWeight: OdinsonWeight,
+      val excludeWeight: OdinsonWeight
+  ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       includeWeight.extractTerms(terms)

@@ -34,17 +34,17 @@ class OdinRangeQuery(
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinWeight = {
-    val weight = query.createWeight(searcher, false).asInstanceOf[OdinWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val weight = query.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinRangeWeight(weight, searcher, terms)
   }
 
   class OdinRangeWeight(
-      val weight: OdinWeight,
+      val weight: OdinsonWeight,
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
-  ) extends OdinWeight(self, searcher, terms) {
+  ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       weight.extractTerms(terms)

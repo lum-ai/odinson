@@ -15,7 +15,7 @@ import ai.lum.odinson.lucene._
  *
  * (copied from lucene documentation)
  */
-abstract class OdinWeight(
+abstract class OdinsonWeight(
     val query: OdinsonQuery,
     val searcher: IndexSearcher,
     val termContexts: JMap[Term, TermContext]
@@ -24,7 +24,7 @@ abstract class OdinWeight(
   import SpanWeight._
 
   val similarity: Similarity = searcher.getSimilarity(termContexts != null)
-  val simWeight: Similarity.SimWeight = OdinWeight.buildSimWeight(query, searcher, termContexts, similarity)
+  val simWeight: Similarity.SimWeight = OdinsonWeight.buildSimWeight(query, searcher, termContexts, similarity)
 
   def extractTermContexts(contexts: JMap[Term, TermContext]): Unit
   def getSpans(ctx: LeafReaderContext, requiredPostings: Postings): OdinSpans
@@ -67,7 +67,7 @@ abstract class OdinWeight(
 
 }
 
-object OdinWeight {
+object OdinsonWeight {
 
   def buildSimWeight(
       query: OdinsonQuery,
