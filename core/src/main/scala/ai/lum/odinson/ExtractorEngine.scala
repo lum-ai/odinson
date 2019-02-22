@@ -5,8 +5,8 @@ import java.nio.file.Path
 
 import org.apache.lucene.analysis.CharArraySet
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{Document => LuceneDocument}
-import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
+import org.apache.lucene.document.{ Document => LuceneDocument }
+import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
@@ -27,10 +27,20 @@ class ExtractorEngine(val indexDir: Path) {
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val parentAnalyzer = new WhitespaceAnalyzer()
 
-  /** The docId field for the parent document.  Children retain a reference to their parent via this shared field. */
+  /** The docId field for the parent document.
+   *  Children retain a reference to their parent via this shared field.
+   */
   val parentDocIdField: String = {
     val config = ConfigFactory.load()
     config[String]("odinson.index.documentIdField")
+  }
+
+  def doc(docID: Int): LuceneDocument = {
+    indexSearcher.doc(docID)
+  }
+
+  def numDocs(): Int = {
+    indexReader.numDocs()
   }
 
   /** Retrieves the parent Lucene Document by docId */
@@ -47,35 +57,42 @@ class ExtractorEngine(val indexDir: Path) {
     docs.head
   }
 
-
-  def query(q: OdinsonQuery, n: Int): OdinResults = {
-    indexSearcher.odinSearch(q, n)
+  /** executes query and returns all results */
+  def query(q: String): OdinResults = {
+    query(compiler.compile(q))
   }
 
-  def query(q: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
-    indexSearcher.odinSearch(after, q, n)
-  }
-
-  def query(oq: String, pq: Option[String]): OdinResults = {
-    query(compiler.compile(oq, pq), indexReader.numDocs())
-  }
-
+  /** executes query and returns all results */
   def query(q: OdinsonQuery): OdinResults = {
     query(q, indexReader.numDocs())
   }
 
-  def query(oq: String, pq: Option[String], n: Int): OdinResults = {
-    query(compiler.compile(oq, pq), n)
+  /** executes query and returns at most n documents */
+  def query(q: String, n: Int): OdinResults = {
+    query(compiler.compile(q), n)
   }
 
-  def query(oq: String, pq: Option[String], n: Int, after: OdinsonScoreDoc): OdinResults = {
-    query(compiler.compile(oq, pq), n, after)
+  /** executes query and returns at most n documents */
+  def query(q: OdinsonQuery, n: Int): OdinResults = {
+    indexSearcher.odinSearch(q, n)
   }
 
-  def query(oq: String, pq: Option[String], n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(compiler.compile(oq, pq), n, new OdinsonScoreDoc(afterDoc, afterScore))
+  /** executes query and returns the next n documents after the provided doc */
+  def query(q: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(compiler.compile(q), n, after)
   }
 
+  /** executes query and returns the next n documents after the provided doc */
+  def query(q: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    indexSearcher.odinSearch(after, q, n)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(q: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
+    query(compiler.compile(q), n, afterDoc, afterScore)
+  }
+
+  /** executes query and returns next n results after the provided doc */
   def query(q: OdinsonQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
     query(q, n, new OdinsonScoreDoc(afterDoc, afterScore))
   }

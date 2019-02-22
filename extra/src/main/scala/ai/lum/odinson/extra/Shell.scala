@@ -18,6 +18,7 @@ import ai.lum.odinson.highlighter.ConsoleHighlighter
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.BuildInfo
+import ai.lum.odinson.ExtractorEngine
 
 
 object Shell extends App {
@@ -73,8 +74,7 @@ object Shell extends App {
   reader.addCompleter(completer)
 
   // setup searcher
-  val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
-  val indexSearcher = new OdinsonIndexSearcher(indexReader)
+  val extractorEngine = new ExtractorEngine(indexDir)
 
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
@@ -111,7 +111,7 @@ object Shell extends App {
             case ":settings" => printSettings()
             case ":more" => printMore(maxMatchesDisplay)
             case ":corpus" =>
-              println("Number of sentences: " + fmt(indexReader.numDocs()))
+              println("Number of sentences: " + fmt(extractorEngine.numDocs()))
               // TODO maybe print some more stuff?
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
@@ -171,7 +171,7 @@ object Shell extends App {
   def search(pattern: String, n: Int): Unit = {
     query = compiler.compile(pattern)
     val start = System.currentTimeMillis()
-    val results = indexSearcher.odinSearch(query, n)
+    val results = extractorEngine.query(query, n)
     val duration = (System.currentTimeMillis() - start) / 1000f
     after = results.scoreDocs.lastOption.getOrElse(null)
     totalHits = results.totalHits
@@ -190,7 +190,7 @@ object Shell extends App {
       return
     }
     val start = System.currentTimeMillis()
-    val results = indexSearcher.odinSearch(after, query, n)
+    val results = extractorEngine.query(query, n, after)
     val duration = (System.currentTimeMillis() - start) / 1000f
     after = results.scoreDocs.lastOption.getOrElse(null)
     if (after == null) {
@@ -212,7 +212,7 @@ object Shell extends App {
     println(s"found ${fmt(total)} matches in ${fmt(duration)} seconds")
     println(s"showing ${fmt(start)} to ${fmt(end)}\n")
     for (hit <- results.scoreDocs) {
-      val doc = indexSearcher.doc(hit.doc)
+      val doc = extractorEngine.doc(hit.doc)
       val docID = doc.getField("docId").stringValue
       println(s"Doc $docID (score = ${hit.score})")
       val spans = hit.matches.map(_.span).toVector
@@ -220,7 +220,7 @@ object Shell extends App {
       // FIXME: print statements used for debugging, please remove
       println("spans: " + spans)
       println("captures: " + captures)
-      val res = ConsoleHighlighter.highlight(reader = indexReader, docId = hit.doc, spans = spans, captures = captures)
+      val res = ConsoleHighlighter.highlight(reader = extractorEngine.indexReader, docId = hit.doc, spans = spans, captures = captures)
       println(res)
       println()
     }
