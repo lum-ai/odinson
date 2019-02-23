@@ -63,38 +63,38 @@ class ExtractorEngine(val indexDir: Path) {
   }
 
   /** executes query and returns all results */
-  def query(q: OdinsonQuery): OdinResults = {
-    query(q, indexReader.numDocs())
+  def query(oq: OdinsonQuery): OdinResults = {
+    query(oq, indexReader.numDocs())
   }
 
   /** executes query and returns at most n documents */
-  def query(q: String, n: Int): OdinResults = {
-    query(compiler.compile(q), n)
+  def query(oq: String, n: Int): OdinResults = {
+    query(compiler.compile(oq), n)
   }
 
   /** executes query and returns at most n documents */
-  def query(q: OdinsonQuery, n: Int): OdinResults = {
-    indexSearcher.odinSearch(q, n)
+  def query(oq: OdinsonQuery, n: Int): OdinResults = {
+    indexSearcher.odinSearch(oq, n)
   }
 
   /** executes query and returns the next n documents after the provided doc */
-  def query(q: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
-    query(compiler.compile(q), n, after)
+  def query(oq: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(compiler.compile(oq), n, after)
   }
 
   /** executes query and returns the next n documents after the provided doc */
-  def query(q: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
-    indexSearcher.odinSearch(after, q, n)
+  def query(oq: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    indexSearcher.odinSearch(after, oq, n)
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(q: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(compiler.compile(q), n, afterDoc, afterScore)
+  def query(oq: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
+    query(compiler.compile(oq), n, afterDoc, afterScore)
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(q: OdinsonQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(q, n, new OdinsonScoreDoc(afterDoc, afterScore))
+  def query(oq: OdinsonQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
+    query(oq, n, new OdinsonScoreDoc(afterDoc, afterScore))
   }
 
 }

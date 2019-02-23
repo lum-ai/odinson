@@ -49,7 +49,9 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings"),
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
-  excludeDependencies += "commons-logging" % "commons-logging"
+  excludeDependencies += "commons-logging" % "commons-logging",
+  // used for DocumentMetadata
+  resolvers += "Lum AI public snapshots" at "https://s3-us-west-2.amazonaws.com/maven.lum.ai/snapshots"
 )
 
 lazy val core = project
@@ -71,6 +73,15 @@ lazy val extra = project
   .aggregate(core)
   .dependsOn(core)
   .settings(commonSettings)
-  .settings(
-    resolvers += "Lum AI public snapshots" at "https://s3-us-west-2.amazonaws.com/maven.lum.ai/snapshots"
-  )
+
+
+lazy val backend = project
+  .enablePlugins(PlayScala)
+  .aggregate(core)
+  .dependsOn(core % "test->test;compile->compile")
+  .dependsOn(extra)
+  .settings(commonSettings)
+
+
+lazy val restApi = taskKey[Unit]("Launches the odinson REST API.")
+restApi := (run in Compile in backend).toTask("").value

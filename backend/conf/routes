@@ -1,0 +1,27 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# https://www.playframework.com/documentation/latest/ScalaRouting
+# ~~~~
+
+# An example controller showing a sample home page
+GET     /                               controllers.Default.redirect(to = "/api")
+
+GET     /api/buildinfo                  controllers.OdinsonController.buildInfo(pretty: Option[Boolean])
+
+# API spec
+GET     /api                            controllers.OpenApiController.openAPI
+# search
+GET     /api/search                     controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], prevDoc: Option[Int], prevScore: Option[Float], pretty: Option[Boolean])
+# parent doc
+GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
+# sentence json
+GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentId: Int, pretty: Option[Boolean])
+# export
+GET     /api/export                     controllers.OdinsonController.exportResults(odinsonQuery: String, parentQuery: Option[String])
+# counts
+GET     /api/numdocs                    controllers.OdinsonController.numDocs
+GET     /api/most-common                controllers.OdinsonController.mostCommonForArg(odinsonQuery: String, parentQuery: Option[String], k: Int, arg: Option[String], pretty: Option[Boolean])
+
+# resources
+GET     /favicon.ico                    controllers.Assets.at(file="images/favicon.ico")
+GET     /assets/*file                   controllers.Assets.at(file)

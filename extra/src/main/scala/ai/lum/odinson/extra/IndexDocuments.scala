@@ -52,6 +52,8 @@ object IndexDocuments extends App with LazyLogging {
   val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
 
+  val storeSentenceJson   = config[Boolean]("odinson.extra.storeSetenceJson")
+
   implicit val formats = DefaultFormats
 
   // we will populate this vocabulary with the dependencies
@@ -211,6 +213,13 @@ object IndexDocuments extends App with LazyLogging {
         logger.warn(s"serialized dependencies too big for storage: ${bytes.length} > $sortedDocValuesFieldMaxSize bytes")
       }
     }
+
+    if (storeSentenceJson) {
+      // store sentence JSON in index for use in webapp
+      // NOTE: this will **greatly** increase the size of the index
+      sent.add(new StoredField("json-binary", DocUtils.sentenceToBytes(s)))
+    }
+
     sent
   }
 
