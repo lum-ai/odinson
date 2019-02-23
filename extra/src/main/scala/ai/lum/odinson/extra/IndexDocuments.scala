@@ -73,15 +73,7 @@ object IndexDocuments extends App with LazyLogging {
     if ! f.getName.endsWith(".metadata.ser")
   } {
     Try {
-      val doc = deserializeDoc(f)
-      val md: Option[DocumentMetadata] = {
-        // FIXME: move this into `deserializeDoc` to avoid extension ambiguity
-        // and alter it to return (ProcessorsDocument, Option[DocumentMetadata])
-        val mdFile = new File(f.getCanonicalPath.replaceAll("\\.ser", ".metadata.ser"))
-        if (mdFile.exists) {
-          Some(Serializer.deserialize[DocumentMetadata](mdFile))
-        } else None
-      }
+      val (doc, md) = deserializeDoc(f)
       val block = mkDocumentBlock(doc, md)
       writer.addDocuments(block)
     } match {
@@ -99,14 +91,25 @@ object IndexDocuments extends App with LazyLogging {
   // fin
 
 
-  def deserializeDoc(f: File): ProcessorsDocument = f.getName.toLowerCase match {
-    case json if json.endsWith(".json") => JSONSerializer.toDocument(f)
-    case ser if ser.endsWith(".ser") => Serializer.deserialize[ProcessorsDocument](f)
+  def deserializeDoc(f: File): (ProcessorsDocument, Option[DocumentMetadata]) = f.getName.toLowerCase match {
+    case json if json.endsWith(".json") =>
+      val doc = JSONSerializer.toDocument(f)
+      (doc, None)
+    case ser if ser.endsWith(".ser") =>
+      val doc = Serializer.deserialize[ProcessorsDocument](f)
+      val md: Option[DocumentMetadata] = {
+        val mdFile = new File(f.getCanonicalPath.replaceAll("\\.ser", ".metadata.ser"))
+        if (mdFile.exists) {
+          Some(Serializer.deserialize[DocumentMetadata](mdFile))
+        } else None
+      }
+      (doc, md)
       // NOTE: we're assuming this is
     case gz if gz.endsWith("json.gz") =>
       val contents: String = GzipUtils.uncompress(f)
       val jast = parse(contents)
-      JSONSerializer.toDocument(jast)
+      val doc = JSONSerializer.toDocument(jast)
+      (doc, None)
     case other =>
       throw new Exception(s"Cannot deserialize ${f.getName} to org.clulab.processors.Document. Unsupported extension '$other'")
   }
