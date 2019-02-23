@@ -68,13 +68,19 @@ object IndexDocuments extends App with LazyLogging {
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
   // NOTE indexes the documents in parallel
   // FIXME: groupBy by extension-less basename?
-  for (f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par) {
+  for {
+    f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par
+    if ! f.getName.endsWith(".metadata.ser")
+  } {
     Try {
-      // FIXME: ensure this is not .metatadata.ser
       val doc = deserializeDoc(f)
-      // FIXME: if present, retrieve .metadata.ser file corresponding to doc
       val md: Option[DocumentMetadata] = {
-       ???
+        // FIXME: move this into `deserializeDoc` to avoid extension ambiguity
+        // and alter it to return (ProcessorsDocument, Option[DocumentMetadata])
+        val mdFile = new File(f.getCanonicalPath.replaceAll("\\.ser", ".metadata.ser"))
+        if (mdFile.exists) {
+          Some(Serializer.deserialize[DocumentMetadata](mdFile))
+        } else None
       }
       val block = mkDocumentBlock(doc, md)
       writer.addDocuments(block)
