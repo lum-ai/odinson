@@ -10,10 +10,8 @@ import org.apache.lucene.util.BytesRef
 import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.document.{ Document, StoredField, TextField }
+import org.apache.lucene.document._
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.document.NumericDocValuesField
-import org.apache.lucene.document.SortedDocValuesField
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.clulab.struct.{ DirectedGraph => ProcessorsDirectedGraph }
 import org.clulab.processors.{ Sentence, Document => ProcessorsDocument }
@@ -25,6 +23,7 @@ import com.typesafe.config.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.common.Serializer
+import ai.lum.labrador.DocumentMetadata
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 
@@ -68,10 +67,16 @@ object IndexDocuments extends App with LazyLogging {
   // serialized org.clulab.processors.Document or Document json
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
   // NOTE indexes the documents in parallel
+  // FIXME: groupBy by extension-less basename?
   for (f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par) {
     Try {
+      // FIXME: ensure this is not .metatadata.ser
       val doc = deserializeDoc(f)
-      val block = mkDocumentBlock(doc)
+      // FIXME: if present, retrieve .metadata.ser file corresponding to doc
+      val md: Option[DocumentMetadata] = {
+       ???
+      }
+      val block = mkDocumentBlock(doc, md)
       writer.addDocuments(block)
     } match {
       case Success(_) =>
@@ -86,7 +91,6 @@ object IndexDocuments extends App with LazyLogging {
   writer.close()
 
   // fin
-
 
 
   def deserializeDoc(f: File): ProcessorsDocument = f.getName.toLowerCase match {
@@ -106,7 +110,7 @@ object IndexDocuments extends App with LazyLogging {
   }
 
   // generates a lucene document per sentence
-  def mkDocumentBlock(d: ProcessorsDocument): Collection[Document] = {
+  def mkDocumentBlock(d: ProcessorsDocument, metadata: Option[DocumentMetadata]): Collection[Document] = {
     // FIXME what should we do if the document has no id?
     val docId = d.id.getOrElse(generateUUID)
 
@@ -118,14 +122,51 @@ object IndexDocuments extends App with LazyLogging {
         logger.warn(s"skipping sentence with ${s.size} tokens")
       }
     }
-    block += mkParentDoc(docId)
+    block += mkParentDoc(docId, metadata)
     block.toSeq.asJava
   }
 
-  def mkParentDoc(docId: String): Document = {
+  def mkParentDoc(docId: String, metadata: Option[DocumentMetadata]): Document = {
     val parent = new Document
     parent.add(new TextField("type", "root", Store.NO))
     parent.add(new StoredField("docId", docId))
+
+    if (metadata.nonEmpty) {
+      val md = metadata.get
+
+      val authors: Seq[String]    = md.authors.map{ a => s"${a.givenName} ${a.surName}" }
+      val     doi: Option[String] = md.doi.map(_.doi)
+      val    pmid: Option[String] = md.pmid.map(_.pmid)
+      val     url: Option[String] = if (md.doi.nonEmpty) {
+        md.doi.get.url
+      } else if (md.pmid.nonEmpty) {
+        md.pmid.get.url
+      } else {
+        None
+      }
+
+      val pubYear: Option[Int]    = md.publicationDate match {
+        case None => None
+        case Some(pd) => pd.year
+      }
+
+      authors.foreach{ author: String => parent.add( new TextField("author", author, Store.YES)) }
+      md.title.foreach(title => parent.add( new TextField("title", title, Store.YES)))
+      // FIXME: should this be stored?
+      md.journal.foreach(v => parent.add( new TextField("venue", v, Store.YES)))
+      // FIXME: should this be stored?
+      pubYear.foreach{ y =>
+        parent.add( new IntPoint("year", y))
+        parent.add( new StoredField("year", y))
+      }
+      // FIXME: should this be stored?
+      doi.foreach(doi => parent.add( new TextField("doi", doi, Store.YES)))
+      url.foreach { url =>
+        parent.add( new TextField("url", url, Store.YES))
+      }
+
+    }
+
     parent
   }
 
