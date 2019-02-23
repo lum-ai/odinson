@@ -71,3 +71,6 @@ lazy val extra = project
   .aggregate(core)
   .dependsOn(core)
   .settings(commonSettings)
+  .settings(
+    resolvers += "Lum AI public snapshots" at "https://s3-us-west-2.amazonaws.com/maven.lum.ai/snapshots"
+  )
