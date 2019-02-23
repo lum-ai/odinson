@@ -127,7 +127,7 @@ object AnnotateText extends App with LazyLogging {
   for (f <- textDir.listFilesByRegex(pattern = ".*\\.(txt|nxml)$", caseSensitive = false, recursive = true).toSeq.par) {
     //val docFile = new File(docsDir, f.getBaseName() + ".json")
     val docFile      = new File(docsDir, f.getBaseName() + ".ser")
-    val metadataFile = new File(docsDir, f.getBaseName() + "metadata.ser")
+    val metadataFile = new File(docsDir, f.getBaseName() + ".metadata.ser")
 
     if (docFile.exists()) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")
