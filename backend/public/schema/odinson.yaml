@@ -188,6 +188,24 @@ paths:
                 items:
                   $ref: '#/components/schemas/MatchFrequency'
 
+  /api/dependencies-vocabulary:
+    get:
+      tags:
+        - details
+      summary: The set of dependencies present in index.
+      description: Retrieves vocabulary of dependencies for the current index.
+      operationId: dependencies-vocabulary
+      responses:
+        '200':
+          description: "An array of unique dependencies."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: A dependency relation.
+
   /api/export:
     get:
       tags:

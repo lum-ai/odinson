@@ -22,6 +22,9 @@ GET     /api/export                     controllers.OdinsonController.exportResu
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
 GET     /api/most-common                controllers.OdinsonController.mostCommonForArg(odinsonQuery: String, parentQuery: Option[String], k: Int, arg: Option[String], pretty: Option[Boolean])
 
+# misc
+GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
+
 # resources
 GET     /favicon.ico                    controllers.Assets.at(file="images/favicon.ico")
 GET     /assets/*file                   controllers.Assets.at(file)

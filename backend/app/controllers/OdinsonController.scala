@@ -3,7 +3,7 @@ package controllers
 import java.nio.file.Path
 
 import javax.inject._
-import java.io.InputStream
+import java.io.{ InputStream, File }
 import java.nio.charset.StandardCharsets
 
 import scala.util.control.NonFatal
@@ -17,6 +17,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.FileUtils._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
@@ -38,6 +39,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIndexField = config[String]("odinson.index.sentenceIndexField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
+
+  val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
 
   val extractorEngine = new ExtractorEngine(indexDir)
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
@@ -66,6 +69,27 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def getSentenceIndex(luceneDocId: Int): Int = {
     val doc = extractorEngine.indexReader.document(luceneDocId)
     doc.getValues(sentenceIndexField).head.toInt
+  }
+
+
+  /** Retrieves vocabulary of dependencies for the current index.
+    */
+  def dependenciesVocabulary(pretty: Option[Boolean]) = Action.async {
+    Future {
+      val vocab: List[String] = {
+        vocabFile
+          .readString()
+          .lines
+          //.flatMap(dep => Seq(s">$dep", s"<$dep"))
+          .toList
+          .sorted
+      }
+      val json  = Json.toJson(vocab)
+      pretty match {
+        case Some(true) => Ok(Json.prettyPrint(json))
+        case _ => Ok(json)
+      }
+    }(odinsonContext)
   }
 
   /** Retrieves JSON for given sentence ID. <br>
