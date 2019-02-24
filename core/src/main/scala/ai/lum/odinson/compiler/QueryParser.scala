@@ -86,26 +86,41 @@ class QueryParser(
   }
 
   def quantOperator[_: P](includeLazy: Boolean): P[Quantifier] = {
-    val operator = if (includeLazy) StringIn("?", "*", "+", "??", "*?", "+?") else StringIn("?", "*", "+")
-    P(operator.!).map {
-      case "?"  => GreedyQuantifier(0, Some(1))
-      case "*"  => GreedyQuantifier(0, None)
-      case "+"  => GreedyQuantifier(1, None)
-      case "??" => LazyQuantifier(0, Some(1))
-      case "*?" => LazyQuantifier(0, None)
-      case "+?" => LazyQuantifier(1, None)
-      case _ => ??? // this shouldn't happen
+    if (includeLazy) {
+      P(StringIn("?", "*", "+", "??", "*?", "+?")).!.map {
+        case "?"  => GreedyQuantifier(0, Some(1))
+        case "*"  => GreedyQuantifier(0, None)
+        case "+"  => GreedyQuantifier(1, None)
+        case "??" => LazyQuantifier(0, Some(1))
+        case "*?" => LazyQuantifier(0, None)
+        case "+?" => LazyQuantifier(1, None)
+        case _ => ??? // this shouldn't happen
+      }
+    } else {
+      P(StringIn("?", "*", "+")).!.map {
+        case "?"  => GreedyQuantifier(0, Some(1))
+        case "*"  => GreedyQuantifier(0, None)
+        case "+"  => GreedyQuantifier(1, None)
+        case _ => ??? // this shouldn't happen
+      }
     }
   }
 
   def range[_: P](includeLazy: Boolean): P[Quantifier] = {
-    val operator = if (includeLazy) StringIn("}", "}?") else StringIn("}")
-    P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ operator.!).map {
-      case (Some(min), Some(max), _) if min > max => sys.error("min should be less than or equal to max")
-      case (Some(min), maxOption, "}")  => GreedyQuantifier(min, maxOption)
-      case (None,      maxOption, "}")  => GreedyQuantifier(0, maxOption)
-      case (Some(min), maxOption, "}?") => LazyQuantifier(min, maxOption)
-      case (None,      maxOption, "}?") => LazyQuantifier(0, maxOption)
+    if (includeLazy) {
+      P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ StringIn("}", "}?").!).flatMap {
+        case (Some(min), Some(max), _) if min > max => Fail
+        case (None,      maxOption, "}")  => Pass(GreedyQuantifier(0, maxOption))
+        case (Some(min), maxOption, "}")  => Pass(GreedyQuantifier(min, maxOption))
+        case (None,      maxOption, "}?") => Pass(LazyQuantifier(0, maxOption))
+        case (Some(min), maxOption, "}?") => Pass(LazyQuantifier(min, maxOption))
+      }
+    } else {
+      P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ "}").flatMap {
+        case (Some(min), Some(max)) if min > max => Fail
+        case (None,      maxOption)  => Pass(GreedyQuantifier(0, maxOption))
+        case (Some(min), maxOption)  => Pass(GreedyQuantifier(min, maxOption))
+      }
     }
   }
 
