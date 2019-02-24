@@ -218,8 +218,8 @@ object Shell extends App {
       val spans = hit.matches.map(_.span).toVector
       val captures = hit.matches.flatMap(_.captures).toVector
       // FIXME: print statements used for debugging, please remove
-      println("spans: " + spans)
-      println("captures: " + captures)
+      // println("spans: " + spans)
+      // println("captures: " + captures)
       val res = ConsoleHighlighter.highlight(reader = extractorEngine.indexReader, docId = hit.doc, spans = spans, captures = captures)
       println(res)
       println()
