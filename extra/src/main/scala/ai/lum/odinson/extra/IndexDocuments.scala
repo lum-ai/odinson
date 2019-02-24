@@ -52,7 +52,7 @@ object IndexDocuments extends App with LazyLogging {
   val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
 
-  val storeSentenceJson   = config[Boolean]("odinson.extra.storeSetenceJson")
+  val storeSentenceJson   = config[Boolean]("odinson.extra.storeSentenceJson")
 
   implicit val formats = DefaultFormats
 
