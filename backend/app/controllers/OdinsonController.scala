@@ -37,7 +37,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val indexDir           = config[Path]("odinson.indexDir")
 
   val docIdField         = config[String]("odinson.index.documentIdField")
-  val sentenceIndexField = config[String]("odinson.index.sentenceIndexField")
+  val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
 
   val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
@@ -68,7 +68,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
   def getSentenceIndex(luceneDocId: Int): Int = {
     val doc = extractorEngine.indexReader.document(luceneDocId)
-    doc.getValues(sentenceIndexField).head.toInt
+    doc.getValues(sentenceIdField).head.toInt
   }
 
 
@@ -305,7 +305,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
         val qString = if (parentQuery.nonEmpty) {
           s"""
-             |parentQuery: ${parentQuery.getOrElse("")}
+             | parentQuery: ${parentQuery.getOrElse("")}
              |odinsonQuery: $odinsonQuery
            """.stripMargin
         } else { odinsonQuery }
