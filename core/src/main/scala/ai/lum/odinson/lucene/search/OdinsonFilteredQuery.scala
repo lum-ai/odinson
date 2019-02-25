@@ -1,5 +1,6 @@
 package ai.lum.odinson.lucene.search
 
+import java.util.Arrays
 import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -65,15 +66,21 @@ class OdinsonFilteredQuery(
     val filterDisi: DocIdSetIterator
   ) extends OdinsonSpans {
 
-    def docID(): Int = spans.docID()
-    def cost(): Long = spans.cost()
+    // use to move to next doc considering the filter
+    val conjunction: DocIdSetIterator = {
+      ConjunctionDISI.intersectIterators(Arrays.asList(spans, filterDisi))
+    }
+
+    def docID(): Int = conjunction.docID()
+    def cost(): Long = conjunction.cost()
+
     def nextStartPosition(): Int = spans.nextStartPosition()
     def startPosition(): Int = spans.startPosition()
     def endPosition(): Int = spans.endPosition()
     def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
     def nextDoc(): Int = {
-      if (filterDisi.nextDoc() == NO_MORE_DOCS) {
+      if (conjunction.nextDoc() == NO_MORE_DOCS) {
         NO_MORE_DOCS
       } else {
         toMatchDoc()
@@ -81,7 +88,7 @@ class OdinsonFilteredQuery(
     }
 
     def advance(target: Int): Int = {
-      if (filterDisi.advance(target) == NO_MORE_DOCS) {
+      if (conjunction.advance(target) == NO_MORE_DOCS) {
         NO_MORE_DOCS
       } else {
         toMatchDoc()
@@ -93,7 +100,7 @@ class OdinsonFilteredQuery(
       def getDoc(): Int = {
         if (twoPhaseCurrentDocMatches()) {
           docID()
-        } else if (filterDisi.nextDoc() == NO_MORE_DOCS) {
+        } else if (conjunction.nextDoc() == NO_MORE_DOCS) {
           NO_MORE_DOCS
         } else {
           getDoc()
@@ -111,7 +118,7 @@ class OdinsonFilteredQuery(
       val totalMatchCost: Float =
         if (tpi != null) tpi.matchCost()
         else 0 // FIXME
-      new TwoPhaseIterator(spans) {
+      new TwoPhaseIterator(conjunction) {
         def matches(): Boolean = twoPhaseCurrentDocMatches()
         def matchCost(): Float = totalMatchCost
       }
