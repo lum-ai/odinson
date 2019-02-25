@@ -25,7 +25,7 @@ case class OdinsonRow(
       matchingSpan,
       OdinsonRow.sterilizeAndQuote(docId),
       OdinsonRow.sterilize(metadata.title.getOrElse("")),
-      metadata.authors.getOrElse(Nil).map(OdinsonRow.sterilize).mkString(OdinRow.ARRAY_DELIMITER),
+      metadata.authors.getOrElse(Nil).map(OdinsonRow.sterilize).mkString(OdinsonRow.ARRAY_DELIMITER),
       metadata.venue.getOrElse(""),
       metadata.year.getOrElse(""),
       metadata.doi.getOrElse(""),
