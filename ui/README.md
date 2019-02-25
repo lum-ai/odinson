@@ -17,7 +17,7 @@ In the development mode, 2 servers will run. The front end code will be served b
 
 ```bash
 # start the dual servers with hot reloading of any modifications to the source
-npm dev
+npm run dev
 ```
 
 ### Production mode
@@ -28,7 +28,7 @@ You can run the app in production mode with the following commands:
 
 ```bash
 # Minify everything
-npm build
+npm run build
 # Start the production server
 npm start
 ```
