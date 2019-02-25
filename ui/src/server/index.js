@@ -17,13 +17,16 @@ app.get('/api/search', (req, res) => {
   const data = {};
   data[config.odinsonQueryParam] = req.query[config.odinsonQueryParam];
   console.log(data);
-  axios.get(`${config.odinsonApiBaseUrl}/search`, {
+  axios.get(`${config.odinsonApiBaseUrl}/rich-search`, {
     headers: {'Access-Control-Allow-Origin': '*'},
     params: data,
     responseType: 'json'
   }).then(results => {
     console.log(results.data);
     res.json(results.data)
+  }).catch(error => {
+    console.log(error.response)
+    res.json(error.response.data)
   });
 });
 

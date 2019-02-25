@@ -75,7 +75,64 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DocHit'
+                  $ref: '#/components/schemas/BasicResults'
+        '400':
+          description: Syntax error in query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryError'
+
+
+  /api/rich-search:
+    get:
+      tags:
+        - core
+      summary: |
+        Performs an Odinson query against the corpus.
+      description: |
+        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to subset the the documents to which the pattern should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
+      operationId: rich-search
+      parameters:
+        - $ref: '#/components/schemas/OdinsonPattern'
+        - $ref: '#/components/schemas/ParentDocumentQuery'
+        - name: prevDoc
+          in: query
+          description: |
+            The document ID for the last document seen in the previous page of results.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            exclusiveMinimum: false
+            maximum: 3
+            exclusiveMaximum: false
+          #example: 1
+        - name: prevScore
+          in: query
+          description: |
+            The score for the last document seen in the previous page of results.
+          required: false
+          schema:
+            type: number
+            format: float
+          #example: 0.424
+      responses:
+        '200':
+          description: Paginated matches for the query.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnrichedResults'
+        '400':
+          description: Syntax error in query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryError'
 
   /api/parent:
     get:
@@ -320,6 +377,67 @@ components:
             $ref: '#/components/schemas/OdinsonSpan'
           description: "Named captures for this match."
 
+    QueryError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: The stack trace corresponding to the malformed query.
+
+    BasicResults:
+      type: object
+      required:
+        - odinsonQuery
+        - parentQuery
+        - duration
+        - totalHits
+        - scoreDocs
+      properties:
+        odinsonQuery:
+          $ref: '#/components/schemas/OdinsonPattern'
+        parentQuery:
+          $ref: '#/components/schemas/ParentDocumentQuery'
+        duration:
+          type: number
+          format: float
+          description: The query's execution time (in seconds)
+        totalHits:
+          type: number
+          format: int64
+          description: The total number of hits (matches) for the query
+        scoreDocs:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocHit'
+
+    EnrichedResults:
+      type: object
+      required:
+        - odinsonQuery
+        - parentQuery
+        - duration
+        - totalHits
+        - scoreDocs
+      properties:
+        odinsonQuery:
+          $ref: '#/components/schemas/OdinsonPattern'
+        parentQuery:
+          $ref: '#/components/schemas/ParentDocumentQuery'
+        duration:
+          type: number
+          format: float
+          description: The query's execution time (in seconds)
+        totalHits:
+          type: number
+          format: int64
+          description: The total number of hits (matches) for the query
+        scoreDocs:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrichedDocHit'
+
     DocHit:
       type: object
       required:
@@ -357,6 +475,42 @@ components:
             $ref: '#/components/schemas/OdinsonMatch'
           description: The list of matching spans for this document.
 
+
+    EnrichedDocHit:
+      description: A `DocHit` that include sentence details.
+      type: object
+      required:
+        - odinsonDoc
+        - score
+        - documentId
+        - sentenceIndex
+        - sentence
+        - matches
+      properties:
+        odinsonDoc:
+          type: integer
+          format: int64
+          description: The internal ID for this Odinson Document.
+        score:
+          type: number
+          format: float
+          description: The Lucene score for this Document.
+        documentId:
+          type: string
+          description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
+        sentenceIndex:
+          type: integer
+          format: int32
+          description: The index of this sentence in the parent document (0-based).
+        sentence:
+          $ref: '#/components/schemas/BasicSentence'
+          description: Token attributes and annotations for this sentence to aid in further refining queries.
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/OdinsonMatch'
+          description: The list of matching spans for this document.
+
     DocumentMetadata:
       type: object
       required:
@@ -387,6 +541,46 @@ components:
           type: integer
           format: int32
           description: The year this document was published.
+
+    BasicSentence:
+      type: object
+      required:
+        - words
+        #      - raw
+        - graphs
+      properties:
+        words:
+          type: array
+          description: |
+            The tokens for this sentence.
+          items:
+            type: string
+        lemmas:
+          type: array
+          description: |
+            The lemma form of each token in this sentence.
+          items:
+            type: string
+        tags:
+          type: array
+          description: |
+            The part of speech tag for each token in this sentence.
+          items:
+            type: string
+        chunks:
+          type: array
+          description: |
+            The BIO-style chunk label designating a coarse XP assignment for each token in this sentence.
+          items:
+            type: string
+        entities:
+          type: array
+          description: |
+            The BIO-style entity label for each token in this sentence.
+          items:
+            type: string
+        graphs:
+          $ref: "#/components/schemas/GraphMap"
 
     Sentence:
       type: object

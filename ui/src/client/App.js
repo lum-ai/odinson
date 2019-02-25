@@ -16,10 +16,10 @@ export default class App extends Component {
     this.state = {
       errorMsg: null,
       odinsonQuery: null,
+      parentQuery: null,
       duration: null,
       totalHits: null,
-      scoreDocs: null,
-      oq: null
+      scoreDocs: null
     };
 
     this.onSubmit    = this.onSubmit.bind(this);
@@ -33,7 +33,8 @@ export default class App extends Component {
 
   onSubmit(event) {
     const data = {};
-    data[config.odinsonQueryParam] = this.state.oq;
+    data[config.odinsonQueryParam] = this.state.odinsonQuery;
+    // FIXME: add parent query
     axios.get('api/search', {
       params: data,
     }).then(res => {
@@ -42,10 +43,11 @@ export default class App extends Component {
         this.setState({errorMsg: response.error});
       } else {
         this.setState({
-          query: response.query,
-          duration: response.duration,
-          totalHits: response.totalHits,
-          scoreDocs: response.scoreDocs
+          odinsonQuery: response.odinsonQuery,
+          parentQuery : response.parentQuery,
+          duration    : response.duration,
+          totalHits   : response.totalHits,
+          scoreDocs   : response.scoreDocs
         });
       }
     });
@@ -54,7 +56,7 @@ export default class App extends Component {
   // callback for submission
   // FIXME: add pq
   updateQuery(event) {
-    this.setState({oq: event.target.value});
+    this.setState({odinsonQuery: event.target.value});
   }
 
   renderSentenceJson(event) {
@@ -65,19 +67,21 @@ export default class App extends Component {
   createSearchInterface() {
     return (
       <div>
-        <input type="text" name="oq" onChange={this.updateQuery}></input>
+        <input type="text" name="odinsonQuery" onChange={this.updateQuery}></input>
          <button type="button" onClick={this.onSubmit} className="btn">Search</button>
       </div>
     );
   }
 
   // process query execution details
+  // FIXME: convert this to a table
   createDetailsDiv() {
     return (
       <div>
-        <p>Query: <span className="query">{this.state.query}</span></p>
-        <p>Duration: <span className="duration">{Number(this.state.duration).toFixed(4)}</span> seconds</p>
-        <p>Hits: <span className="totalHits">{this.state.totalHits}</span></p>
+        <p>Odinson Query: <span className="query">{this.state.odinsonQuery}</span></p>
+        <p> Parent Query: <span className="query">{this.state.parentQuery}</span></p>
+        <p>     Duration: <span className="duration">{Number(this.state.duration).toFixed(4)}</span> seconds</p>
+        <p>         Hits: <span className="totalHits">{this.state.totalHits}</span></p>
       </div>
     );
   }
