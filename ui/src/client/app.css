@@ -1,0 +1,19 @@
+h1 {
+  color: green;
+}
+
+body {
+  text-align: center;
+  margin: auto;
+}
+
+/*
+  The following styles correspond to className assignments
+*/
+.errorMsg {
+  color: red;
+}
+
+.query {
+  font-family: monospace;
+}
