@@ -6,6 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import DocIdSetIterator._
 import Spans._
@@ -74,6 +75,7 @@ class OdinsonFilteredQuery(
     def docID(): Int = conjunction.docID()
     def cost(): Long = conjunction.cost()
 
+    override def namedCaptures: List[NamedCapture] = spans.namedCaptures
     def nextStartPosition(): Int = spans.nextStartPosition()
     def startPosition(): Int = spans.startPosition()
     def endPosition(): Int = spans.endPosition()
