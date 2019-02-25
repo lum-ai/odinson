@@ -20,6 +20,8 @@ import ai.lum.odinson.lucene.search._
 
 class ExtractorEngine(val indexDir: Path) {
 
+  def this(indexDir: File) = this(indexDir.toPath)
+
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
   val indexSearcher = new OdinsonIndexSearcher(indexReader)
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
