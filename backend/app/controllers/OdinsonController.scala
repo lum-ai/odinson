@@ -295,11 +295,16 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val results = (prevDoc, prevScore) match {
           case (Some(doc), Some(score)) =>
             // continue where we left off
-            // FIXME: add in parentQuery
-            extractorEngine.query(oq = odinsonQuery, pageSize, doc, score)
+            parentQuery match {
+              case None => extractorEngine.query(odinsonQuery, pageSize, doc, score)
+              case Some(filter) => extractorEngine.query(odinsonQuery, filter, pageSize, doc, score)
+            }
           case _ =>
             // get first page
-            extractorEngine.query(oq = odinsonQuery, pageSize)
+            parentQuery match {
+              case None => extractorEngine.query(odinsonQuery, pageSize)
+              case Some(filter) => extractorEngine.query(odinsonQuery, filter, pageSize)
+            }
         }
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
