@@ -44,7 +44,7 @@ We have made a few example queries to show how the system works. For this we use
 
 This example shows odinson applying a pattern over surface features (i.e., words) to extract mentions of causal relations. Note that Odinson was able to find 3,774 sentences that match the pattern in 0.18 seconds.
 
-![example 1](https://github.com/lum-ai/odinson/raw/dev/images/image1.png "example 1")
+![example 1](https://github.com/lum-ai/odinson/raw/master/images/image1.png "example 1")
 
 
 
@@ -52,7 +52,7 @@ This example shows odinson applying a pattern over surface features (i.e., words
 
 This example shows how Odinson can also use patterns over syntax. In this case it tries to find hypernym relations. It finds 10,562 matches in 0.37 seconds.
 
-![example 2](https://github.com/lum-ai/odinson/raw/dev/images/image2.png "example 2")
+![example 2](https://github.com/lum-ai/odinson/raw/master/images/image2.png "example 2")
 
 
 
@@ -60,7 +60,7 @@ This example shows how Odinson can also use patterns over syntax. In this case i
 
 This example shows how surface and syntax can be combined in a single pattern. This pattern finds 12 sentences that match in our corpus of 1,105,737 sentences. It does this in 0.01 seconds.
 
-![example 3](https://github.com/lum-ai/odinson/raw/dev/images/image3.png "example 3")
+![example 3](https://github.com/lum-ai/odinson/raw/master/images/image3.png "example 3")
 
 
 
@@ -68,7 +68,7 @@ This example shows how surface and syntax can be combined in a single pattern. T
 
 This example shows how we can match over different aspects of tokens, lemmas in this example. Note that the ability to utilize syntax helps with the precision of the extractions (as compared with the overly simple surface rule above). Odinson finds 5,489 matches in 0.18 seconds.
 
-![example 4](https://github.com/lum-ai/odinson/raw/dev/images/image4.png "example 4")
+![example 4](https://github.com/lum-ai/odinson/raw/master/images/image4.png "example 4")
 
 
 
@@ -76,10 +76,10 @@ This example shows how we can match over different aspects of tokens, lemmas in 
 
 This is an example of a slightly more complex pattern. Odinson is able to apply it over our corpus and finds 228 matches in 0.04 seconds.
 
-![example 5](https://github.com/lum-ai/odinson/raw/dev/images/image5.png "example 5")
+![example 5](https://github.com/lum-ai/odinson/raw/master/images/image5.png "example 5")
 
 ## Web UI
 
 We are also working on a web interface that will simplify debugging by displaying more information than the shell. This interface will allow us to display syntactic information when needed. We would also like to be able to interact with it to correct extractions or bootstrap patterns.
 
-![example 6](https://github.com/lum-ai/odinson/raw/dev/images/image6.png "example 6")
+![example 6](https://github.com/lum-ai/odinson/raw/master/images/image6.png "example 6")
