@@ -1,4 +1,13 @@
 import React, { Component } from 'react';
+//import { Appdiv } from './UIElements';
+import {
+  AnchorButton,
+  Card,
+  Classes,
+  Elevation,
+  HTMLTable,
+  InputGroup
+} from "@blueprintjs/core";
 import './app.css';
 import "text-annotation-graphs/dist/tag/css/tag.css"
 import axios from 'axios';
@@ -27,7 +36,7 @@ export default class App extends Component {
 
     this.onSubmit           = this.onSubmit.bind(this);
     this.updateOdinsonQuery = this.updateOdinsonQuery.bind(this);
-    //this.updateParentQuery  = this.updateParentQuery.bind(this);
+    this.updateParentQuery  = this.updateParentQuery.bind(this);
   }
 
 
@@ -39,7 +48,7 @@ export default class App extends Component {
     const data = {};
     data[config.odinsonQueryParam] = this.state.oq;
     // FIXME: add parent query
-    //data[config.parentQueryParm] = this.state.pq;
+    data[config.parentQueryParam] = this.state.pq;
     axios.get('api/search', {
       params: data,
     }).then(res => {
@@ -63,9 +72,9 @@ export default class App extends Component {
     this.setState({oq: event.target.value});
   }
   // TODO: add parent query
-  // updateParentQuery(event) {
-  //   this.setState({pq: event.target.value});
-  // }
+  updateParentQuery(event) {
+    this.setState({pq: event.target.value});
+  }
 
   renderSentenceJson(event) {
     console.log(event);
@@ -74,23 +83,53 @@ export default class App extends Component {
   // creates input fields for search
   createSearchInterface() {
     return (
-      <div>
-        <input type="text" name="odinsonQuery" onChange={this.updateOdinsonQuery}></input>
-         <button type="button" onClick={this.onSubmit} className="btn">Search</button>
-      </div>
+      <div className="searchParams">
+        <InputGroup
+          type="text"
+          name="odinsonQuery"
+          placeholder="Odinson Query"
+          onChange={this.updateOdinsonQuery}
+          />
+        <InputGroup
+          type="text"
+          name="parentQuery"
+          placeholder="Parent Query"
+          onChange={this.updateParentQuery}
+          />
+        <AnchorButton
+        onClick={this.onSubmit}
+        type="button"
+        text="Search"
+        className="btn"/>
+    </div>
     );
   }
-
   // process query execution details
-  // FIXME: convert this to a table
   createDetailsDiv() {
+    const formattedDuration = `${Number(this.state.duration).toFixed(4)} seconds`;
+    const formattedHits = this.state.totalHits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
     return (
-      <div>
-        <p>Odinson Query: <span className="query">{this.state.odinsonQuery}</span></p>
-        <p> Parent Query: <span className="query">{this.state.parentQuery}</span></p>
-        <p>     Duration: <span className="duration">{Number(this.state.duration).toFixed(4)}</span> seconds</p>
-        <p>         Hits: <span className="totalHits">{this.state.totalHits}</span></p>
-      </div>
+      <HTMLTable>
+        <tbody>
+          <tr>
+            <td><strong>Odinson Query</strong></td>
+            <td className="queryString">{this.state.odinsonQuery}</td>
+          </tr>
+          <tr>
+            <td><strong>Parent Query</strong></td>
+            <td className="queryString">{this.state.parentQuery}</td>
+          </tr>
+          <tr>
+            <td><strong>Duration</strong></td>
+            <td>{formattedDuration}</td>
+          </tr>
+          <tr>
+            <td><strong>Hits</strong></td>
+            <td>{formattedHits}</td>
+          </tr>
+        </tbody>
+      </HTMLTable>
     );
   }
 
@@ -139,17 +178,18 @@ export default class App extends Component {
   render() {
     if (this.state.errorMsg) {
       return (
-        <div>
+        <div
+          >
           {this.createSearchInterface()}
           <div>
             {this.state.errorMsg}
           </div>
         </div>
-
       );
     } else if (this.state.scoreDocs) {
       return (
-        <div>
+        <div
+          >
           {this.createSearchInterface()}
           {this.createDetailsDiv()}
           <hr></hr>
@@ -158,7 +198,8 @@ export default class App extends Component {
       )
     } else {
       return (
-        <div>
+        <div
+          >
           {this.createSearchInterface()}
         </div>
       )

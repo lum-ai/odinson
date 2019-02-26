@@ -13,9 +13,13 @@ app.use(cors());
 app.use(express.static('dist'));
 
 app.get('/api/search', (req, res) => {
-  const param = config.odinsonQueryParam;
   const data = {};
   data[config.odinsonQueryParam] = req.query[config.odinsonQueryParam];
+  const pq = req.query[config.parentQueryParam];
+  if (pq) {
+    data[config.parentQueryParam]   = pq;
+    console.log(`parentQuery: ${pq}`);
+  }
   console.log(data);
   axios.get(`${config.odinsonApiBaseUrl}/rich-search`, {
     headers: {'Access-Control-Allow-Origin': '*'},

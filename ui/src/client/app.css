@@ -1,3 +1,7 @@
+@import "~normalize.css";
+@import "~@blueprintjs/core/lib/css/blueprint.css";
+@import "~@blueprintjs/icons/lib/css/blueprint-icons.css";
+
 h1 {
   color: green;
 }
@@ -14,6 +18,27 @@ body {
   color: red;
 }
 
-.query {
+/*
+  Display of executed queries in details table
+*/
+.queryString {
   font-family: monospace;
 }
+
+.flex-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  /*flex-wrap: wrap;*/
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.searchParams {
+  width: 1300px;
+}
+
+/*#root div{
+  width:100%;
+}*/
