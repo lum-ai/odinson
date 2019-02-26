@@ -77,3 +77,9 @@ This example shows how we can match over different aspects of tokens, lemmas in 
 This is an example of a slightly more complex pattern. Odinson is able to apply it over our corpus and finds 228 matches in 0.06 seconds.
 
 ![example 5](https://github.com/lum-ai/odinson/raw/dev/images/image5.png "example 5")
+
+## Web UI
+
+We are also working on a web interface that will simplify debugging by displaying more information than the shell. This interface will allow us to display syntactic information when needed. We would also like to be able to interact with it to correct extractions or bootstrap patterns.
+
+![example 6](https://github.com/lum-ai/odinson/raw/dev/images/image6.png "example 6")
