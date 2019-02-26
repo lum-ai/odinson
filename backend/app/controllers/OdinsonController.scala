@@ -45,7 +45,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val extractorEngine = new ExtractorEngine(indexDir)
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
-  val pageSize = 15 // TODO move to config?
+  val pageSize = 5 // TODO move to config?
 
   def buildInfo(pretty: Option[Boolean]) = Action.async {
     Future {
