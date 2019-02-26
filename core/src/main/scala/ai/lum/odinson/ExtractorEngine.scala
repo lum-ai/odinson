@@ -61,7 +61,7 @@ class ExtractorEngine(val indexDir: Path) {
 
   /** executes query and returns all results */
   def query(q: String): OdinResults = {
-    query(compiler.compile(q))
+    query(compiler.mkQuery(q))
   }
 
   /** executes query and returns all results */
@@ -76,7 +76,7 @@ class ExtractorEngine(val indexDir: Path) {
 
   /** executes query and returns at most n documents */
   def query(oq: String, n: Int): OdinResults = {
-    query(compiler.compile(oq), n)
+    query(compiler.mkQuery(oq), n)
   }
 
   /** executes query and returns at most n documents */
@@ -86,7 +86,7 @@ class ExtractorEngine(val indexDir: Path) {
 
   /** executes query and returns the next n documents after the provided doc */
   def query(oq: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
-    query(compiler.compile(oq), n, after)
+    query(compiler.mkQuery(oq), n, after)
   }
 
   /** executes query and returns the next n documents after the provided doc */
@@ -96,18 +96,12 @@ class ExtractorEngine(val indexDir: Path) {
 
   /** executes query and returns next n results after the provided doc */
   def query(oq: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(compiler.compile(oq), n, afterDoc, afterScore)
+    query(compiler.mkQuery(oq), n, afterDoc, afterScore)
   }
 
   /** executes query and returns next n results after the provided doc */
   def query(oq: OdinsonQuery, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
     query(oq, n, new OdinsonScoreDoc(afterDoc, afterScore))
   }
-
-}
-
-object ExtractorEngine {
-
-  def apply(indexDir: String) = new ExtractorEngine(new File(indexDir).toPath)
 
 }
