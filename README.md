@@ -24,17 +24,17 @@ We would also love to hear any questions, requests, or suggestions you may have.
 
 It consists of several subprojects:
 
-- core: the core odinson library
-- extra: these are a few apps that we need but don't really belong in core,
+- **core**: the core odinson library
+- **extra**: these are a few apps that we need but don't really belong in core,
         for example, licensing issues
-- backend: this is a REST API for odinson
-- ui: this is a webapp that we are building to interact with the system and visualize results
+- **backend**: this is a REST API for odinson
+- **ui**: this is a webapp that we are building to interact with the system and visualize results
 
 The three apps in extra are:
 
-- AnnotateText: parses text documents using processors
-- IndexDocuments: reads the parsed documents and builds an odinson index
-- Shell: this is a shell where you can execute queries (we will replace this with the webapp soon)
+- **AnnotateText**: parses text documents using processors
+- **IndexDocuments**: reads the parsed documents and builds an odinson index
+- **Shell**: this is a shell where you can execute queries (we will replace this with the webapp soon)
 
 ## Examples
 
