@@ -44,7 +44,7 @@ We have made a few example queries to show how the system works. For this we use
 
 This example shows odinson applying a pattern over surface features (i.e., words) to extract mentions of causal relations. Note that Odinson was able to find 3,774 sentences that match the pattern in 0.17 seconds.
 
-![example 1](https://github.com/lum-ai/odinson/raw/master/images/image1.png "example 1")
+![example 1](https://github.com/lum-ai/odinson/raw/dev/images/image1.png "example 1")
 
 
 
