@@ -97,9 +97,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     */
   def sentenceJsonForSentId(odinsonDocId: Int, pretty: Option[Boolean]) = Action.async {
     Future {
-      val sent  = extractorEngine.indexSearcher.doc(odinsonDocId)
-      val bin   = sent.getBinaryValue("json-binary").bytes
-      val json  = Json.toJson(DocUtils.bytesToJsonString(bin))
+      val json  = mkAbridgedSentence(odinsonDocId)
       pretty match {
         case Some(true) => Ok(Json.prettyPrint(json))
         case _ => Ok(json)
@@ -288,6 +286,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     parentQuery: Option[String],
     prevDoc: Option[Int],
     prevScore: Option[Float],
+    enriched: Boolean,
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
@@ -303,14 +302,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
             extractorEngine.query(oq = odinsonQuery, pageSize)
         }
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
-        val qString = if (parentQuery.nonEmpty) {
-          s"""
-             | parentQuery: ${parentQuery.getOrElse("")}
-             |odinsonQuery: $odinsonQuery
-           """.stripMargin
-        } else { odinsonQuery }
 
-        val json = Json.toJson(mkJson(qString, duration, results))
+        val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
         pretty match {
           case Some(true) => Ok(Json.prettyPrint(json))
           case _ => Ok(json)
@@ -319,10 +312,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
           val json = Json.toJson(Json.obj("error" -> stackTrace))
-          pretty match {
-            case Some(true) => Ok(Json.prettyPrint(json))
-            case _ => Ok(json)
-          }
+          Status(400)(json)
       }
     }(odinsonContext)
   }
@@ -342,12 +332,19 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     "builtAtMillis"         -> BuildInfo.builtAtMillis
   )
 
-  def mkJson(query: String, duration: Float, results: OdinResults): JsValue = {
+  def mkJson(odinsonQuery: String, parentQuery: Option[String], duration: Float, results: OdinResults, enriched: Boolean): JsValue = {
+
+    val scoreDocs: JsValue = enriched match {
+      case true  => Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse):_*)
+      case false => Json.arr(results.scoreDocs.map(mkJson):_*)
+    }
+
     Json.obj(
-      "query"        -> query,
+      "odinsonQuery" -> odinsonQuery,
+      "parentQuery"  -> parentQuery,
       "duration"     -> duration,
       "totalHits"    -> results.totalHits,
-      "scoreDocs"    -> Json.arr(results.scoreDocs.map(mkJson):_*)
+      "scoreDocs"    -> scoreDocs
     )
   }
 
@@ -383,6 +380,29 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       "start" -> span.start,
       "end"   -> span.end
     )
+  }
+
+  def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
+    val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
+    Json.obj(
+      "odinsonDoc"    -> odinsonScoreDoc.doc,
+      "score"         -> odinsonScoreDoc.score,
+      "documentId"    -> getDocId(odinsonScoreDoc.doc),
+      "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
+      "sentence"      -> mkAbridgedSentence(odinsonScoreDoc.doc),
+      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson):_*)
+    )
+  }
+
+  def retrieveSentenceJson(odinsonDocId: Int): JsValue = {
+    val sent  = extractorEngine.indexSearcher.doc(odinsonDocId)
+    val bin   = sent.getBinaryValue("json-binary").bytes
+    Json.parse(DocUtils.bytesToJsonString(bin))
+  }
+
+  def mkAbridgedSentence(odinsonDocId: Int): JsValue = {
+    val unabridgedJson = retrieveSentenceJson(odinsonDocId)
+    unabridgedJson.as[JsObject] - "startOffsets" - "endOffsets" - "raw"
   }
 
 }
