@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import './app.css';
+import "text-annotation-graphs/dist/tag/css/tag.css"
 import axios from 'axios';
-
+import OdinsonTAG from './OdinsonTAG.js';
 import _ from 'lodash';
 
 const config = require('../../config');
@@ -16,14 +17,17 @@ export default class App extends Component {
     this.state = {
       errorMsg: null,
       odinsonQuery: null,
+      oq: null, // for storing incremental query updates
+      pq: null, // for storing incremental query updates
       parentQuery: null,
       duration: null,
       totalHits: null,
       scoreDocs: null
     };
 
-    this.onSubmit    = this.onSubmit.bind(this);
-    this.updateQuery = this.updateQuery.bind(this);
+    this.onSubmit           = this.onSubmit.bind(this);
+    this.updateOdinsonQuery = this.updateOdinsonQuery.bind(this);
+    //this.updateParentQuery  = this.updateParentQuery.bind(this);
   }
 
 
@@ -33,8 +37,9 @@ export default class App extends Component {
 
   onSubmit(event) {
     const data = {};
-    data[config.odinsonQueryParam] = this.state.odinsonQuery;
+    data[config.odinsonQueryParam] = this.state.oq;
     // FIXME: add parent query
+    //data[config.parentQueryParm] = this.state.pq;
     axios.get('api/search', {
       params: data,
     }).then(res => {
@@ -54,10 +59,13 @@ export default class App extends Component {
   }
 
   // callback for submission
-  // FIXME: add pq
-  updateQuery(event) {
-    this.setState({odinsonQuery: event.target.value});
+  updateOdinsonQuery(event) {
+    this.setState({oq: event.target.value});
   }
+  // TODO: add parent query
+  // updateParentQuery(event) {
+  //   this.setState({pq: event.target.value});
+  // }
 
   renderSentenceJson(event) {
     console.log(event);
@@ -67,7 +75,7 @@ export default class App extends Component {
   createSearchInterface() {
     return (
       <div>
-        <input type="text" name="odinsonQuery" onChange={this.updateQuery}></input>
+        <input type="text" name="odinsonQuery" onChange={this.updateOdinsonQuery}></input>
          <button type="button" onClick={this.onSubmit} className="btn">Search</button>
       </div>
     );
@@ -99,19 +107,23 @@ export default class App extends Component {
     .groupBy(sd => sd.documentId)
     .mapValues(group => _(group).orderBy(elem => elem.sentenceIndex).value())
     .value();
-    console.log(groupedResults);
+    //console.log(groupedResults);
     const resultElements = Object.keys(groupedResults).map(parentDocId => {
       const scoreDocs = groupedResults[parentDocId];
-      console.log(scoreDocs);
+      // console.log(scoreDocs);
       const scoreDocsGroup = scoreDocs.map(scoreDoc => {
-        return (
-          <div className="sentenceResults" key={scoreDoc.odinsonDoc}>
-            <h3 onClick={() => this.renderSentenceJson(scoreDoc.odinsonDoc)}>Sentence ID: {scoreDoc.odinsonDoc}</h3>
-            <div id={scoreDoc.odinsonDoc} className="scoreDoc" key={scoreDoc.odinsonDoc}>{JSON.stringify(scoreDoc, null, 2)}</div>
-          </div>
-        );
+        // FIXME: key has to be unique for tag to re-render when spans + doc order is the same.
+        // Evaluate https://www.npmjs.com/package/weak-key as possible solution.
+        // We need to either hash the json or use an ID that is guaranteed to be unique.
+        return <OdinsonTAG
+          odinsonDocId={scoreDoc.odinsonDoc}
+          odinsonJson={scoreDoc}
+          key={`odinson-tag-${scoreDoc.odinsonDoc}`}
+          ></OdinsonTAG>;
       });
-      // FIXME: add TAG
+      // FIXME: key has to be unique for tag to re-render when spans + doc order is the same.
+      // Evaluate https://www.npmjs.com/package/weak-key as possible solution.
+      // We need to either hash the json or use an ID that is guaranteed to be unique.
       return (
         <div key={`container-${parentDocId}`}>
           <h2>Parent Doc: {parentDocId}</h2>

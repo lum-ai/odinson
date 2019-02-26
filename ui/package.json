@@ -19,7 +19,8 @@
     "express": "^4.16.3",
     "lodash": "^4.17.11",
     "react": "^16.5.2",
-    "react-dom": "^16.5.2"
+    "react-dom": "^16.5.2",
+    "text-annotation-graphs": "git://github.com/lum-ai/TAG.git#odinson"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
