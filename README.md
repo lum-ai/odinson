@@ -2,33 +2,49 @@
 
 Odinson can be used to rapidly query a natural language knowledge base and extract structured relations. Query patterns can be designed over (a) surface (e.g. #1), syntax (e.g., #2), or a combination of both (e.g., #3-5). These examples were executed over a collection of 8,479 scientific papers, corresponding to 1,105,737 sentences. Please note that the rapidity of the execution allows a user to dynamically develop these queries in _real-time_, immediately receiving feedback on the coverage and precision of the patterns at scale.
 
+## Project overview
 
+Odinson supports several features:
 
+- Patterns over tokens, including boolean patterns over token features like lemma, POS tags, NER tags, chunk tags, etc
+- Patterns over syntax by matching paths in a dependency graph. Note that this actually agnostic to the tags in the graph edges and it could be repurposed for matching over semantic roles or something else.
+- Named captures for extracting the different entities involved in a relation
 
+And there are many more on the way:
+
+- Testing framework and extensive test suite
+- Better error messages
+- Better support for greedy and lazy quantifiers
+- Lookaround assertions
+- Support for an internal state to hold intermediate mentions, allowing for the application of patterns in a cascade
+- Support for grammars (similar to odin)
+- Filtering results by document metadata (e.g., authors, publication date)
+
+We would also love to hear any questions, requests, or suggestions you may have.
+
+It consists of several subprojects:
+
+- core: the core odinson library
+- extra: these are a few apps that we need but don't really belong in core,
+        for example, licensing issues
+- backend: this is a REST API for odinson
+- ui: this is a webapp that we are building to interact with the system and visualize results
+
+The three apps in extra are:
+
+- AnnotateText: parses text documents using processors
+- IndexDocuments: reads the parsed documents and builds an odinson index
+- Shell: this is a shell where you can execute queries (we will replace this with the webapp soon)
+
+## Examples
+
+We have made a few example queries to show how the system works. For this we used a collection of 8,479 scientific papers (or 1,105,737 sentences). Please note that the rapidity of the execution allows a user to dynamically develop these queries in real-time, immediately receiving feedback on the coverage and precision of the patterns at scale.
 
 ### Example of a surface pattern for extracting casual relations.
 
 This example shows odinson applying a pattern over surface features (i.e., words) to extract mentions of causal relations. Note that Odinson was able to find 3,774 sentences that match the pattern in 0.17 seconds.
 
-    >>> (?<cause> []) leads to (?<effect> [])
-    found 3,774 matches in 0.17 seconds
-    showing 1 to 5
-
-    Doc 10.1007/s00216-014-7741-8 (score = 9.998652)
-    This leads to skeletonization .
-
-    Doc 10.1186/1746-1596-8-201 (score = 9.897583)
-    Knockdown of PRMT5 leads to slower cellular growth , while over-expression of PRMT5 leads to cellular hyperproliferation .
-
-    Doc 10.1186/s12893-017-0224-z (score = 9.897583)
-    Chronic inflammation leads to the activation of sequins , which in turn leads to CC in UC patients .
-
-    Doc 10.1186/1476-7120-2-11 (score = 9.897583)
-    Dipyridamole leads to transiently increased coronary flow , which leads to improved contractility in viable myocardium [ 9 ] .
-
-    Doc 10.3389/fncom.2013.00070 (score = 9.897583)
-    Typically , low-frequency stimulation leads to slow-frequency movements and inversely fast-frequency stimulation leads to fast-frequency movements .
-
+![example 1](https://github.com/lum-ai/odinson/raw/master/images/image1.png "example 1")
 
 
 
