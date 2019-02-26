@@ -28,7 +28,7 @@ class QueryCompiler(
   val parser = new QueryParser(allTokenFields, defaultTokenField, normalizeQueriesToDefaultField)
 
   /** query parser for parent doc queries */
-  val queryParser = new LuceneQueryParser("doc_id", new WhitespaceAnalyzer)
+  val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
 
   def compile(pattern: String): OdinsonQuery = {
     val ast = parser.parseQuery(pattern)
