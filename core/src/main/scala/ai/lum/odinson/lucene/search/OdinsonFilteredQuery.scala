@@ -56,7 +56,11 @@ class OdinsonFilteredQuery(
       if (spans == null) {
         return null
       }
-      val filterDisi = filterWeight.scorer(context).iterator()
+      val scorer = filterWeight.scorer(context)
+      if (scorer == null) {
+        return null
+      }
+      val filterDisi = scorer.iterator()
       new OdinsonFilteredSpans(spans, filterDisi)
     }
 
@@ -75,10 +79,13 @@ class OdinsonFilteredQuery(
     def docID(): Int = conjunction.docID()
     def cost(): Long = conjunction.cost()
 
+    // a first start position is available in current doc for nextStartPosition
+    protected var atFirstInCurrentDoc: Boolean = true
+
+    def startPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.startPosition()
+    def endPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.endPosition()
+
     override def namedCaptures: List[NamedCapture] = spans.namedCaptures
-    def nextStartPosition(): Int = spans.nextStartPosition()
-    def startPosition(): Int = spans.startPosition()
-    def endPosition(): Int = spans.endPosition()
     def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
     def nextDoc(): Int = {
@@ -112,7 +119,19 @@ class OdinsonFilteredQuery(
     }
 
     def twoPhaseCurrentDocMatches(): Boolean = {
-      spans.nextStartPosition() != NO_MORE_POSITIONS
+      if (spans.nextStartPosition() != NO_MORE_POSITIONS) {
+        atFirstInCurrentDoc = true
+        return true
+      }
+      false
+    }
+
+    def nextStartPosition(): Int = {
+      if (atFirstInCurrentDoc) {
+        atFirstInCurrentDoc = false
+        return spans.startPosition()
+      }
+      spans.nextStartPosition()
     }
 
     override def asTwoPhaseIterator(): TwoPhaseIterator = {
