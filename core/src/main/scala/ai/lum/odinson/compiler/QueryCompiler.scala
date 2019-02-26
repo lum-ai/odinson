@@ -3,7 +3,10 @@ package ai.lum.odinson.compiler
 import java.io.File
 import org.apache.lucene.index._
 import org.apache.lucene.search._
+import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
+import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config._
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene._
@@ -24,28 +27,40 @@ class QueryCompiler(
 
   val parser = new QueryParser(allTokenFields, defaultTokenField, normalizeQueriesToDefaultField)
 
+  /** query parser for parent doc queries */
+  val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
+
   def compile(pattern: String): OdinsonQuery = {
     val ast = parser.parseQuery(pattern)
     val query = mkOdinsonQuery(ast)
     query.getOrElse(new FailQuery(defaultTokenField))
   }
 
-  /**
-    * Join an Odinson pattern with an optional Lucene query meant to filter the parent
-    * @param odinsonPattern An Odison pattern.
-    * @param parentQuery An optional Lucene query string meant to filter the documents to which the odinsonPattern is applied.
-    */
-  def compile(odinsonPattern: String, parentQuery: Option[String]): OdinsonQuery = {
-    val oq = compile(odinsonPattern)
-    if (parentQuery.isEmpty) {
-      oq
-    } else {
-      // TODO: turn this into a Lucene query
-      // Do we have to provide a default field, or can we assume it specifies the fields it wants to match?
-      val pq = parentQuery.get
-      // FIXME: join queries!
-      oq
-    }
+  def mkQuery(pattern: String): OdinsonQuery = {
+    compile(pattern)
+  }
+
+  def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
+    val query = compile(pattern)
+    val parentQuery = queryParser.parse(parentPattern)
+    mkQuery(query, parentQuery)
+  }
+
+  def mkQuery(pattern: String, parentQuery: Query): OdinsonQuery = {
+    val query = compile(pattern)
+    mkQuery(query, parentQuery)
+  }
+
+  def mkQuery(query: OdinsonQuery, parentPattern: String): OdinsonQuery = {
+    val parentQuery = queryParser.parse(parentPattern)
+    mkQuery(query, parentQuery)
+  }
+
+  def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
+    val termQuery = new TermQuery(new Term("type", "root")) // TODO rename root to parent
+    val parentFilter = new QueryBitSetProducer(termQuery)
+    val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
+    new OdinsonFilteredQuery(query, filter)
   }
 
   /** Constructs an OdinsonQuery from an AST. */

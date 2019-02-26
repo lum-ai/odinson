@@ -70,6 +70,11 @@ class ExtractorEngine(val indexDir: Path) {
   }
 
   /** executes query and returns at most n documents */
+  def query(oq: String, pf: String, n: Int): OdinResults = {
+    query(compiler.mkQuery(oq, pf), n)
+  }
+
+  /** executes query and returns at most n documents */
   def query(oq: String, n: Int): OdinResults = {
     query(compiler.compile(oq), n)
   }
