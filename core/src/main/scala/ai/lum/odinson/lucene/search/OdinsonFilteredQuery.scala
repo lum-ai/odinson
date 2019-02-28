@@ -13,7 +13,7 @@ import Spans._
 
 class OdinsonFilteredQuery(
   val query: OdinsonQuery,
-  val filter: ToChildBlockJoinQuery,
+  val filter: Query,
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(query, filter)
@@ -21,6 +21,16 @@ class OdinsonFilteredQuery(
   def toString(field: String): String = s"FiltereqQuery($query)"
 
   def getField(): String = query.getField()
+
+  override def rewrite(reader: IndexReader): Query = {
+    val rewrittenQuery = query.rewrite(reader).asInstanceOf[OdinsonQuery]
+    val rewrittenFilter = filter.rewrite(reader)
+    if (query != rewrittenQuery || filter != rewrittenFilter) {
+      new OdinsonFilteredQuery(rewrittenQuery, rewrittenFilter)
+    } else {
+      super.rewrite(reader)
+    }
+  }
 
   override def createWeight(
     searcher: IndexSearcher,
