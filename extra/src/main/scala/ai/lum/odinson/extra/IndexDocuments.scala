@@ -139,7 +139,7 @@ object IndexDocuments extends App with LazyLogging {
 
   def mkParentDoc(docId: String, metadata: Option[DocumentMetadata]): Document = {
     val parent = new Document
-    parent.add(new TextField("type", "root", Store.NO))
+    parent.add(new TextField("type", "parent", Store.NO))
     parent.add(new StoredField("docId", docId))
 
     if (metadata.nonEmpty) {
