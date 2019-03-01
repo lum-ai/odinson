@@ -42,10 +42,10 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
   val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
 
+  val pageSize           = config[Int]("odinson.pageSize") // TODO move to config?
+
   val extractorEngine = new ExtractorEngine(indexDir)
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
-
-  val pageSize = 5 // TODO move to config?
 
   def buildInfo(pretty: Option[Boolean]) = Action.async {
     Future {
