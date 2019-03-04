@@ -81,7 +81,7 @@ class StateQuery(
         currentDoc = docIds(currentDocIndex)
         matchStart = -1
         // retrieve mentions
-        val (starts, ends) = state.getMatches(label, currentDoc)
+        val (starts, ends) = state.getMatches(label, currentDoc).unzip
         startMatches = starts
         endMatches = ends
         currentMatchIndex = -1

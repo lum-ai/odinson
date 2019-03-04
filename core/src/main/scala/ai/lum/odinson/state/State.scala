@@ -46,20 +46,20 @@ class State {
     statement.executeUpdate(sql)
   }
 
-  def getMatches(label: String, luceneDocId: Int): (Array[Int], Array[Int]) = {
+  def getMatches(label: String, luceneDocId: Int): Array[(Int, Int)] = {
     val sql = s"""SELECT *
                  |FROM mentions
                  |WHERE label='$label' AND luceneDocId=$luceneDocId
                  |ORDER BY startToken, endToken
                  |;""".stripMargin
     val results = statement.executeQuery(sql)
-    val starts = ArrayBuffer.empty[Int]
-    val ends = ArrayBuffer.empty[Int]
+    val matches = ArrayBuffer.empty[(Int, Int)]
     while (results.next()) {
-      starts += results.getInt("startToken")
-      ends += results.getInt("endToken")
+      val start = results.getInt("startToken")
+      val end = results.getInt("endToken")
+      matches += Tuple2(start, end)
     }
-    (starts.toArray, ends.toArray)
+    matches.toArray
   }
 
   def getDocIds(label: String): Array[Int] = {
