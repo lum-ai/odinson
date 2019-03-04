@@ -5,10 +5,10 @@ import org.h2.jdbcx.JdbcDataSource
 
 class State {
 
-  val dataSource = new JdbcDataSource()
+  private val dataSource = new JdbcDataSource()
   dataSource.setURL("jdbc:h2:mem:odinson")
-  val connection = dataSource.getConnection()
-  val statement = connection.createStatement()
+  private val connection = dataSource.getConnection()
+  private val statement = connection.createStatement()
 
   def close(): Unit = {
     statement.close()
