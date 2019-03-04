@@ -16,6 +16,7 @@ import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.state.State
 
 
 class ExtractorEngine(val indexDir: Path) {
@@ -25,6 +26,10 @@ class ExtractorEngine(val indexDir: Path) {
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
   val indexSearcher = new OdinsonIndexSearcher(indexReader)
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
+
+  // this object stores the mentions that can be matched by other rules
+  val state = new State
+  state.init()
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val parentAnalyzer = new WhitespaceAnalyzer()
