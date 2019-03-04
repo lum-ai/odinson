@@ -46,23 +46,34 @@ class State {
     statement.executeUpdate(sql)
   }
 
-  def getMentions(label: String, luceneDocId: Int) = {
+  def getMatches(label: String, luceneDocId: Int): (Array[Int], Array[Int]) = {
     val sql = s"""SELECT *
                  |FROM mentions
                  |WHERE label='$label' AND luceneDocId=$luceneDocId
+                 |ORDER BY startToken, endToken
                  |;""".stripMargin
     val results = statement.executeQuery(sql)
-    val mentions = ArrayBuffer.empty[(String, Int, Int, Int)]
+    val starts = ArrayBuffer.empty[Int]
+    val ends = ArrayBuffer.empty[Int]
     while (results.next()) {
-      val mention = (
-        results.getString("label"),
-        results.getInt("luceneDocId"),
-        results.getInt("startToken"),
-        results.getInt("endToken"),
-      )
-      mentions += mention
+      starts += results.getInt("startToken")
+      ends += results.getInt("endToken")
     }
-    mentions.toArray
+    (starts.toArray, ends.toArray)
+  }
+
+  def getDocIds(label: String): Array[Int] = {
+    val sql = s"""SELECT DISTINCT luceneDocId
+                 |FROM mentions
+                 |WHERE label='$label'
+                 |ORDER BY luceneDocId
+                 |;""".stripMargin
+    val results = statement.executeQuery(sql)
+    val docIds = ArrayBuffer.empty[Int]
+    while (results.next()) {
+      docIds += results.getInt("luceneDocId")
+    }
+    docIds.toArray
   }
 
 }
