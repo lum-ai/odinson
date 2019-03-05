@@ -30,6 +30,7 @@ class ExtractorEngine(val indexDir: Path) {
   // this object stores the mentions that can be matched by other rules
   val state = new State
   state.init()
+  compiler.setState(state)
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val parentAnalyzer = new WhitespaceAnalyzer()
