@@ -57,7 +57,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
-    val termQuery = new TermQuery(new Term("type", "root")) // TODO rename root to parent
+    val termQuery = new TermQuery(new Term("type", "parent"))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
     new OdinsonFilteredQuery(query, filter)
