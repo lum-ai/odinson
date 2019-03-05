@@ -1,19 +1,10 @@
 package ai.lum.odinson.extra
 
 import java.io._
-import java.nio.file.Path
-import java.util.Collection
-
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
-import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
-import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.document._
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.clulab.struct.{ DirectedGraph => ProcessorsDirectedGraph }
 import org.clulab.processors.{ Sentence, Document => ProcessorsDocument }
 import org.clulab.serialization.json.JSONSerializer
 import org.json4s._
@@ -25,7 +16,7 @@ import ai.lum.common.FileUtils._
 import ai.lum.common.Serializer
 import ai.lum.labrador.DocumentMetadata
 import ai.lum.odinson.lucene.analysis._
-import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
+import ai.lum.odinson.OdinsonIndexWriter
 
 import scala.util.{ Failure, Success, Try }
 
@@ -33,7 +24,7 @@ import scala.util.{ Failure, Success, Try }
 object IndexDocuments extends App with LazyLogging {
 
   val config = ConfigFactory.load()
-  val indexDir = config[Path]("odinson.indexDir")
+  val indexDir = config[File]("odinson.indexDir")
   val docsDir  = config[File]("odinson.docsDir")
   val documentIdField = config[String]("odinson.index.documentIdField")
   val sentenceIdField = config[String]("odinson.index.sentenceIdField")
@@ -56,15 +47,7 @@ object IndexDocuments extends App with LazyLogging {
 
   implicit val formats = DefaultFormats
 
-  // we will populate this vocabulary with the dependencies
-  // and we will dump it at the end
-  val dependenciesVocabulary = Vocabulary.empty
-
-  val dir = FSDirectory.open(indexDir)
-  val analyzer = new WhitespaceAnalyzer()
-  val writerConfig = new IndexWriterConfig(analyzer)
-  writerConfig.setOpenMode(OpenMode.CREATE)
-  val writer = new IndexWriter(dir, writerConfig)
+  val writer = new OdinsonIndexWriter(indexDir, dependenciesVocabularyFile)
 
   // serialized org.clulab.processors.Document or Document json
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
@@ -87,7 +70,6 @@ object IndexDocuments extends App with LazyLogging {
 
   }
 
-  dependenciesVocabulary.dumpToFile(dependenciesVocabularyFile)
   writer.close()
 
   // fin
@@ -121,7 +103,7 @@ object IndexDocuments extends App with LazyLogging {
   }
 
   // generates a lucene document per sentence
-  def mkDocumentBlock(d: ProcessorsDocument, metadata: Option[DocumentMetadata]): Collection[Document] = {
+  def mkDocumentBlock(d: ProcessorsDocument, metadata: Option[DocumentMetadata]): Seq[Document] = {
     // FIXME what should we do if the document has no id?
     val docId = d.id.getOrElse(generateUUID)
 
@@ -134,7 +116,7 @@ object IndexDocuments extends App with LazyLogging {
       }
     }
     block += mkParentDoc(docId, metadata)
-    block.toSeq.asJava
+    block
   }
 
   def mkParentDoc(docId: String, metadata: Option[DocumentMetadata]): Document = {
@@ -206,7 +188,8 @@ object IndexDocuments extends App with LazyLogging {
       val deps = s.dependencies.get
       sent.add(new TextField(incomingTokenField, new DependencyTokenStream(deps.incomingEdges)))
       sent.add(new TextField(outgoingTokenField, new DependencyTokenStream(deps.outgoingEdges)))
-      val bytes = mkDirectedGraph(deps, dependenciesVocabulary).toBytes
+      val graph = writer.mkDirectedGraph(deps.incomingEdges, deps.outgoingEdges, deps.roots.toArray)
+      val bytes = graph.toBytes
       if (bytes.length <= sortedDocValuesFieldMaxSize) {
         sent.add(new SortedDocValuesField(dependenciesField, new BytesRef(bytes)))
       } else {
@@ -221,25 +204,6 @@ object IndexDocuments extends App with LazyLogging {
     }
 
     sent
-  }
-
-  def textfield(name: String, tokens: Seq[String], store: Store = Store.NO): TextField = {
-    new TextField(name, tokens.mkString(" "), store)
-  }
-
-  def textfield(name: String, deps: Array[Array[(Int, String)]]): TextField = {
-    new TextField(name, new DependencyTokenStream(deps))
-  }
-
-  def mkDirectedGraph(g: ProcessorsDirectedGraph[String], v: Vocabulary): DirectedGraph = {
-    def toLabelIds(tokenEdges: Array[(Int, String)]): Array[Int] = for {
-      (tok, label) <- tokenEdges
-      labelId = v.getOrCreateId(label)
-      n <- Array(tok, labelId)
-    } yield n
-    val incoming = g.incomingEdges.map(toLabelIds)
-    val outgoing = g.outgoingEdges.map(toLabelIds)
-    DirectedGraph(incoming, outgoing, g.roots.toArray)
   }
 
 }
