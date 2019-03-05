@@ -54,7 +54,11 @@ class QueryParser(
   }
 
   def atomicPattern[_: P]: P[Ast.Pattern] = {
-    P(constraintPattern | "(" ~ disjunctivePattern ~ ")" | namedCapturePattern | assertionPattern)
+    P(constraintPattern | mentionPattern | "(" ~ disjunctivePattern ~ ")" | namedCapturePattern | assertionPattern)
+  }
+
+  def mentionPattern[_: P]: P[Ast.Pattern] = {
+    P("@" ~ Literals.string).map(label => Ast.MentionPattern(None, label))
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
