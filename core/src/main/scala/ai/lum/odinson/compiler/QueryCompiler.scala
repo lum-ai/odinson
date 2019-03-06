@@ -126,7 +126,11 @@ class QueryCompiler(
     // mentions
 
     case Ast.MentionPattern(_, label) =>
-      state.map(s => new StateQuery(defaultTokenField, label, s))
+      if (state.isEmpty) {
+        Some(new FailQuery(defaultTokenField))
+      } else {
+        Some(new StateQuery(defaultTokenField, label, state.get))
+      }
 
     // graph traversal
 

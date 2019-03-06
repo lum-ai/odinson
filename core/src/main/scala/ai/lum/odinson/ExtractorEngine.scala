@@ -101,6 +101,16 @@ class ExtractorEngine(val indexDir: Path) {
   }
 
   /** executes query and returns next n results after the provided doc */
+  def query(odinsonQuery: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(compiler.mkQuery(odinsonQuery), n, after)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(odinsonQuery: String, parentQuery: String, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(compiler.mkQuery(odinsonQuery, parentQuery), n, after)
+  }
+
+  /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
     indexSearcher.odinSearch(after, odinsonQuery, n)
   }

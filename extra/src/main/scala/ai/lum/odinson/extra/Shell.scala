@@ -39,7 +39,6 @@ object Shell extends App {
   val indexDir = config[Path]("odinson.indexDir")
   var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
   val prompt = config[String]("odinson.shell.prompt")
-  val compiler = QueryCompiler.fromConfig("odinson.compiler")
   val history = new FileHistory(config[File]("odinson.shell.history"))
   val dependenciesVocabulary = config[File]("odinson.index.dependenciesVocabulary")
 
@@ -80,7 +79,7 @@ object Shell extends App {
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
   val matchSettingsScope = """^:settings\s+([\w\.-]+)$""".r
 
-  var query: OdinsonQuery = null
+  var query: String = null
   var after: OdinsonScoreDoc = null
   var shownHits: Int = 0
   var totalHits: Int = 0
@@ -121,7 +120,9 @@ object Shell extends App {
               println(s"Unrecognized command $s")
               println("Type :help for a list of commands")
             case s if s startsWith "#" => ()
-            case pattern => search(pattern, maxMatchesDisplay)
+            case pattern =>
+              query = pattern
+              search(maxMatchesDisplay)
           }
         }
       } catch {
@@ -168,8 +169,7 @@ object Shell extends App {
   def printSettings(c: Config): Unit = println(c.root().render())
 
   /** searches for pattern and prints the first n matches */
-  def search(pattern: String, n: Int): Unit = {
-    query = compiler.compile(pattern)
+  def search(n: Int): Unit = {
     val start = System.currentTimeMillis()
     val results = extractorEngine.query(query, n)
     val duration = (System.currentTimeMillis() - start) / 1000f
