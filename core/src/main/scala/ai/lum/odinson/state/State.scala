@@ -16,6 +16,11 @@ class State(val url: String) {
   }
 
   def init(): Unit = {
+    // doc_base    -- doc_id offset corresponding to the lucene segment
+    // doc_id      -- doc_id relative to the lucene segment (not global)
+    // label       -- the label corresponding to the mention
+    // start_token -- the index of the first token in the mention (inclusive)
+    // end_token   -- the indes of the last token in the mention (exclusive)
     val sql = """
       CREATE TABLE mentions (
         doc_base INT NOT NULL,
@@ -35,6 +40,7 @@ class State(val url: String) {
     startToken: Int,
     endToken: Int
   ): Unit = {
+    // FIXME this should be altered to add several mentions in a single call
     val sql = s"""
       INSERT INTO mentions
         (doc_base, doc_id, label, start_token, end_token)
@@ -66,7 +72,11 @@ class State(val url: String) {
     docIds.toArray
   }
 
-  def getMatches(docBase: Int, docId: Int, label: String): Array[(Int, Int)] = {
+  def getMatches(
+    docBase: Int,
+    docId: Int,
+    label: String
+  ): Array[(Int, Int)] = {
     val sql = s"""
       SELECT start_token, end_token
       FROM mentions

@@ -55,6 +55,8 @@ class StateQuery(
     import DocIdSetIterator._
     import Spans._
 
+    // retrieve all segment-specific doc-ids corresponding to
+    // the documents that contain a mention with the specified label
     private val docIds: Array[Int] = state.getDocIds(docBase, label)
     private var currentDocIndex: Int = -1
     private var currentDoc: Int = -1
