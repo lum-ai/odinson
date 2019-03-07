@@ -45,6 +45,20 @@ paths:
       parameters:
         - $ref: '#/components/schemas/OdinsonPattern'
         - $ref: '#/components/schemas/ParentDocumentQuery'
+        - name: label
+          in: query
+          description: |
+            The label to use when committing mentions to the State.
+          required: false
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: |
+            Whether or not the results of this query should be committed to the State.
+          required: false
+          schema:
+            type: boolean
         - name: prevDoc
           in: query
           description: |
@@ -96,6 +110,20 @@ paths:
       parameters:
         - $ref: '#/components/schemas/OdinsonPattern'
         - $ref: '#/components/schemas/ParentDocumentQuery'
+        - name: label
+          in: query
+          description: |
+            The label to use when committing mentions to the State.
+          required: false
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: |
+            Whether or not the results of this query should be committed to the State.
+          required: false
+          schema:
+            type: boolean
         - name: prevDoc
           in: query
           description: |

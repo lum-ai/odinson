@@ -18,6 +18,7 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.state._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
@@ -40,12 +41,21 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
 
+  val jdbcUrl            = config[String]("odinson.state.jdbc.url")
+  val state              = createState(jdbcUrl)
   val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
 
   val pageSize           = config[Int]("odinson.pageSize") // TODO move to config?
 
   val extractorEngine = new ExtractorEngine(indexDir)
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
+
+  /** Creates a new empty [[ai.lum.odinson.state.State]] to store intermediate results */
+  def createState(jdbcUrl: String): State = {
+    val state = new State(jdbcUrl)
+    state.init
+    state
+  }
 
   def buildInfo(pretty: Option[Boolean]) = Action.async {
     Future {
@@ -273,10 +283,13 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }(odinsonContext)
   }
 
+
   /**
     *
     * @param odinsonQuery An Odinson pattern
     * @param parentQuery A Lucene query to filter documents (optional).
+    * @param label The label to use when committing matches to the state.
+    * @param commit Whether or not results should be committed to the state.
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
     * @param prevScore The score of the last Document see on the previous page (required if retrieving page 2+).
     * @return JSON of matches
@@ -284,6 +297,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def runQuery(
     odinsonQuery: String,
     parentQuery: Option[String],
+    label: Option[String], // FIXME: in the future, this will be decided in the grammar
+    commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
     prevDoc: Option[Int],
     prevScore: Option[Float],
     enriched: Boolean,
@@ -292,7 +307,9 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     Future {
       try {
         val start = System.currentTimeMillis()
-        val results = (prevDoc, prevScore) match {
+
+        val mentionLabel = label.getOrElse("Mention")
+        val results: OdinResults = (prevDoc, prevScore) match {
           case (Some(doc), Some(score)) =>
             // continue where we left off
             parentQuery match {
@@ -307,6 +324,22 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
             }
         }
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+
+        // should the results be added to the state?
+        if (commit.getOrElse(false)) {
+          for {
+            scoreDoc <- results.scoreDocs
+            span <- scoreDoc.matches.map(_.span).distinct
+          } {
+            state.addMention(
+              docBase    = scoreDoc.segmentDocBase,
+              docId      = scoreDoc.segmentDocId,
+              label      = mentionLabel,
+              startToken = span.start,
+              endToken   = span.end
+            )
+          }
+        }
 
         val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
         pretty match {

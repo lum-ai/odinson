@@ -11,9 +11,9 @@ GET     /api/buildinfo                  controllers.OdinsonController.buildInfo(
 # API spec
 GET     /api                            controllers.OpenApiController.openAPI
 # search
-GET     /api/search                     controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
+GET     /api/search                     controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
 
-GET     /api/rich-search                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = true, pretty: Option[Boolean])
+GET     /api/rich-search                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = true, pretty: Option[Boolean])
 
 # parent doc
 GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
