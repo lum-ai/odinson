@@ -47,8 +47,7 @@ export default class App extends Component {
   onSubmit(event) {
     const data = {};
     data[config.odinsonQueryParam] = this.state.oq;
-    // FIXME: add parent query
-    data[config.parentQueryParam] = this.state.pq;
+    data[config.parentQueryParam]  = this.state.pq;
     axios.get('api/search', {
       params: data,
     }).then(res => {
@@ -57,6 +56,7 @@ export default class App extends Component {
         this.setState({errorMsg: response.error});
       } else {
         this.setState({
+          errorMsg    : null,
           odinsonQuery: response.odinsonQuery,
           parentQuery : response.parentQuery,
           duration    : response.duration,
@@ -71,7 +71,7 @@ export default class App extends Component {
   updateOdinsonQuery(event) {
     this.setState({oq: event.target.value});
   }
-  // TODO: add parent query
+
   updateParentQuery(event) {
     this.setState({pq: event.target.value});
   }
