@@ -28,7 +28,7 @@ class ExtractorEngine(val indexDir: Path) {
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
 
   // this object stores the mentions that can be matched by other rules
-  val state = new State
+  val state = new State("jdbc:h2:mem:odinson")
   state.init()
   compiler.setState(state)
 

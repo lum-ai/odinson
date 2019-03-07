@@ -41,20 +41,21 @@ class StateQuery(
       context: LeafReaderContext,
       requiredPostings: SpanWeight.Postings
     ): OdinsonSpans = {
-      new StateSpans(label, state)
+      new StateSpans(label, context.docBase, state)
     }
 
   }
 
   class StateSpans(
     val label: String,
+    val docBase: Int,
     val state: State
   ) extends OdinsonSpans {
 
     import DocIdSetIterator._
     import Spans._
 
-    private val docIds: Array[Int] = state.getDocIds(label)
+    private val docIds: Array[Int] = state.getDocIds(docBase, label)
     private var currentDocIndex: Int = -1
     private var currentDoc: Int = -1
 
@@ -81,7 +82,7 @@ class StateQuery(
         currentDoc = docIds(currentDocIndex)
         matchStart = -1
         // retrieve mentions
-        val (starts, ends) = state.getMatches(label, currentDoc).unzip
+        val (starts, ends) = state.getMatches(docBase, currentDoc, label).unzip
         startMatches = starts
         endMatches = ends
         currentMatchIndex = -1
