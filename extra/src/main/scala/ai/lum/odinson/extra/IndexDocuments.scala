@@ -121,6 +121,7 @@ object IndexDocuments extends App with LazyLogging {
 
   def mkParentDoc(docId: String, metadata: Option[DocumentMetadata]): Document = {
     val parent = new Document
+    // FIXME these strings should probably be defined in the config, not hardcoded
     parent.add(new StringField("type", "parent", Store.NO))
     parent.add(new StringField("docId", docId, Store.YES))
 

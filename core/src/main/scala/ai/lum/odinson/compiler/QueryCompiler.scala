@@ -64,6 +64,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
+    // FIXME the strings "type" and "parent" should probably be defined in the config
     val termQuery = new TermQuery(new Term("type", "parent"))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
