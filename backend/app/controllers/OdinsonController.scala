@@ -164,6 +164,34 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }(odinsonContext)
   }
 
+  /** Stores query results in state.
+    *
+    * @param odinsonQuery An Odinson pattern
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param label The label to use when committing matches.
+    */
+  def commitResults(
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    label: String = "Mention"
+  ): Unit = {
+    val results = parentQuery match {
+      case None => extractorEngine.query(odinsonQuery)
+      case Some(filter) => extractorEngine.query(odinsonQuery, filter)
+    }
+    for {
+      scoreDoc <- results.scoreDocs
+      span <- scoreDoc.matches.map(_.span).distinct
+    } {
+      extractorEngine.state.addMention(
+        docBase    = scoreDoc.segmentDocBase,
+        docId      = scoreDoc.segmentDocId,
+        label      = label,
+        startToken = span.start,
+        endToken   = span.end
+      )
+    }
+  }
 
   /**
     *
@@ -189,7 +217,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       try {
         val start = System.currentTimeMillis()
 
-        val mentionLabel = label.getOrElse("Mention")
         val results: OdinResults = (prevDoc, prevScore) match {
           case (Some(doc), Some(score)) =>
             // continue where we left off
@@ -208,18 +235,12 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
         // should the results be added to the state?
         if (commit.getOrElse(false)) {
-          for {
-            scoreDoc <- results.scoreDocs
-            span <- scoreDoc.matches.map(_.span).distinct
-          } {
-            extractorEngine.state.addMention(
-              docBase    = scoreDoc.segmentDocBase,
-              docId      = scoreDoc.segmentDocId,
-              label      = mentionLabel,
-              startToken = span.start,
-              endToken   = span.end
-            )
-          }
+          // FIXME: can this be processed in the background?
+          commitResults(
+            odinsonQuery = odinsonQuery,
+            parentQuery = parentQuery,
+            label = label.getOrElse("Mention")
+          )
         }
 
         val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
