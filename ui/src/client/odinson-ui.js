@@ -186,18 +186,12 @@ export default class OdinsonUI extends Component {
       const scoreDocs = groupedResults[parentDocId];
       // console.log(scoreDocs);
       const scoreDocsGroup = scoreDocs.map(scoreDoc => {
-        // FIXME: key has to be unique for tag to re-render when spans + doc order is the same.
-        // Evaluate https://www.npmjs.com/package/weak-key as possible solution.
-        // We need to either hash the json or use an ID that is guaranteed to be unique.
         return <OdinsonTAG
           odinsonDocId={scoreDoc.odinsonDoc}
           odinsonJson={scoreDoc}
           key={`odinson-tag-${scoreDoc.odinsonDoc}`}
           ></OdinsonTAG>;
       });
-      // FIXME: key has to be unique for tag to re-render when spans + doc order is the same.
-      // Evaluate https://www.npmjs.com/package/weak-key as possible solution.
-      // We need to either hash the json or use an ID that is guaranteed to be unique.
       return (
         <div key={`container-${parentDocId}`}>
           <h2>Parent Doc: {parentDocId}</h2>
@@ -209,7 +203,6 @@ export default class OdinsonUI extends Component {
   }
 
   // As the name suggests, this is what controls the appearance/contents of the page.
-  // TODO: Add react-tabs for [RESULTS, DETAILS] https://reactcommunity.org/react-tabs/
   render() {
     if (this.state.errorMsg) {
       return (
