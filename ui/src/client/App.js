@@ -107,7 +107,7 @@ export default class App extends Component {
   // process query execution details
   createDetailsDiv() {
     const formattedDuration = `${Number(this.state.duration).toFixed(4)} seconds`;
-    const formattedHits = this.state.totalHits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const formattedHits = this.state.totalHits.toLocaleString();
 
     return (
       <HTMLTable>
@@ -181,7 +181,7 @@ export default class App extends Component {
         <div
           >
           {this.createSearchInterface()}
-          <div>
+          <div className="errorMsg">
             {this.state.errorMsg}
           </div>
         </div>

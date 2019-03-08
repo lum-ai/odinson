@@ -15,6 +15,9 @@ body {
   The following styles correspond to className assignments
 */
 .errorMsg {
+  font-family: monospace;
+  text-align: left;
+  white-space: pre-wrap;
   color: red;
 }
 
