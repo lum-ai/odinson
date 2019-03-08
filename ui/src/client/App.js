@@ -35,16 +35,27 @@ export default class App extends Component {
     };
 
     this.onSubmit           = this.onSubmit.bind(this);
+    this.resetResults       = this.resetResults.bind(this);
     this.updateOdinsonQuery = this.updateOdinsonQuery.bind(this);
     this.updateParentQuery  = this.updateParentQuery.bind(this);
   }
 
+  // Empty results when submitting query
+  resetResults() {
+    this.setState({
+      errorMsg    : null,
+      duration    : null,
+      totalHits   : null,
+      scoreDocs   : null
+    });
+  }
 
   componentDidMount() {
     // TODO: retrieve/build autocomplete
   }
 
   onSubmit(event) {
+    this.resetResults();
     const data = {};
     data[config.odinsonQueryParam] = this.state.oq;
     data[config.parentQueryParam]  = this.state.pq;
