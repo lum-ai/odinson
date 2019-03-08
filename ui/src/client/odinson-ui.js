@@ -131,7 +131,7 @@ export default class OdinsonUI extends Component {
                 const label = args[1];
                 console.log(`label: ${label}`);
                 this.runQuery(true, label);
-                print(`Running query and committing results as label '${this.state.label}'...`);
+                print(`Running query and committing results as label '${label}'...`);
               } else {
                   print("ERROR: unrecognized command");
               }
