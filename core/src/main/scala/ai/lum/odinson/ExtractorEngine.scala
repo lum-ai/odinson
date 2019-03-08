@@ -28,8 +28,13 @@ class ExtractorEngine(val indexDir: Path) {
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
 
   // this object stores the mentions that can be matched by other rules
-  val state = new State("jdbc:h2:mem:odinson")
-  state.init()
+  val state= {
+    val config  = ConfigFactory.load()
+    val jdbcUrl = config[String]("odinson.state.jdbc.url")
+    val s       = new State(jdbcUrl)
+    s.init()
+    s
+  }
   compiler.setState(state)
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */

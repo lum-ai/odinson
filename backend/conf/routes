@@ -19,11 +19,9 @@ GET     /api/rich-search                controllers.OdinsonController.runQuery(o
 GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
 # sentence json
 GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentId: Int, pretty: Option[Boolean])
-# export
-GET     /api/export                     controllers.OdinsonController.exportResults(odinsonQuery: String, parentQuery: Option[String])
+
 # counts
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
-GET     /api/most-common                controllers.OdinsonController.mostCommonForArg(odinsonQuery: String, parentQuery: Option[String], k: Int, arg: Option[String], pretty: Option[Boolean])
 
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
