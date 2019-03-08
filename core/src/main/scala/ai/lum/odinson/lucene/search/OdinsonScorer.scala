@@ -67,8 +67,11 @@ class OdinsonScorer(
   }
 
   private def scoreCurrentDoc(): Float = {
-    assert(docScorer != null, getClass() + " has a null docScorer!")
-    docScorer.score(docID(), accSloppyFreq)
+    // assert(docScorer != null, getClass() + " has a null docScorer!")
+    // if the docscorer is null return zero
+    // FIXME should we return one? are scores added or multiplied?
+    if (docScorer == null) 0
+    else docScorer.score(docID(), accSloppyFreq)
   }
 
   private def ensureFreq(): Unit = {
