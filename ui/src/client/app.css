@@ -26,6 +26,8 @@ body {
 */
 .queryString {
   font-family: monospace;
+  font-weight: bold;
+  font-size: 1em;
 }
 
 .flex-container {
@@ -39,7 +41,9 @@ body {
 }
 
 .searchParams {
-  width: 1300px;
+  display: flex;
+  flex-direction: row;
+  height: 200px;
 }
 
 /*#root div{

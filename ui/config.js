@@ -2,9 +2,11 @@ const config = {};
 
 config.port = 7777;
 config.odinsonApiBaseUrl = (process.env.ODINSON_API_BASE_URL || "http://localhost:9000/api");
-config.odinsonQueryParam = "odinsonQuery";
-config.parentQueryParam  = "parentQuery";
-
+config.queryParams              = {};
+config.queryParams.odinsonQuery = "odinsonQuery";
+config.queryParams.parentQuery  = "parentQuery";
+config.queryParams.label        = "label";
+config.queryParams.commit       = "commit";
 // TAG settings for Odinson
 config.tag = {};
 config.tag.showTopArgLabels   = false;
