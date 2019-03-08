@@ -33,7 +33,9 @@ class StateQuery(
     state: State
   ) extends OdinsonWeight(self, searcher, termContexts) {
 
-    def extractTerms(terms: JSet[Term]): Unit = ()
+    def extractTerms(terms: JSet[Term]): Unit = {
+      terms.addAll(termContexts.keySet)
+    }
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
