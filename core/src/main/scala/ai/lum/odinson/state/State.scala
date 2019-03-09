@@ -96,4 +96,20 @@ class State(val url: String) {
     matches.toArray
   }
 
+  /** delete all mentions from the state */
+  def delete(): Unit = {
+    val sql = "DELETE FROM mentions;"
+    statement.executeUpdate(sql)
+  }
+
+  /** delete all mentions with the provided label */
+  def delete(label: String): Unit = {
+    val sql = s"""
+      DELETE FROM mentions
+      WHERE label='$label'
+      ;
+    """
+    statement.executeUpdate(sql)
+  }
+
 }
