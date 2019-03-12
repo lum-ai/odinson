@@ -46,6 +46,12 @@ body {
   height: 200px;
 }
 
+.pageNumbers {
+  display: flex;
+  flex-direction: row;
+  align-self: center;
+}
+
 /*#root div{
   width:100%;
 }*/

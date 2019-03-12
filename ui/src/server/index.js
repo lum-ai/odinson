@@ -22,6 +22,17 @@ app.get('/api/search', (req, res) => {
     data[config.queryParams.parentQuery]   = pq;
     console.log(`parentQuery: ${pq}`);
   }
+  // handle page
+  const prevDoc = req.query[config.queryParams.prevDoc];
+  if (prevDoc) {
+    data[config.queryParams.prevDoc] = prevDoc;
+    console.log(`prevDoc: ${prevDoc}`);
+  }
+  const prevScore = req.query[config.queryParams.prevScore];
+  if (prevScore) {
+    data[config.queryParams.prevScore] = prevScore;
+    console.log(`prevScore: ${prevScore}`);
+  }
   // handle commit
   const commit = req.query[config.queryParams.commit];
   if (commit === true || commit === "true") {
