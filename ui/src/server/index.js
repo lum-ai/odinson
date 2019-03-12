@@ -14,11 +14,25 @@ app.use(express.static('dist'));
 
 app.get('/api/search', (req, res) => {
   const data = {};
-  data[config.odinsonQueryParam] = req.query[config.odinsonQueryParam];
-  const pq = req.query[config.parentQueryParam];
+  // handle odinson query
+  data[config.queryParams.odinsonQuery] = req.query[config.queryParams.odinsonQuery];
+  // handle parent query
+  const pq = req.query[config.queryParams.parentQuery];
   if (pq) {
-    data[config.parentQueryParam]   = pq;
+    data[config.queryParams.parentQuery]   = pq;
     console.log(`parentQuery: ${pq}`);
+  }
+  // handle commit
+  const commit = req.query[config.queryParams.commit];
+  if (commit === true || commit === "true") {
+    data[config.queryParams.commit]   = true;
+    console.log(`commit: ${commit}`);
+  }
+  // handle label
+  const label = req.query[config.queryParams.label];
+  if (label) {
+    data[config.queryParams.label]   = label;
+    console.log(`label: ${label}`);
   }
   console.log(data);
   axios.get(`${config.odinsonApiBaseUrl}/rich-search`, {
@@ -26,10 +40,10 @@ app.get('/api/search', (req, res) => {
     params: data,
     responseType: 'json'
   }).then(results => {
-    console.log(results.data);
+    //console.log(results.data);
     res.json(results.data)
   }).catch(error => {
-    console.log(error.response)
+    //console.log(error.response)
     res.json(error.response.data)
   });
 });

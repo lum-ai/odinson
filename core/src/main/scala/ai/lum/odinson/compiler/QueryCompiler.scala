@@ -13,6 +13,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.odinson.state.State
 
 class QueryCompiler(
     val allTokenFields: Seq[String],
@@ -29,6 +30,12 @@ class QueryCompiler(
 
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
+
+  private var state: Option[State] = None
+
+  def setState(s: State): Unit = {
+    state = Some(s)
+  }
 
   def compile(pattern: String): OdinsonQuery = {
     val ast = parser.parseQuery(pattern)
@@ -57,6 +64,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
+    // FIXME the strings "type" and "parent" should probably be defined in the config
     val termQuery = new TermQuery(new Term("type", "parent"))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
@@ -118,7 +126,11 @@ class QueryCompiler(
 
     // mentions
 
-    case Ast.MentionPattern(_, _) => ???
+    case Ast.MentionPattern(_, label) =>
+      state match {
+        case None => Some(new FailQuery(defaultTokenField))
+        case Some(state) => Some(new StateQuery(defaultTokenField, label, state))
+      }
 
     // graph traversal
 

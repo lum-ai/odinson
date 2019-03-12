@@ -16,6 +16,7 @@ import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.state.State
 
 
 class ExtractorEngine(val indexDir: Path) {
@@ -25,6 +26,16 @@ class ExtractorEngine(val indexDir: Path) {
   val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
   val indexSearcher = new OdinsonIndexSearcher(indexReader)
   val compiler = QueryCompiler.fromConfig("odinson.compiler")
+
+  // this object stores the mentions that can be matched by other rules
+  val state= {
+    val config  = ConfigFactory.load()
+    val jdbcUrl = config[String]("odinson.state.jdbc.url")
+    val s       = new State(jdbcUrl)
+    s.init()
+    s
+  }
+  compiler.setState(state)
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val parentAnalyzer = new WhitespaceAnalyzer()
@@ -85,17 +96,59 @@ class ExtractorEngine(val indexDir: Path) {
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery), n, new OdinsonScoreDoc(afterDoc, afterScore))
+  def query(
+    odinsonQuery: String,
+    n: Int,
+    afterDoc: Int,
+    afterScore: Float
+  ): OdinResults = {
+    query(
+      compiler.mkQuery(odinsonQuery),
+      n,
+      new OdinsonScoreDoc(afterDoc, afterScore)
+    )
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: String, parentQuery: String, n: Int, afterDoc: Int, afterScore: Float): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery, parentQuery), n, new OdinsonScoreDoc(afterDoc, afterScore))
+  def query(
+    odinsonQuery: String,
+    parentQuery: String,
+    n: Int,
+    afterDoc: Int,
+    afterScore: Float
+  ): OdinResults = {
+    query(
+      compiler.mkQuery(odinsonQuery, parentQuery),
+      n,
+      new OdinsonScoreDoc(afterDoc, afterScore)
+    )
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+  def query(
+    odinsonQuery: String,
+    n: Int,
+    after: OdinsonScoreDoc
+  ): OdinResults = {
+    query(compiler.mkQuery(odinsonQuery), n, after)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(
+    odinsonQuery: String,
+    parentQuery: String,
+    n: Int,
+    after: OdinsonScoreDoc
+  ): OdinResults = {
+    query(compiler.mkQuery(odinsonQuery, parentQuery), n, after)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(
+    odinsonQuery: OdinsonQuery,
+    n: Int,
+    after: OdinsonScoreDoc
+  ): OdinResults = {
     indexSearcher.odinSearch(after, odinsonQuery, n)
   }
 

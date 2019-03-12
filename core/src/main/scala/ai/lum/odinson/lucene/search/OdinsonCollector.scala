@@ -129,6 +129,8 @@ object OdinsonCollector {
           pqTop.doc = doc + docBase
           pqTop.score = score
           pqTop.matches = scorer.getMatches()
+          pqTop.segmentDocId = doc
+          pqTop.segmentDocBase = docBase
           pqTop = pq.updateTop()
         }
       }
@@ -172,6 +174,8 @@ object OdinsonCollector {
           pqTop.doc = doc + docBase
           pqTop.score = score
           pqTop.matches = scorer.getMatches()
+          pqTop.segmentDocId = doc
+          pqTop.segmentDocBase = docBase
           pqTop = pq.updateTop()
         }
       }

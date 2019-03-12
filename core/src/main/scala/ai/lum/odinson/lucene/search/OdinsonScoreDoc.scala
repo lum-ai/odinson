@@ -7,5 +7,7 @@ class OdinsonScoreDoc(
     doc: Int,
     score: Float,
     shardIndex: Int = -1,
-    var matches: Array[SpanWithCaptures] = Array.empty
+    var matches: Array[SpanWithCaptures] = Array.empty,
+    var segmentDocId: Int = -1,
+    var segmentDocBase: Int = -1
 ) extends ScoreDoc(doc, score, shardIndex)

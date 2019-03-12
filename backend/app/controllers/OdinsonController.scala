@@ -18,6 +18,7 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.state._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
@@ -68,6 +69,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
   def getSentenceIndex(luceneDocId: Int): Int = {
     val doc = extractorEngine.indexReader.document(luceneDocId)
+    // FIXME: this isn't safe
     doc.getValues(sentenceIdField).head.toInt
   }
 
@@ -98,117 +100,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def sentenceJsonForSentId(odinsonDocId: Int, pretty: Option[Boolean]) = Action.async {
     Future {
       val json  = mkAbridgedSentence(odinsonDocId)
-      pretty match {
-        case Some(true) => Ok(Json.prettyPrint(json))
-        case _ => Ok(json)
-      }
-    }(odinsonContext)
-  }
-
-  /**
-    * Export query results to a TSV file
-    * TSV file structure: <br>
-    * QUERY  DOC_ID  SENTENCE_INDEX  TOKENS  START  END  MATCHING_SPAN <br>
-    * START and END are character spans relative to the beginning of the sentence
-    */
-  def exportResults(odinsonQuery: String, parentQuery: Option[String]) = Action.async {
-    Future {
-      // FIXME: add in parentQuery
-      val results = extractorEngine.query(odinsonQuery, extractorEngine.indexReader.maxDoc)
-
-      val rows: Seq[OdinsonRow] = results.scoreDocs.flatMap { d =>
-
-        val doc = extractorEngine.indexSearcher.doc(d.doc)
-        val docId = getDocId(d.doc)
-        val sentenceIndex = getSentenceIndex(d.doc)
-        val sentenceText = doc.getField(wordTokenField).stringValue
-
-        val parentMetadata = getParentMetadata(docId = docId)
-
-        val tokens = {
-          val tvs = extractorEngine.indexReader.getTermVectors(d.doc)
-          val ts = TokenSources.getTokenStream(wordTokenField, tvs, sentenceText, new WhitespaceAnalyzer, -1)
-          TokenStreamUtils.getTokens(ts)
-        }
-
-
-        d.matches.map { m =>
-          val matchingSpan = tokens.slice(m.span.start, m.span.end).mkString(" ")
-          val row = OdinsonRow(
-            odinsonQuery = odinsonQuery,
-            parentQuery = parentQuery,
-            docId = docId,
-            sentenceIndex = sentenceIndex,
-            tokens = tokens.toSeq,
-            start = m.span.start + tokens.take(m.span.start).map(_.length).sum,
-            end = m.span.end - 1 + tokens.take(m.span.end).map(_.length).sum,
-            matchingSpan = matchingSpan,
-            metadata = parentMetadata
-          )
-          row
-        }
-      }
-
-      // FIXME: can this be done as stream (ex. process n rows at a time?)
-      val contents = Seq(OdinsonRow.HEADER(delimiter = "\t")) ++ rows.map(_.toRow(delimiter = "\t"))
-
-      // see https://en.wikipedia.org/wiki/Chunked_transfer_encoding
-      val stream: InputStream = IOUtils.toInputStream(contents.mkString("\n"), StandardCharsets.UTF_8)
-      val src = StreamConverters.fromInputStream(() => stream)
-      Ok.chunked(src)
-    }(odinsonContext)
-  }
-
-  /**
-    * Find the most commonly occurring matching spans (top n) for the given query q. <br>
-    * Count ignores case.
-    */
-  def mostCommon(odinsonQuery: String, parentQuery: Option[String], k: Int): Action[AnyContent] = {
-    mostCommonForArg(odinsonQuery, parentQuery, k, arg = None, pretty = None)
-  }
-
-  /**
-    * Find the most commonly occurring matching spans (top n) for the given query q. <br>
-    * Count ignores case. Optionally specify a
-    */
-  def mostCommonForArg(odinsonQuery: String, parentQuery: Option[String], k: Int, arg: Option[String], pretty: Option[Boolean]): Action[AnyContent] = Action.async {
-    Future {
-      // FIXME: add in parentQuery
-      val results = extractorEngine.query(odinsonQuery, extractorEngine.indexReader.maxDoc)
-
-      val matchCounts: Seq[(String, Int)] = results.scoreDocs.par.flatMap { d =>
-        val doc = extractorEngine.indexSearcher.doc(d.doc)
-        val sentenceText = doc.getField(wordTokenField).stringValue
-
-        val tokens = {
-          val tvs = extractorEngine.indexReader.getTermVectors(d.doc)
-          val ts = TokenSources.getTokenStream(wordTokenField, tvs, sentenceText, new WhitespaceAnalyzer, -1)
-          TokenStreamUtils.getTokens(ts)
-        }
-
-        d.matches.flatMap { m =>
-          val spans = if (arg.isEmpty) {
-            Seq(m.span)
-          } else {
-            m.captures.filter(_._1 == arg.get).map(_._2)
-          }
-          spans.map{ span =>
-            tokens
-              .slice(span.start, span.end)
-              .mkString(" ")
-              .toLowerCase
-          }
-        }
-      }.groupBy(identity).mapValues(_.length).toSeq.seq
-
-      val res = matchCounts
-        .sortBy(_._2)
-        .reverse
-        .take(k)
-        .map(pair => Json.obj("match" -> pair._1, "count" -> pair._2))
-
-      val json = Json.toJson(res)
-
       pretty match {
         case Some(true) => Ok(Json.prettyPrint(json))
         case _ => Ok(json)
@@ -273,10 +164,41 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }(odinsonContext)
   }
 
+  /** Stores query results in state.
+    *
+    * @param odinsonQuery An Odinson pattern
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param label The label to use when committing matches.
+    */
+  def commitResults(
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    label: String = "Mention"
+  ): Unit = {
+    val results = parentQuery match {
+      case None => extractorEngine.query(odinsonQuery)
+      case Some(filter) => extractorEngine.query(odinsonQuery, filter)
+    }
+    for {
+      scoreDoc <- results.scoreDocs
+      span <- scoreDoc.matches.map(_.span).distinct
+    } {
+      extractorEngine.state.addMention(
+        docBase    = scoreDoc.segmentDocBase,
+        docId      = scoreDoc.segmentDocId,
+        label      = label,
+        startToken = span.start,
+        endToken   = span.end
+      )
+    }
+  }
+
   /**
     *
     * @param odinsonQuery An Odinson pattern
     * @param parentQuery A Lucene query to filter documents (optional).
+    * @param label The label to use when committing matches to the state.
+    * @param commit Whether or not results should be committed to the state.
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
     * @param prevScore The score of the last Document see on the previous page (required if retrieving page 2+).
     * @return JSON of matches
@@ -284,6 +206,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def runQuery(
     odinsonQuery: String,
     parentQuery: Option[String],
+    label: Option[String], // FIXME: in the future, this will be decided in the grammar
+    commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
     prevDoc: Option[Int],
     prevScore: Option[Float],
     enriched: Boolean,
@@ -292,7 +216,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     Future {
       try {
         val start = System.currentTimeMillis()
-        val results = (prevDoc, prevScore) match {
+
+        val results: OdinResults = (prevDoc, prevScore) match {
           case (Some(doc), Some(score)) =>
             // continue where we left off
             parentQuery match {
@@ -307,6 +232,16 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
             }
         }
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+
+        // should the results be added to the state?
+        if (commit.getOrElse(false)) {
+          // FIXME: can this be processed in the background?
+          commitResults(
+            odinsonQuery = odinsonQuery,
+            parentQuery = parentQuery,
+            label = label.getOrElse("Mention")
+          )
+        }
 
         val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
         pretty match {
