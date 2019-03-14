@@ -13,6 +13,7 @@ import OdinsonTAG from './odinson-tag';
 
 import Terminal from 'terminal-in-react';
 import QueryDetails from './query-details';
+import PageNavigation from './page-navigation';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,23 +32,39 @@ export default class OdinsonUI extends Component {
     super(props);
 
     this.state = {
-      errorMsg: null,
+      errorMsg    : null,
       odinsonQuery: null,
-      parentQuery: null,
-      results: null
+      parentQuery : null,
+      results     : null,
+      pageEnds    : null,
+      currentPage : null,
+      totalPages  : null
     };
 
     this.runQuery           = this.runQuery.bind(this);
     this.resetResults       = this.resetResults.bind(this);
     this.updateOdinsonQuery = this.updateOdinsonQuery.bind(this);
     this.updateParentQuery  = this.updateParentQuery.bind(this);
+    this.handleHeadClick    = this.handleHeadClick.bind(this);
+    this.handleLeftClick    = this.handleLeftClick.bind(this);
+    this.handleRightClick   = this.handleRightClick.bind(this);
+    // this.handleLastClick    = this.handleLastClick.bind(this);
   }
 
   // Empty results when submitting query
   resetResults() {
     this.setState({
-      errorMsg : null,
-      results  : null
+      errorMsg: null,
+      results : null
+    });
+  }
+
+  // Empty results when submitting query
+  resetPages() {
+    this.setState({
+      pageEnds   : null,
+      currentPage: 1,
+      totalPages : null
     });
   }
 
@@ -55,13 +72,20 @@ export default class OdinsonUI extends Component {
     // TODO: retrieve/build autocomplete
   }
 
-  runQuery(commit=false, label=null) {
+  runQuery(commit=false, label=null, newSearch=true) {
     if (this.state.odinsonQuery) {
-      console.log(`runQuery(${commit}, ${label})`);
+      console.log(`runQuery(${commit}, ${label}, ${newSearch})`);
       this.resetResults();
+      if (newSearch) {
+        this.resetPages();
+      }
       const data = {};
       data[config.queryParams.odinsonQuery] = this.state.odinsonQuery;
       data[config.queryParams.parentQuery]  = this.state.parentQuery;
+      if (this.state.pageEnds && this.state.pageEnds.length > 0) {
+        data[config.queryParams.prevDoc]    = this.state.pageEnds.slice(-1).pop().odinsonDoc;
+        data[config.queryParams.prevScore]  = this.state.pageEnds.slice(-1).pop().score;
+      }
       data[config.queryParams.commit]       = commit;
       data[config.queryParams.label]        = label;
       axios.get('api/search', {
@@ -72,8 +96,15 @@ export default class OdinsonUI extends Component {
           this.setState({errorMsg: response.error});
         } else {
           this.setState({
-            results     : response
+            results: response
           });
+          if (newSearch) {
+            const tp = Math.ceil(response.totalHits / response.scoreDocs.length)
+            console.log("Total pages: " + tp)
+            this.setState({
+              totalPages: tp
+            })
+          }
         }
       });
     } else {
@@ -133,7 +164,7 @@ export default class OdinsonUI extends Component {
                 this.runQuery(true, label);
                 print(`Running query and committing results as label '${label}'...`);
               } else {
-                  print("ERROR: unrecognized command");
+                  print(`ERROR: unrecognized command`);
               }
             }
           }}
@@ -202,12 +233,73 @@ export default class OdinsonUI extends Component {
     return <div className="scoreDocs">{resultElements}</div>;
   }
 
+  // navigate to the first page (start query over again)
+  handleHeadClick() {
+    if (this.state.currentPage > 1) {
+      this.runQuery(false, null, true);
+      console.log("Requesting first page");
+      // console.log("After: " + this.state.pageEnds);
+    }
+  }
+
+  // navigate to the previous page (query for docs before the first on the current page)
+  handleLeftClick() {
+    if (this.state.currentPage > 1) {
+      // console.log("Before: " + this.state.pageEnds);
+      this.setState(
+        {
+          pageEnds   : this.state.pageEnds.slice(0,-1),
+          currentPage: this.state.currentPage - 1
+        },
+        function () {
+          this.runQuery(false, null, false);
+          console.log("Requesting previous page");
+          // console.log("After: " + this.state.pageEnds);
+        }
+      );
+    }
+  }
+
+  // navigate to the next page (query for docs after the last on the current page)
+  handleRightClick() {
+    const nextprevDoc = [this.state.results.scoreDocs.slice(-1).pop()]
+    if (this.state.pageEnds) {
+      // console.log("Before: " + this.state.pageEnds);
+      this.setState(
+        {
+          pageEnds   : this.state.pageEnds.concat(nextprevDoc),
+          currentPage: this.state.currentPage + 1
+        },
+        function () {
+          // console.log("After: " + this.state.pageEnds);
+          this.runQuery(false, null, false);
+          console.log("Requesting next page");
+        }
+      );
+    } else {
+      this.setState(
+        {
+          pageEnds   : nextprevDoc,
+          currentPage: this.state.currentPage + 1
+        },
+        function () {
+          // console.log("After: " + this.state.pageEnds);
+          this.runQuery(false, null, false);
+          console.log("Requesting next page");
+        }
+      );
+    }
+  }
+
+  // handle button press to go to the last page of results
+  // handleLastClick () {
+  // }
+
   // As the name suggests, this is what controls the appearance/contents of the page.
   render() {
     if (this.state.errorMsg) {
       return (
-        <div
-          >
+        <div>
           <ToastContainer/>
           {this.createSearchInterface()}
           <hr/>
@@ -218,8 +310,7 @@ export default class OdinsonUI extends Component {
       );
     } else if (this.state.results) {
       return (
-        <div
-          >
+        <div>
           <ToastContainer/>
           {this.createSearchInterface()}
           <QueryDetails
@@ -230,12 +321,20 @@ export default class OdinsonUI extends Component {
           />
           <hr></hr>
           {this.createResultsDiv()}
+          <PageNavigation
+            handleHeadClick={this.handleHeadClick}
+            handleLeftClick={this.handleLeftClick}
+            handleRightClick={this.handleRightClick}
+            // handleLastClick={this.handleLastClick}
+            currentPage={this.state.currentPage}
+            totalPages={this.state.totalPages}
+            pageEnds={this.state.pageEnds}
+          />
         </div>
       )
     } else {
       return (
-        <div
-          >
+        <div>
           <ToastContainer/>
           {this.createSearchInterface()}
         </div>
