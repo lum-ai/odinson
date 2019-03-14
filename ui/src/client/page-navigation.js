@@ -43,14 +43,15 @@ export default class PageNavigation extends Component {
             >
             </Button>
           </Tooltip>
-          <Tooltip content="Not implemented yet" className={Classes.DARK}>
+          <Button disabled={true}></Button>
+          {/*<Tooltip content="Not implemented yet" className={Classes.DARK}>
             <Button
               icon="chevron-forward"
               //disabled={this.props.currentPage == this.props.totalPages}
               disabled={true}
               onClick={this.props.handleLastClick}
             ></Button>
-          </Tooltip>
+          </Tooltip>*/}
         </ButtonGroup>
       </div>
     )

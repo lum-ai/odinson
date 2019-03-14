@@ -48,7 +48,7 @@ export default class OdinsonUI extends Component {
     this.handleHeadClick    = this.handleHeadClick.bind(this);
     this.handleLeftClick    = this.handleLeftClick.bind(this);
     this.handleRightClick   = this.handleRightClick.bind(this);
-    this.handleLastClick    = this.handleLastClick.bind(this);
+    // this.handleLastClick    = this.handleLastClick.bind(this);
   }
 
   // Empty results when submitting query
@@ -292,9 +292,8 @@ export default class OdinsonUI extends Component {
   }
 
   // handle button press to go to the last page of results
-  handleLastClick () {
-    // FIXME: implement
-  }
+  // handleLastClick () {
+  // }
 
   // As the name suggests, this is what controls the appearance/contents of the page.
   render() {
@@ -326,7 +325,7 @@ export default class OdinsonUI extends Component {
             handleHeadClick={this.handleHeadClick}
             handleLeftClick={this.handleLeftClick}
             handleRightClick={this.handleRightClick}
-            handleLastClick={this.handleLastClick}
+            // handleLastClick={this.handleLastClick}
             currentPage={this.state.currentPage}
             totalPages={this.state.totalPages}
             pageEnds={this.state.pageEnds}
