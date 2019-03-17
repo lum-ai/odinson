@@ -29,6 +29,8 @@ class State(val url: String) {
         start_token INT NOT NULL,
         end_token INT NOT NULL,
       );
+      CREATE INDEX IF NOT EXISTS mentions_index
+      ON mentions(doc_base, doc_id, label);
     """
     statement.executeUpdate(sql)
   }
