@@ -9,6 +9,7 @@ libraryDependencies ++= {
     "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
     "ch.qos.logback" %  "logback-classic" % "1.1.10",
     "ai.lum" %% "common" % "0.0.8",
+    "org.apache.commons" % "commons-text" % "1.4",
     "org.apache.lucene" % "lucene-core" % luceneVersion,
     "org.apache.lucene" % "lucene-queryparser" % luceneVersion,
     "org.apache.lucene" % "lucene-highlighter" % luceneVersion,
