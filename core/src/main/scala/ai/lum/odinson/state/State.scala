@@ -22,7 +22,7 @@ class State(val url: String) {
     // start_token -- the index of the first token in the mention (inclusive)
     // end_token   -- the indes of the last token in the mention (exclusive)
     val sql = """
-      CREATE TABLE mentions (
+      CREATE TABLE IF NOT EXISTS mentions (
         doc_base INT NOT NULL,
         doc_id INT NOT NULL,
         label VARCHAR(50) NOT NULL,
