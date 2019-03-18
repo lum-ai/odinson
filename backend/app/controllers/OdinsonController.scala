@@ -24,7 +24,7 @@ import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.highlighter.TokenStreamUtils
+import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import org.apache.commons.io.IOUtils
 import utils.{ DocumentMetadata, OdinsonRow }
 

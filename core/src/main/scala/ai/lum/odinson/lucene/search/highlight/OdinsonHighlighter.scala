@@ -1,19 +1,17 @@
-package ai.lum.odinson.highlighter
+package ai.lum.odinson.lucene.search.highlight
 
-import ai.lum.odinson.lucene.Span
 import org.apache.lucene.analysis.{ Analyzer, TokenStream }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.search.highlight.TokenSources
-
-import scala.collection.mutable.ListBuffer
+import ai.lum.odinson.lucene.Span
+import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 
 
 /**
   * Highlight results
   */
-trait OdinHighlighter {
+trait OdinsonHighlighter {
 
   val openTag: String
   val closeTag: String
@@ -86,7 +84,7 @@ trait OdinHighlighter {
 }
 
 
-object HtmlHighlighter extends OdinHighlighter {
+object HtmlHighlighter extends OdinsonHighlighter {
 
   override val openTag: String = "<mark class=\"odin-mention\">"
   override val closeTag: String = "</mark>"
@@ -94,31 +92,11 @@ object HtmlHighlighter extends OdinHighlighter {
   override val argOpenTag: String = "<mark class=\"odin-arg\">"
 }
 
-object ConsoleHighlighter extends OdinHighlighter {
+object ConsoleHighlighter extends OdinsonHighlighter {
 
   override val openTag: String =  Console.BLACK + Console.YELLOW_B
   override val closeTag: String = Console.RESET
 
   override val argOpenTag: String =  Console.BLACK + Console.RED_B
-
-}
-
-object TokenStreamUtils {
-
-  def getTokens(ts: TokenStream): Array[String] = {
-    ts.reset()
-    val terms = new ListBuffer[String]()
-
-    while (ts.incrementToken()) {
-      val charTermAttribute = ts.addAttribute(classOf[CharTermAttribute])
-      val term = charTermAttribute.toString
-      terms.append(term)
-    }
-    
-    ts.end()
-    ts.close()
-
-    terms.toArray
-  }
 
 }

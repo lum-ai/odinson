@@ -14,9 +14,9 @@ import com.typesafe.config._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.compiler.QueryCompiler
-import ai.lum.odinson.highlighter.ConsoleHighlighter
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 
