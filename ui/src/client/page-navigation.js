@@ -12,6 +12,9 @@ export default class PageNavigation extends Component {
   }
 
   render() {
+    if (this.props.totalPages < 1) {
+      return null
+    }
     return (
       <div className="navigation">
       <hr></hr>

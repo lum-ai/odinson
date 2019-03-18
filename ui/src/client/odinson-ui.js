@@ -99,7 +99,7 @@ export default class OdinsonUI extends Component {
             results: response
           });
           if (newSearch) {
-            const tp = Math.ceil(response.totalHits / response.scoreDocs.length)
+            const tp = Math.ceil(response.totalHits / Math.max(response.scoreDocs.length, 1))
             console.log("Total pages: " + tp)
             this.setState({
               totalPages: tp
@@ -297,10 +297,11 @@ export default class OdinsonUI extends Component {
 
   // As the name suggests, this is what controls the appearance/contents of the page.
   render() {
+
     if (this.state.errorMsg) {
       return (
         <div>
-          <ToastContainer/>
+          <ToastContainer />
           {this.createSearchInterface()}
           <hr/>
           <div className="errorMsg">
@@ -308,10 +309,12 @@ export default class OdinsonUI extends Component {
           </div>
         </div>
       );
-    } else if (this.state.results) {
+    }
+
+    if (this.state.results) {
       return (
         <div>
-          <ToastContainer/>
+          <ToastContainer />
           {this.createSearchInterface()}
           <QueryDetails
             duration={this.state.results.duration}
@@ -332,13 +335,14 @@ export default class OdinsonUI extends Component {
           />
         </div>
       )
-    } else {
-      return (
-        <div>
-          <ToastContainer/>
-          {this.createSearchInterface()}
-        </div>
-      )
-    }
+    } 
+
+    return (
+      <div>
+        <ToastContainer/>
+        {this.createSearchInterface()}
+      </div>
+    )
+
   }
 }
