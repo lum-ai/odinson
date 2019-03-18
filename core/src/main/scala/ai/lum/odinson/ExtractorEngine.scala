@@ -10,11 +10,13 @@ import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQ
 import org.apache.lucene.store.FSDirectory
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
+import org.apache.lucene.search.highlight.TokenSources
 import com.typesafe.config._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 
@@ -38,7 +40,7 @@ class ExtractorEngine(val indexDir: Path) {
   compiler.setState(state)
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
-  val parentAnalyzer = new WhitespaceAnalyzer()
+  val analyzer = new WhitespaceAnalyzer()
 
   /** The docId field for the parent document.
    *  Children retain a reference to their parent via this shared field.
@@ -60,9 +62,9 @@ class ExtractorEngine(val indexDir: Path) {
   def getParentDoc(docId: String): LuceneDocument = {
     val sterileDocID =  docId.escapeJava
     val booleanQuery = new LuceneBooleanQuery.Builder()
-    val q1 = new QueryParser(parentDocIdField, parentAnalyzer).parse(s""""$sterileDocID"""")
+    val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    val q2 = new QueryParser("type", parentAnalyzer).parse("root")
+    val q2 = new QueryParser("type", analyzer).parse("root")
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
@@ -150,6 +152,20 @@ class ExtractorEngine(val indexDir: Path) {
     after: OdinsonScoreDoc
   ): OdinResults = {
     indexSearcher.odinSearch(after, odinsonQuery, n)
+  }
+
+  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
+    getTokens(scoreDoc.doc)
+  }
+
+  def getTokens(docID: Int): Array[String] = {
+    val tokenField = "raw" // FIXME read from config?
+    val doc = indexSearcher.doc(docID)
+    val tvs = indexReader.getTermVectors(docID)
+    val text = doc.getField(tokenField).stringValue
+    val ts = TokenSources.getTokenStream(tokenField, tvs, text, analyzer, -1)
+    val tokens = TokenStreamUtils.getTokens(ts)
+    tokens
   }
 
 }
