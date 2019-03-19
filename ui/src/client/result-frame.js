@@ -1,4 +1,8 @@
 import React, { Component } from 'react';
+import ReactHtmlParser, { processNodes, 
+  convertNodeToElement, 
+  htmlparser2 
+} from 'react-html-parser';
 import TAG from "text-annotation-graphs";
 import {
   ButtonGroup,
@@ -34,7 +38,6 @@ export default class ResultFrame extends Component {
             <h3>Sentence ID: {this.props.odinsonDocId}</h3>
           </div>
           <OdinsonTAG
-            odinsonDocId={this.props.odinsonDocId}
             odinsonJson={this.props.odinsonJson}
           />
         </div>
@@ -54,7 +57,6 @@ export default class ResultFrame extends Component {
             <h3>Sentence ID: {this.props.odinsonDocId}</h3>
           </div>
           <OdinsonHighlight
-            odinsonDocId={this.props.odinsonDocId}
             odinsonJson={this.props.odinsonJson}
           />
         </div>
@@ -64,21 +66,49 @@ export default class ResultFrame extends Component {
 }
 
 ResultFrame.propTypes = {
-  expanded: PropTypes.bool.isRequired
+  expanded: PropTypes.bool.isRequired,
+  odinsonDocId: PropTypes.number.isRequired,
+  odinsonJson: PropTypes.object.isRequired
 }
 
 class OdinsonHighlight extends Component {
   constructor(props) {
     super(props);
+    this.state = {}
+
+    this.makeHighlights = this.makeHighlights.bind(this);
+  }
+
+  componentDidMount() {
+    this.setState({
+      displayText: this.makeHighlights()
+    })
+  }
+
+  makeHighlights() {
+    var base = this.props.odinsonJson.sentence.words;
+    var matches = this.props.odinsonJson.matches;
+    matches.forEach(function (m) {
+      const start = m.span.start;
+      const end = m.span.end;
+      base[start] = '<mark>' + base[start];
+      base[end - 1] = base[end - 1] + '</mark>';
+    })
+    const displayText = base.join(' ');
+    return <div>{ ReactHtmlParser(displayText) }</div>;
   }
 
   render() {
     return (
       <div className="highlights">
-        {this.props.odinsonJson.sentence.words.join(" ")}
+        {this.state.displayText}
       </div>
     )
   }
+}
+
+OdinsonHighlight.propTypes = {
+  odinsonJson: PropTypes.object.isRequired
 }
 
 class OdinsonTAG extends Component {
@@ -117,3 +147,6 @@ class OdinsonTAG extends Component {
   }
 }
 
+OdinsonTAG.propTypes = {
+  odinsonJson: PropTypes.object.isRequired
+}

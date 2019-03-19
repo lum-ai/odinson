@@ -212,7 +212,7 @@ export default class OdinsonUI extends Component {
       .groupBy(sd => sd.documentId)
       .mapValues(group => _(group).orderBy(elem => elem.sentenceIndex).value())
       .value();
-    //console.log(groupedResults);
+    console.log(groupedResults);
     const resultElements = Object.keys(groupedResults).map(parentDocId => {
       const scoreDocs = groupedResults[parentDocId];
       // console.log(scoreDocs);
