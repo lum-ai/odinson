@@ -13,6 +13,7 @@ body {
 }
 
 mark {
+  font-weight: bold;
   color: white;
   background-color: green;
   padding: 3px;
@@ -70,6 +71,8 @@ mark {
 
 .sentenceResults {
   width: 1000px;
+  align-self: center;
+  align-items: center;
 }
 
 /*#root div{

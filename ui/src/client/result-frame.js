@@ -86,7 +86,7 @@ class OdinsonHighlight extends Component {
   }
 
   makeHighlights() {
-    var base = this.props.odinsonJson.sentence.words;
+    var base = this.props.odinsonJson.sentence.words.slice();
     var matches = this.props.odinsonJson.matches;
     matches.forEach(function (m) {
       const start = m.span.start;
