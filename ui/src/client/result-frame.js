@@ -6,6 +6,7 @@ import {
   Classes,
   Tooltip
 } from "@blueprintjs/core";
+import PropTypes from 'prop-types';
 
 const config = require('../../config');
 
@@ -15,21 +16,6 @@ export default class ResultFrame extends Component {
     this.state = {
       'expanded': props.expanded
     };
-    
-    this.handleExpand = this.handleExpand.bind(this);
-    this.handleCollapse = this.handleCollapse.bind(this);
-  }
-
-  handleExpand () {
-    this.setState({
-      'expanded': true
-    });
-  }
-
-  handleCollapse () {
-    this.setState({
-      'expanded': false
-    });
   }
 
   render() {
@@ -37,7 +23,7 @@ export default class ResultFrame extends Component {
       return (
         <div className="sentenceResults">
           <div className="row">
-            <Tooltip content="See less detail" className={Classes.DARK}>
+            <Tooltip content="See less detail">
               <Button
                 icon="collapse-all"
                 minimal={true}
@@ -57,7 +43,7 @@ export default class ResultFrame extends Component {
       return (
         <div className="sentenceResults">
           <div className="row">
-            <Tooltip content="See more detail" className={Classes.DARK}>
+            <Tooltip content="See more detail">
               <Button
                 icon="expand-all"
                 minimal={true}
@@ -75,6 +61,10 @@ export default class ResultFrame extends Component {
       )
     }
   }
+}
+
+ResultFrame.propTypes = {
+  expanded: PropTypes.bool.isRequired
 }
 
 class OdinsonHighlight extends Component {

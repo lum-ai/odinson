@@ -221,6 +221,7 @@ export default class OdinsonUI extends Component {
           odinsonDocId={scoreDoc.odinsonDoc}
           odinsonJson={scoreDoc}
           key={`result-frame-${scoreDoc.odinsonDoc}`}
+          expanded={false}
           />;
       });
       return (

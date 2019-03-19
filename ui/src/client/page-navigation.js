@@ -19,14 +19,14 @@ export default class PageNavigation extends Component {
       <div className="navigation">
       <hr></hr>
         <ButtonGroup minimal={true} large={true}>
-          <Tooltip content="Go to first page" className={Classes.DARK}>
+          <Tooltip content="Go to first page">
             <Button
               icon="chevron-backward"
               disabled={this.props.currentPage === 1}
               onClick={this.props.handleHeadClick}
             />
           </Tooltip>
-          <Tooltip content="Go to previous page" className={Classes.DARK}>
+          <Tooltip content="Go to previous page">
             <Button
               icon="chevron-left"
               disabled={this.props.currentPage === 1}
@@ -36,7 +36,7 @@ export default class PageNavigation extends Component {
           <div className="pageNumbers">
             {this.props.currentPage} / {this.props.totalPages}
           </div>
-          <Tooltip content="Go to next page" className={Classes.DARK}>
+          <Tooltip content="Go to next page">
             <Button
               icon="chevron-right"
               disabled={this.props.currentPage == this.props.totalPages}
