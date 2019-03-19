@@ -3,13 +3,13 @@ import ReactHtmlParser, { processNodes,
   convertNodeToElement, 
   htmlparser2 
 } from 'react-html-parser';
-import TAG from "text-annotation-graphs";
+import TAG from 'text-annotation-graphs';
 import {
   ButtonGroup,
   Button,
   Classes,
   Tooltip
-} from "@blueprintjs/core";
+} from '@blueprintjs/core';
 import PropTypes from 'prop-types';
 
 const config = require('../../config');
@@ -18,21 +18,25 @@ export default class ResultFrame extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      'expanded': props.expanded
+      expanded: props.expanded
     };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({ expanded: nextProps.expanded });
   }
 
   render() {
     if(this.state.expanded) {
       return (
-        <div className="sentenceResults">
-          <div className="row">
-            <Tooltip content="See less detail">
+        <div className='sentenceResults'>
+          <div className='row'>
+            <Tooltip content='See less detail'>
               <Button
-                icon="collapse-all"
+                icon='collapse-all'
                 minimal={true}
                 large={true}
-                onClick={() => this.setState({'expanded': false})}
+                onClick={() => this.setState({expanded: false})}
               />
             </Tooltip>
             <h3>Sentence ID: {this.props.odinsonDocId}</h3>
@@ -44,14 +48,14 @@ export default class ResultFrame extends Component {
       )
     } else {
       return (
-        <div className="sentenceResults">
-          <div className="row">
-            <Tooltip content="See more detail">
+        <div className='sentenceResults'>
+          <div className='row'>
+            <Tooltip content='See more detail'>
               <Button
-                icon="expand-all"
+                icon='expand-all'
                 minimal={true}
                 large={true}
-                onClick={() => this.setState({'expanded': true})}
+                onClick={() => this.setState({expanded: true})}
               />
             </Tooltip>
             <h3>Sentence ID: {this.props.odinsonDocId}</h3>
@@ -100,7 +104,7 @@ class OdinsonHighlight extends Component {
 
   render() {
     return (
-      <div className="highlights">
+      <div className='highlights'>
         {this.state.displayText}
       </div>
     )
@@ -122,7 +126,7 @@ class OdinsonTAG extends Component {
     const odinsonTAG = TAG.tag({
       container: this.tagRef.current,
       data: this.props.odinsonJson,
-      format: "odinson",
+      format: 'odinson',
       // Overrides for default options
       options: {
         showTopArgLabels: config.tag.showTopArgLabels,
@@ -142,7 +146,7 @@ class OdinsonTAG extends Component {
 
     return (
       // TODO: add div and dropdown button allowing one to reconfigure TAG elements
-      <div ref={this.tagRef} className="scoreDoc"></div>
+      <div ref={this.tagRef} className='scoreDoc'></div>
     )
   }
 }
