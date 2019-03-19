@@ -9,8 +9,8 @@ import {
 } from "@blueprintjs/core";
 import './app.css';
 import "text-annotation-graphs/dist/tag/css/tag.css"
-import OdinsonTAG from './odinson-tag';
 
+import ResultFrame from './result-frame';
 import Terminal from 'terminal-in-react';
 import QueryDetails from './query-details';
 import PageNavigation from './page-navigation';
@@ -99,11 +99,11 @@ export default class OdinsonUI extends Component {
             results: response
           });
           if (newSearch) {
-            const tp = Math.ceil(response.totalHits / Math.max(response.scoreDocs.length, 1))
-            console.log("Total pages: " + tp)
+            const tp = Math.ceil(response.totalHits / Math.max(response.scoreDocs.length, 1));
+            console.log("Total pages: " + tp);
             this.setState({
               totalPages: tp
-            })
+            });
           }
         }
       });
@@ -209,19 +209,19 @@ export default class OdinsonUI extends Component {
     where values are sorted by their **order of appearance** in the document
     */
     const groupedResults = _(this.state.results.scoreDocs)
-    .groupBy(sd => sd.documentId)
-    .mapValues(group => _(group).orderBy(elem => elem.sentenceIndex).value())
-    .value();
+      .groupBy(sd => sd.documentId)
+      .mapValues(group => _(group).orderBy(elem => elem.sentenceIndex).value())
+      .value();
     //console.log(groupedResults);
     const resultElements = Object.keys(groupedResults).map(parentDocId => {
       const scoreDocs = groupedResults[parentDocId];
       // console.log(scoreDocs);
       const scoreDocsGroup = scoreDocs.map(scoreDoc => {
-        return <OdinsonTAG
+        return <ResultFrame
           odinsonDocId={scoreDoc.odinsonDoc}
           odinsonJson={scoreDoc}
-          key={`odinson-tag-${scoreDoc.odinsonDoc}`}
-          ></OdinsonTAG>;
+          key={`result-frame-${scoreDoc.odinsonDoc}`}
+          />;
       });
       return (
         <div key={`container-${parentDocId}`}>
@@ -334,15 +334,14 @@ export default class OdinsonUI extends Component {
             pageEnds={this.state.pageEnds}
           />
         </div>
-      )
-    } 
+      );
+    }
 
     return (
       <div>
         <ToastContainer/>
         {this.createSearchInterface()}
       </div>
-    )
-
+    );
   }
 }

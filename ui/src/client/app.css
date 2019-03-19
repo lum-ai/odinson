@@ -7,6 +7,7 @@ h1 {
 }
 
 body {
+  font-family: "Open Sans", sans-serif;
   text-align: center;
   margin: auto;
 }
@@ -15,7 +16,7 @@ body {
   The following styles correspond to className assignments
 */
 .errorMsg {
-  font-family: monospace;
+  font-family: "Fira Mono", monospace;
   text-align: left;
   white-space: pre-wrap;
   color: red;
@@ -25,7 +26,7 @@ body {
   Display of executed queries in details table
 */
 .queryString {
-  font-family: monospace;
+  font-family: "Fira Mono", monospace;
   font-weight: bold;
   font-size: 1em;
 }
@@ -35,6 +36,15 @@ body {
   display: flex;
   flex-direction: column;
   /*flex-wrap: wrap;*/
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  /*padding: 0 20px;*/
+  align-self: center;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -50,6 +60,10 @@ body {
   display: flex;
   flex-direction: row;
   align-self: center;
+}
+
+.sentenceResults {
+  width: 100%;
 }
 
 /*#root div{

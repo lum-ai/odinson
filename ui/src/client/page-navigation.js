@@ -24,16 +24,14 @@ export default class PageNavigation extends Component {
               icon="chevron-backward"
               disabled={this.props.currentPage === 1}
               onClick={this.props.handleHeadClick}
-            >
-            </Button>
+            />
           </Tooltip>
           <Tooltip content="Go to previous page" className={Classes.DARK}>
             <Button
               icon="chevron-left"
               disabled={this.props.currentPage === 1}
               onClick={this.props.handleLeftClick}
-            >
-            </Button>
+            />
           </Tooltip>
           <div className="pageNumbers">
             {this.props.currentPage} / {this.props.totalPages}
@@ -43,10 +41,9 @@ export default class PageNavigation extends Component {
               icon="chevron-right"
               disabled={this.props.currentPage == this.props.totalPages}
               onClick={this.props.handleRightClick}
-            >
-            </Button>
+            />
           </Tooltip>
-          <Button disabled={true}></Button>
+          <Button disabled={true}/>
           {/*<Tooltip content="Not implemented yet" className={Classes.DARK}>
             <Button
               icon="chevron-forward"
