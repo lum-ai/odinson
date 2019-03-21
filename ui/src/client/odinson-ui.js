@@ -314,6 +314,7 @@ export default class OdinsonUI extends Component {
             pageEnds={this.state.pageEnds}
           />
           <ExpandToggle
+            hidden={this.state.results.totalHits === 0}
             expanded={this.state.expanded}
             handleExpand={this.handleExpand}
             handleCollapse={this.handleCollapse}
@@ -402,6 +403,10 @@ class ExpandToggle extends Component {
   }
 
   render() {
+    if(this.props.hidden) {
+      return null
+    }
+
     if(this.props.expanded) {
       return (
         <Tooltip content='Hide annotated view'>
