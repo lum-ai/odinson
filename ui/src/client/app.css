@@ -24,6 +24,10 @@ mark {
   padding: 3px;
 }
 
+table.bp3-html-table td {
+  padding: 4px 7px;
+}
+
 /*
   The following styles correspond to className assignments
 */
