@@ -180,13 +180,7 @@ export default class OdinsonUI extends Component {
             ':commit': ':commit <label>\n\tCommits the odinson results to the state using the provided label'
           }}
         />
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '1000px'
-          }}
-          >
+        <div className='searchFields'>
           <InputGroup
             type='text'
             name='odinsonQuery'

@@ -24,8 +24,11 @@ mark {
   padding: 3px;
 }
 
-table.bp3-html-table td {
-  padding: 4px 7px;
+.searchFields {
+  display: 'flex';
+  flexDirection: 'column';
+  width: 1000px;
+  padding: 5px;
 }
 
 /*
@@ -70,6 +73,9 @@ table.bp3-html-table td {
   display: flex;
   flex-direction: row;
   height: 200px;
+  width: 1610px;
+  max-width: 1610px;
+  align-self: center;
 }
 
 .pageNumbers {
@@ -79,6 +85,12 @@ table.bp3-html-table td {
 
 .sentenceResults {
   padding: 10px 0 0 0;
+  align-self: center;
+  align-items: center;
+}
+
+.scoreDocs {
+  max-width: 1610px;
   align-self: center;
   align-items: center;
 }
