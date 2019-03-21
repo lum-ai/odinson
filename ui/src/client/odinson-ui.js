@@ -304,7 +304,15 @@ export default class OdinsonUI extends Component {
             odinsonQuery={this.state.results.odinsonQuery}
             parentQuery={this.state.results.parentQuery}
           />
-          <hr />
+          <PageNavigation
+            handleHeadClick={this.handleHeadClick}
+            handleLeftClick={this.handleLeftClick}
+            handleRightClick={this.handleRightClick}
+            // handleLastClick={this.handleLastClick}
+            currentPage={this.state.currentPage}
+            totalPages={this.state.totalPages}
+            pageEnds={this.state.pageEnds}
+          />
           <ExpandToggle
             expanded={this.state.expanded}
             handleExpand={this.handleExpand}
@@ -337,6 +345,7 @@ export default class OdinsonUI extends Component {
   }
 }
 
+// a div containing a page's results in order
 class Results extends Component {
   constructor(props) {
     super(props);
@@ -372,7 +381,7 @@ class Results extends Component {
           />;
       });
       return (
-        <div key={`container-${parentDocId}`}>
+        <div className='parentDoc' key={`container-${parentDocId}`}>
           <h2>Parent Doc: {parentDocId}</h2>
           {scoreDocsGroup}
         </div>

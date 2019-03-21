@@ -6,6 +6,11 @@ h1 {
   color: green;
 }
 
+h2 {
+  margin: 0;
+  padding: 30px 0 0 0;
+}
+
 body {
   font-family: "Open Sans", sans-serif;
   text-align: center;
@@ -64,13 +69,12 @@ mark {
 }
 
 .pageNumbers {
-  display: flex;
-  flex-direction: row;
   align-self: center;
+  padding: 0 10px 0 10px;
 }
 
 .sentenceResults {
-  width: 1000px;
+  padding: 10px 0 0 0;
   align-self: center;
   align-items: center;
 }
@@ -78,3 +82,7 @@ mark {
 /*#root div{
   width:100%;
 }*/
+
+.parentDoc {
+  padding: 10px 0 20px 0;
+}
