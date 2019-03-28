@@ -19,6 +19,7 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.utils.ConfigFactory
 
 
 object Shell extends App {
@@ -73,7 +74,7 @@ object Shell extends App {
   reader.addCompleter(completer)
 
   // setup searcher
-  val extractorEngine = new ExtractorEngine(indexDir)
+  val extractorEngine = ExtractorEngine.fromConfig("odinson")
 
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
