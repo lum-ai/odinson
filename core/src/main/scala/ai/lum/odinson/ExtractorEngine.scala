@@ -156,6 +156,10 @@ class ExtractorEngine(
 
 object ExtractorEngine {
 
+  def fromConfig(): ExtractorEngine = {
+    fromConfig("odinson")
+  }
+
   def fromConfig(path: String): ExtractorEngine = {
     val config = ConfigFactory.load()
     fromConfig(config[Config](path))
