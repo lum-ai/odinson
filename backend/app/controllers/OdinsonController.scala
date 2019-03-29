@@ -1,7 +1,5 @@
 package controllers
 
-import java.nio.file.Path
-
 import javax.inject._
 import java.io.{ InputStream, File }
 import java.nio.charset.StandardCharsets
@@ -35,15 +33,11 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   extends AbstractController(cc) {
 
   val config             = ConfigFactory.load()
-  val indexDir           = config[Path]("odinson.indexDir")
-
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
-
   val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
-
-  val pageSize           = config[Int]("odinson.pageSize") // TODO move to config?
+  val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
