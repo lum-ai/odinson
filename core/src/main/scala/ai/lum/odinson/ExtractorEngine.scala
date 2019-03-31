@@ -8,10 +8,10 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.index.DirectoryReader
+import org.apache.lucene.index.{ IndexReader, DirectoryReader }
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.highlight.TokenSources
-import com.typesafe.config._
+import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
@@ -19,36 +19,20 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
+import ai.lum.odinson.utils.ConfigFactory
 
 
-class ExtractorEngine(val indexDir: Path) {
 
-  def this(indexDir: File) = this(indexDir.toPath)
-
-  val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
-  val indexSearcher = new OdinsonIndexSearcher(indexReader)
-  val compiler = QueryCompiler.fromConfig("odinson.compiler")
-
-  // this object stores the mentions that can be matched by other rules
-  val state= {
-    val config  = ConfigFactory.load()
-    val jdbcUrl = config[String]("odinson.state.jdbc.url")
-    val s       = new State(jdbcUrl)
-    s.init()
-    s
-  }
-  compiler.setState(state)
+class ExtractorEngine(
+  val indexReader: IndexReader,
+  val indexSearcher: OdinsonIndexSearcher,
+  val compiler: QueryCompiler,
+  val state: State,
+  val parentDocIdField: String
+) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val analyzer = new WhitespaceAnalyzer()
-
-  /** The docId field for the parent document.
-   *  Children retain a reference to their parent via this shared field.
-   */
-  val parentDocIdField: String = {
-    val config = ConfigFactory.load()
-    config[String]("odinson.index.documentIdField")
-  }
 
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
@@ -166,6 +150,32 @@ class ExtractorEngine(val indexDir: Path) {
     val ts = TokenSources.getTokenStream(tokenField, tvs, text, analyzer, -1)
     val tokens = TokenStreamUtils.getTokens(ts)
     tokens
+  }
+
+}
+
+object ExtractorEngine {
+
+  def fromConfig(): ExtractorEngine = {
+    fromConfig("odinson")
+  }
+
+  def fromConfig(path: String): ExtractorEngine = {
+    val config = ConfigFactory.load()
+    fromConfig(config[Config](path))
+  }
+
+  def fromConfig(config: Config): ExtractorEngine = {
+    val indexDir = config[Path]("indexDir")
+    val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
+    val indexSearcher = new OdinsonIndexSearcher(indexReader)
+    val compiler = QueryCompiler.fromConfig(config[Config]("compiler"))
+    val jdbcUrl = config[String]("state.jdbc.url")
+    val state = new State(jdbcUrl)
+    state.init()
+    compiler.setState(state)
+    val parentDocIdField: String = config[String]("index.documentIdField")
+    new ExtractorEngine(indexReader, indexSearcher, compiler, state, parentDocIdField)
   }
 
 }
