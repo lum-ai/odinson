@@ -8,9 +8,8 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.index.{ IndexReader, DirectoryReader }
+import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import org.apache.lucene.search.highlight.TokenSources
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
@@ -24,7 +23,6 @@ import ai.lum.odinson.utils.ConfigFactory
 
 
 class ExtractorEngine(
-  val indexReader: IndexReader,
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val state: State,
@@ -33,6 +31,8 @@ class ExtractorEngine(
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val analyzer = new WhitespaceAnalyzer()
+
+  val indexReader = indexSearcher.getIndexReader()
 
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
@@ -143,13 +143,7 @@ class ExtractorEngine(
   }
 
   def getTokens(docID: Int): Array[String] = {
-    val tokenField = "raw" // FIXME read from config?
-    val doc = indexSearcher.doc(docID)
-    val tvs = indexReader.getTermVectors(docID)
-    val text = doc.getField(tokenField).stringValue
-    val ts = TokenSources.getTokenStream(tokenField, tvs, text, analyzer, -1)
-    val tokens = TokenStreamUtils.getTokens(ts)
-    tokens
+    TokenStreamUtils.getTokens(docID, "raw", indexSearcher, analyzer)
   }
 
 }
@@ -174,8 +168,8 @@ object ExtractorEngine {
     val state = new State(jdbcUrl)
     state.init()
     compiler.setState(state)
-    val parentDocIdField: String = config[String]("index.documentIdField")
-    new ExtractorEngine(indexReader, indexSearcher, compiler, state, parentDocIdField)
+    val parentDocIdField = config[String]("index.documentIdField")
+    new ExtractorEngine(indexSearcher, compiler, state, parentDocIdField)
   }
 
 }
