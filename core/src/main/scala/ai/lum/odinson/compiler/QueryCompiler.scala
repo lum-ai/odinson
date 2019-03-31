@@ -9,7 +9,6 @@ import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._

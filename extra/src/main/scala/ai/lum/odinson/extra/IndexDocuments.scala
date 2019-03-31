@@ -130,7 +130,6 @@ object IndexDocuments extends App with LazyLogging {
 
       val authors: Seq[String]    = md.authors.map{ a => s"${a.givenName} ${a.surName}" }
       val     doi: Option[String] = md.doi.map(_.doi)
-      val    pmid: Option[String] = md.pmid.map(_.pmid)
       val     url: Option[String] = if (md.doi.nonEmpty) {
         md.doi.get.url
       } else if (md.pmid.nonEmpty) {
@@ -168,7 +167,7 @@ object IndexDocuments extends App with LazyLogging {
     val sent = new Document
     sent.add(new StoredField(documentIdField, docId))
     sent.add(new StoredField(sentenceIdField, sentId))
-    sent.add(new NumericDocValuesField(sentenceLengthField, s.size))
+    sent.add(new NumericDocValuesField(sentenceLengthField, s.size.toLong))
     sent.add(new TextField(rawTokenField, new OdinsonTokenStream(s.raw)))
     // we want to index and store the words for displaying in the shell
     sent.add(new TextField(wordTokenField, s.words.mkString(" "), Store.YES))

@@ -1,23 +1,18 @@
 package controllers
 
 import javax.inject._
-import java.io.{ InputStream, File }
-import java.nio.charset.StandardCharsets
+import java.io.File
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
-import akka.stream.scaladsl.StreamConverters
 import play.api.mvc._
 import play.api.libs.json._
 import akka.actor._
-import com.typesafe.config.Config
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
-import org.apache.commons.io.IOUtils
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.state._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
@@ -25,7 +20,7 @@ import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.utils.ConfigFactory
-import utils.{ DocumentMetadata, OdinsonRow }
+import utils.DocumentMetadata
 
 
 @Singleton
@@ -319,7 +314,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   }
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     Json.obj(
       "odinsonDoc"    -> odinsonScoreDoc.doc,
       "score"         -> odinsonScoreDoc.score,

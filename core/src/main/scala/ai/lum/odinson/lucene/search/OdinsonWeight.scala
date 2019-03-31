@@ -6,7 +6,6 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
 /**

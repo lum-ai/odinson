@@ -1,21 +1,18 @@
 package ai.lum.odinson.extra
 
 import java.io.File
-
-import org.clulab.processors.{ Document, Processor }
-import org.clulab.processors.clu.{ BioCluProcessor, CluProcessor }
-import org.clulab.serialization.json._
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.ConfigFactory
-import ai.lum.nxmlreader.{ NxmlDocument, NxmlReader }
 import org.clulab.utils.ScienceUtils
-import ai.lum.labrador.{ Author, DateTime, DocumentMetadata, DOI, Organization, PMID }
+import org.clulab.processors.{ Document, Processor }
+import org.clulab.processors.clu.{ BioCluProcessor, CluProcessor }
+import ai.lum.nxmlreader.{ NxmlDocument, NxmlReader }
+import ai.lum.labrador.{ Author, DateTime, DocumentMetadata, DOI, PMID }
 import ai.lum.common.Serializer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 
-import scala.util.{ Failure, Success, Try }
-//import ai.lum.common.Serializer
 
 object AnnotateText extends App with LazyLogging {
 

@@ -10,7 +10,6 @@ import jline.console.completer.{ ArgumentCompleter, StringsCompleter }
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
@@ -48,8 +47,8 @@ object Shell extends App {
   val intFormatter = NumberFormat.getIntegerInstance()
   val numFormatter = NumberFormat.getInstance()
   numFormatter.setMaximumFractionDigits(2)
-  def fmt(n: Int): String = intFormatter.format(n)
-  def fmt(n: Float): String = numFormatter.format(n)
+  def fmt(n: Int): String = intFormatter.format(n.toLong)
+  def fmt(n: Float): String = numFormatter.format(n.toDouble)
 
   // retrieve dependencies
   val dependencies = dependenciesVocabulary
