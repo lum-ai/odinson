@@ -27,7 +27,7 @@ mark {
 .searchFields {
   display: 'flex';
   flexDirection: 'column';
-  width: 1000px;
+  width: 800px;
   padding: 5px;
 }
 
@@ -73,7 +73,7 @@ mark {
   display: flex;
   flex-direction: row;
   height: 200px;
-  width: 1610px;
+  width: 800px;
   max-width: 1610px;
   align-self: center;
 }
@@ -90,7 +90,7 @@ mark {
 }
 
 .scoreDocs {
-  max-width: 1610px;
+  max-width: 800;
   align-self: center;
   align-items: center;
 }

@@ -12,18 +12,51 @@ import {
 } from '@blueprintjs/core';
 import PropTypes from 'prop-types';
 
+const axios = require('axios');
+
 const config = require('../../config');
 
 export default class ResultFrame extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      odinsonJson: props.odinsonJson,
       expanded: props.expanded
     };
+
+    this.handleExpand       = this.handleExpand.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
     this.setState({ expanded: nextProps.expanded });
+  }
+
+  handleExpand() {
+    if(! this.state.odinsonJson.hasOwnProperty('sentence')) {
+      console.log("no sentence");
+      const data = {};
+      data[config.sentParams.sentId] = this.state.odinsonJson.odinsonDoc;
+      console.log(data);
+      axios.get('/api/sentence', {
+        params: data,
+      }).then(res => {
+        const response = res.data;
+        console.log(response);
+        if (response.hasOwnProperty('error')) {
+          this.setState({errorMsg: response.error});
+        } else {
+          var odinsonJson = this.state.odinsonJson;
+          odinsonJson['sentence'] = response;
+          this.setState({
+            odinsonJson: odinsonJson,
+            expanded: true
+          });
+        }
+      }
+    )}
+    else{
+      this.setState({expanded: true});
+    }
   }
 
   render() {
@@ -55,7 +88,7 @@ export default class ResultFrame extends Component {
                 icon='expand-all'
                 minimal={true}
                 large={true}
-                onClick={() => this.setState({expanded: true})}
+                onClick={() => this.handleExpand()}
               />
             </Tooltip>
             <h3>Sentence ID: {this.props.odinsonDocId}</h3>
@@ -90,7 +123,11 @@ class OdinsonHighlight extends Component {
   }
 
   makeHighlights() {
-    var base = this.props.odinsonJson.sentence.words.slice();
+    if(this.props.odinsonJson.hasOwnProperty('sentence')) {
+      var base = this.props.odinsonJson.sentence.words.slice();
+    } else {
+      var base = this.props.odinsonJson.words.slice();
+    }
     var matches = this.props.odinsonJson.matches;
     matches.forEach(function (m) {
       const start = m.span.start;

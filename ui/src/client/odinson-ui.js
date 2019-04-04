@@ -79,9 +79,9 @@ export default class OdinsonUI extends Component {
     // TODO: retrieve/build autocomplete
   }
 
-  runQuery(commit=false, label=null, newSearch=true) {
+  runQuery(commit=false, label=null, newSearch=true, rich=false) {
     if (this.state.odinsonQuery) {
-      console.log(`runQuery(${commit}, ${label}, ${newSearch})`);
+      // console.log(`runQuery(${commit}, ${label}, ${newSearch})`);
       this.resetResults();
       if (newSearch) {
         this.resetPages();
@@ -95,7 +95,8 @@ export default class OdinsonUI extends Component {
       }
       data[config.queryParams.commit]       = commit;
       data[config.queryParams.label]        = label;
-      axios.get('api/search', {
+      const searchRoute = rich ? 'api/rich-search' : 'api/search';
+      axios.get(searchRoute, {
         params: data,
       }).then(res => {
         const response = res.data;
@@ -155,7 +156,7 @@ export default class OdinsonUI extends Component {
           commands={{
             ':query': (args, print, runCommand) => {
               if (args.length == 1) {
-                this.runQuery();
+                this.runQuery(false, null, true, this.state.expanded);
                 print(`Running query...`);
               } else {
                 print(`ERROR: unrecognized command`);
@@ -163,12 +164,12 @@ export default class OdinsonUI extends Component {
             },
             ':commit': (args, print, runCommand) => {
               if (args.length == 1) {
-                this.runQuery(true);
+                this.runQuery(true, null, true, this.state.expanded);
                 print(`Running query and committing results...`);
               } else if (args.length == 2) {
                 const label = args[1];
                 console.log(`label: ${label}`);
-                this.runQuery(true, label);
+                this.runQuery(true, label, true, this.state.expanded);
                 print(`Running query and committing results as label '${label}'...`);
               } else {
                   print(`ERROR: unrecognized command`);
@@ -204,7 +205,7 @@ export default class OdinsonUI extends Component {
   // navigate to the first page (start query over again)
   handleHeadClick() {
     if (this.state.currentPage > 1) {
-      this.runQuery(false, null, true);
+      this.runQuery(false, null, true, this.state.expanded);
       console.log('Requesting first page');
       // console.log('After: ' + this.state.pageEnds);
     }
@@ -220,7 +221,7 @@ export default class OdinsonUI extends Component {
           currentPage: this.state.currentPage - 1
         },
         function () {
-          this.runQuery(false, null, false);
+          this.runQuery(false, null, false, this.state.expanded);
           console.log('Requesting previous page');
           // console.log('After: ' + this.state.pageEnds);
         }
@@ -240,7 +241,7 @@ export default class OdinsonUI extends Component {
         },
         function () {
           // console.log('After: ' + this.state.pageEnds);
-          this.runQuery(false, null, false);
+          this.runQuery(false, null, false, this.state.expanded);
           console.log('Requesting next page');
         }
       );
@@ -252,7 +253,7 @@ export default class OdinsonUI extends Component {
         },
         function () {
           // console.log('After: ' + this.state.pageEnds);
-          this.runQuery(false, null, false);
+          this.runQuery(false, null, false, this.state.expanded);
           console.log('Requesting next page');
         }
       );
@@ -264,7 +265,10 @@ export default class OdinsonUI extends Component {
   // }
 
   handleExpand() {
-    this.setState({'expanded': true});
+    this.setState(function() {
+      return ({'expanded': true});
+    });
+    this.runQuery(false, null, false, true);
   }
 
   handleCollapse() {
