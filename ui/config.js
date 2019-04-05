@@ -9,6 +9,9 @@ config.queryParams.label        = "label";
 config.queryParams.commit       = "commit";
 config.queryParams.prevDoc      = "prevDoc";
 config.queryParams.prevScore    = "prevScore";
+// to expand sentence to full info
+config.sentParams               = {};
+config.sentParams.sentId        = "sentId";
 // TAG settings for Odinson
 config.tag = {};
 config.tag.showTopArgLabels   = false;

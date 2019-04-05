@@ -15,7 +15,7 @@ export default class QueryDetails extends Component {
     const formattedHits = this.props.totalHits.toLocaleString();
     return (
       <div className="queryDetails">
-        <HTMLTable>
+        <HTMLTable condensed={true} striped={true}>
           <tbody>
             <tr>
               <td><strong>Odinson Query</strong></td>

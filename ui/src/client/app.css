@@ -6,16 +6,36 @@ h1 {
   color: green;
 }
 
+h2 {
+  margin: 0;
+  padding: 30px 0 0 0;
+}
+
 body {
+  font-family: "Open Sans", sans-serif;
   text-align: center;
   margin: auto;
+}
+
+mark {
+  font-weight: bold;
+  color: white;
+  background-color: green;
+  padding: 3px;
+}
+
+.searchFields {
+  display: 'flex';
+  flexDirection: 'column';
+  width: 800px;
+  padding: 5px;
 }
 
 /*
   The following styles correspond to className assignments
 */
 .errorMsg {
-  font-family: monospace;
+  font-family: "Fira Mono", monospace;
   text-align: left;
   white-space: pre-wrap;
   color: red;
@@ -25,7 +45,7 @@ body {
   Display of executed queries in details table
 */
 .queryString {
-  font-family: monospace;
+  font-family: "Fira Mono", monospace;
   font-weight: bold;
   font-size: 1em;
 }
@@ -40,18 +60,45 @@ body {
   width: 100%;
 }
 
+.row {
+  display: flex;
+  /*padding: 0 20px;*/
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
 .searchParams {
   display: flex;
   flex-direction: row;
   height: 200px;
+  width: 800px;
+  max-width: 1610px;
+  align-self: center;
 }
 
 .pageNumbers {
-  display: flex;
-  flex-direction: row;
   align-self: center;
+  padding: 0 10px 0 10px;
+}
+
+.sentenceResults {
+  padding: 10px 0 0 0;
+  align-self: center;
+  align-items: center;
+}
+
+.scoreDocs {
+  max-width: 800;
+  align-self: center;
+  align-items: center;
 }
 
 /*#root div{
   width:100%;
 }*/
+
+.parentDoc {
+  padding: 10px 0 20px 0;
+}
