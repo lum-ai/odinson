@@ -3,9 +3,11 @@ package ai.lum.odinson.lucene.search
 import java.util.Collection
 import java.util.concurrent.ExecutorService
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.utils.ExecutionContextExecutorServiceBridge
 
 class OdinsonIndexSearcher(
     context: IndexReaderContext,
@@ -13,7 +15,8 @@ class OdinsonIndexSearcher(
 ) extends IndexSearcher(context, executor) {
 
   def this(r: IndexReader, e: ExecutorService) = this(r.getContext(), e)
-  def this(r: IndexReader) = this(r, null)
+  def this(r: IndexReader, e: ExecutionContext) = this(r.getContext(), ExecutionContextExecutorServiceBridge(e))
+  def this(r: IndexReader) = this(r.getContext(), null)
 
   def odinSearch(query: OdinsonQuery): OdinResults = {
     val n = readerContext.reader().maxDoc()

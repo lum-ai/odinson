@@ -5,7 +5,6 @@ import scala.collection.JavaConverters._
 import scala.util.hashing.MurmurHash3
 import org.apache.lucene.index._
 import org.apache.lucene.search._
-import ai.lum.odinson.lucene.search._
 
 /**
  * In some sense, the Query class is where it all begins. Without a Query,

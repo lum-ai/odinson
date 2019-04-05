@@ -24,7 +24,7 @@ sbt ";project extra;runMain ai.lum.odinson.extra.AnnotateText"
 ### Command
 
 ```
-sbt ";project extra;runMain ai.lum.odinson.extra.IndexDocuments"
+sbt "extra/runMain ai.lum.odinson.extra.IndexDocuments"
 ```
 
 ## Querying using the shell
@@ -36,7 +36,7 @@ sbt ";project extra;runMain ai.lum.odinson.extra.IndexDocuments"
 ### Command
 
 ```
-sbt ";project extra;runMain ai.lum.odinson.extra.Shell"
+sbt "extra/runMain ai.lum.odinson.extra.Shell"
 ```
 
 ### Example queries

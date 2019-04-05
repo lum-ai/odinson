@@ -1,51 +1,40 @@
 package controllers
 
-import java.nio.file.Path
-
 import javax.inject._
-import java.io.{ InputStream, File }
-import java.nio.charset.StandardCharsets
-
+import java.io.File
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
-import akka.stream.scaladsl.StreamConverters
+import scala.util.{ Failure, Success, Try }
 import play.api.mvc._
 import play.api.libs.json._
 import akka.actor._
-import com.typesafe.config._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.state._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import org.apache.commons.io.IOUtils
-import utils.{ DocumentMetadata, OdinsonRow }
+import ai.lum.odinson.utils.ConfigFactory
+import utils.DocumentMetadata
 
-import scala.util.{ Failure, Success, Try }
 
 @Singleton
 class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents)
   extends AbstractController(cc) {
 
   val config             = ConfigFactory.load()
-  val indexDir           = config[Path]("odinson.indexDir")
-
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
-
   val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
-
   val pageSize           = config[Int]("odinson.pageSize")
 
-  val extractorEngine = new ExtractorEngine(indexDir)
+  val extractorEngine = ExtractorEngine.fromConfig("odinson")
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
   def buildInfo(pretty: Option[Boolean]) = Action.async {
@@ -191,6 +180,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         endToken   = span.end
       )
     }
+    // index for efficient lookup in subsequent queries
+    extractorEngine.state.index()
   }
 
   /**
@@ -323,7 +314,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   }
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     Json.obj(
       "odinsonDoc"    -> odinsonScoreDoc.doc,
       "score"         -> odinsonScoreDoc.score,

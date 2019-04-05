@@ -4,7 +4,6 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.util.PriorityQueue
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.search._
 import OdinsonCollector._
 
 

@@ -1,24 +1,21 @@
 package ai.lum.odinson.extra
 
 import java.io.File
-import java.nio.file.Path
 import java.text.NumberFormat
 import scala.util.control.NonFatal
 import scala.collection.immutable.ListMap
 import jline.console.ConsoleReader
 import jline.console.history.FileHistory
 import jline.console.completer.{ ArgumentCompleter, StringsCompleter }
-import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.index.DirectoryReader
-import com.typesafe.config._
+import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.utils.ConfigFactory
 
 
 object Shell extends App {
@@ -36,7 +33,6 @@ object Shell extends App {
 
   // read config parameters
   val config = ConfigFactory.load()
-  val indexDir = config[Path]("odinson.indexDir")
   var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
   val prompt = config[String]("odinson.shell.prompt")
   val history = new FileHistory(config[File]("odinson.shell.history"))
@@ -51,8 +47,8 @@ object Shell extends App {
   val intFormatter = NumberFormat.getIntegerInstance()
   val numFormatter = NumberFormat.getInstance()
   numFormatter.setMaximumFractionDigits(2)
-  def fmt(n: Int): String = intFormatter.format(n)
-  def fmt(n: Float): String = numFormatter.format(n)
+  def fmt(n: Int): String = intFormatter.format(n.toLong)
+  def fmt(n: Float): String = numFormatter.format(n.toDouble)
 
   // retrieve dependencies
   val dependencies = dependenciesVocabulary
@@ -73,7 +69,7 @@ object Shell extends App {
   reader.addCompleter(completer)
 
   // setup searcher
-  val extractorEngine = new ExtractorEngine(indexDir)
+  val extractorEngine = ExtractorEngine.fromConfig("odinson")
 
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
