@@ -54,22 +54,21 @@ class OdinsonCollector(
   def getLeafCollector(context: LeafReaderContext): LeafCollector = {
     val docBase = context.docBase
     val afterDoc = after - context.docBase
-      new OdinsonLeafCollector {
-        def collect(doc: Int): Unit = {
-          totalHits += 1
-          if (collectedHits >= collectedResults.length || doc <= afterDoc) {
-            return
-          }
-          collectedResults(collectedHits) = new OdinsonScoreDoc(
-            doc = doc + docBase,
-            score = scorer.score(),
-            shardIndex = -1,
-            matches = scorer.getMatches(),
-            segmentDocId = doc,
-            segmentDocBase = docBase,
-          )
-          collectedHits += 1
+    new OdinsonLeafCollector {
+      def collect(doc: Int): Unit = {
+        totalHits += 1
+        if (collectedHits >= collectedResults.length || doc <= afterDoc) {
+          return
         }
+        collectedResults(collectedHits) = new OdinsonScoreDoc(
+          doc = doc + docBase,
+          score = scorer.score(),
+          shardIndex = -1,
+          matches = scorer.getMatches(),
+          segmentDocId = doc,
+          segmentDocBase = docBase,
+        )
+        collectedHits += 1
       }
     }
   }
