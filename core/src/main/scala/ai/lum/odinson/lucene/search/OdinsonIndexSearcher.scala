@@ -33,7 +33,7 @@ class OdinsonIndexSearcher(
     )
     val cappedNumHits = math.min(numHits, limit)
     val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-      def newCollector(): OdinsonCollector = OdinsonCollector.create(cappedNumHits, after)
+      def newCollector() = new OdinsonCollector(cappedNumHits, after)
       def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
         val results = collectors.iterator.asScala.map(_.odinResults).toArray
         OdinResults.merge(0, cappedNumHits, results, true)
