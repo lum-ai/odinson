@@ -171,7 +171,7 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue)
+          val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue, QuantifierType.Greedy)
           // If there is a zero-width query, it should be the first clause.
           // This is a convention we follow to be able to identify optional clauses easily.
           val clauses = List(zero, oneOrMore)
@@ -183,7 +183,7 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          val oneOrMore = new OdinRangeQuery(q, 1, max)
+          val oneOrMore = new OdinRangeQuery(q, 1, max, QuantifierType.Greedy)
           // If there is a zero-width query, it should be the first clause.
           // This is a convention we follow to be able to identify optional clauses easily.
           val clauses = List(zero, oneOrMore)
@@ -200,13 +200,13 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, Int.MaxValue)
+        case q => new OdinRangeQuery(q, min, Int.MaxValue, QuantifierType.Greedy)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, max)
+        case q => new OdinRangeQuery(q, min, max, QuantifierType.Greedy)
       }
 
   }

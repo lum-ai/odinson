@@ -8,10 +8,17 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
+object QuantifierType extends Enumeration {
+  type QuantifierType = Value
+  val Greedy, Lazy = Value
+}
+import QuantifierType._
+
 class OdinRangeQuery(
     val query: OdinsonQuery,
     val min: Int,
-    val max: Int
+    val max: Int,
+    val quantifierType: QuantifierType
 ) extends OdinsonQuery { self =>
 
   require(min > 0, "min must be positive")
@@ -29,7 +36,7 @@ class OdinRangeQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinRangeQuery(rewritten, min, max)
+      new OdinRangeQuery(rewritten, min, max, quantifierType)
     } else {
       super.rewrite(reader)
     }
@@ -57,7 +64,7 @@ class OdinRangeQuery(
 
     def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
-      if (spans == null) null else new OdinRangeSpans(spans, min, max)
+      if (spans == null) null else new OdinRangeSpans(spans, min, max, quantifierType)
     }
 
   }
@@ -67,7 +74,8 @@ class OdinRangeQuery(
 class OdinRangeSpans(
     val spans: OdinsonSpans,
     val min: Int,
-    val max: Int
+    val max: Int,
+    val quantifierType: QuantifierType
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._
