@@ -42,7 +42,10 @@ class OdinRangeQuery(
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): OdinsonWeight = {
     val weight = query.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinRangeWeight(weight, searcher, terms)
@@ -62,9 +65,13 @@ class OdinRangeQuery(
       weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
-      if (spans == null) null else new OdinRangeSpans(spans, min, max, quantifierType)
+      if (spans == null) null
+      else new OdinRangeSpans(spans, min, max, quantifierType)
     }
 
   }
