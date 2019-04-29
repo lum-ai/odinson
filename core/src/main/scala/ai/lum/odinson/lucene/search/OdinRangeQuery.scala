@@ -5,6 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -91,7 +92,7 @@ class OdinRangeSpans(
   // a first start position is available in current doc for nextStartPosition
   protected var atFirstInCurrentDoc: Boolean = false
 
-  private var stretch: IndexedSeq[SpanWithCaptures] = ArrayBuffer.empty
+  private var stretch: IndexedSeq[OdinsonMatch] = ArrayBuffer.empty
   private var startIndex: Int = 0
   private var numReps: Int = 0
 
@@ -155,7 +156,7 @@ class OdinRangeSpans(
     false
   }
 
-  def getNextStretch(): IndexedSeq[SpanWithCaptures] = {
+  def getNextStretch(): IndexedSeq[OdinsonMatch] = {
     while (spans.startPosition() != NO_MORE_POSITIONS) {
       val stretch = getStretch()
       if (stretch.length >= min) return stretch
@@ -163,11 +164,11 @@ class OdinRangeSpans(
     IndexedSeq.empty
   }
 
-  def getStretch(): IndexedSeq[SpanWithCaptures] = {
+  def getStretch(): IndexedSeq[OdinsonMatch] = {
     var end = spans.startPosition()
-    val stretch = ArrayBuffer.empty[SpanWithCaptures]
+    val stretch = ArrayBuffer.empty[OdinsonMatch]
     while (spans.startPosition() == end) {
-      stretch += spans.spanWithCaptures
+      stretch += spans.odinsonMatch
       end = spans.endPosition()
       spans.nextStartPosition()
     }
@@ -188,33 +189,33 @@ class OdinRangeSpans(
     throw new UnsupportedOperationException
   }
 
-  override def namedCaptures: List[NamedCapture] = {
+  override def namedCaptures: List[(String, OdinsonMatch)] = {
     stretch
       .slice(startIndex, startIndex + numReps)
       .map(_.captures)
       // the cost of concatenating two lists is given by the length
       // of the list to the left, so we want list concatenation to be
       // right-associative, which is why we use foldRight
-      .foldRight(List.empty[NamedCapture])(_ ++ _)
+      .foldRight(List.empty[(String, OdinsonMatch)])(_ ++ _)
   }
 
   def startPosition(): Int = {
     if (atFirstInCurrentDoc) -1
     else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex).span.start
+    else stretch(startIndex).start
   }
 
   def endPosition(): Int = {
     if (atFirstInCurrentDoc) -1
     else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex + numReps - 1).span.end
+    else stretch(startIndex + numReps - 1).end
   }
 
   def nextStartPosition(): Int = {
     if (atFirstInCurrentDoc) {
       // we know we have a match because we checked previously
       atFirstInCurrentDoc = false
-      return stretch(startIndex).span.start
+      return stretch(startIndex).start
     }
     while (stretch.nonEmpty) {
       numReps += 1
@@ -223,7 +224,7 @@ class OdinRangeSpans(
         numReps = min
       }
       if (startIndex + numReps <= stretch.length) {
-        return stretch(startIndex).span.start
+        return stretch(startIndex).start
       }
       // if we reach this point then we need a new stretch
       stretch = getNextStretch()

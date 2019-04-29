@@ -4,6 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities.Similarity.SimScorer
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -17,8 +18,8 @@ class OdinsonScorer(
   private var numMatches: Int = 0      // number of matches (computed in setFreqCurrentDoc)
   private var lastScoredDoc: Int = -1  // last doc we called setFreqCurrentDoc() for
 
-  // stores the Spans found in the current document
-  private val collectedSpans: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
+  // stores the matcher found in the current document
+  private val collectedMatches: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
 
   def getSpans(): OdinsonSpans = spans
   def docID(): Int = spans.docID()
@@ -28,7 +29,7 @@ class OdinsonScorer(
   private def setFreqCurrentDoc(): Unit = {
     accSloppyFreq = 0
     numMatches = 0
-    collectedSpans.clear()
+    collectedMatches.clear()
 
     spans.odinDoStartCurrentDoc()
 
@@ -47,9 +48,9 @@ class OdinsonScorer(
       // if we already found a span starting at this position then discard it
       // because we only want to keep the longest
       if (startPos == prevStartPos) {
-        collectedSpans.remove(collectedSpans.indices.last)
+        collectedMatches.remove(collectedMatches.indices.last)
       }
-      collectedSpans += spans.spanWithCaptures // collect span
+      collectedMatches += spans.odinsonMatch // collect match
       numMatches += 1
       if (docScorer == null) {  // scores not required
         accSloppyFreq = 1
@@ -97,9 +98,9 @@ class OdinsonScorer(
     accSloppyFreq
   }
 
-  def getMatches(): Array[SpanWithCaptures] = {
+  def getMatches(): Array[OdinsonMatch] = {
     ensureFreq()
-    collectedSpans.toArray
+    collectedMatches.toArray
   }
 
 }

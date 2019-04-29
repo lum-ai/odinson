@@ -5,6 +5,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import DocIdSetIterator._
@@ -94,7 +95,7 @@ class OdinsonFilteredQuery(
     def startPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.startPosition()
     def endPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.endPosition()
 
-    override def namedCaptures: List[NamedCapture] = spans.namedCaptures
+    override def namedCaptures: List[(String, OdinsonMatch)] = spans.namedCaptures
     def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
     def nextDoc(): Int = {

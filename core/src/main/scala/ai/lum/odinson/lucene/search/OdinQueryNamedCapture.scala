@@ -4,6 +4,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -71,5 +72,5 @@ class OdinSpansNamedCapture(
   def positionsCost(): Float = spans.positionsCost()
   override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
-  override def namedCaptures: List[NamedCapture] = (captureName, span) :: spans.namedCaptures
+  override def namedCaptures: List[(String, OdinsonMatch)] = (captureName, OdinsonMatch(docID, startPosition, endPosition)) :: spans.namedCaptures
 }

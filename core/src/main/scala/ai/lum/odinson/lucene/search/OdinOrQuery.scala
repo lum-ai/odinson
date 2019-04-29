@@ -7,6 +7,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -237,7 +238,7 @@ class OdinOrSpans(
     else topPositionSpans.endPosition()
   }
 
-  override def namedCaptures: List[NamedCapture] = {
+  override def namedCaptures: List[(String, OdinsonMatch)] = {
     if (topPositionSpans == null) Nil
     else topPositionSpans.namedCaptures
   }

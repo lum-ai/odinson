@@ -6,6 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -94,11 +95,11 @@ class GraphTraversalSpans(
   // resulting spans sorted by position
   private var pq: QueueByPosition = null
   // named captures corresponding to the top span in the queue
-  private var topPositionCaptures: List[NamedCapture] = Nil
+  private var topPositionCaptures: List[(String, OdinsonMatch)] = Nil
   // dependency graph
   private var graph: DirectedGraph = null
 
-  override def namedCaptures: List[NamedCapture] = topPositionCaptures
+  override def namedCaptures: List[(String, OdinsonMatch)] = topPositionCaptures
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
@@ -116,9 +117,9 @@ class GraphTraversalSpans(
   def nextStartPosition(): Int = {
     atFirstInCurrentDoc = false
     if (pq.size() > 0) {
-      val SpanWithCaptures(span, captures) = pq.pop()
-      matchStart = span.start
-      matchEnd = span.end
+      val OdinsonMatch(_, spanStart, spanEnd, captures) = pq.pop()
+      matchStart = spanStart
+      matchEnd = spanEnd
       topPositionCaptures = captures
     } else {
       matchStart = NO_MORE_POSITIONS
@@ -129,19 +130,19 @@ class GraphTraversalSpans(
   }
 
   // FIXME this is repeated in OdinConcatQuery
-  private def getAllSpansWithCaptures(spans: OdinsonSpans): Seq[SpanWithCaptures] = {
-    val buffer = ArrayBuffer.empty[SpanWithCaptures]
+  private def getAllMatches(spans: OdinsonSpans): Seq[OdinsonMatch] = {
+    val buffer = ArrayBuffer.empty[OdinsonMatch]
     while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
-      buffer += spans.spanWithCaptures
+      buffer += spans.odinsonMatch
     }
     buffer
   }
 
-  private def mkInvIndex(spans: Seq[SpanWithCaptures]): Map[Int, Seq[SpanWithCaptures]] = {
-    val index = HashMap.empty[Int, ArrayBuffer[SpanWithCaptures]]
+  private def mkInvIndex(spans: Seq[OdinsonMatch]): Map[Int, Seq[OdinsonMatch]] = {
+    val index = HashMap.empty[Int, ArrayBuffer[OdinsonMatch]]
     for {
       s <- spans
-      i <- s.span.interval
+      i <- s.tokenInterval
     } index.getOrElseUpdate(i, ArrayBuffer.empty) += s
     index.toMap.withDefaultValue(Seq.empty)
   }
@@ -151,11 +152,11 @@ class GraphTraversalSpans(
       traversal: GraphTraversal,
       srcSpans: OdinsonSpans,
       dstSpans: OdinsonSpans
-  ): Seq[SpanWithCaptures] = {
-    val results: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
-    val dstIndex = mkInvIndex(getAllSpansWithCaptures(dstSpans))
-    for (src <- getAllSpansWithCaptures(srcSpans)) {
-      val dsts = traversal.traverseFrom(graph, src.span.interval)
+  ): Seq[OdinsonMatch] = {
+    val results: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
+    val dstIndex = mkInvIndex(getAllMatches(dstSpans))
+    for (src <- getAllMatches(srcSpans)) {
+      val dsts = traversal.traverseFrom(graph, src.tokenInterval)
       results ++= dsts.flatMap(dstIndex)
         .map(r => r.copy(captures = src.captures ++ r.captures)) // accumulate named captures
     }
