@@ -38,7 +38,6 @@ object Shell extends App {
   var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
   val prompt = config[String]("odinson.shell.prompt")
   val history = new FileHistory(config[File]("odinson.shell.history"))
-  val dependenciesVocabulary = new File(config[File]("odinson.indexDir"), Vocabulary.FILE_NAME)
 
   // we must flush the history before exiting
   sys.addShutdownHook {
@@ -53,9 +52,10 @@ object Shell extends App {
   def fmt(n: Float): String = numFormatter.format(n.toDouble)
 
   // retrieve dependencies
+  val dependenciesVocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+
   val dependencies = dependenciesVocabulary
-    .readString()
-    .lines
+    .terms
     .flatMap(dep => Seq(s">$dep", s"<$dep"))
 
   // autocomplete

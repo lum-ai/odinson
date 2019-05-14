@@ -37,7 +37,7 @@ class OdinsonIndexWriter(
 
   def close(): Unit = {
     // FIXME: is this the correct instantiation of IOContext?
-    val stream = directory.createOutput(Vocabulary.FILE_NAME, new IOContext())
+    val stream = directory.createOutput(Vocabulary.FILE_NAME, new IOContext)
     stream.writeString(vocabulary.dump)
     stream.close()
     writer.close()
@@ -66,22 +66,16 @@ object OdinsonIndexWriter {
   def apply(directory: Directory, vocabulary: Vocabulary): OdinsonIndexWriter = new OdinsonIndexWriter(directory, vocabulary)
 
   def apply(indexDir: File): OdinsonIndexWriter = {
-    val dir = FSDirectory.open(indexDir.toPath)
+    val directory  = FSDirectory.open(indexDir.toPath)
     // dependencies vocabulary
-    val vocabFile  = new File (indexDir, Vocabulary.FILE_NAME)
-    val vocabulary = if (vocabFile.exists) {
-      Vocabulary.load(vocabFile)
-    } else Vocabulary.empty
-    OdinsonIndexWriter(dir, vocabulary)
+    val vocabulary = Vocabulary.fromIndex(directory)
+    OdinsonIndexWriter(directory, vocabulary)
   }
 
   def apply(config: Config): OdinsonIndexWriter = {
     val indexDir   = config[Path]("indexDir")
     val directory  = FSDirectory.open(indexDir)
-    val vocabFile  = new File (indexDir.toFile, Vocabulary.FILE_NAME)
-    val vocabulary = if (vocabFile.exists) {
-      Vocabulary.load(vocabFile)
-    } else Vocabulary.empty
+    val vocabulary = Vocabulary.fromIndex(directory)
     OdinsonIndexWriter(directory, vocabulary)
   }
 

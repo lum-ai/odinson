@@ -422,7 +422,7 @@ object QueryCompiler {
       config[String]("compiler.dependenciesField"),
       config[String]("compiler.incomingTokenField"),
       config[String]("compiler.outgoingTokenField"),
-      Vocabulary.load(new File(config[File]("indexDir"), Vocabulary.FILE_NAME)),
+      Vocabulary.fromIndex(config[File]("indexDir")),
       config[Boolean]("compiler.normalizeQueriesToDefaultField")
     )
   }

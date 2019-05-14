@@ -33,7 +33,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
-  val vocabFile          = new File(config[File]("odinson.indexDir"), Vocabulary.FILE_NAME)
   val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
@@ -69,14 +68,9 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     */
   def dependenciesVocabulary(pretty: Option[Boolean]) = Action.async {
     Future {
-      val vocab: List[String] = {
-        vocabFile
-          .readString()
-          .lines
-          //.flatMap(dep => Seq(s">$dep", s"<$dep"))
-          .toList
-          .sorted
-      }
+      // NOTE: It's possible the vocabulary could change if the index is updated
+      val vocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+      val vocab = vocabulary.terms.toList.sorted
       val json  = Json.toJson(vocab)
       pretty match {
         case Some(true) => Ok(Json.prettyPrint(json))
