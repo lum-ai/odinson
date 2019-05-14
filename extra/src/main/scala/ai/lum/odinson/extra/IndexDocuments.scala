@@ -39,7 +39,6 @@ object IndexDocuments extends App with LazyLogging {
   val incomingTokenField   = config[String]("odinson.index.incomingTokenField")
   val outgoingTokenField   = config[String]("odinson.index.outgoingTokenField")
   val dependenciesField    = config[String]("odinson.index.dependenciesField")
-  val dependenciesVocabularyFile   = config[File]("odinson.index.dependenciesVocabulary")
   val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
 
@@ -70,7 +69,7 @@ object IndexDocuments extends App with LazyLogging {
 
   }
 
-  writer.close(dependenciesVocabularyFile)
+  writer.close
 
   // fin
 

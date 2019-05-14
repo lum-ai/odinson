@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 import java.io.File
+
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -15,7 +16,8 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
+import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
@@ -31,7 +33,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
-  val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
+  val vocabFile          = new File(config[File]("odinson.indexDir"), Vocabulary.FILE_NAME)
   val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")

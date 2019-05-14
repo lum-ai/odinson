@@ -2,6 +2,7 @@ package ai.lum.odinson.extra
 
 import java.io.File
 import java.text.NumberFormat
+
 import scala.util.control.NonFatal
 import scala.collection.immutable.ListMap
 import jline.console.ConsoleReader
@@ -15,6 +16,7 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.ConfigFactory
 
 
@@ -36,7 +38,7 @@ object Shell extends App {
   var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
   val prompt = config[String]("odinson.shell.prompt")
   val history = new FileHistory(config[File]("odinson.shell.history"))
-  val dependenciesVocabulary = config[File]("odinson.index.dependenciesVocabulary")
+  val dependenciesVocabulary = new File(config[File]("odinson.indexDir"), Vocabulary.FILE_NAME)
 
   // we must flush the history before exiting
   sys.addShutdownHook {

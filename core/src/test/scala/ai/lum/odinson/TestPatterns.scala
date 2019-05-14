@@ -132,7 +132,7 @@ object TestUtils {
 
     val memWriter = OdinsonIndexWriter.inMemory
     writeDoc(memWriter, text)
-    
+
     val reader = DirectoryReader.open(memWriter.directory)
 
     val indexSearcher = new OdinsonIndexSearcher(reader)

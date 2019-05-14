@@ -52,6 +52,8 @@ object Vocabulary {
 
   val sep = "\n"
 
+  val FILE_NAME = "dependencies.txt"
+
   def empty: Vocabulary = {
     new Vocabulary(mutable.ArrayBuffer.empty, mutable.HashMap.empty)
   }
