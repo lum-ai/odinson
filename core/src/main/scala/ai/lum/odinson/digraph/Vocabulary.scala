@@ -64,7 +64,7 @@ object Vocabulary {
     new Vocabulary(buffer, map)
   }
 
-  def fromFile(file: File): Vocabulary = {
+  def load(file: File): Vocabulary = {
     load(file.readString(UTF_8))
   }
 

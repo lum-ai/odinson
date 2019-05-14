@@ -47,7 +47,7 @@ object IndexDocuments extends App with LazyLogging {
 
   implicit val formats = DefaultFormats
 
-  val writer = new OdinsonIndexWriter(indexDir, dependenciesVocabularyFile)
+  val writer = OdinsonIndexWriter.fromConfig
 
   // serialized org.clulab.processors.Document or Document json
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
@@ -70,7 +70,7 @@ object IndexDocuments extends App with LazyLogging {
 
   }
 
-  writer.close()
+  writer.close(dependenciesVocabularyFile)
 
   // fin
 

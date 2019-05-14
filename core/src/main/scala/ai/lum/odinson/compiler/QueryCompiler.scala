@@ -427,7 +427,7 @@ object QueryCompiler {
       config[String]("dependenciesField"),
       config[String]("incomingTokenField"),
       config[String]("outgoingTokenField"),
-      Vocabulary.fromFile(config[File]("dependenciesVocabulary")),
+      Vocabulary.load(config[File]("dependenciesVocabulary")),
       config[Boolean]("normalizeQueriesToDefaultField")
     )
   }
