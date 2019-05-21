@@ -28,7 +28,7 @@ class OdinsonCollector(
   private var totalHits: Int = 0
   private var collectedHits: Int = 0
 
-  override def needsScores(): Boolean = false
+  override def needsScores(): Boolean = true
 
   def odinResults(): OdinResults = odinResults(0, collectedHits)
 

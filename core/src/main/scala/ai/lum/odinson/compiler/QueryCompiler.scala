@@ -414,21 +414,16 @@ class QueryCompiler(
 
 object QueryCompiler {
 
-  def fromConfig(path: String): QueryCompiler = {
-    val config = ConfigFactory.load()
-    fromConfig(config[Config](path))
-  }
-
   def fromConfig(config: Config): QueryCompiler = {
     new QueryCompiler(
-      config[List[String]]("allTokenFields"),
-      config[String]("defaultTokenField"),
-      config[String]("sentenceLengthField"),
-      config[String]("dependenciesField"),
-      config[String]("incomingTokenField"),
-      config[String]("outgoingTokenField"),
-      Vocabulary.fromFile(config[File]("dependenciesVocabulary")),
-      config[Boolean]("normalizeQueriesToDefaultField")
+      config[List[String]]("compiler.allTokenFields"),
+      config[String]("compiler.defaultTokenField"),
+      config[String]("compiler.sentenceLengthField"),
+      config[String]("compiler.dependenciesField"),
+      config[String]("compiler.incomingTokenField"),
+      config[String]("compiler.outgoingTokenField"),
+      Vocabulary.fromIndex(config[File]("indexDir")),
+      config[Boolean]("compiler.normalizeQueriesToDefaultField")
     )
   }
 

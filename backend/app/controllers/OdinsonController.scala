@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 import java.io.File
+
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -15,7 +16,8 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc }
+import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
@@ -31,7 +33,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.index.wordTokenField")
-  val vocabFile          = config[File]("odinson.compiler.dependenciesVocabulary")
   val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
@@ -67,14 +68,9 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     */
   def dependenciesVocabulary(pretty: Option[Boolean]) = Action.async {
     Future {
-      val vocab: List[String] = {
-        vocabFile
-          .readString()
-          .lines
-          //.flatMap(dep => Seq(s">$dep", s"<$dep"))
-          .toList
-          .sorted
-      }
+      // NOTE: It's possible the vocabulary could change if the index is updated
+      val vocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+      val vocab = vocabulary.terms.toList.sorted
       val json  = Json.toJson(vocab)
       pretty match {
         case Some(true) => Ok(Json.prettyPrint(json))
