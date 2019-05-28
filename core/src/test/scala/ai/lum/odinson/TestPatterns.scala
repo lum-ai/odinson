@@ -109,7 +109,7 @@ object TestUtils {
         swc <- scoreDoc.matches
       } yield {
         tokens
-          .slice(swc.span.start, swc.span.end)
+          .slice(swc.start, swc.end)
           .mkString(" ")
       }
       allMatchingSpans.mkString(" ")
