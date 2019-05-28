@@ -99,30 +99,21 @@ object TestUtils {
   /**
     * Converts [[ai.lum.odinson.lucene.OdinResults]] to a string.  Used to compare actual to expected results.
     */
-  def mkString(results: OdinResults, engine: ExtractorEngine): String = if (results.totalHits == 0) "" else {
-    val allMatchingSpans = for {
-      scoreDoc <- results.scoreDocs
-      tokens = getTokens(scoreDoc, engine)
-      swc <- scoreDoc.matches
-    } yield {
-      tokens
-        .slice(swc.span.start, swc.span.end)
-        .mkString(" ")
+  def mkString(results: OdinResults, engine: ExtractorEngine): String = {
+    if (results.totalHits == 0) {
+      ""
+    } else {
+      val allMatchingSpans = for {
+        scoreDoc <- results.scoreDocs
+        tokens = engine.getTokens(scoreDoc)
+        swc <- scoreDoc.matches
+      } yield {
+        tokens
+          .slice(swc.span.start, swc.span.end)
+          .mkString(" ")
+      }
+      allMatchingSpans.mkString(" ")
     }
-
-    allMatchingSpans.mkString(" ")
-  }
-
-  /**
-    * Retrieves tokens from an [[ai.lum.odinson.lucene.search.OdinsonScoreDoc]] using an [[ai.lum.odinson.ExtractorEngine]].
-    */
-  def getTokens(scoreDoc: OdinsonScoreDoc, engine: ExtractorEngine): Array[String] = {
-    val doc = engine.indexSearcher.doc(scoreDoc.doc)
-    // FIXME: retrieve tokens without relying on term vectors
-    val tvs = engine.indexReader.getTermVectors(scoreDoc.doc)
-    val sentenceText = doc.getField(wordTokenField).stringValue
-    val ts = TokenSources.getTokenStream(wordTokenField, tvs, sentenceText, new WhitespaceAnalyzer, -1)
-    TokenStreamUtils.getTokens(ts).toArray
   }
 
   /**
@@ -138,7 +129,7 @@ object TestUtils {
     val indexSearcher = new OdinsonIndexSearcher(reader)
     val compiler = new QueryCompiler(
       allTokenFields = allTokenFields,
-      defaultTokenField = defaultTokenField,
+      defaultTokenField = rawTokenField, // raw is the default field for testing purposes
       sentenceLengthField = sentenceLengthField,
       dependenciesField = dependenciesField,
       incomingTokenField = incomingTokenField,
@@ -152,6 +143,7 @@ object TestUtils {
     state.init()
     compiler.setState(state)
     new ExtractorEngine(indexSearcher, compiler, state, documentIdField)
+
   }
 
   /**
@@ -159,7 +151,6 @@ object TestUtils {
     */
   def writeDoc(writer: OdinsonIndexWriter, text: String): Unit = {
     val doc = mkSentenceDoc(text)
-
     writer.addDocuments(Seq(doc))
     writer.commit()
   }
@@ -168,16 +159,12 @@ object TestUtils {
     * Creates a simple Odison-style [[org.apache.lucene.document.Document]] from a space-delimited string.
     */
   def mkSentenceDoc(text: String): LuceneDocument = {
-
     val toks: Array[String] = text.split(" ")
     val sent = new LuceneDocument
     sent.add(new StoredField(documentIdField, "doc-1"))
     sent.add(new StoredField(sentenceIdField, "sent-1"))
     sent.add(new NumericDocValuesField(sentenceLengthField, toks.size.toLong))
-    sent.add(new TextField(rawTokenField, new OdinsonTokenStream(toks)))
-    // we want to index and store the words for displaying in the shell
-    sent.add(new TextField(wordTokenField, text, Store.YES))
-    sent.add(new TextField(normalizedTokenField, new NormalizedTokenStream(toks, toks)))
+    sent.add(new TextField(rawTokenField, text, Store.YES))
     sent
   }
 
