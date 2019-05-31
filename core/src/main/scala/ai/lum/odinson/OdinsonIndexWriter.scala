@@ -63,26 +63,36 @@ class OdinsonIndexWriter(
 
 object OdinsonIndexWriter {
 
-  def apply(directory: Directory, vocabulary: Vocabulary): OdinsonIndexWriter = new OdinsonIndexWriter(directory, vocabulary)
-
-  def apply(indexDir: File): OdinsonIndexWriter = {
-    val directory  = FSDirectory.open(indexDir.toPath)
-    // dependencies vocabulary
-    val vocabulary = Vocabulary.fromIndex(directory)
-    OdinsonIndexWriter(directory, vocabulary)
+  def apply(directory: Directory, vocabulary: Vocabulary): OdinsonIndexWriter = {
+    new OdinsonIndexWriter(directory, vocabulary)
   }
 
-  def apply(config: Config): OdinsonIndexWriter = {
-    val indexDir   = config[Path]("indexDir")
+  def apply(indexDir: File): OdinsonIndexWriter = {
+    OdinsonIndexWriter(indexDir.toPath)
+  }
+
+  def apply(indexDir: Path): OdinsonIndexWriter = {
     val directory  = FSDirectory.open(indexDir)
     val vocabulary = Vocabulary.fromIndex(directory)
     OdinsonIndexWriter(directory, vocabulary)
   }
 
-  def fromConfig: OdinsonIndexWriter = {
-    val config     = ConfigFactory.load()
-    OdinsonIndexWriter(config)
+  def fromConfig(): OdinsonIndexWriter = {
+    fromConfig("odinson")
   }
 
-  def inMemory: OdinsonIndexWriter = OdinsonIndexWriter(new RAMDirectory(), Vocabulary.empty)
+  def fromConfig(path: String): OdinsonIndexWriter = {
+    val config = ConfigFactory.load()
+    fromConfig(config[Config](path))
+  }
+
+  def fromConfig(config: Config): OdinsonIndexWriter = {
+    val indexDir = config[Path]("indexDir")
+    OdinsonIndexWriter(indexDir)
+  }
+
+  def inMemory: OdinsonIndexWriter = {
+    OdinsonIndexWriter(new RAMDirectory(), Vocabulary.empty)
+  }
+
 }
