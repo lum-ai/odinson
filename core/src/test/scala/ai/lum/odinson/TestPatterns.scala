@@ -1,16 +1,12 @@
 package ai.lum.odinson
 
 import org.scalatest._
-import org.scalatest.prop.TableDrivenPropertyChecks._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.analysis.{ NormalizedTokenStream, OdinsonTokenStream, TokenStreamUtils }
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.ConfigFactory
 import ai.lum.common.ConfigUtils._
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.document.{ Document => LuceneDocument, _ }
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.index.DirectoryReader
@@ -18,63 +14,22 @@ import org.apache.lucene.index.DirectoryReader
 
 class TestPatterns extends FlatSpec with Matchers {
 
-  "patterns" should "match" in {
-    val patterns = Table(
-      ("pattern", "string", "expected"),
-      ("a b c", "a b c", "a b c"),
-      ("a b* c", "a b c", "a b c"),
-      ("a b* c", "a b b c", "a b b c"),
-      ("a b* c", "a c", "a c"),
-      ("a b* b c", "a b c", "a b c"),
-      ("a b* b c", "a b b c", "a b b c"),
-      ("a b* b c", "a b b b c", "a b b b c"),
-      ("a b* b c", "a b b b b c", "a b b b b c"),
-      ("a b+ c", "a b c", "a b c"),
-      ("a b+ c", "a b b c", "a b b c"),
-      ("a b+ c ", "a b b b c", "a b b b c"),
-      ("a b+ b c", "a b b c", "a b b c"),
-      ("a b+ b c", "a b b b c", "a b b b c"),
-      ("a b? b c", "a b c", "a b c"),
-      ("a b? b c", "a b b c", "a b b c"),
-      ("a b{0,1} c", "a c", "a c"),
-      ("a b{0,1} c", "a b c", "a b c"),
-      ("a (b | c) d", "a b d", "a b d"),
-      ("a (b | c) d", "a c d", "a c d"),
-      ("a (b | c)? d", "a d ", "a d"),
-      ("a (b | c)? d", "a b d", "a b d"),
-      ("a (b | c)? d", "a c d", "a c d"),
-      ("a (b | c)* d", "a d", "a d"),
-      ("a (b | c)* d", "a b d", "a b d"),
-      ("a (b | c)* d", "a b c d", "a b c d"),
-      ("a (b | c)* d", "a c b d", "a c b d"),
-      ("a (b | c)* d", "a b b b d", "a b b b d"),
-      ("a (b | c)* d", "a b c b c d", "a b c b c d"),
-      ("a b | c d", "a b c", "a b"),
-      ("a b | c d", "a c d", "c d"),
-      ("a []*? c", "a b c a b c", "a b c"),
-      ("a []* c", "a b c a b c", "a b c a b c"),
-      ("a []+? c", "a b c a b c", "a b c"),
-      ("a []+ c", "a b c a b c", "a b c a b c"),
-      ("a []*? c", "a c b c a b c", "a c"),
-      ("a []* c", "a c b c a b c", "a c b c a b c"),
-      ("a []+? c", "a c b c a b c", "a c b c"),
-      ("a []+ c", "a c b c a b c", "a c b c a b c"),
-      ("(a+ | b)*", "a b", "a b"),
-      ("(a+ | b){0,}", "a b", "a b"),
-      ("(a+ | b)+", "a b", "a b"),
-      ("(a+ | b){1,}", "a b", "a b"),
-      ("(a+ | b)?", "a b", "a"),
-      ("(a+ | b){0,1}", "a b", "a"),
-      ("(a | b | c | d | e) f", "e f", "e f"),
-      ("(a b | a b*) b c", "a b c", "a b c"),
-    )
-    forAll (patterns) { (pattern: String, string: String, expected: String) =>
+  val patternFile = "patternsThatMatch.tsv"
+  val source = scala.io.Source.fromResource(patternFile)
+  val lines = source.getLines().toArray
+
+  for (line <- lines.slice(1, lines.length)) { // skip header
+    val Array(pattern, string, expected) = line.trim.split("\t")
+
+    pattern should s"match «$expected» in «$string»" in {
       val ee = TestUtils.mkExtractorEngine(string)
       val results = ee.query(pattern)
       val actual = TestUtils.mkString(results, ee)
       actual should equal (expected)
     }
   }
+
+  source.close()
 
 }
 
