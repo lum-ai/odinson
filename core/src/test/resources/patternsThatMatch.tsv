@@ -1,0 +1,47 @@
+pattern	string	expected
+a b c	a b c	a b c
+a b* c	a b c	a b c
+a b* c	a b b c	a b b c
+a b* c	a c	a c
+a b* b c	a b c	a b c
+a b* b c	a b b c	a b b c
+a b* b c	a b b b c	a b b b c
+a b* b c	a b b b b c	a b b b b c
+a b+ c	a b c	a b c
+a b+ c	a b b c	a b b c
+a b+ c 	a b b b c	a b b b c
+a b+ b c	a b b c	a b b c
+a b+ b c	a b b b c	a b b b c
+a b? b c	a b c	a b c
+a b? b c	a b b c	a b b c
+a b{0,1} c	a c	a c
+a b{0,1} c	a b c	a b c
+a (b | c) d	a b d	a b d
+a (b | c) d	a c d	a c d
+a (b | c)? d	a d 	a d
+a (b | c)? d	a b d	a b d
+a (b | c)? d	a c d	a c d
+a (b | c)* d	a d	a d
+a (b | c)* d	a b d	a b d
+a (b | c)* d	a b c d	a b c d
+a (b | c)* d	a c b d	a c b d
+a (b | c)* d	a b b b d	a b b b d
+a (b | c)* d	a b c b c d	a b c b c d
+a b | c d	a b c	a b
+a b | c d	a c d	c d
+a []*? c	a b c a b c	a b c
+a []* c	a b c a b c	a b c a b c
+a []+? c	a b c a b c	a b c
+a []+ c	a b c a b c	a b c a b c
+a []*? c	a c b c a b c	a c
+a []* c	a c b c a b c	a c b c a b c
+a []+? c	a c b c a b c	a c b c
+a []+ c	a c b c a b c	a c b c a b c
+(a+ | b)*	a b	a b
+(a+ | b){0,}	a b	a b
+(a+ | b)+	a b	a b
+(a+ | b){1,}	a b	a b
+(a+ | b)?	a b	a
+(a+ | b){0,1}	a b	a
+(a | b | c | d | e) f	e f	e f
+(a b | a b*) b c	a b c	a b c
