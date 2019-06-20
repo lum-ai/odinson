@@ -1,4 +1,4 @@
-#pattern	string	expected
+pattern	string	expected
 a b c	a b c	a b c
 a b* c	a b c	a b c
 a b* c	a b b c	a b b c
