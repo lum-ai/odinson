@@ -24,7 +24,7 @@ class TestPatterns extends FlatSpec with Matchers {
     pattern should s"find all expected results for «$string»" in {
       val ee = TestUtils.mkExtractorEngine(string)
       val results = ee.query(pattern)
-      val actual = TestUtils.mkString(results, ee)
+      val actual = TestUtils.mkStrings(results, ee)
       actual should equal (expected)
     }
   }
@@ -52,9 +52,10 @@ object TestUtils {
   val normalizeQueriesToDefaultField = config[Boolean]("odinson.compiler.normalizeQueriesToDefaultField")
 
   /**
-    * Converts [[ai.lum.odinson.lucene.OdinResults]] to a string.  Used to compare actual to expected results.
+    * Converts [[ai.lum.odinson.lucene.OdinResults]] to an array of strings.
+    * Used to compare actual to expected results.
     */
-  def mkString(results: OdinResults, engine: ExtractorEngine): Array[String] = {
+  def mkStrings(results: OdinResults, engine: ExtractorEngine): Array[String] = {
     for {
       scoreDoc <- results.scoreDocs
       tokens = engine.getTokens(scoreDoc)
