@@ -18,13 +18,13 @@ class TestPatterns extends FlatSpec with Matchers {
   val source = scala.io.Source.fromResource(patternFile)
   val lines = source.getLines().toArray
 
-  for (line <- lines.slice(1, lines.length)) { // skip header
-    val Array(pattern, string, expected) = line.trim.split("\t")
-
-    pattern should s"match «$expected» in «$string»" in {
+  for (line <- lines.drop(1)) { // skip header
+    val Array(pattern, string, allExpected) = line.trim.split("\t")
+    val expected = allExpected.split(";")
+    pattern should s"find all expected results for «$string»" in {
       val ee = TestUtils.mkExtractorEngine(string)
       val results = ee.query(pattern)
-      val actual = TestUtils.mkString(results, ee)
+      val actual = TestUtils.mkStrings(results, ee)
       actual should equal (expected)
     }
   }
@@ -52,22 +52,18 @@ object TestUtils {
   val normalizeQueriesToDefaultField = config[Boolean]("odinson.compiler.normalizeQueriesToDefaultField")
 
   /**
-    * Converts [[ai.lum.odinson.lucene.OdinResults]] to a string.  Used to compare actual to expected results.
+    * Converts [[ai.lum.odinson.lucene.OdinResults]] to an array of strings.
+    * Used to compare actual to expected results.
     */
-  def mkString(results: OdinResults, engine: ExtractorEngine): String = {
-    if (results.totalHits == 0) {
-      ""
-    } else {
-      val allMatchingSpans = for {
-        scoreDoc <- results.scoreDocs
-        tokens = engine.getTokens(scoreDoc)
-        swc <- scoreDoc.matches
-      } yield {
-        tokens
-          .slice(swc.start, swc.end)
-          .mkString(" ")
-      }
-      allMatchingSpans.mkString(" ")
+  def mkStrings(results: OdinResults, engine: ExtractorEngine): Array[String] = {
+    for {
+      scoreDoc <- results.scoreDocs
+      tokens = engine.getTokens(scoreDoc)
+      swc <- scoreDoc.matches
+    } yield {
+      tokens
+        .slice(swc.start, swc.end)
+        .mkString(" ")
     }
   }
 
