@@ -28,8 +28,8 @@ class OdinRangeQuery(
   override def hashCode: Int = mkHash(query, min, max)
 
   def toString(field: String): String = {
-      val q = query.toString(field)
-      s"Repeat($q, $min, $max)"
+    val q = query.toString(field)
+    s"Repeat($q, $min, $max)"
   }
 
   def getField(): String = query.getField()
@@ -47,7 +47,7 @@ class OdinRangeQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val weight = query.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinRangeWeight(weight, searcher, terms)
   }
@@ -156,15 +156,9 @@ class OdinRangeSpans(
     false
   }
 
-  def getNextStretch(): IndexedSeq[OdinsonMatch] = {
-    while (spans.startPosition() != NO_MORE_POSITIONS) {
-      val stretch = getStretch()
-      if (stretch.length >= min) return stretch
-    }
-    IndexedSeq.empty
-  }
-
-  def getStretch(): IndexedSeq[OdinsonMatch] = {
+  // collect all consecutive matches
+  // and return them in an array
+  private def getStretch(): IndexedSeq[OdinsonMatch] = {
     var end = spans.startPosition()
     val stretch = ArrayBuffer.empty[OdinsonMatch]
     while (spans.startPosition() == end) {
@@ -173,6 +167,16 @@ class OdinRangeSpans(
       spans.nextStartPosition()
     }
     stretch
+  }
+
+  // get the next stretch that is of size `min` or bigger
+  // or return empty if there is no such a stretch in the document
+  private def getNextStretch(): IndexedSeq[OdinsonMatch] = {
+    while (spans.startPosition() != NO_MORE_POSITIONS) {
+      val stretch = getStretch()
+      if (stretch.length >= min) return stretch
+    }
+    IndexedSeq.empty
   }
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
