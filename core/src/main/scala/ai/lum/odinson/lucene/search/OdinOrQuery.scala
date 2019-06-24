@@ -77,25 +77,23 @@ class OdinOrQuery(
         assert(s.isInstanceOf[OdinsonSpans])
         return s.asInstanceOf[OdinsonSpans]
       }
-      val byDocQueue = new DisiPriorityQueue(subSpans.length)
-      for (spans <- subSpans) {
-        byDocQueue.add(new DisiWrapper(spans))
-      }
-      val byPositionQueue = new SpanPositionQueue(subSpans.length) // when empty use -1
-      new OdinOrSpans(subSpans.toArray, byDocQueue, byPositionQueue)
+      new OdinOrSpans(subSpans.toArray)
     }
 
   }
 
 }
 
-class OdinOrSpans(
-    val subSpans: Array[OdinsonSpans],
-    val byDocQueue: DisiPriorityQueue,
-    val byPositionQueue: SpanPositionQueue
-) extends OdinsonSpans {
+class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
 
   private var topPositionSpans: OdinsonSpans = null
+
+  private val byDocQueue = new DisiPriorityQueue(subSpans.length)
+  for (spans <- subSpans) {
+    byDocQueue.add(new DisiWrapper(spans))
+  }
+
+  private val byPositionQueue = new SpanPositionQueue(subSpans.length)
 
   def nextDoc(): Int = {
     topPositionSpans = null
