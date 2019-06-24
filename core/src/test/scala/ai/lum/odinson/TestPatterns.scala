@@ -20,7 +20,7 @@ class TestPatterns extends FlatSpec with Matchers {
 
   for (line <- lines.drop(1)) { // skip header
     val Array(pattern, string, allExpected) = line.trim.split("\t")
-    val expected = allExpected.split(";")
+    val expected = allExpected.split(";", -1)
     pattern should s"find all expected results for «$string»" in {
       val ee = TestUtils.mkExtractorEngine(string)
       val results = ee.query(pattern)
