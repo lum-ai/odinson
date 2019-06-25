@@ -158,36 +158,23 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case one =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, one)
-          new OdinOrQuery(clauses, defaultTokenField)
+        case q => new OdinsonOptionalQuery(q, sentenceLengthField)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
           val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue, QuantifierType.Greedy)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, oneOrMore)
-          new OdinOrQuery(clauses, defaultTokenField)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
           val oneOrMore = new OdinRangeQuery(q, 1, max, QuantifierType.Greedy)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, oneOrMore)
-          new OdinOrQuery(clauses, defaultTokenField)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
