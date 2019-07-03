@@ -165,7 +165,7 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue, QuantifierType.Greedy)
+          val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, QuantifierType.Greedy)
           new OdinsonOptionalQuery(oneOrMore, sentenceLengthField)
       }
 
@@ -173,7 +173,7 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val oneOrMore = new OdinRangeQuery(q, 1, max, QuantifierType.Greedy)
+          val oneOrMore = new OdinRepetitionQuery(q, 1, max, QuantifierType.Greedy)
           new OdinsonOptionalQuery(oneOrMore, sentenceLengthField)
       }
 
@@ -187,13 +187,13 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, Int.MaxValue, QuantifierType.Greedy)
+        case q => new OdinRepetitionQuery(q, min, Int.MaxValue, QuantifierType.Greedy)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, max, QuantifierType.Greedy)
+        case q => new OdinRepetitionQuery(q, min, max, QuantifierType.Greedy)
       }
 
   }

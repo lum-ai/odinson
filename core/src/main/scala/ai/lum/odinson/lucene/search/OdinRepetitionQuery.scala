@@ -5,7 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -15,7 +15,7 @@ object QuantifierType extends Enumeration {
 }
 import QuantifierType._
 
-class OdinRangeQuery(
+class OdinRepetitionQuery(
     val query: OdinsonQuery,
     val min: Int,
     val max: Int,
@@ -37,7 +37,7 @@ class OdinRangeQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinRangeQuery(rewritten, min, max, quantifierType)
+      new OdinRepetitionQuery(rewritten, min, max, quantifierType)
     } else {
       super.rewrite(reader)
     }
@@ -49,10 +49,10 @@ class OdinRangeQuery(
   ): OdinsonWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
-    new OdinRangeWeight(weight, searcher, terms)
+    new OdinRepetitionWeight(weight, searcher, terms)
   }
 
-  class OdinRangeWeight(
+  class OdinRepetitionWeight(
       val weight: OdinsonWeight,
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
@@ -72,14 +72,14 @@ class OdinRangeQuery(
     ): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
       if (spans == null) null
-      else new OdinRangeSpans(spans, min, max, quantifierType)
+      else new OdinRepetitionSpans(spans, min, max, quantifierType)
     }
 
   }
 
 }
 
-class OdinRangeSpans(
+class OdinRepetitionSpans(
     val spans: OdinsonSpans,
     val min: Int,
     val max: Int,
@@ -193,14 +193,11 @@ class OdinRangeSpans(
     throw new UnsupportedOperationException
   }
 
-  override def namedCaptures: List[(String, OdinsonMatch)] = {
-    stretch
-      .slice(startIndex, startIndex + numReps)
-      .map(_.captures)
-      // the cost of concatenating two lists is given by the length
-      // of the list to the left, so we want list concatenation to be
-      // right-associative, which is why we use foldRight
-      .foldRight(List.empty[(String, OdinsonMatch)])(_ ++ _)
+  override def odinsonMatch: OdinsonMatch = {
+    // FIXME avoid converting to list
+    val subMatches = stretch.slice(startIndex, startIndex + numReps).toList
+    val isGreedy = true
+    new RepetitionMatch(subMatches, isGreedy)
   }
 
   def startPosition(): Int = {

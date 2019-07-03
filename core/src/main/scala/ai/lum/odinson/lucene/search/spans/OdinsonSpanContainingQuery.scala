@@ -4,7 +4,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 
@@ -70,7 +70,9 @@ class OdinsonSpanContainingWeight(
 
 }
 
-class OdinsonSpanContainingSpans(val subSpans: Array[OdinsonSpans]) extends ConjunctionSpans {
+class OdinsonSpanContainingSpans(
+  val subSpans: Array[OdinsonSpans]
+) extends ConjunctionSpans {
 
   import Spans._
 
@@ -122,7 +124,6 @@ class OdinsonSpanContainingSpans(val subSpans: Array[OdinsonSpans]) extends Conj
     NO_MORE_POSITIONS
   }
 
-  // (this is the main purpose of using this class, instead of org.apache.lucene.search.spans.SpanContainingQuery)
-  override def namedCaptures: List[(String, OdinsonMatch)] = bigSpans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = bigSpans.odinsonMatch
 
 }

@@ -6,7 +6,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.digraph._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -94,12 +94,13 @@ class GraphTraversalSpans(
 
   // resulting spans sorted by position
   private var pq: QueueByPosition = null
-  // named captures corresponding to the top span in the queue
-  private var topPositionCaptures: List[(String, OdinsonMatch)] = Nil
+
+  private var topPositionOdinsonMatch: OdinsonMatch = null
+
   // dependency graph
   private var graph: DirectedGraph = null
 
-  override def namedCaptures: List[(String, OdinsonMatch)] = topPositionCaptures
+  override def odinsonMatch: OdinsonMatch = topPositionOdinsonMatch
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
@@ -107,7 +108,7 @@ class GraphTraversalSpans(
     pq = QueueByPosition.mkPositionQueue(matchPairs(graph, traversal, srcSpans, dstSpans))
     if (pq.size() > 0) {
       atFirstInCurrentDoc = true
-      topPositionCaptures = Nil
+      topPositionOdinsonMatch = null
       true
     } else {
       false
@@ -117,14 +118,13 @@ class GraphTraversalSpans(
   def nextStartPosition(): Int = {
     atFirstInCurrentDoc = false
     if (pq.size() > 0) {
-      val OdinsonMatch(_, spanStart, spanEnd, captures) = pq.pop()
-      matchStart = spanStart
-      matchEnd = spanEnd
-      topPositionCaptures = captures
+      topPositionOdinsonMatch = pq.pop()
+      matchStart = topPositionOdinsonMatch.start
+      matchEnd = topPositionOdinsonMatch.end
     } else {
       matchStart = NO_MORE_POSITIONS
       matchEnd = NO_MORE_POSITIONS
-      topPositionCaptures = Nil
+      topPositionOdinsonMatch = null
     }
     matchStart
   }
@@ -157,8 +157,9 @@ class GraphTraversalSpans(
     val dstIndex = mkInvIndex(getAllMatches(dstSpans))
     for (src <- getAllMatches(srcSpans)) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
-      results ++= dsts.flatMap(dstIndex)
-        .map(r => r.copy(captures = src.captures ++ r.captures)) // accumulate named captures
+      results ++= dsts
+        .flatMap(dstIndex)
+        .map(dst => new GraphTraversalMatch(src, dst))
     }
     results
   }

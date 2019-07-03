@@ -7,7 +7,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -83,19 +83,20 @@ class OdinConcatQuery(
     import Spans._
 
     private var pq: QueueByPosition = null
-    private var topPositionCaptures: List[(String, OdinsonMatch)] = Nil
 
     // only evaluate numWordsPerDoc if wildcards are involved
     private lazy val numWordsPerDoc: NumericDocValues = getNumWordsPerDoc
 
-    override def namedCaptures: List[(String, OdinsonMatch)] = topPositionCaptures
+    private var topPositionOdinsonMatch: OdinsonMatch = null
+
+    override def odinsonMatch: OdinsonMatch = topPositionOdinsonMatch
 
     def twoPhaseCurrentDocMatches(): Boolean = {
       oneExhaustedInCurrentDoc = false
       pq = QueueByPosition.mkPositionQueue(concatSpans(subSpans))
       if (pq.size() > 0) {
         atFirstInCurrentDoc = true
-        topPositionCaptures = Nil
+        topPositionOdinsonMatch = null
         true
       } else {
         false
@@ -105,14 +106,12 @@ class OdinConcatQuery(
     def nextStartPosition(): Int = {
       atFirstInCurrentDoc = false
       if (pq.size() > 0) {
-        val OdinsonMatch(_, spanStart, spanEnd, captures) = pq.pop()
-        matchStart = spanStart
-        matchEnd = spanEnd
-        topPositionCaptures = captures
+        topPositionOdinsonMatch = pq.pop()
+        matchStart = topPositionOdinsonMatch.start
+        matchEnd = topPositionOdinsonMatch.end
       } else {
         matchStart = NO_MORE_POSITIONS
         matchEnd = NO_MORE_POSITIONS
-        topPositionCaptures = Nil
       }
       matchStart
     }
@@ -137,15 +136,26 @@ class OdinConcatQuery(
         k <- keys
         l <- lhsGrouped(k)
         r <- rhsGrouped(k)
-      } yield OdinsonMatch(docID, l.start, r.end, l.captures ++ r.captures)
+      } yield {
+        (l, r) match {
+          case (l: ConcatMatch, r: ConcatMatch) =>
+            new ConcatMatch(l.subMatches ++ r.subMatches)
+          case (l: ConcatMatch, r) =>
+            new ConcatMatch(l.subMatches :+ r)
+          case (l, r: ConcatMatch) =>
+            new ConcatMatch(l +: r.subMatches)
+          case (l, r) =>
+            new ConcatMatch(List(l, r))
+        }
+      }
     }
 
     private def concatSpans(spans: Array[OdinsonSpans]): Seq[OdinsonMatch] = {
       var results: Seq[OdinsonMatch] = null
-      var numWildcards: Int = 0
-      if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
-        return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
-      }
+      // var numWildcards: Int = 0
+      // if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
+      //   return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
+      // }
       for (s <- spans) {
         s match {
           // // count wildcards
@@ -227,34 +237,34 @@ class OdinConcatQuery(
               // these are our first spans
               results = getAllMatches(s)
               // prepend wildcards if needed
-              if (numWildcards > 0) {
-                results = for {
-                  r <- results
-                  if r.start - numWildcards >= 0
-                } yield r.copy(start = r.start - numWildcards)
-                numWildcards = 0
-              }
+              // if (numWildcards > 0) {
+              //   results = for {
+              //     r <- results
+              //     if r.start - numWildcards >= 0
+              //   } yield r.copy(start = r.start - numWildcards)
+              //   numWildcards = 0
+              // }
             } else {
               // append wildcards if needed
-              if (numWildcards > 0) {
-                results = for {
-                  r <- results
-                  if r.end + numWildcards <= numWordsPerDoc.get(docID())
-                } yield r.copy(end = r.end + numWildcards)
-                numWildcards = 0
-              }
+              // if (numWildcards > 0) {
+              //   results = for {
+              //     r <- results
+              //     if r.end + numWildcards <= numWordsPerDoc.get(docID())
+              //   } yield r.copy(end = r.end + numWildcards)
+              //   numWildcards = 0
+              // }
               results = concatSpansPair(results, getAllMatches(s))
             }
             if (results.isEmpty) return Seq.empty
         }
       }
       // any remaining wildcards to append?
-      if (numWildcards > 0) {
-        results = for {
-          r <- results
-          if r.end + numWildcards <= numWordsPerDoc.get(docID())
-        } yield r.copy(end = r.end + numWildcards)
-      }
+      // if (numWildcards > 0) {
+      //   results = for {
+      //     r <- results
+      //     if r.end + numWildcards <= numWordsPerDoc.get(docID())
+      //   } yield r.copy(end = r.end + numWildcards)
+      // }
       results
     }
 

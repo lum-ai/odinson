@@ -1,7 +1,7 @@
 package ai.lum.odinson.lucene.search.spans
 
 import org.apache.lucene.search.spans.Spans
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 
 /**
  * Iterates through combinations of start/end positions per-doc.
@@ -14,11 +14,11 @@ import ai.lum.odinson.OdinsonMatch
  */
 abstract class OdinsonSpans extends Spans {
 
-  def odinsonMatch = OdinsonMatch(docID, startPosition, endPosition, namedCaptures)
+  def odinsonMatch: OdinsonMatch = {
+    new NGramMatch(docID(), startPosition(), endPosition())
+  }
 
   def width(): Int = 0
-
-  def namedCaptures: List[(String, OdinsonMatch)] = Nil
 
   def odinDoStartCurrentDoc() = doStartCurrentDoc()
 

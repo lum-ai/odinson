@@ -7,7 +7,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -85,6 +85,8 @@ class OdinOrQuery(
 }
 
 class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
+
+  private val getClauseID = subSpans.zipWithIndex.toMap
 
   private var topPositionSpans: OdinsonSpans = null
 
@@ -236,9 +238,8 @@ class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
     else topPositionSpans.endPosition()
   }
 
-  override def namedCaptures: List[(String, OdinsonMatch)] = {
-    if (topPositionSpans == null) Nil
-    else topPositionSpans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = {
+    new OrMatch(topPositionSpans.odinsonMatch, getClauseID(topPositionSpans))
   }
 
   override def width(): Int = topPositionSpans.width()

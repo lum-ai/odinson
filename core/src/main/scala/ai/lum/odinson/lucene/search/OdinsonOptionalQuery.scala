@@ -4,7 +4,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.lucene.search.spans._
@@ -82,6 +82,7 @@ class OdinsonOptionalQuery(
 }
 
 class OdinsonOptionalSpans(
+  // FIXME do i need the original spans?
   val originalSpans: OdinsonSpans, // original spans available
   val mergedSpans: OdinOrSpans     // original ORed with 0-grams
 ) extends OdinsonSpans {
@@ -97,6 +98,9 @@ class OdinsonOptionalSpans(
   def positionsCost(): Float = mergedSpans.positionsCost()
   override def asTwoPhaseIterator(): TwoPhaseIterator = mergedSpans.asTwoPhaseIterator()
   override def width(): Int = mergedSpans.width()
-  override def namedCaptures: List[(String, OdinsonMatch)] = mergedSpans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = {
+    // FIXME greedy or lazy?
+    new OptionalMatch(mergedSpans.odinsonMatch, true)
+  }
 
 }
