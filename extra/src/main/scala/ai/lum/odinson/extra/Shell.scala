@@ -10,6 +10,7 @@ import jline.console.history.FileHistory
 import jline.console.completer.{ ArgumentCompleter, StringsCompleter }
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.ConfigFactory
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
@@ -17,7 +18,6 @@ import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.utils.ConfigFactory
 
 
 object Shell extends App {

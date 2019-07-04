@@ -9,11 +9,11 @@ import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.ConfigFactory
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.state.State
-import ai.lum.odinson.utils.ConfigFactory
 
 class QueryCompiler(
     val allTokenFields: Seq[String],

@@ -10,10 +10,10 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.{IndexWriter, IndexWriterConfig}
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
 import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
-import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
-import ai.lum.odinson.utils.ConfigFactory
 import com.typesafe.config.Config
+import ai.lum.common.ConfigUtils._
+import ai.lum.common.ConfigFactory
+import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 
 class OdinsonIndexWriter(
   val directory: Directory,

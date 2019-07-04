@@ -2,7 +2,7 @@ package ai.lum.odinson.state
 
 import scala.collection.mutable.ArrayBuffer
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
-import ai.lum.odinson.utils.Resources.using
+import ai.lum.common.TryWithResources.using
 
 class State(val url: String) {
 
