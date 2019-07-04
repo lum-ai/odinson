@@ -6,6 +6,7 @@ import org.apache.lucene.document.Field.Store
 import org.apache.lucene.index.DirectoryReader
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.DisplayUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
@@ -21,7 +22,7 @@ class TestPatterns extends FlatSpec with Matchers {
   for (line <- lines.drop(1)) { // skip header
     val Array(pattern, string, allExpected) = line.trim.split("\t")
     val expected = allExpected.split(";", -1)
-    pattern should s"find all expected results for «$string»" in {
+    pattern should s"find all expected results for ${string.display}" in {
       val ee = TestUtils.mkExtractorEngine(string)
       val results = ee.query(pattern)
       val actual = TestUtils.mkStrings(results, ee)
