@@ -56,13 +56,21 @@ class OdinsonScorer(
     if (startPosition == Spans.NO_MORE_POSITIONS) {
       return None
     }
+    // gather all matches with the same start position
     val currentMatches = ArrayBuffer(spans.odinsonMatch)
     var nextStart = spans.nextStartPosition()
     while (nextStart == startPosition) {
       currentMatches += spans.odinsonMatch
       nextStart = spans.nextStartPosition()
     }
-    Some(pickMatch(currentMatches))
+    // select final match
+    val finalMatch = pickMatch(currentMatches)
+    // advance to next match that doesn't overlap with current result
+    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatch.end) {
+      nextStart = spans.nextStartPosition()
+    }
+    // return result
+    Some(finalMatch)
   }
 
   // implements algorithm to select match based on specified query
