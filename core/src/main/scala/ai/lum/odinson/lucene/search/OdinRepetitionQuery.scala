@@ -9,17 +9,11 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
-object QuantifierType extends Enumeration {
-  type QuantifierType = Value
-  val Greedy, Lazy = Value
-}
-import QuantifierType._
-
 class OdinRepetitionQuery(
     val query: OdinsonQuery,
     val min: Int,
     val max: Int,
-    val quantifierType: QuantifierType
+    val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
   require(min > 0, "min must be positive")
@@ -37,7 +31,7 @@ class OdinRepetitionQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinRepetitionQuery(rewritten, min, max, quantifierType)
+      new OdinRepetitionQuery(rewritten, min, max, isGreedy)
     } else {
       super.rewrite(reader)
     }
@@ -72,7 +66,7 @@ class OdinRepetitionQuery(
     ): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
       if (spans == null) null
-      else new OdinRepetitionSpans(spans, min, max, quantifierType)
+      else new OdinRepetitionSpans(spans, min, max, isGreedy)
     }
 
   }
@@ -83,7 +77,7 @@ class OdinRepetitionSpans(
     val spans: OdinsonSpans,
     val min: Int,
     val max: Int,
-    val quantifierType: QuantifierType
+    val isGreedy: Boolean
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._
@@ -196,7 +190,6 @@ class OdinRepetitionSpans(
   override def odinsonMatch: OdinsonMatch = {
     // FIXME avoid converting to list
     val subMatches = stretch.slice(startIndex, startIndex + numReps).toList
-    val isGreedy = true
     new RepetitionMatch(subMatches, isGreedy)
   }
 
