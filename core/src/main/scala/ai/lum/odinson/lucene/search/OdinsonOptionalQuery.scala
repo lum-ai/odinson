@@ -12,7 +12,7 @@ import ai.lum.odinson.lucene.search.spans._
 class OdinsonOptionalQuery(
     val query: OdinsonQuery,
     val sentenceLengthField: String,
-    // quantifierType
+    val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = mkHash(query)
@@ -27,7 +27,7 @@ class OdinsonOptionalQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinsonOptionalQuery(rewritten, sentenceLengthField)
+      new OdinsonOptionalQuery(rewritten, sentenceLengthField, isGreedy)
     } else {
       super.rewrite(reader)
     }
@@ -71,9 +71,11 @@ class OdinsonOptionalQuery(
         zeroGrams
       } else {
         // merge matches with empty spans
-        val subSpans = Array(spans, zeroGrams)
+        val subSpans =
+          if (isGreedy) Array(spans, zeroGrams)
+          else Array(zeroGrams, spans)
         val mergedSpans = new OdinOrSpans(subSpans)
-        new OdinsonOptionalSpans(spans, mergedSpans)
+        new OdinsonOptionalSpans(spans, mergedSpans, isGreedy)
       }
     }
 
@@ -84,7 +86,8 @@ class OdinsonOptionalQuery(
 class OdinsonOptionalSpans(
   // FIXME do i need the original spans?
   val originalSpans: OdinsonSpans, // original spans available
-  val mergedSpans: OdinOrSpans     // original ORed with 0-grams
+  val mergedSpans: OdinOrSpans,    // original ORed with 0-grams
+  val isGreedy: Boolean
 ) extends OdinsonSpans {
 
   def nextDoc(): Int = mergedSpans.nextDoc()
@@ -99,8 +102,7 @@ class OdinsonOptionalSpans(
   override def asTwoPhaseIterator(): TwoPhaseIterator = mergedSpans.asTwoPhaseIterator()
   override def width(): Int = mergedSpans.width()
   override def odinsonMatch: OdinsonMatch = {
-    // FIXME greedy or lazy?
-    new OptionalMatch(mergedSpans.odinsonMatch, true)
+    new OptionalMatch(mergedSpans.odinsonMatch, isGreedy)
   }
 
 }

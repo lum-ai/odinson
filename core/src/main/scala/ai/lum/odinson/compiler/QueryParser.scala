@@ -46,7 +46,7 @@ class QueryParser(
   }
 
   def quantifiedPattern[_: P]: P[Ast.Pattern] = {
-    P(atomicPattern ~ quantifier(includeLazy = false).?).map {
+    P(atomicPattern ~ quantifier(includeLazy = true).?).map {
       case (pattern, None) => pattern
       case (pattern, Some(GreedyQuantifier(min, max))) => Ast.GreedyRepetitionPattern(pattern, min, max)
       case (pattern, Some(LazyQuantifier(min, max)))   => Ast.LazyRepetitionPattern(pattern, min, max)
