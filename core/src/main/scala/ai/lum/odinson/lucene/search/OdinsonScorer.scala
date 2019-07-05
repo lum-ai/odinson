@@ -131,29 +131,24 @@ class OdinsonScorer(
             ???
           }
 
-        case (l :: lTail, r :: rTail) =>
-          val left = l match {
-            case l: NGramMatch => lTail
-            case l: GraphTraversalMatch => ???
-            case l: ConcatMatch => l.subMatches ::: lTail
-            case l: RepetitionMatch => ???
-            case l: OptionalMatch => ???
-            case l: OrMatch => ???
-            case l: NamedMatch => l.subMatch :: lTail
-          }
-          val right = r match {
-            case r: NGramMatch => rTail
-            case r: GraphTraversalMatch => ???
-            case r: ConcatMatch => r.subMatches ::: rTail
-            case r: RepetitionMatch => ???
-            case r: OptionalMatch => ???
-            case r: OrMatch => ???
-            case r: NamedMatch => r.subMatch :: rTail
-          }
-          if (left.isEmpty || right.isEmpty) {
-            ???
-          }
+        case (leftMatches, rightMatches) =>
+          val left = expandFirstMatch(leftMatches)
+          val right = expandFirstMatch(rightMatches)
           traverse(left, right)
+      }
+    }
+    def expandFirstMatch(ms: List[OdinsonMatch]): List[OdinsonMatch] = {
+      ms match {
+        case Nil => ???
+        case head :: tail => head match {
+          case m: NGramMatch => tail
+          case m: NamedMatch => m.subMatch :: tail
+          case m: ConcatMatch => m.subMatches ::: tail
+          case m: GraphTraversalMatch => ???
+          case m: RepetitionMatch => ???
+          case m: OptionalMatch => ???
+          case m: OrMatch => ???
+        }
       }
     }
     traverse(List(lhs), List(rhs))
