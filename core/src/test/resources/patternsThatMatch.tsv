@@ -38,10 +38,14 @@ a []* c	a c b c a b c	a c b c a b c
 a []+? c	a c b c a b c	a c b c;a b c
 a []+ c	a c b c a b c	a c b c a b c
 (a+ | b)*	a b	a b;
+(a+ | b)*?	a b	;;
+(a+ | b){,}	a b	a b;
 (a+ | b){0,}	a b	a b;
+(a+ | b){0,}?	a b	;;
 (a+ | b)+	a b	a b
 (a+ | b){1,}	a b	a b
 (a+ | b)?	a b	a;b;
+(a+ | b)??	a b	;;
 (a+ | b){0,1}	a b	a;b;
 (a | b | c | d | e) f	e f	e f
 (a b | a b*) b c	a b c	a b c
