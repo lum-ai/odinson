@@ -9,6 +9,9 @@ trait OdinsonMatch {
   def end: Int
   def captures: List[(String, OdinsonMatch)]
 
+  /** The length of the match */
+  def length: Int = end - start
+
   /** The interval of token indicess that form this mention. */
   def tokenInterval: Interval = Interval.open(start, end)
 
@@ -48,35 +51,28 @@ class GraphTraversalMatch(
 class ConcatMatch(
   val subMatches: List[OdinsonMatch]
 ) extends OdinsonMatch {
-
   val docID: Int = subMatches.head.docID
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
-
   def captures: List[(String, OdinsonMatch)] = {
     subMatches.flatMap(_.captures)
   }
-
 }
 
 class RepetitionMatch(
   val subMatches: List[OdinsonMatch],
   val isGreedy: Boolean,
 ) extends OdinsonMatch {
-
   val docID: Int = subMatches.head.docID
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
-
   val isLazy: Boolean = !isGreedy
-
   def captures: List[(String, OdinsonMatch)] = {
     // subMatches.flatMap(_.captures)
     subMatches
       .map(_.captures)
       .foldRight(List.empty[(String, OdinsonMatch)])(_ ++ _)
   }
-
 }
 
 class OptionalMatch(
@@ -94,28 +90,22 @@ class OrMatch(
   val subMatch: OdinsonMatch,
   val clauseID: Int,
 ) extends OdinsonMatch {
-
   val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
-
   def captures: List[(String, OdinsonMatch)] = {
     subMatch.captures
   }
-
 }
 
 class NamedMatch(
   val subMatch: OdinsonMatch,
   val name: String,
 ) extends OdinsonMatch {
-
   val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
-
   def captures: List[(String, OdinsonMatch)] = {
     (name, subMatch) :: subMatch.captures
   }
-
 }
