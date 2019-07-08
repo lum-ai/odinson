@@ -159,6 +159,7 @@ class GraphTraversalSpans(
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
       results ++= dsts
         .flatMap(dstIndex)
+        .distinct
         .map(dst => new GraphTraversalMatch(src, dst))
     }
     results
