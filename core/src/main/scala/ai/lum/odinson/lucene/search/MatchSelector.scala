@@ -63,27 +63,34 @@ object MatchSelector {
             ???
           }
 
-        case (leftMatches, rightMatches) =>
+        case (leftMatches, rightMatches) if leftMatches.nonEmpty && rightMatches.nonEmpty =>
           val left = expandFirstMatch(leftMatches)
           val right = expandFirstMatch(rightMatches)
           traverse(left, right)
-      }
-    }
-    def expandFirstMatch(ms: List[OdinsonMatch]): List[OdinsonMatch] = {
-      ms match {
-        case Nil => ???
-        case head :: tail => head match {
-          case m: NGramMatch => tail
-          case m: NamedMatch => m.subMatch :: tail
-          case m: ConcatMatch => m.subMatches ::: tail
-          case m: GraphTraversalMatch => ???
-          case m: RepetitionMatch => ???
-          case m: OptionalMatch => ???
-          case m: OrMatch => ???
-        }
+
+        case (l, r) =>
+          // if either the left or the right matches are empty
+          // then something is wrong
+          ???
+
       }
     }
     traverse(List(lhs), List(rhs))
+  }
+
+  private def expandFirstMatch(ms: List[OdinsonMatch]): List[OdinsonMatch] = {
+    ms match {
+      case Nil => Nil
+      case head :: tail => head match {
+        case m: NGramMatch => tail
+        case m: NamedMatch => m.subMatch :: tail
+        case m: ConcatMatch => m.subMatches ::: tail
+        case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
+        case m: RepetitionMatch => ???
+        case m: OptionalMatch => ???
+        case m: OrMatch => ???
+      }
+    }
   }
 
 }
