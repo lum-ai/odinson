@@ -1,8 +1,7 @@
 package controllers
 
-import javax.inject._
 import java.io.File
-
+import javax.inject._
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -12,6 +11,7 @@ import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
+import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
@@ -37,14 +37,18 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
-  def buildInfo(pretty: Option[Boolean]) = Action.async {
-    Future {
-      val json = jsonBuildInfo
-      pretty match {
-        case Some(true) => Ok(Json.prettyPrint(json))
-        case _ => Ok(json)
-      }
-    }(odinsonContext)
+  def buildInfo(pretty: Option[Boolean]) = Action {
+    val json = jsonBuildInfo
+    pretty match {
+      case Some(true) => Ok(Json.prettyPrint(json))
+      case _ => Ok(json)
+    }
+  }
+
+  def configInfo = Action {
+    val options = ConfigRenderOptions.concise.setFormatted(true).setJson(true)
+    val jsonString = config.root.render(options)
+    Ok(jsonString).as(JSON)
   }
 
   def numDocs = Action {

@@ -7,6 +7,7 @@
 GET     /                               controllers.Default.redirect(to = "/api")
 
 GET     /api/buildinfo                  controllers.OdinsonController.buildInfo(pretty: Option[Boolean])
+GET     /api/config                     controllers.OdinsonController.configInfo
 
 # API spec
 GET     /api                            controllers.OpenApiController.openAPI
