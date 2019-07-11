@@ -2,7 +2,7 @@ name := "odinson-core"
 
 libraryDependencies ++= {
 
-  val luceneVersion = "6.6.5"
+  val luceneVersion = "6.6.6"
 
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
