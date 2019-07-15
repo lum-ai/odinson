@@ -2,12 +2,14 @@ package ai.lum.odinson
 
 import ai.lum.common.Interval
 
-trait OdinsonMatch {
+case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
+
+sealed trait OdinsonMatch {
 
   def docID: Int
   def start: Int
   def end: Int
-  def captures: List[(String, OdinsonMatch)]
+  def namedCaptures: List[NamedCapture]
 
   /** The length of the match */
   def length: Int = end - start
@@ -22,7 +24,9 @@ trait OdinsonMatch {
     * For example, in the biodomain, Binding may have several themes.
     */
   def arguments: Map[String, Seq[OdinsonMatch]] = {
-    captures.groupBy(_._1).transform((k,v) => v.map(_._2))
+    namedCaptures
+      .groupBy(_.name)
+      .transform((k,v) => v.map(_.capturedMatch))
   }
 
 }
@@ -32,7 +36,7 @@ class NGramMatch(
   val start: Int,
   val end: Int,
 ) extends OdinsonMatch {
-  val captures: List[(String, OdinsonMatch)] = Nil
+  val namedCaptures: List[NamedCapture] = Nil
 }
 
 // TODO add traversed path to this match object
@@ -43,8 +47,8 @@ class GraphTraversalMatch(
   val docID: Int = dstMatch.docID
   val start: Int = dstMatch.start
   val end: Int = dstMatch.end
-  def captures: List[(String, OdinsonMatch)] = {
-    srcMatch.captures ++ dstMatch.captures
+  def namedCaptures: List[NamedCapture] = {
+    srcMatch.namedCaptures ++ dstMatch.namedCaptures
   }
 }
 
@@ -54,8 +58,8 @@ class ConcatMatch(
   val docID: Int = subMatches.head.docID
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
-  def captures: List[(String, OdinsonMatch)] = {
-    subMatches.flatMap(_.captures)
+  def namedCaptures: List[NamedCapture] = {
+    subMatches.flatMap(_.namedCaptures)
   }
 }
 
@@ -67,11 +71,8 @@ class RepetitionMatch(
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
   val isLazy: Boolean = !isGreedy
-  def captures: List[(String, OdinsonMatch)] = {
-    // subMatches.flatMap(_.captures)
-    subMatches
-      .map(_.captures)
-      .foldRight(List.empty[(String, OdinsonMatch)])(_ ++ _)
+  def namedCaptures: List[NamedCapture] = {
+    subMatches.flatMap(_.namedCaptures)
   }
 }
 
@@ -83,7 +84,9 @@ class OptionalMatch(
   val start: Int = subMatch.start
   val end: Int = subMatch.end
   val isLazy: Boolean = !isGreedy
-  val captures: List[(String, OdinsonMatch)] = subMatch.captures
+  val namedCaptures: List[NamedCapture] = {
+    subMatch.namedCaptures
+  }
 }
 
 class OrMatch(
@@ -93,8 +96,8 @@ class OrMatch(
   val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
-  def captures: List[(String, OdinsonMatch)] = {
-    subMatch.captures
+  def namedCaptures: List[NamedCapture] = {
+    subMatch.namedCaptures
   }
 }
 
@@ -105,7 +108,7 @@ class NamedMatch(
   val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
-  def captures: List[(String, OdinsonMatch)] = {
-    (name, subMatch) :: subMatch.captures
+  def namedCaptures: List[NamedCapture] = {
+    NamedCapture(name, subMatch) :: subMatch.namedCaptures
   }
 }

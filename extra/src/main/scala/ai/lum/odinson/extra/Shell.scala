@@ -206,7 +206,7 @@ object Shell extends App {
       val docID = doc.getField("docId").stringValue
       println(s"Doc $docID (score = ${hit.score})")
       val spans = hit.matches.toVector
-      val captures = hit.matches.flatMap(_.captures).toVector
+      val captures = hit.matches.flatMap(_.namedCaptures).toVector
       // FIXME: print statements used for debugging, please remove
       // println("spans: " + spans)
       // println("captures: " + captures)

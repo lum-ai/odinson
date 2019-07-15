@@ -4,7 +4,7 @@ import org.apache.lucene.analysis.{ Analyzer, TokenStream }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.search.highlight.TokenSources
-import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 
 
@@ -23,7 +23,7 @@ trait OdinsonHighlighter {
     field: String = "word",
     analyzer: Analyzer = new WhitespaceAnalyzer(),
     spans: Seq[OdinsonMatch],
-    captures: Seq[(String, OdinsonMatch)],
+    captures: Seq[NamedCapture],
     openTag: String = openTag,
     argOpenTag: String = argOpenTag,
     closeTag: String = closeTag
@@ -39,8 +39,8 @@ trait OdinsonHighlighter {
     if (captures.nonEmpty) {
       // highlight args
       for (capture <- captures) {
-        val start = capture._2.start
-        val end   = capture._2.end - 1
+        val start = capture.capturedMatch.start
+        val end   = capture.capturedMatch.end - 1
 
         val startTok  = tokens(start)
         tokens(start) = s"$argOpenTag$startTok"
