@@ -291,6 +291,9 @@ class QueryCompiler(
     case Ast.NegatedConstraint(Ast.NegatedConstraint(constraint)) =>
       mkConstraintQuery(constraint)
 
+    case Ast.NegatedConstraint(Ast.Wildcard) =>
+      new FailQuery(defaultTokenField)
+
     case Ast.NegatedConstraint(constraint) =>
       val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
       val exclude = mkConstraintQuery(constraint)
