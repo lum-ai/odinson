@@ -90,10 +90,15 @@ class QueryCompiler(
     case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) =>
       mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
 
-    // TODO lookarounds
-    case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) => ???
-    case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) => ???
+    case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) =>
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val lookahead = mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
+      lookahead.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
+    case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) =>
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val lookbehind = mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
+      lookbehind.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     // token constraints
 

@@ -53,3 +53,4 @@ a	a b a c	a;a
 a (?=b)	a b a c	a
 a (?=c)	a b a c	a
 (?<=a) []	a b a c	b;c
+(?<!a) []	a b a c	a;a
