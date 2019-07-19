@@ -87,9 +87,11 @@ class QueryCompiler(
     case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) =>
       mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
 
+    case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) =>
+      mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
+
     // TODO lookarounds
     case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) => ???
-    case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) => ???
     case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) => ???
 
 
