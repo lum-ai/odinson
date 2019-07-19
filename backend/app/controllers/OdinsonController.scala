@@ -15,7 +15,7 @@ import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{ BuildInfo, ExtractorEngine, OdinsonMatch }
+import ai.lum.odinson.{ BuildInfo, ExtractorEngine, OdinsonMatch, NamedCapture }
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
@@ -297,12 +297,12 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def mkJson(m: OdinsonMatch): Json.JsValueWrapper = {
     Json.obj(
       "span"     -> Json.obj("start" -> m.start, "end" -> m.end),
-      "captures" -> Json.arr(m.captures.map(mkJson):_*)
+      "captures" -> Json.arr(m.namedCaptures.map(mkJson):_*)
     )
   }
 
-  def mkJson(namedCapture: (String, OdinsonMatch)): Json.JsValueWrapper = {
-    Json.obj(namedCapture._1 -> mkJson(namedCapture._2))
+  def mkJson(namedCapture: NamedCapture): Json.JsValueWrapper = {
+    Json.obj(namedCapture.name -> mkJson(namedCapture.capturedMatch))
   }
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
