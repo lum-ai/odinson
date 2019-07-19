@@ -84,8 +84,10 @@ class QueryCompiler(
       val q = new DocEndQuery(defaultTokenField, sentenceLengthField)
       Some(q)
 
+    case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) =>
+      mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
+
     // TODO lookarounds
-    case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) => ???
     case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) => ???
     case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) => ???
     case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) => ???

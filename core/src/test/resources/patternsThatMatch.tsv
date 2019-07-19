@@ -49,3 +49,6 @@ a []+ c	a c b c a b c	a c b c a b c
 (a+ | b){0,1}	a b	a;b;
 (a | b | c | d | e) f	e f	e f
 (a b | a b*) b c	a b c	a b c
+a	a b a c	a;a
+a (?=b)	a b a c	a
+a (?=c)	a b a c	a
