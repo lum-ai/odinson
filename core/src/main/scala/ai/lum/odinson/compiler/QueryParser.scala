@@ -28,7 +28,7 @@ class QueryParser(
 
   // the argument must be a mention that already exists in the state
   def existingArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.javaIdentifier.! ~ ":" ~ Literals.javaIdentifier.! ~
+    P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
       (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal ~ surfacePattern.?
     ).map {
@@ -62,7 +62,7 @@ class QueryParser(
 
   // the argument will be promoted to a mention if it isn't one already
   def promotedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.javaIdentifier.! ~ ":" ~ "^" ~ Literals.javaIdentifier.! ~
+    P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
       (disjunctiveTraversal ~ surfacePattern).rep(1)
     ).map {
@@ -123,7 +123,7 @@ class QueryParser(
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
-    P("(?<" ~ Literals.javaIdentifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
+    P("(?<" ~ Literals.identifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
       case (name, pattern) => Ast.NamedCapturePattern(name, pattern)
     }
   }
@@ -305,7 +305,9 @@ class QueryParser(
   }
 
   def defaultFieldStringConstraint[_: P]: P[Ast.Constraint] = {
-    P(Literals.string ~ "~".!.?).map {
+    // a negative lookahead is required to ensure that this constraint
+    // is not followed by a colon, if it is then it actually is an argument name
+    P(Literals.string ~ !":" ~ "~".!.?).map {
       case (string, None) =>
         Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(maybeNormalize(string)))
       case (string, Some(_)) =>
@@ -364,7 +366,7 @@ class QueryParser(
   }
 
   def stringFieldConstraint[_: P]: P[Ast.Constraint] = {
-    P(fieldName ~ StringIn("=", "!=").! ~ stringMatcher ~ "~".!.?).map {
+    P(fieldName ~ StringIn("=", "!=").! ~ extendedStringMatcher ~ "~".!.?).map {
       case (name, "=",  matcher, None)    => Ast.FieldConstraint(name, matcher)
       case (name, "!=", matcher, None)    => Ast.NegatedConstraint(Ast.FieldConstraint(name, matcher))
       case (name, "=",  matcher, Some(_)) => Ast.FuzzyConstraint(name, matcher)
@@ -375,13 +377,17 @@ class QueryParser(
 
   // any value in `allTokenFields` is a valid field name
   def fieldName[_: P]: P[String] = {
-    P(Literals.javaIdentifier).flatMap { identifier =>
+    P(Literals.identifier).flatMap { identifier =>
       if (allTokenFields contains identifier) Pass(identifier) else Fail
     }
   }
 
   def anyMatcher[_: P]: P[Ast.Matcher] = {
-    P(stringMatcher | regexMatcher)
+    P(extendedStringMatcher | regexMatcher)
+  }
+
+  def extendedStringMatcher[_: P]: P[Ast.StringMatcher] = {
+    P(Literals.extendedString.map(Ast.StringMatcher))
   }
 
   def stringMatcher[_: P]: P[Ast.StringMatcher] = {
