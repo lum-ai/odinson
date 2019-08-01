@@ -31,6 +31,16 @@ sealed trait OdinsonMatch {
 
 }
 
+class EventMatch(
+  val trigger: OdinsonMatch,
+  val namedCaptures: List[NamedCapture],
+) extends OdinsonMatch {
+  // FIXME these are wrong
+  val docID: Int = trigger.docID
+  val start: Int = trigger.start
+  val end: Int = trigger.end
+}
+
 class NGramMatch(
   val docID: Int,
   val start: Int,

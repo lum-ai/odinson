@@ -10,9 +10,70 @@ class QueryParser(
     val normalizeQueriesToDefaultField: Boolean
 ) {
 
+  import QueryParser._
+
   // parser's entry point
   def parseQuery(query: String) = parse(query, odinsonPattern(_)).get.value
   def parseQuery2(query: String) = parse(query, odinsonPattern(_))
+
+  def eventPattern[_: P]: P[Ast.EventPattern] = {
+    P("trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1)).map {
+      case (trigger, arguments) => Ast.EventPattern(trigger, arguments.toList)
+    }
+  }
+
+  def argumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(existingArgumentPattern | promotedArgumentPattern)
+  }
+
+  // the argument must be a mention that already exists in the state
+  def existingArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.javaIdentifier.! ~ ":" ~ Literals.javaIdentifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal ~ surfacePattern.?
+    ).map {
+        case (name, label, None, traversalsWithSurface, graphTraversal, filterPattern) =>
+          // the kind of mention we want
+          val mention = Ast.MentionPattern(None, label)
+          // if the end of the argument pattern is a surface pattern
+          // then we want to use it to constrain the retrieved mention
+          val lastHop = filterPattern match {
+            case None => (graphTraversal, mention)
+            case Some(filter) => (graphTraversal, Ast.FilterPattern(mention, filter))
+          }
+          // the full pattern is a sequence of (graphTraversal, surfacePattern) pairs
+          val pattern = traversalsWithSurface :+ lastHop
+          Ast.ArgumentPattern(name, label, pattern.toList, 1, Some(1), promote = false)
+        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface, graphTraversal, filterPattern) =>
+          // the kind of mention we want
+          val mention = Ast.MentionPattern(None, label)
+          // if the end of the argument pattern is a surface pattern
+          // then we want to use it to constrain the retrieved mention
+          val lastHop = filterPattern match {
+            case None => (graphTraversal, mention)
+            case Some(filter) => (graphTraversal, Ast.FilterPattern(mention, filter))
+          }
+          // the full pattern is a sequence of (graphTraversal, surfacePattern) pairs
+          val pattern = traversalsWithSurface :+ lastHop
+          Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
+        case _ => ??? // we don't support lazy quantifiers
+    }
+  }
+
+  // the argument will be promoted to a mention if it isn't one already
+  def promotedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.javaIdentifier.! ~ ":" ~ "^" ~ Literals.javaIdentifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~
+      (disjunctiveTraversal ~ surfacePattern).rep(1)
+    ).map {
+        case (name, label, None, traversalsWithSurface) =>
+          // TODO should we use Ast.FilterPattern here too?
+          Ast.ArgumentPattern(name, label, traversalsWithSurface.toList, 1, Some(1), promote = true)
+        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface) =>
+          Ast.ArgumentPattern(name, label, traversalsWithSurface.toList, min, max, promote = true)
+        case _ => ??? // we don't support lazy quantifiers
+    }
+  }
 
   // grammar's top-level symbol
   def odinsonPattern[_: P]: P[Ast.Pattern] = {
@@ -80,10 +141,6 @@ class QueryParser(
   // quantifiers
   //
   ///////////////////////////
-
-  sealed trait Quantifier
-  case class GreedyQuantifier(min: Int, max: Option[Int]) extends Quantifier
-  case class LazyQuantifier(min: Int, max: Option[Int]) extends Quantifier
 
   def quantifier[_: P](includeLazy: Boolean): P[Quantifier] = {
     P(quantOperator(includeLazy) | range(includeLazy) | repetition)
@@ -334,5 +391,13 @@ class QueryParser(
   def regexMatcher[_: P]: P[Ast.RegexMatcher] = {
     P(Literals.regex.map(Ast.RegexMatcher))
   }
+
+}
+
+object QueryParser {
+
+  sealed trait Quantifier
+  case class GreedyQuantifier(min: Int, max: Option[Int]) extends Quantifier
+  case class LazyQuantifier(min: Int, max: Option[Int]) extends Quantifier
 
 }

@@ -32,6 +32,18 @@ object Ast {
   case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
   case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
+  case class FilterPattern(mainPattern: Pattern, filterPattern: Pattern) extends Pattern
+
+  // FIXME should these be `Pattern` or something else?
+  case class EventPattern(trigger: Pattern, arguments: List[ArgumentPattern]) extends Pattern
+  case class ArgumentPattern(
+    name: String,
+    label: String,
+    traversal: List[(Traversal, Pattern)],
+    min: Int,
+    max: Option[Int],
+    promote: Boolean, // capture mention on-the-fly if not already captured
+  ) extends Pattern
 
   sealed trait Traversal
   case object NoTraversal extends Traversal

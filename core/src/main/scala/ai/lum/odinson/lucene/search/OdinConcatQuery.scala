@@ -36,9 +36,16 @@ class OdinConcatQuery(
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
-    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
-    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): OdinsonWeight = {
+    val subWeights = clauses
+      .map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight])
+      .asJava
+    val terms =
+      if (needsScores) OdinsonQuery.getTermContexts(subWeights)
+      else null
     new OdinConcatWeight(subWeights, searcher, terms)
   }
 
@@ -56,7 +63,10 @@ class OdinConcatQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val subSpans = new Array[OdinsonSpans](clauses.size)
       var i = 0
       for (weight <- subWeights) {
@@ -69,7 +79,11 @@ class OdinConcatQuery(
         }
       }
       val reader = context.reader
-      new OdinConcatSpans(subSpans, reader, reader.getNumericDocValues(sentenceLengthField))
+      new OdinConcatSpans(
+        subSpans,
+        reader,
+        reader.getNumericDocValues(sentenceLengthField)
+      )
     }
 
   }
