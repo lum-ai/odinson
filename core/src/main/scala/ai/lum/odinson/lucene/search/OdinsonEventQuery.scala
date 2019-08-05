@@ -91,27 +91,31 @@ case class ArgumentSpans(
 
 class OdinsonEventQuery(
   val trigger: OdinsonQuery,
-  val arguments: List[ArgumentQuery],
+  val requiredArguments: List[ArgumentQuery],
+  val optionalArguments: List[ArgumentQuery],
   val dependenciesField: String,
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(trigger, arguments, dependenciesField)
+  override def hashCode: Int = mkHash(trigger, requiredArguments, optionalArguments, dependenciesField)
 
   def toString(field: String): String = {
     val triggerStr = trigger.toString(field)
-    val argsStr = arguments.map(_.toString(field)).mkString(",")
-    s"Event($triggerStr, [$argsStr])"
+    val reqStr = requiredArguments.map(_.toString(field)).mkString(",")
+    val optStr = optionalArguments.map(_.toString(field)).mkString(",")
+    s"Event($triggerStr, [$reqStr], [$optStr])"
   }
 
   def getField(): String = trigger.getField()
 
   override def rewrite(reader: IndexReader): Query = {
     val rewrittenTrigger = trigger.rewrite(reader).asInstanceOf[OdinsonQuery]
-    val rewrittenArguments = arguments.map(_.rewrite(reader))
-    if (trigger != rewrittenTrigger || arguments != rewrittenArguments) {
+    val rewrittenRequiredArguments = requiredArguments.map(_.rewrite(reader))
+    val rewrittenOptionalArguments = optionalArguments.map(_.rewrite(reader))
+    if (trigger != rewrittenTrigger || requiredArguments != rewrittenRequiredArguments || optionalArguments != rewrittenOptionalArguments) {
       new OdinsonEventQuery(
         rewrittenTrigger,
-        rewrittenArguments,
+        rewrittenRequiredArguments,
+        rewrittenOptionalArguments,
         dependenciesField
       )
     } else {
@@ -126,15 +130,17 @@ class OdinsonEventQuery(
     val triggerWeight = trigger
       .createWeight(searcher, needsScores)
       .asInstanceOf[OdinsonWeight]
-    val argumentWeights = arguments.map(_.createWeight(searcher, needsScores))
+    val required = requiredArguments.map(_.createWeight(searcher, needsScores))
+    val optional = optionalArguments.map(_.createWeight(searcher, needsScores))
     val terms =
       if (needsScores) {
-        val subWeights = triggerWeight :: argumentWeights.flatMap(_.subWeights)
+        val reqSubWeights = required.flatMap(_.subWeights)
+        val optSubWeights = optional.flatMap(_.subWeights)
+        val subWeights = triggerWeight :: reqSubWeights ::: optSubWeights
         OdinsonQuery.getTermContexts(subWeights.asJava)
       } else {
         null
       }
-    val (required, optional) = argumentWeights.partition(_.min > 0)
     new OdinsonEventWeight(searcher, terms, triggerWeight, required, optional)
   }
 

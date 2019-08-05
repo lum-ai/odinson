@@ -39,7 +39,7 @@ object Ast {
   case class ArgumentPattern(
     name: String,
     label: String,
-    traversal: List[(Traversal, Pattern)],
+    fullTraversal: List[(Traversal, Pattern)],
     min: Int,
     max: Option[Int],
     promote: Boolean, // capture mention on-the-fly if not already captured

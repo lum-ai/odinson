@@ -1,6 +1,7 @@
 package ai.lum.odinson.compiler
 
 import java.io.File
+import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
@@ -104,6 +105,28 @@ class QueryCompiler(
 
     case Ast.ConstraintPattern(constraint) =>
       val q = mkConstraintQuery(constraint)
+      Some(q)
+
+    // event pattern
+
+    case Ast.EventPattern(triggerPattern, argPatterns) =>
+      val triggerOption = mkOdinsonQuery(triggerPattern)
+      if (triggerOption.isEmpty) return None
+      var triggerQuery = triggerOption.get
+      // split arguments in required and optional
+      val (required, optional) = argPatterns.partition(_.min > 0)
+      val reqArgQueries = required.flatMap(mkArgumentQuery)
+      val optArgQueries = optional.flatMap(mkArgumentQuery)
+      // all arguments should survive the transformation
+      if (reqArgQueries.length != required.length || optArgQueries.length != optional.length) {
+        ???
+      }
+      // add start-constraints of required args to trigger
+      for (arg <- reqArgQueries) {
+        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.head._1))
+      }
+      // return event query
+      val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField)
       Some(q)
 
     // disjunctive patterns
@@ -248,6 +271,33 @@ class QueryCompiler(
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = true)
       }
 
+  }
+
+  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+    // we will collect traversals and queries for the argument's full traversal
+    val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
+    val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
+    // for each step in the traversal ...
+    for ((t, p) <- arg.fullTraversal) {
+      // compile graph traversal
+      val traversal = mkGraphTraversal(t)
+      // compile query and add end-constraint
+      val query = mkOdinsonQuery(p).map(q => addConstraint(q, mkEndConstraint(traversal)))
+      // if query is none then we failed
+      if (query.isEmpty) return None
+      // if we already have a query then add a start-constraint
+      if (allOdinsonQueries.nonEmpty) {
+        val i = allOdinsonQueries.length - 1
+        val q = allOdinsonQueries(i)
+        allOdinsonQueries(i) = addConstraint(q, mkStartConstraint(traversal))
+      }
+      // collect traversal and query
+      allGraphTraversals += traversal
+      allOdinsonQueries += query.get
+    }
+    // make argument query
+    val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
+    Some(ArgumentQuery(arg.name, arg.min, arg.max, fullTraversal))
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {
