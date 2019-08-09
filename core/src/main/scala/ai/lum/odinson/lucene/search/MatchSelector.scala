@@ -89,6 +89,7 @@ object MatchSelector {
         case m: RepetitionMatch => ???
         case m: OptionalMatch => ???
         case m: OrMatch => ???
+        case m: EventMatch => ???
       }
     }
   }
