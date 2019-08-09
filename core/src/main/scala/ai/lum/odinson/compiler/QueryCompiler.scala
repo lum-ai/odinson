@@ -38,6 +38,13 @@ class QueryCompiler(
     state = Some(s)
   }
 
+  // FIXME temporary entrypoint
+  def compileEventQuery(pattern: String): OdinsonQuery = {
+    val ast = parser.parseEventQuery(pattern)
+    val query = mkOdinsonQuery(ast)
+    query.getOrElse(new FailQuery(defaultTokenField))
+  }
+
   def compile(pattern: String): OdinsonQuery = {
     val ast = parser.parseQuery(pattern)
     val query = mkOdinsonQuery(ast)
@@ -505,6 +512,11 @@ class QueryCompiler(
 }
 
 object QueryCompiler {
+
+  def fromConfig(path: String): QueryCompiler = {
+    val config = ConfigFactory.load()
+    fromConfig(config[Config](path))
+  }
 
   def fromConfig(config: Config): QueryCompiler = {
     new QueryCompiler(
