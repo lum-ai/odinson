@@ -16,8 +16,11 @@ class QueryParser(
   def parseQuery(query: String) = parse(query, odinsonPattern(_)).get.value
   def parseQuery2(query: String) = parse(query, odinsonPattern(_))
 
+  // FIXME temporary entrypoint
+  def parseEventQuery(query: String) = parse(query, eventPattern(_), verboseFailures = true)
+
   def eventPattern[_: P]: P[Ast.EventPattern] = {
-    P("trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1)).map {
+    P(Start ~ "trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1) ~ End).map {
       case (trigger, arguments) => Ast.EventPattern(trigger, arguments.toList)
     }
   }
@@ -29,32 +32,32 @@ class QueryParser(
   // the argument must be a mention that already exists in the state
   def existingArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~
-      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal ~ surfacePattern.?
+      quantifier(includeLazy = false).? ~ "=" ~/
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
     ).map {
-        case (name, label, None, traversalsWithSurface, graphTraversal, filterPattern) =>
+        case (name, label, None, traversalsWithSurface, lastTraversal) =>
           // the kind of mention we want
           val mention = Ast.MentionPattern(None, label)
           // if the end of the argument pattern is a surface pattern
           // then we want to use it to constrain the retrieved mention
-          val lastHop = filterPattern match {
-            case None => (graphTraversal, mention)
-            case Some(filter) => (graphTraversal, Ast.FilterPattern(mention, filter))
+          val pattern = lastTraversal match {
+            case Some(t) => traversalsWithSurface :+ (t, mention)
+            case None =>
+              val (lastHop, lastSurface) = traversalsWithSurface.last
+              traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
           }
-          // the full pattern is a sequence of (graphTraversal, surfacePattern) pairs
-          val pattern = traversalsWithSurface :+ lastHop
           Ast.ArgumentPattern(name, label, pattern.toList, 1, Some(1), promote = false)
-        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface, graphTraversal, filterPattern) =>
+        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface, lastTraversal) =>
           // the kind of mention we want
           val mention = Ast.MentionPattern(None, label)
           // if the end of the argument pattern is a surface pattern
           // then we want to use it to constrain the retrieved mention
-          val lastHop = filterPattern match {
-            case None => (graphTraversal, mention)
-            case Some(filter) => (graphTraversal, Ast.FilterPattern(mention, filter))
+          val pattern = lastTraversal match {
+            case Some(t) => traversalsWithSurface :+ (t, mention)
+            case None =>
+              val (lastHop, lastSurface) = traversalsWithSurface.last
+              traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
           }
-          // the full pattern is a sequence of (graphTraversal, surfacePattern) pairs
-          val pattern = traversalsWithSurface :+ lastHop
           Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
         case _ => ??? // we don't support lazy quantifiers
     }
