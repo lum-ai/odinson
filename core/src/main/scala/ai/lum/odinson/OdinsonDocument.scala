@@ -39,20 +39,34 @@ object Sentence {
 
 sealed trait Field {
   def name: String
+  def store: Boolean
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
 }
 
 object Field {
   implicit val rw: ReadWriter[Field] = {
-    ReadWriter.merge(TokensField.rw, GraphField.rw)
+    ReadWriter.merge(StringField.rw, TokensField.rw, GraphField.rw)
+  }
+}
+
+case class StringField(
+  name: String,
+  value: String,
+  store: Boolean = false,
+) extends Field
+
+object StringField {
+  implicit val rw: ReadWriter[StringField] = macroRW
+  def fromJson(data: String): StringField = {
+    read[StringField](data)
   }
 }
 
 case class TokensField(
   name: String,
   tokens: Seq[String],
-  store: Boolean,
+  store: Boolean = false,
 ) extends Field
 
 object TokensField {
@@ -66,7 +80,8 @@ case class GraphField(
   name: String,
   incomingEdges: Seq[Seq[(Int, String)]],
   outgoingEdges: Seq[Seq[(Int, String)]],
-  roots: Seq[Int],
+  roots: Set[Int],
+  store: Boolean = false,
 ) extends Field
 
 object GraphField {
