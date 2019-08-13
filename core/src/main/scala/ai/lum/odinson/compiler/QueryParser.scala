@@ -17,7 +17,7 @@ class QueryParser(
   def parseQuery2(query: String) = parse(query, odinsonPattern(_))
 
   // FIXME temporary entrypoint
-  def parseEventQuery(query: String) = parse(query, eventPattern(_), verboseFailures = true)
+  def parseEventQuery(query: String) = parse(query, eventPattern(_), verboseFailures = true).get.value
 
   def eventPattern[_: P]: P[Ast.EventPattern] = {
     P(Start ~ "trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1) ~ End).map {
