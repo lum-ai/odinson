@@ -1,7 +1,7 @@
 package ai.lum.odinson
 
 import java.io.File
-import java.nio.file.{ Path, Paths }
+import java.nio.file.Paths
 import java.util.Collection
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
@@ -175,10 +175,11 @@ object OdinsonIndexWriter {
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
-        (new RAMDirectory(), Vocabulary.empty)
-      case s =>
-        val path = Paths.get(s)
-        val dir = FSDirectory.open(path)
+        val dir = new RAMDirectory
+        val vocab = Vocabulary.empty
+        (dir, vocab)
+      case path =>
+        val dir = FSDirectory.open(Paths.get(path))
         val vocab = Vocabulary.fromIndex(dir)
         (dir, vocab)
     }
