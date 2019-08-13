@@ -77,8 +77,8 @@ class OdinsonIndexWriter(
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
     for {
       odinsonField <- d.metadata
-      lucenedocField <- mklucenedocFields(odinsonField)
-    } metadata.add(lucenedocField)
+      luceneField <- mkLuceneFields(odinsonField)
+    } metadata.add(luceneField)
     metadata
   }
 
@@ -89,8 +89,8 @@ class OdinsonIndexWriter(
     sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
     for {
       odinsonField <- s.fields
-      lucenedocField <- mklucenedocFields(odinsonField)
-    } sent.add(lucenedocField)
+      luceneField <- mkLuceneFields(odinsonField)
+    } sent.add(luceneField)
     val normFields = s.fields
       .collect { case f: TokensField => f }
       .filter(f => addToNormalizedField.contains(f.name))
@@ -99,7 +99,7 @@ class OdinsonIndexWriter(
     sent
   }
 
-  def mklucenedocFields(f: Field): Seq[lucenedoc.Field] = {
+  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
     f match {
       case f: DateField =>
         val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
