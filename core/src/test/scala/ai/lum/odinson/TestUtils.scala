@@ -44,6 +44,37 @@ object TestUtils {
     }
   }
 
+  def mkExtractorEngine(doc: Document): ExtractorEngine = {
+
+    val memWriter = OdinsonIndexWriter.inMemory
+    val block = memWriter.mkDocumentBlock(doc)
+    memWriter.addDocuments(block)
+    memWriter.commit()
+
+    val reader = DirectoryReader.open(memWriter.directory)
+
+    val indexSearcher = new OdinsonIndexSearcher(reader)
+    val compiler = new QueryCompiler(
+      allTokenFields = allTokenFields,
+      defaultTokenField = rawTokenField, // raw is the default field for testing purposes
+      sentenceLengthField = sentenceLengthField,
+      dependenciesField = dependenciesField,
+      incomingTokenField = incomingTokenField,
+      outgoingTokenField = outgoingTokenField,
+      dependenciesVocabulary = memWriter.vocabulary,
+      normalizeQueriesToDefaultField = normalizeQueriesToDefaultField
+    )
+
+    val jdbcUrl = config[String]("odinson.state.jdbc.url")
+    val state = new State(jdbcUrl)
+    state.init()
+    compiler.setState(state)
+    new ExtractorEngine(indexSearcher, compiler, state, documentIdField)
+
+  }
+
+
+
   /**
     * Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc in-memory index ([[org.apache.lucene.store.RAMDirectory]])
     */
