@@ -101,6 +101,14 @@ class OdinsonIndexWriter(
 
   def mklucenedocFields(f: Field): Seq[lucenedoc.Field] = {
     f match {
+      case f: DateField =>
+        val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
+        if (f.store) {
+          val storedField = new lucenedoc.StoredField(f.name, f.date)
+          Seq(longField, storedField)
+        } else {
+          Seq(longField)
+        }
       case f: StringField =>
         val store = if (f.store) Store.YES else Store.NO
         val stringField = new lucenedoc.StringField(f.name, f.string, store)
