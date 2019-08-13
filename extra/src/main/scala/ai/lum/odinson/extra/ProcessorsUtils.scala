@@ -1,5 +1,6 @@
 package ai.lum.odinson.extra
 
+import java.util.UUID
 import org.clulab.processors.{
   Document => ProcessorsDocument,
   Sentence => ProcessorsSentence,
@@ -27,17 +28,16 @@ object ProcessorsUtils {
 
   /** convert processors document to odinson document */
   def convertDocument(d: ProcessorsDocument): OdinsonDocument = {
+    val id = d.id.getOrElse(UUID.randomUUID.toString)
     val metadata = mkMetadata(d)
     val sentences = mkSentences(d)
-    OdinsonDocument(metadata, sentences)
+    OdinsonDocument(id, metadata, sentences)
   }
 
   /** generate metadata from processors document */
   def mkMetadata(d: ProcessorsDocument): Seq[Field] = {
-    val maybeDocId = d.id.map(id => StringField(documentIdField, id, store = true))
-    // TODO add more metadata
-    val metadata = Seq(maybeDocId)
-    metadata.flatten
+    // TODO return metadata
+    Seq.empty
   }
 
   /** make sequence of odinson documents from processors document */
@@ -55,7 +55,7 @@ object ProcessorsUtils {
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
     val maybeDeps = s.dependencies.map(deps => GraphField(dependenciesField, convertEdges(deps.incomingEdges), convertEdges(deps.outgoingEdges), deps.roots))
     val fields = Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
-    OdinsonSentence(fields.flatten)
+    OdinsonSentence(s.size, fields.flatten)
   }
 
   /** convert edges type */

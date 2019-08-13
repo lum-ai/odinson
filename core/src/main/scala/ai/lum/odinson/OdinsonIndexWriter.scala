@@ -3,17 +3,16 @@ package ai.lum.odinson
 import java.io.File
 import java.nio.file.Path
 import java.util.Collection
-
 import scala.collection.JavaConverters._
-import org.apache.lucene.document.Document
+import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.index.{IndexWriter, IndexWriterConfig}
+import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
+import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
-import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
+import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -25,11 +24,11 @@ class OdinsonIndexWriter(
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
 
-  def addDocuments(block: Seq[Document]): Unit = {
+  def addDocuments(block: Seq[LuceneDocument]): Unit = {
     addDocuments(block.asJava)
   }
 
-  def addDocuments(block: Collection[Document]): Unit = {
+  def addDocuments(block: Collection[LuceneDocument]): Unit = {
     writer.addDocuments(block)
   }
 
@@ -41,6 +40,13 @@ class OdinsonIndexWriter(
     stream.writeString(vocabulary.dump)
     stream.close()
     writer.close()
+  }
+
+  def mkDirectedGraph(f: GraphField): DirectedGraph = {
+    val incomingEdges = f.incomingEdges.map(_.toArray).toArray
+    val outgoingEdges = f.outgoingEdges.map(_.toArray).toArray
+    val roots = f.roots.toArray
+    mkDirectedGraph(incomingEdges, outgoingEdges, roots)
   }
 
   def mkDirectedGraph(

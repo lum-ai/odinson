@@ -7,6 +7,10 @@ import org.apache.lucene.analysis.tokenattributes.{ CharTermAttribute, PositionI
 class DependencyTokenStream(val edges: Array[Array[(Int, String)]]) extends TokenStream {
   // edges can be either incoming or outgoing
 
+  def this(edges: Seq[Seq[(Int, String)]]) = {
+    this(edges.map(_.toArray).toArray)
+  }
+
   val posIncrAtt = addAttribute(classOf[PositionIncrementAttribute])
   val termAtt = addAttribute(classOf[CharTermAttribute])
 

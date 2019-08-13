@@ -1,12 +1,15 @@
 package ai.lum.odinson
 
+import java.io.File
 import upickle.default._
+import ai.lum.common.FileUtils._
 
 
 
 case class Document(
+  id: String,
   metadata: Seq[Field],
-  sentences: Seq[Sentence]
+  sentences: Seq[Sentence],
 ) {
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
@@ -14,14 +17,21 @@ case class Document(
 
 object Document {
   implicit val rw: ReadWriter[Document] = macroRW
+
   def fromJson(data: String): Document = {
     read[Document](data)
   }
+
+  def fromJson(f: File): Document = {
+    fromJson(f.readString())
+  }
+
 }
 
 
 
 case class Sentence(
+  numTokens: Long,
   fields: Seq[Field]
 ) {
   def toJson: String = write(this)
@@ -52,7 +62,7 @@ object Field {
 
 case class StringField(
   name: String,
-  value: String,
+  string: String,
   store: Boolean = false,
 ) extends Field
 
