@@ -42,7 +42,7 @@ class TestEvents extends FlatSpec with Matchers {
     results.scoreDocs.head.matches should have size 1
     val m = results.scoreDocs.head.matches.head
     m shouldBe an [EventMatch]
-    val em = results.scoreDocs.head.matches.head.asInstanceOf[EventMatch]
+    val em = m.asInstanceOf[EventMatch]
     val trigger = em.trigger
     trigger.start should be (1)
     trigger.end should be (2)
