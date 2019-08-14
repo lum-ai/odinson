@@ -19,7 +19,7 @@ class TestEvents extends FlatSpec with Matchers {
   "Document" should "contain NPs" in {
     val results = ee.query("[chunk=B-NP][chunk=I-NP]*")
     results.totalHits should equal (1)
-    results.scoreDocs.head.matches.length should equal (2)
+    results.scoreDocs.head.matches should have size 2
     for {
       scoreDoc <- results.scoreDocs
       m <- scoreDoc.matches
@@ -39,7 +39,7 @@ class TestEvents extends FlatSpec with Matchers {
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 1)
     results.totalHits should equal (1)
-    results.scoreDocs.head.matches.length should equal (1)
+    results.scoreDocs.head.matches should have size 1
     val m = results.scoreDocs.head.matches.head
     m shouldBe an [EventMatch]
     val em = results.scoreDocs.head.matches.head.asInstanceOf[EventMatch]
@@ -47,10 +47,12 @@ class TestEvents extends FlatSpec with Matchers {
     trigger.start should be (1)
     trigger.end should be (2)
     em.arguments.keys should contain ("subject")
+    em.arguments("subject") should have size 1
     val subject = em.arguments("subject").head
     subject.start should be (0)
     subject.end should be (1)
     em.arguments.keys should contain ("object")
+    em.arguments("object") should have size 1
     val `object` = em.arguments("object").head
     `object`.start should be (2)
     `object`.end should be (4)
