@@ -41,21 +41,25 @@ class TestEvents extends FlatSpec with Matchers {
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 1
     val m = results.scoreDocs.head.matches.head
+    testEventTrigger(m, start = 1, end = 2)
+    m.arguments.keys should contain ("subject")
+    m.arguments("subject") should have size 1
+    val subject = m.arguments("subject").head
+    subject.start should be (0)
+    subject.end should be (1)
+    m.arguments.keys should contain ("object")
+    m.arguments("object") should have size 1
+    val `object` = m.arguments("object").head
+    `object`.start should be (2)
+    `object`.end should be (4)
+  }
+
+  def testEventTrigger(m: OdinsonMatch, start: Int, end: Int): Unit = {
     m shouldBe an [EventMatch]
     val em = m.asInstanceOf[EventMatch]
     val trigger = em.trigger
-    trigger.start should be (1)
-    trigger.end should be (2)
-    em.arguments.keys should contain ("subject")
-    em.arguments("subject") should have size 1
-    val subject = em.arguments("subject").head
-    subject.start should be (0)
-    subject.end should be (1)
-    em.arguments.keys should contain ("object")
-    em.arguments("object") should have size 1
-    val `object` = em.arguments("object").head
-    `object`.start should be (2)
-    `object`.end should be (4)
+    trigger.start shouldEqual start
+    trigger.end shouldEqual end
   }
 
 }
