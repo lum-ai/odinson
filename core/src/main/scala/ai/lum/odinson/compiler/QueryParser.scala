@@ -35,46 +35,55 @@ class QueryParser(
       quantifier(includeLazy = false).? ~ "=" ~/
       (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
     ).map {
-        case (name, label, None, traversalsWithSurface, lastTraversal) =>
-          // the kind of mention we want
-          val mention = Ast.MentionPattern(None, label)
-          // if the end of the argument pattern is a surface pattern
-          // then we want to use it to constrain the retrieved mention
-          val pattern = lastTraversal match {
-            case Some(t) => traversalsWithSurface :+ (t, mention)
-            case None =>
-              val (lastHop, lastSurface) = traversalsWithSurface.last
-              traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
-          }
-          Ast.ArgumentPattern(name, label, pattern.toList, 1, Some(1), promote = false)
-        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface, lastTraversal) =>
-          // the kind of mention we want
-          val mention = Ast.MentionPattern(None, label)
-          // if the end of the argument pattern is a surface pattern
-          // then we want to use it to constrain the retrieved mention
-          val pattern = lastTraversal match {
-            case Some(t) => traversalsWithSurface :+ (t, mention)
-            case None =>
-              val (lastHop, lastSurface) = traversalsWithSurface.last
-              traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
-          }
-          Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
-        case _ => ??? // we don't support lazy quantifiers
+      case (name, label, quant, traversalsWithSurface, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        // if the end of the argument pattern is a surface pattern
+        // then we want to use it to constrain the retrieved mention
+        val pattern = lastTraversal match {
+          case Some(t) => traversalsWithSurface :+ (t, mention)
+          case None =>
+            val (lastHop, lastSurface) = traversalsWithSurface.last
+            traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
+        }
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
     }
   }
 
   // the argument will be promoted to a mention if it isn't one already
   def promotedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~
-      (disjunctiveTraversal ~ surfacePattern).rep(1)
+    P(Literals.identifier.! ~ ":" ~ "^" ~/ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~/
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
     ).map {
-        case (name, label, None, traversalsWithSurface) =>
-          // TODO should we use Ast.FilterPattern here too?
-          Ast.ArgumentPattern(name, label, traversalsWithSurface.toList, 1, Some(1), promote = true)
-        case (name, label, Some(GreedyQuantifier(min, max)), traversalsWithSurface) =>
-          Ast.ArgumentPattern(name, label, traversalsWithSurface.toList, min, max, promote = true)
-        case _ => ??? // we don't support lazy quantifiers
+      case (name, label, quant, traversalsWithSurface, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        val pattern = lastTraversal match {
+          case Some(t) =>
+            // if we don't have a final token pattern then assume a wildcard
+            val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
+            val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
+            traversalsWithSurface :+ (t, mentionOrWildcard)
+          case None =>
+            // if there is a final token pattern then use it to filter an existing mention
+            // or use it as the result if there is no matching mention
+            val (lastHop, lastSurface) = traversalsWithSurface.last
+            val conditionedMention = Ast.FilterPattern(mention, lastSurface)
+            val mentionOrPattern = Ast.DisjunctivePattern(List(conditionedMention, lastSurface))
+            traversalsWithSurface.init :+ (lastHop, mentionOrPattern)
+        }
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = true)
     }
   }
 
