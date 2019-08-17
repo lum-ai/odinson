@@ -18,7 +18,28 @@ class TestEvents extends FlatSpec with Matchers {
   val doc = Document.fromJson(json)
   val ee = TestUtils.mkExtractorEngine(doc)
 
-  "Document" should "contain NPs" in {
+  "Odinson" should "match event with promoted entities" in {
+    val pattern = """
+      trigger = [lemma=eat]
+      subject: ^NP = >nsubj [chunk=B-NP][chunk=I-NP]*
+      object: ^NP = >dobj [chunk=B-NP][chunk=I-NP]*
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val results = ee.query(q, 1)
+    results.totalHits should equal (1)
+    results.scoreDocs.head.matches should have size 1
+    val m = results.scoreDocs.head.matches.head
+    // test trigger
+    testEventTrigger(m, start = 1, end = 2)
+    // test arguments
+    val desiredArgs = Seq(
+      Argument("subject", 0, 1),
+      Argument("object", 2, 4),
+    )
+    testEventArguments(m, desiredArgs)
+  }
+
+  it should "populate the state with NPs" in {
     val results = ee.query("[chunk=B-NP][chunk=I-NP]*")
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
@@ -37,7 +58,7 @@ class TestEvents extends FlatSpec with Matchers {
     ee.state.index()
   }
 
-  it should "contain Becky eating gummy bears" in {
+  it should "find event with mentions from the state" in {
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 1)
     results.totalHits should equal (1)

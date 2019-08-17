@@ -82,6 +82,14 @@ class QueryCompiler(
   /** Constructs an OdinsonQuery from an AST. */
   def mkOdinsonQuery(ast: Ast.Pattern): Option[OdinsonQuery] = ast match {
 
+    // filtered query
+
+    case Ast.FilterPattern(main, filter) =>
+      for {
+        q <- mkOdinsonQuery(main)
+        c <- mkOdinsonQuery(filter)
+      } yield new OdinsonSpanContainingQuery(q, c)
+
     // zero-width assertions
 
     case Ast.AssertionPattern(Ast.SentenceStartAssertion) =>
