@@ -14,7 +14,7 @@ sealed trait OdinsonMatch {
   /** The length of the match */
   def length: Int = end - start
 
-  /** The interval of token indicess that form this mention. */
+  /** The interval of token indices that form this mention. */
   def tokenInterval: Interval = Interval.open(start, end)
 
   /** A map from argument name to a sequence of matches.
@@ -35,10 +35,9 @@ class EventMatch(
   val trigger: OdinsonMatch,
   val namedCaptures: List[NamedCapture],
 ) extends OdinsonMatch {
-  // FIXME these are wrong
   val docID: Int = trigger.docID
-  val start: Int = trigger.start
-  val end: Int = trigger.end
+  val start: Int = (trigger.start :: namedCaptures.map(_.capturedMatch.start)).min
+  val end: Int = (trigger.end :: namedCaptures.map(_.capturedMatch.end)).max
 }
 
 class NGramMatch(
