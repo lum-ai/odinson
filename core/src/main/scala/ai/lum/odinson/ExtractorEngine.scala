@@ -165,7 +165,8 @@ object ExtractorEngine {
   def fromConfig(config: Config): ExtractorEngine = {
     val indexDir = config[Path]("indexDir")
     val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
-    val indexSearcher = new OdinsonIndexSearcher(indexReader)
+    val computeTotalHits = config[Boolean]("computeTotalHits")
+    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val compiler = QueryCompiler.fromConfig(config)
     val jdbcUrl = config[String]("state.jdbc.url")
     val state = new State(jdbcUrl)
