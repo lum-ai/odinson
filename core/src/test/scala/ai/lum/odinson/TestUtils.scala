@@ -53,7 +53,7 @@ object TestUtils {
 
     val reader = DirectoryReader.open(memWriter.directory)
 
-    val indexSearcher = new OdinsonIndexSearcher(reader)
+    val indexSearcher = new OdinsonIndexSearcher(reader, computeTotalHits = true)
     val compiler = new QueryCompiler(
       allTokenFields = allTokenFields,
       defaultTokenField = rawTokenField, // raw is the default field for testing purposes
@@ -85,7 +85,7 @@ object TestUtils {
 
     val reader = DirectoryReader.open(memWriter.directory)
 
-    val indexSearcher = new OdinsonIndexSearcher(reader)
+    val indexSearcher = new OdinsonIndexSearcher(reader, computeTotalHits = true)
     val compiler = new QueryCompiler(
       allTokenFields = allTokenFields,
       defaultTokenField = rawTokenField, // raw is the default field for testing purposes

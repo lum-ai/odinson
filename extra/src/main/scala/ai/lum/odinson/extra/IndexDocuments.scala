@@ -41,21 +41,34 @@ object IndexDocuments extends App with LazyLogging {
   val dependenciesField    = config[String]("odinson.index.dependenciesField")
   val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
   val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
+  val synchronizeOrderWithDocumentId =    config[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
 
   val storeSentenceJson   = config[Boolean]("odinson.extra.storeSentenceJson")
 
-  implicit val formats = DefaultFormats
+  implicit val formats: DefaultFormats = DefaultFormats
 
-  val writer = OdinsonIndexWriter.fromConfig
+  val writer = OdinsonIndexWriter.fromConfig()
 
   // serialized org.clulab.processors.Document or Document json
   val SUPPORTED_EXTENSIONS = "(?i).*?\\.(ser|json)$"
   // NOTE indexes the documents in parallel
   // FIXME: groupBy by extension-less basename?
-  for {
-    f <- docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true).toSeq.par
-    if ! f.getName.endsWith(".metadata.ser")
-  } {
+
+  val documentFiles = if (synchronizeOrderWithDocumentId) {
+    // files ordered by the id of the document
+    docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true)
+           .withFilter(f => !f.getName.endsWith(".metadata.ser"))
+           .map(f => (deserializeDoc(f)._1.id.map(_.toInt), f))
+           .toSeq
+           .sortBy(_._1)
+           .map(_._2)
+  } else {
+    docsDir.listFilesByRegex(SUPPORTED_EXTENSIONS, recursive = true)
+           .toSeq.par
+           .withFilter(f => !f.getName.endsWith(".metadata.ser"))
+  }
+
+  documentFiles.foreach{ f =>
     Try {
       val (doc, md) = deserializeDoc(f)
       val block = mkDocumentBlock(doc, md)
