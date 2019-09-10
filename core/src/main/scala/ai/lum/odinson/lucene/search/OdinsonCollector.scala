@@ -110,7 +110,7 @@ class OdinsonCollector(
       // if all the indexes here are before the specified 'after' value
       if (context.parent.isTopLevel && context.parent.leaves().size() > context.ordInParent + 1) {
         val nextLeafContext = context.parent.leaves().get(context.ordInParent + 1)
-        if (nextLeafContext.docBase >= after + 1) {
+        if (nextLeafContext.docBase <= after + 1) {
           skipEntireSegment = true
         }
       }
