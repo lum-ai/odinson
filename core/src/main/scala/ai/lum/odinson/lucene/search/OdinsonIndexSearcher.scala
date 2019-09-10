@@ -11,12 +11,14 @@ import ai.lum.odinson.utils.ExecutionContextExecutorServiceBridge
 
 class OdinsonIndexSearcher(
     context: IndexReaderContext,
-    executor: ExecutorService
+    executor: ExecutorService,
+    computeTotalHits: Boolean,
 ) extends IndexSearcher(context, executor) {
 
-  def this(r: IndexReader, e: ExecutorService) = this(r.getContext(), e)
-  def this(r: IndexReader, e: ExecutionContext) = this(r.getContext(), ExecutionContextExecutorServiceBridge(e))
-  def this(r: IndexReader) = this(r.getContext(), null)
+  def this(r: IndexReader, e: ExecutorService, computeTotalHits: Boolean) = this(r.getContext(), e, computeTotalHits)
+  def this(r: IndexReader, e: ExecutionContext,  computeTotalHits: Boolean) =
+    this(r.getContext(), ExecutionContextExecutorServiceBridge(e), computeTotalHits)
+  def this(r: IndexReader, computeTotalHits: Boolean) = this(r.getContext(), null, computeTotalHits)
 
   def odinSearch(query: OdinsonQuery): OdinResults = {
     val n = readerContext.reader().maxDoc()
@@ -33,7 +35,7 @@ class OdinsonIndexSearcher(
     )
     val cappedNumHits = math.min(numHits, limit)
     val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-      def newCollector() = new OdinsonCollector(cappedNumHits, after)
+      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits)
       def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
         val results = collectors.iterator.asScala.map(_.odinResults).toArray
         OdinResults.merge(0, cappedNumHits, results, true)
