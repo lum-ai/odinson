@@ -50,8 +50,6 @@ lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
   excludeDependencies += "commons-logging" % "commons-logging",
-  // used for DocumentMetadata
-  resolvers += "Lum AI public snapshots" at "https://s3-us-west-2.amazonaws.com/maven.lum.ai/snapshots"
 )
 
 lazy val core = project
