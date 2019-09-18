@@ -67,10 +67,21 @@ class AllNGramsSpans(
   def nextDoc(): Int = advance(currentDoc + 1)
 
   def advance(target: Int): Int = {
-    if (target >= maxDoc) {
-      currentDoc = NO_MORE_DOCS
-    } else {
-      currentDoc = target
+    @annotation.tailrec
+    def getNextDocId(nextDocId: Int): Int = {
+      if (nextDocId >= maxDoc) {
+        NO_MORE_DOCS
+      } else {
+        val numWords = numWordsPerDoc.get(nextDocId)
+        if (numWords == 0) {
+          getNextDocId(nextDocId + 1)
+        } else {
+          nextDocId
+        }
+      }
+    }
+    currentDoc = getNextDocId(target)
+    if (currentDoc != NO_MORE_DOCS) {
       // get number of tokens in sentence
       maxToken = numWordsPerDoc.get(currentDoc)
       // reset positions in document

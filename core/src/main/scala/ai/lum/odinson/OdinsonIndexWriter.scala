@@ -188,7 +188,7 @@ object OdinsonIndexWriter {
         (dir, vocab)
       case path =>
         val dir = FSDirectory.open(Paths.get(path))
-        val vocab = Vocabulary.fromIndex(dir)
+        val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
     new OdinsonIndexWriter(
