@@ -1,12 +1,13 @@
 package ai.lum.odinson
 
 import org.scalatest._
+import com.typesafe.config.Config
+import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.ConfigFactory
-import ai.lum.common.ConfigUtils._
 import org.apache.lucene.document.{ Document => LuceneDocument, _ }
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.index.DirectoryReader
@@ -36,20 +37,12 @@ class TestPatterns extends FlatSpec with Matchers {
 object TestUtils {
 
   val config = ConfigFactory.load()
-  val allTokenFields       = config[List[String]]("odinson.compiler.allTokenFields")
+  val odinsonConfig = config[Config]("odinson")
   val documentIdField      = config[String]("odinson.index.documentIdField")
   val sentenceIdField      = config[String]("odinson.index.sentenceIdField")
   val sentenceLengthField  = config[String]("odinson.index.sentenceLengthField")
   val rawTokenField        = config[String]("odinson.index.rawTokenField")
-  val normalizedTokenField = config[String]("odinson.index.normalizedTokenField")
-  val wordTokenField       = config[String]("odinson.index.wordTokenField")
-
   val defaultTokenField    = config[String]("odinson.compiler.defaultTokenField")
-  val dependenciesField    = config[String]("odinson.compiler.dependenciesField")
-  val incomingTokenField   = config[String]("odinson.compiler.incomingTokenField")
-  val outgoingTokenField   = config[String]("odinson.compiler.outgoingTokenField")
-
-  val normalizeQueriesToDefaultField = config[Boolean]("odinson.compiler.normalizeQueriesToDefaultField")
 
   /**
     * Converts [[ai.lum.odinson.lucene.OdinResults]] to an array of strings.
@@ -71,29 +64,9 @@ object TestUtils {
     * Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc in-memory index ([[org.apache.lucene.store.RAMDirectory]])
     */
   def mkExtractorEngine(text: String): ExtractorEngine = {
-
     val memWriter = OdinsonIndexWriter.inMemory
     writeDoc(memWriter, text)
-
-    val reader = DirectoryReader.open(memWriter.directory)
-    val indexSearcher = new OdinsonIndexSearcher(reader, computeTotalHits = true)
-    val compiler = new QueryCompiler(
-      allTokenFields = allTokenFields,
-      defaultTokenField = rawTokenField, // raw is the default field for testing purposes
-      sentenceLengthField = sentenceLengthField,
-      dependenciesField = dependenciesField,
-      incomingTokenField = incomingTokenField,
-      outgoingTokenField = outgoingTokenField,
-      dependenciesVocabulary = memWriter.vocabulary,
-      normalizeQueriesToDefaultField = normalizeQueriesToDefaultField
-    )
-
-    val jdbcUrl = config[String]("odinson.state.jdbc.url")
-    val state = new State(jdbcUrl)
-    state.init()
-    compiler.setState(state)
-    new ExtractorEngine(indexSearcher, compiler, state, documentIdField)
-
+    ExtractorEngine.fromDirectory(odinsonConfig, memWriter.directory)
   }
 
   /**
@@ -115,6 +88,7 @@ object TestUtils {
     sent.add(new StoredField(sentenceIdField, "sent-1"))
     sent.add(new NumericDocValuesField(sentenceLengthField, toks.size.toLong))
     sent.add(new TextField(rawTokenField, text, Store.YES))
+    sent.add(new TextField(defaultTokenField, text, Store.NO))
     sent
   }
 

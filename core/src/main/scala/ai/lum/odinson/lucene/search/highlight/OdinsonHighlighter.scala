@@ -20,7 +20,7 @@ trait OdinsonHighlighter {
   def highlight(
     reader: IndexReader,
     docId: Int,
-    field: String = "word",
+    field: String = "raw",
     analyzer: Analyzer = new WhitespaceAnalyzer(),
     spans: Seq[Span],
     captures: Seq[(String, Span)],

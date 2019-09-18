@@ -4,7 +4,7 @@ import java.nio.file.Path
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
-import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.store.{ Directory, FSDirectory }
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.Config
@@ -16,6 +16,7 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.ConfigFactory
+import ai.lum.odinson.digraph.Vocabulary
 
 
 
@@ -163,11 +164,17 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexDir = config[Path]("indexDir")
-    val indexReader = DirectoryReader.open(FSDirectory.open(indexDir))
+    val indexPath = config[Path]("indexDir")
+    val indexDir = FSDirectory.open(indexPath)
+    fromDirectory(config, indexDir)
+  }
+
+  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
+    val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    val compiler = QueryCompiler.fromConfig(config)
+    val vocabulary = Vocabulary.fromDirectory(indexDir)
+    val compiler = QueryCompiler(config, vocabulary)
     val jdbcUrl = config[String]("state.jdbc.url")
     val state = new State(jdbcUrl)
     state.init()

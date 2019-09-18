@@ -414,7 +414,7 @@ class QueryCompiler(
 
 object QueryCompiler {
 
-  def fromConfig(config: Config): QueryCompiler = {
+  def apply(config: Config, vocabulary: Vocabulary): QueryCompiler = {
     new QueryCompiler(
       config[List[String]]("compiler.allTokenFields"),
       config[String]("compiler.defaultTokenField"),
@@ -422,7 +422,7 @@ object QueryCompiler {
       config[String]("compiler.dependenciesField"),
       config[String]("compiler.incomingTokenField"),
       config[String]("compiler.outgoingTokenField"),
-      Vocabulary.fromIndex(config[File]("indexDir")),
+      vocabulary,
       config[Boolean]("compiler.normalizeQueriesToDefaultField")
     )
   }
