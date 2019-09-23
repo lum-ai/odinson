@@ -23,6 +23,9 @@ GET     /api/sentence                   controllers.OdinsonController.sentenceJs
 # counts
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
 
+# corpus info and statistics
+GET     /api/corpus                    controllers.OdinsonController.corpusInfo
+
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
 
