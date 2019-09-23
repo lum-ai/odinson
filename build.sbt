@@ -81,6 +81,13 @@ lazy val backend = project
   .dependsOn(core % "test->test;compile->compile")
   .dependsOn(extra)
   .settings(commonSettings)
+  .settings(
+    // Dev settings which are read prior to loading of config.
+    // See https://www.playframework.com/documentation/2.7.x/ConfigFile#Using-with-the-run-command
+    PlayKeys.devSettings += "play.server.http.port" -> "9000",
+    PlayKeys.devSettings += "play.server.http.address" -> "0.0.0.0",
+    PlayKeys.devSettings += "play.server.http.idleTimeout" -> "infinite"
+  )
 
 
 lazy val restApi = taskKey[Unit]("Launches the odinson REST API.")
