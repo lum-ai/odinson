@@ -34,7 +34,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val config             = ConfigFactory.load()
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
-  val wordTokenField     = config[String]("odinson.index.wordTokenField")
+  val wordTokenField     = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")

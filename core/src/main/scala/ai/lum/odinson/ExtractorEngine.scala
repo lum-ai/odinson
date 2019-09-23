@@ -23,6 +23,7 @@ import ai.lum.odinson.digraph.Vocabulary
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
+  val displayField: String,
   val state: State,
   val parentDocIdField: String
 ) {
@@ -172,6 +173,7 @@ object ExtractorEngine {
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
+    val displayField = config[String]("displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
@@ -180,7 +182,13 @@ object ExtractorEngine {
     state.init()
     compiler.setState(state)
     val parentDocIdField = config[String]("index.documentIdField")
-    new ExtractorEngine(indexSearcher, compiler, state, parentDocIdField)
+    new ExtractorEngine(
+      indexSearcher,
+      compiler,
+      displayField,
+      state,
+      parentDocIdField
+    )
   }
 
 }
