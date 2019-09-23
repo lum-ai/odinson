@@ -1,15 +1,11 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import OdinsonRoutes from './router';
 
-//const config = require('../../config');
+// const config = require('../../config');
 
-export default class App extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  render() {
-    return <OdinsonRoutes />
-  }
+function App() {
+  return <OdinsonRoutes />;
 }
+
+export default App;
