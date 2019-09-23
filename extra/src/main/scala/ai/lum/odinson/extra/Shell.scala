@@ -51,8 +51,11 @@ object Shell extends App {
   def fmt(n: Int): String = intFormatter.format(n.toLong)
   def fmt(n: Float): String = numFormatter.format(n.toDouble)
 
+  // setup searcher
+  val extractorEngine = ExtractorEngine.fromConfig("odinson")
+
   // retrieve dependencies
-  val dependenciesVocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+  val dependenciesVocabulary = extractorEngine.compiler.dependenciesVocabulary
 
   val dependencies = dependenciesVocabulary
     .terms
@@ -69,9 +72,6 @@ object Shell extends App {
   reader.setHistory(history)
   reader.setExpandEvents(false)
   reader.addCompleter(completer)
-
-  // setup searcher
-  val extractorEngine = ExtractorEngine.fromConfig("odinson")
 
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r

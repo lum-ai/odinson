@@ -73,7 +73,7 @@ object OdinsonIndexWriter {
 
   def apply(indexDir: Path): OdinsonIndexWriter = {
     val directory  = FSDirectory.open(indexDir)
-    val vocabulary = Vocabulary.fromIndex(directory)
+    val vocabulary = Vocabulary.fromDirectory(directory)
     OdinsonIndexWriter(directory, vocabulary)
   }
 
