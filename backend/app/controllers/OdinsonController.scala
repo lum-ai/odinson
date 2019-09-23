@@ -1,6 +1,7 @@
 package controllers
 
 import javax.inject._
+import java.io.File
 import java.nio.file.Path
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
@@ -60,9 +61,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       val numDocs = extractorEngine.indexReader.numDocs
       val corpusDir = config[File]("odinson.indexDir").getName
       val depsVocabSize = {
-        Vocabulary
-          .fromIndex(config[File]("odinson.indexDir"))
-          .terms.toSet.size
+        loadVocabulary.terms.toSet.size
       }
 
       val resp = Json.obj(
