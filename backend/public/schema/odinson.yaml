@@ -325,6 +325,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/BuildInfo'
 
+  /api/corpus:
+    get:
+      tags:
+        - info
+      summary: Information about the current corpus.
+      description: Provides information about the current corpus.
+      operationId: corpus
+      responses:
+        '200':
+          description: "A JSON object containing corpus information."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusInfo'
+
 components:
   schemas:
 
@@ -786,3 +801,25 @@ components:
           type: string
           description: "Date in milliseconds (since unix epoch)."
           example: "1526875138573"
+
+    CorpusInfo:
+      type: object
+      required:
+        - numDocs
+        - corpus
+        - distinctDependencyRelations
+      properties:
+        numDocs:
+          type: integer
+          format: int32
+          description: "The total number of documents (num. docs = num. sentences) in the corpus."
+          example: 10000
+        corpus:
+          type: string
+          description: "The name of the parent directory of the current corpus."
+          example: "demo-index"
+        distinctDependencyRelations:
+          type: integer
+          format: int32
+          description: "The number of dependency relation types indexed in the corpus."
+          example: 134

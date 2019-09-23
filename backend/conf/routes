@@ -24,7 +24,7 @@ GET     /api/sentence                   controllers.OdinsonController.sentenceJs
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
 
 # corpus info and statistics
-GET     /api/corpus                    controllers.OdinsonController.corpusInfo
+GET     /api/corpus                    controllers.OdinsonController.corpusInfo(pretty: Option[Boolean])
 
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
