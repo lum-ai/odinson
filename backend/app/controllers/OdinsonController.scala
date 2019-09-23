@@ -1,8 +1,8 @@
 package controllers
 
-import javax.inject._
 import java.io.File
 import java.nio.file.Path
+import javax.inject._
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -13,17 +13,17 @@ import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.search.highlight.TokenSources
+import com.typesafe.config.ConfigRenderOptions
+import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.BuildInfo
-import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.{ BuildInfo, ExtractorEngine, OdinsonMatch, NamedCapture }
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.utils.ConfigFactory
 import utils.DocumentMetadata
 
 
@@ -53,6 +53,12 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       val json = jsonBuildInfo
       json.format(pretty)
     }(odinsonContext)
+  }
+
+  def configInfo(pretty: Option[Boolean]) = Action {
+    val options = ConfigRenderOptions.concise.setJson(true)
+    val json = Json.parse(config.root.render(options))
+    json.format(pretty)
   }
 
   def numDocs = Action {
@@ -188,14 +194,14 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }
     for {
       scoreDoc <- results.scoreDocs
-      span <- scoreDoc.matches.map(_.span).distinct
+      odinsonMatch <- scoreDoc.matches
     } {
       extractorEngine.state.addMention(
         docBase    = scoreDoc.segmentDocBase,
         docId      = scoreDoc.segmentDocId,
         label      = label,
-        startToken = span.start,
-        endToken   = span.end
+        startToken = odinsonMatch.start,
+        endToken   = odinsonMatch.end
       )
     }
     // index for efficient lookup in subsequent queries
@@ -310,22 +316,15 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     )
   }
 
-  def mkJson(spanWithCaptures: SpanWithCaptures): Json.JsValueWrapper = {
+  def mkJson(m: OdinsonMatch): Json.JsValueWrapper = {
     Json.obj(
-      "span"     -> mkJson(spanWithCaptures.span),
-      "captures" -> Json.arr(spanWithCaptures.captures.map(mkJson):_*)
+      "span"     -> Json.obj("start" -> m.start, "end" -> m.end),
+      "captures" -> Json.arr(m.namedCaptures.map(mkJson):_*)
     )
   }
 
   def mkJson(namedCapture: NamedCapture): Json.JsValueWrapper = {
-    Json.obj(namedCapture._1 -> mkJson(namedCapture._2))
-  }
-
-  def mkJson(span: Span): Json.JsValueWrapper = {
-    Json.obj(
-      "start" -> span.start,
-      "end"   -> span.end
-    )
+    Json.obj(namedCapture.name -> mkJson(namedCapture.capturedMatch))
   }
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {

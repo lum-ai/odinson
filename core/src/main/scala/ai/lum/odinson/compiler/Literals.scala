@@ -7,10 +7,13 @@ import ai.lum.common.StringUtils._
 object Literals {
 
   /** matches either an identifier or a quoted string */
-  def string[_: P]: P[String] = P(odinIdentifier | quotedString)
+  def string[_: P]: P[String] = P(identifier | quotedString)
+
+  /** matches either an identifier or a quoted string */
+  def extendedString[_: P]: P[String] = P(extendedIdentifier | quotedString)
 
   /** matches a valid java identifier */
-  def javaIdentifier[_: P]: P[String] = {
+  def identifier[_: P]: P[String] = {
     P(
       CharPred(_.isUnicodeIdentifierStart) ~
       CharsWhile(_.isUnicodeIdentifierPart).?
@@ -18,7 +21,7 @@ object Literals {
   }
 
   /** matches a string that may contain colons and/or dashes */
-  def odinIdentifier[_: P]: P[String] = {
+  def extendedIdentifier[_: P]: P[String] = {
     P(
       CharPred(_.isUnicodeIdentifierStart) ~
       CharsWhile(c => c.isUnicodeIdentifierPart || c == ':' || c == '-').?

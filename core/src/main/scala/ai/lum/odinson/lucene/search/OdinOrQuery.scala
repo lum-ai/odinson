@@ -7,6 +7,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -76,25 +77,25 @@ class OdinOrQuery(
         assert(s.isInstanceOf[OdinsonSpans])
         return s.asInstanceOf[OdinsonSpans]
       }
-      val byDocQueue = new DisiPriorityQueue(subSpans.length)
-      for (spans <- subSpans) {
-        byDocQueue.add(new DisiWrapper(spans))
-      }
-      val byPositionQueue = new SpanPositionQueue(subSpans.length) // when empty use -1
-      new OdinOrSpans(subSpans.toArray, byDocQueue, byPositionQueue)
+      new OdinOrSpans(subSpans.toArray)
     }
 
   }
 
 }
 
-class OdinOrSpans(
-    val subSpans: Array[OdinsonSpans],
-    val byDocQueue: DisiPriorityQueue,
-    val byPositionQueue: SpanPositionQueue
-) extends OdinsonSpans {
+class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
+
+  private val getClauseID = subSpans.zipWithIndex.toMap
 
   private var topPositionSpans: OdinsonSpans = null
+
+  private val byDocQueue = new DisiPriorityQueue(subSpans.length)
+  for (spans <- subSpans) {
+    byDocQueue.add(new DisiWrapper(spans))
+  }
+
+  private val byPositionQueue = new SpanPositionQueue(subSpans.length)
 
   def nextDoc(): Int = {
     topPositionSpans = null
@@ -237,9 +238,8 @@ class OdinOrSpans(
     else topPositionSpans.endPosition()
   }
 
-  override def namedCaptures: List[NamedCapture] = {
-    if (topPositionSpans == null) Nil
-    else topPositionSpans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = {
+    new OrMatch(topPositionSpans.odinsonMatch, getClauseID(topPositionSpans))
   }
 
   override def width(): Int = topPositionSpans.width()

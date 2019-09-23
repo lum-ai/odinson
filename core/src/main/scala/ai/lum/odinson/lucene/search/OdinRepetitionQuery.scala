@@ -5,13 +5,15 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
-class OdinRangeQuery(
+class OdinRepetitionQuery(
     val query: OdinsonQuery,
     val min: Int,
-    val max: Int
+    val max: Int,
+    val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
   require(min > 0, "min must be positive")
@@ -20,8 +22,8 @@ class OdinRangeQuery(
   override def hashCode: Int = mkHash(query, min, max)
 
   def toString(field: String): String = {
-      val q = query.toString(field)
-      s"Repeat($q, $min, $max)"
+    val q = query.toString(field)
+    s"Repeat($q, $min, $max)"
   }
 
   def getField(): String = query.getField()
@@ -29,19 +31,22 @@ class OdinRangeQuery(
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinRangeQuery(rewritten, min, max)
+      new OdinRepetitionQuery(rewritten, min, max, isGreedy)
     } else {
       super.rewrite(reader)
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
-    val weight = query.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): OdinsonWeight = {
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
-    new OdinRangeWeight(weight, searcher, terms)
+    new OdinRepetitionWeight(weight, searcher, terms)
   }
 
-  class OdinRangeWeight(
+  class OdinRepetitionWeight(
       val weight: OdinsonWeight,
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
@@ -55,19 +60,24 @@ class OdinRangeQuery(
       weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val spans = weight.getSpans(context, requiredPostings)
-      if (spans == null) null else new OdinRangeSpans(spans, min, max)
+      if (spans == null) null
+      else new OdinRepetitionSpans(spans, min, max, isGreedy)
     }
 
   }
 
 }
 
-class OdinRangeSpans(
+class OdinRepetitionSpans(
     val spans: OdinsonSpans,
     val min: Int,
-    val max: Int
+    val max: Int,
+    val isGreedy: Boolean
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._
@@ -76,7 +86,7 @@ class OdinRangeSpans(
   // a first start position is available in current doc for nextStartPosition
   protected var atFirstInCurrentDoc: Boolean = false
 
-  private var stretch: IndexedSeq[SpanWithCaptures] = ArrayBuffer.empty
+  private var stretch: IndexedSeq[OdinsonMatch] = ArrayBuffer.empty
   private var startIndex: Int = 0
   private var numReps: Int = 0
 
@@ -140,23 +150,27 @@ class OdinRangeSpans(
     false
   }
 
-  def getNextStretch(): IndexedSeq[SpanWithCaptures] = {
+  // collect all consecutive matches
+  // and return them in an array
+  private def getStretch(): IndexedSeq[OdinsonMatch] = {
+    var end = spans.startPosition()
+    val stretch = ArrayBuffer.empty[OdinsonMatch]
+    while (spans.startPosition() == end) {
+      stretch += spans.odinsonMatch
+      end = spans.endPosition()
+      spans.nextStartPosition()
+    }
+    stretch
+  }
+
+  // get the next stretch that is of size `min` or bigger
+  // or return empty if there is no such a stretch in the document
+  private def getNextStretch(): IndexedSeq[OdinsonMatch] = {
     while (spans.startPosition() != NO_MORE_POSITIONS) {
       val stretch = getStretch()
       if (stretch.length >= min) return stretch
     }
     IndexedSeq.empty
-  }
-
-  def getStretch(): IndexedSeq[SpanWithCaptures] = {
-    var end = spans.startPosition()
-    val stretch = ArrayBuffer.empty[SpanWithCaptures]
-    while (spans.startPosition() == end) {
-      stretch += spans.spanWithCaptures
-      end = spans.endPosition()
-      spans.nextStartPosition()
-    }
-    stretch
   }
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
@@ -173,33 +187,29 @@ class OdinRangeSpans(
     throw new UnsupportedOperationException
   }
 
-  override def namedCaptures: List[NamedCapture] = {
-    stretch
-      .slice(startIndex, startIndex + numReps)
-      .map(_.captures)
-      // the cost of concatenating two lists is given by the length
-      // of the list to the left, so we want list concatenation to be
-      // right-associative, which is why we use foldRight
-      .foldRight(List.empty[NamedCapture])(_ ++ _)
+  override def odinsonMatch: OdinsonMatch = {
+    // FIXME avoid converting to list
+    val subMatches = stretch.slice(startIndex, startIndex + numReps).toList
+    new RepetitionMatch(subMatches, isGreedy)
   }
 
   def startPosition(): Int = {
     if (atFirstInCurrentDoc) -1
     else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex).span.start
+    else stretch(startIndex).start
   }
 
   def endPosition(): Int = {
     if (atFirstInCurrentDoc) -1
     else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex + numReps - 1).span.end
+    else stretch(startIndex + numReps - 1).end
   }
 
   def nextStartPosition(): Int = {
     if (atFirstInCurrentDoc) {
       // we know we have a match because we checked previously
       atFirstInCurrentDoc = false
-      return stretch(startIndex).span.start
+      return stretch(startIndex).start
     }
     while (stretch.nonEmpty) {
       numReps += 1
@@ -208,7 +218,7 @@ class OdinRangeSpans(
         numReps = min
       }
       if (startIndex + numReps <= stretch.length) {
-        return stretch(startIndex).span.start
+        return stretch(startIndex).start
       }
       // if we reach this point then we need a new stretch
       stretch = getNextStretch()

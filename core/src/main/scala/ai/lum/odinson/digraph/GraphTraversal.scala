@@ -1,7 +1,7 @@
 package ai.lum.odinson.digraph
 
 import scala.annotation.tailrec
-import ai.lum.odinson.lucene.Span
+import ai.lum.odinson.OdinsonMatch
 
 /**
  * A GraphTraversal takes a graph and a starting point (or several)
@@ -12,7 +12,7 @@ trait GraphTraversal {
   // the results of traverseFrom() should be distinct
   def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = traverse(graph, startNode).distinct
   def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = startNodes.flatMap(n => traverse(graph, n)).distinct
-  def traverseFrom(graph: DirectedGraph, span: Span): Seq[Int] = traverseFrom(graph, span.interval)
+  def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = traverseFrom(graph, odinsonMatch.tokenInterval)
 }
 
 /** a no-op traversal */
@@ -20,7 +20,7 @@ case object NoTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
   override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
   override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = startNodes.distinct
-  override def traverseFrom(graph: DirectedGraph, span: Span): Seq[Int] = span.interval
+  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = odinsonMatch.tokenInterval
 }
 
 /** a traversal that always fails */
@@ -28,7 +28,7 @@ case object FailTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
   override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
   override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = Nil
-  override def traverseFrom(graph: DirectedGraph, span: Span): Seq[Int] = Nil
+  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = Nil
 }
 
 /** traverse all incoming edges */

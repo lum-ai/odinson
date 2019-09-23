@@ -10,12 +10,12 @@ import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
+import ai.lum.common.ConfigFactory
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
-import ai.lum.odinson.utils.ConfigFactory
 import ai.lum.odinson.digraph.Vocabulary
 
 

@@ -1,6 +1,7 @@
 package ai.lum.odinson.compiler
 
 import java.io.File
+import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
@@ -9,11 +10,11 @@ import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.ConfigFactory
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.state.State
-import ai.lum.odinson.utils.ConfigFactory
 
 class QueryCompiler(
     val allTokenFields: Seq[String],
@@ -35,6 +36,13 @@ class QueryCompiler(
 
   def setState(s: State): Unit = {
     state = Some(s)
+  }
+
+  // FIXME temporary entrypoint
+  def compileEventQuery(pattern: String): OdinsonQuery = {
+    val ast = parser.parseEventQuery(pattern)
+    val query = mkOdinsonQuery(ast)
+    query.getOrElse(new FailQuery(defaultTokenField))
   }
 
   def compile(pattern: String): OdinsonQuery = {
@@ -74,6 +82,14 @@ class QueryCompiler(
   /** Constructs an OdinsonQuery from an AST. */
   def mkOdinsonQuery(ast: Ast.Pattern): Option[OdinsonQuery] = ast match {
 
+    // filtered query
+
+    case Ast.FilterPattern(main, filter) =>
+      for {
+        q <- mkOdinsonQuery(main)
+        c <- mkOdinsonQuery(filter)
+      } yield new OdinsonSpanContainingQuery(q, c)
+
     // zero-width assertions
 
     case Ast.AssertionPattern(Ast.SentenceStartAssertion) =>
@@ -84,17 +100,48 @@ class QueryCompiler(
       val q = new DocEndQuery(defaultTokenField, sentenceLengthField)
       Some(q)
 
-    // TODO lookarounds
-    case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) => ???
-    case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) => ???
-    case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) => ???
-    case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) => ???
+    case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) =>
+      mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
 
+    case Ast.AssertionPattern(Ast.PositiveLookbehindAssertion(pattern)) =>
+      mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
+
+    case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) =>
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val lookahead = mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
+      lookahead.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
+
+    case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) =>
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val lookbehind = mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
+      lookbehind.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     // token constraints
 
     case Ast.ConstraintPattern(constraint) =>
       val q = mkConstraintQuery(constraint)
+      Some(q)
+
+    // event pattern
+
+    case Ast.EventPattern(triggerPattern, argPatterns) =>
+      val triggerOption = mkOdinsonQuery(triggerPattern)
+      if (triggerOption.isEmpty) return None
+      var triggerQuery = triggerOption.get
+      // split arguments in required and optional
+      val (required, optional) = argPatterns.partition(_.min > 0)
+      val reqArgQueries = required.flatMap(mkArgumentQuery)
+      val optArgQueries = optional.flatMap(mkArgumentQuery)
+      // all arguments should survive the transformation
+      if (reqArgQueries.length != required.length || optArgQueries.length != optional.length) {
+        ???
+      }
+      // add start-constraints of required args to trigger
+      for (arg <- reqArgQueries) {
+        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.head._1))
+      }
+      // return event query
+      val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField)
       Some(q)
 
     // disjunctive patterns
@@ -149,7 +196,50 @@ class QueryCompiler(
           }
       }
 
-    case Ast.LazyRepetitionPattern(_, _, _) => ???
+    case Ast.LazyRepetitionPattern(pattern@_, 0, Some(0)) =>
+      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      Some(q)
+
+    case Ast.LazyRepetitionPattern(pattern, 0, Some(1)) =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = false)
+      }
+
+    case Ast.LazyRepetitionPattern(pattern, 0, None) =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q =>
+          val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = false)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
+      }
+
+    case Ast.LazyRepetitionPattern(pattern, 0, Some(max)) =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q =>
+          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = false)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
+      }
+
+    case Ast.LazyRepetitionPattern(pattern, 1, Some(1)) =>
+      mkOdinsonQuery(pattern)
+
+    case Ast.LazyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, Some(m)) if n == m =>
+      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
+      Some(q)
+
+    case Ast.LazyRepetitionPattern(pattern, min, None) =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q => new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = false)
+      }
+
+    case Ast.LazyRepetitionPattern(pattern, min, Some(max)) =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q => new OdinRepetitionQuery(q, min, max, isGreedy = false)
+      }
 
     case Ast.GreedyRepetitionPattern(pattern@_, 0, Some(0)) =>
       val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
@@ -158,36 +248,23 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case one =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, one)
-          new OdinOrQuery(clauses, defaultTokenField)
+        case q => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          val oneOrMore = new OdinRangeQuery(q, 1, Int.MaxValue)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, oneOrMore)
-          new OdinOrQuery(clauses, defaultTokenField)
+          val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val zero = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
-          val oneOrMore = new OdinRangeQuery(q, 1, max)
-          // If there is a zero-width query, it should be the first clause.
-          // This is a convention we follow to be able to identify optional clauses easily.
-          val clauses = List(zero, oneOrMore)
-          new OdinOrQuery(clauses, defaultTokenField)
+          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
@@ -200,15 +277,42 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, Int.MaxValue)
+        case q => new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q => new OdinRangeQuery(q, min, max)
+        case q => new OdinRepetitionQuery(q, min, max, isGreedy = true)
       }
 
+  }
+
+  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+    // we will collect traversals and queries for the argument's full traversal
+    val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
+    val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
+    // for each step in the traversal ...
+    for ((t, p) <- arg.fullTraversal) {
+      // compile graph traversal
+      val traversal = mkGraphTraversal(t)
+      // compile query and add end-constraint
+      val query = mkOdinsonQuery(p).map(q => addConstraint(q, mkEndConstraint(traversal)))
+      // if query is none then we failed
+      if (query.isEmpty) return None
+      // if we already have a query then add a start-constraint
+      if (allOdinsonQueries.nonEmpty) {
+        val i = allOdinsonQueries.length - 1
+        val q = allOdinsonQueries(i)
+        allOdinsonQueries(i) = addConstraint(q, mkStartConstraint(traversal))
+      }
+      // collect traversal and query
+      allGraphTraversals += traversal
+      allOdinsonQueries += query.get
+    }
+    // make argument query
+    val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
+    Some(ArgumentQuery(arg.name, arg.min, arg.max, fullTraversal))
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {
@@ -251,6 +355,9 @@ class QueryCompiler(
 
     case Ast.NegatedConstraint(Ast.NegatedConstraint(constraint)) =>
       mkConstraintQuery(constraint)
+
+    case Ast.NegatedConstraint(Ast.Wildcard) =>
+      new FailQuery(defaultTokenField)
 
     case Ast.NegatedConstraint(constraint) =>
       val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)

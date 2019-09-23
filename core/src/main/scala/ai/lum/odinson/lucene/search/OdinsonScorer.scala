@@ -4,6 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities.Similarity.SimScorer
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -14,56 +15,62 @@ class OdinsonScorer(
 ) extends Scorer(weight) {
 
   private var accSloppyFreq: Float = 0 // accumulated sloppy freq (computed in setFreqCurrentDoc)
-  private var numMatches: Int = 0      // number of matches (computed in setFreqCurrentDoc)
   private var lastScoredDoc: Int = -1  // last doc we called setFreqCurrentDoc() for
 
-  // stores the Spans found in the current document
-  private val collectedSpans: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
+  // stores the matcher found in the current document
+  private val collectedMatches: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
 
   def getSpans(): OdinsonSpans = spans
   def docID(): Int = spans.docID()
   def iterator(): DocIdSetIterator = spans
   override def twoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
 
-  private def setFreqCurrentDoc(): Unit = {
+  private def collectMatchesCurrentDoc(): Unit = {
     accSloppyFreq = 0
-    numMatches = 0
-    collectedSpans.clear()
-
+    collectedMatches.clear()
     spans.odinDoStartCurrentDoc()
-
-    assert(spans.startPosition() == -1, "incorrect initial start position, " + spans)
-    assert(spans.endPosition() == -1, "incorrect initial end position, " + spans)
-    var prevStartPos = -1
-    var prevEndPos = -1
-
-    var startPos = spans.nextStartPosition()
-    assert(startPos != Spans.NO_MORE_POSITIONS, "initial startPos NO_MORE_POSITIONS, " + spans)
-    do {
-      assert(startPos >= prevStartPos)
-      val endPos = spans.endPosition()
-      assert(endPos != Spans.NO_MORE_POSITIONS)
-      assert((startPos != prevStartPos) || (endPos >= prevEndPos), "decreased endPos="+endPos)
-      // if we already found a span starting at this position then discard it
-      // because we only want to keep the longest
-      if (startPos == prevStartPos) {
-        collectedSpans.remove(collectedSpans.indices.last)
-      }
-      collectedSpans += spans.spanWithCaptures // collect span
-      numMatches += 1
+    // get to first match
+    spans.nextStartPosition()
+    var currentMatch = getCurrentMatchAndAdvance(spans)
+    while (currentMatch.isDefined) {
+      collectedMatches += currentMatch.get
+      // FIXME is sloppy frequency and doCurrentSpans() done once per survivor match? (i.e. here)
+      // or once per overlapping match? (i.e. in getCurrentMatchAndAdvance)
       if (docScorer == null) {  // scores not required
         accSloppyFreq = 1
       } else {
         accSloppyFreq += docScorer.computeSlopFactor(spans.width())
       }
       spans.odinDoCurrentSpans()
-      prevStartPos = startPos
-      prevEndPos = endPos
-      startPos = spans.nextStartPosition()
-    } while (startPos != Spans.NO_MORE_POSITIONS)
-
+      currentMatch = getCurrentMatchAndAdvance(spans)
+    }
     assert(spans.startPosition() == Spans.NO_MORE_POSITIONS, "incorrect final start position, " + spans)
     assert(spans.endPosition() == Spans.NO_MORE_POSITIONS, "incorrect final end position, " + spans)
+  }
+
+  // - consumes all matches with the same start position
+  // - selects the span to return
+  // - leaves the spans iterator at the nest start position
+  private def getCurrentMatchAndAdvance(spans: OdinsonSpans): Option[OdinsonMatch] = {
+    val startPosition = spans.startPosition()
+    if (startPosition == Spans.NO_MORE_POSITIONS) {
+      return None
+    }
+    // gather all matches with the same start position
+    val currentMatches = ArrayBuffer(spans.odinsonMatch)
+    var nextStart = spans.nextStartPosition()
+    while (nextStart == startPosition) {
+      currentMatches += spans.odinsonMatch
+      nextStart = spans.nextStartPosition()
+    }
+    // select final match
+    val finalMatch = MatchSelector.pickMatch(currentMatches)
+    // advance to next match that doesn't overlap with current result
+    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatch.end) {
+      nextStart = spans.nextStartPosition()
+    }
+    // return result
+    Some(finalMatch)
   }
 
   private def scoreCurrentDoc(): Float = {
@@ -74,32 +81,34 @@ class OdinsonScorer(
     else docScorer.score(docID(), accSloppyFreq)
   }
 
-  private def ensureFreq(): Unit = {
+  private def ensureMatchesCollected(): Unit = {
     val currentDoc = docID()
     if (lastScoredDoc != currentDoc) {
-      setFreqCurrentDoc()
+      collectMatchesCurrentDoc()
       lastScoredDoc = currentDoc
     }
   }
 
   def score(): Float = {
-    ensureFreq()
+    ensureMatchesCollected()
     scoreCurrentDoc()
   }
 
   def freq(): Int = {
-    ensureFreq()
-    numMatches
+    ensureMatchesCollected()
+    // FIXME returns number of surviving matches
+    // but should it return total matches? (overlapping)
+    collectedMatches.length
   }
 
   def sloppyFreq(): Float = {
-    ensureFreq()
+    ensureMatchesCollected()
     accSloppyFreq
   }
 
-  def getMatches(): Array[SpanWithCaptures] = {
-    ensureFreq()
-    collectedSpans.toArray
+  def getMatches(): Array[OdinsonMatch] = {
+    ensureMatchesCollected()
+    collectedMatches.toArray
   }
 
 }

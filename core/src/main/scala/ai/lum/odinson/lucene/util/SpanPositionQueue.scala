@@ -1,6 +1,7 @@
 package ai.lum.odinson.lucene.util
 
 import org.apache.lucene.util.PriorityQueue
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -14,16 +15,16 @@ class SpanPositionQueue(maxSize: Int) extends PriorityQueue[OdinsonSpans](maxSiz
   }
 }
 
-class QueueByPosition(maxSize: Int) extends PriorityQueue[SpanWithCaptures](maxSize, false) {
-  protected def lessThan(lhs: SpanWithCaptures, rhs: SpanWithCaptures): Boolean = {
-    if (lhs.span.start < rhs.span.start) true
-    else if (lhs.span.start == rhs.span.start) lhs.span.end < rhs.span.end
+class QueueByPosition(maxSize: Int) extends PriorityQueue[OdinsonMatch](maxSize, false) {
+  protected def lessThan(lhs: OdinsonMatch, rhs: OdinsonMatch): Boolean = {
+    if (lhs.start < rhs.start) true
+    else if (lhs.start == rhs.start) lhs.end < rhs.end
     else false
   }
 }
 
 object QueueByPosition {
-  def mkPositionQueue(spans: Seq[SpanWithCaptures]): QueueByPosition = {
+  def mkPositionQueue(spans: Seq[OdinsonMatch]): QueueByPosition = {
     val queue = new QueueByPosition(spans.length)
     for (s <- spans) {
       queue.add(s)
