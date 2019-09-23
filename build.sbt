@@ -50,6 +50,8 @@ lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
   excludeDependencies += "commons-logging" % "commons-logging",
+  resolvers +=
+    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 )
 
 lazy val core = project
