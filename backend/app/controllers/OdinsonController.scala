@@ -52,6 +52,28 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     Ok(extractorEngine.indexReader.numDocs.toString)
   }
 
+  /** Information about the current corpus. <br>
+    * Directory name, num docs, num dependency types, etc.
+    */
+  def corpusInfo = Action.async {
+    Future {
+      val numDocs = extractorEngine.indexReader.numDocs
+      val corpusDir = config[File]("odinson.indexDir").getName
+      val depsVocabSize = {
+        Vocabulary
+          .fromIndex(config[File]("odinson.indexDir"))
+          .terms.toSet.size
+      }
+
+      val resp = Json.obj(
+        "numDocs" -> numDocs,
+        "corpus"   -> corpusDir,
+        "distinctDependencyRelations" -> depsVocabSize
+      )
+      Ok(resp)
+    }(odinsonContext)
+  }
+
   def getDocId(luceneDocId: Int): String = {
     val doc = extractorEngine.indexReader.document(luceneDocId)
     doc.getValues(docIdField).head
