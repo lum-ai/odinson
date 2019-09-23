@@ -1,8 +1,7 @@
 package controllers
 
 import javax.inject._
-import java.io.File
-
+import java.nio.file.Path
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -17,6 +16,7 @@ import ai.lum.common.FileUtils._
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
+import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
@@ -63,13 +63,18 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     doc.getValues(sentenceIdField).head.toInt
   }
 
+  def loadVocabulary: Vocabulary = {
+    val indexPath = config[Path]("odinson.indexDir")
+    val indexDir = FSDirectory.open(indexPath)
+    Vocabulary.fromDirectory(indexDir)
+  }
 
   /** Retrieves vocabulary of dependencies for the current index.
     */
   def dependenciesVocabulary(pretty: Option[Boolean]) = Action.async {
     Future {
       // NOTE: It's possible the vocabulary could change if the index is updated
-      val vocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+      val vocabulary = loadVocabulary
       val vocab = vocabulary.terms.toList.sorted
       val json  = Json.toJson(vocab)
       pretty match {
