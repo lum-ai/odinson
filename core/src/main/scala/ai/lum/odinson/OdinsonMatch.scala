@@ -1,5 +1,6 @@
 package ai.lum.odinson
 
+import scala.util.hashing.MurmurHash3._
 import ai.lum.common.Interval
 
 case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
@@ -29,6 +30,22 @@ sealed trait OdinsonMatch {
       .transform((k,v) => v.map(_.capturedMatch))
   }
 
+  def canEqual(other: Any): Boolean = {
+    other.isInstanceOf[OdinsonMatch]
+  }
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: OdinsonMatch =>
+        (that canEqual this) &&
+        this.docID == that.docID &&
+        this.start == that.start &&
+        this.end == that.end &&
+        this.namedCaptures == that.namedCaptures
+      case _ => false
+    }
+  }
+
 }
 
 class EventMatch(
@@ -38,6 +55,9 @@ class EventMatch(
   val docID: Int = trigger.docID
   val start: Int = (trigger.start :: namedCaptures.map(_.capturedMatch.start)).min
   val end: Int = (trigger.end :: namedCaptures.map(_.capturedMatch.end)).max
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
+  }
 }
 
 class NGramMatch(
@@ -46,6 +66,9 @@ class NGramMatch(
   val end: Int,
 ) extends OdinsonMatch {
   val namedCaptures: List[NamedCapture] = Nil
+  override val hashCode: Int = {
+    (docID, start, end).##
+  }
 }
 
 // TODO add traversed path to this match object
@@ -56,8 +79,11 @@ class GraphTraversalMatch(
   val docID: Int = dstMatch.docID
   val start: Int = dstMatch.start
   val end: Int = dstMatch.end
-  def namedCaptures: List[NamedCapture] = {
+  val namedCaptures: List[NamedCapture] = {
     srcMatch.namedCaptures ++ dstMatch.namedCaptures
+  }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
   }
 }
 
@@ -67,8 +93,11 @@ class ConcatMatch(
   val docID: Int = subMatches.head.docID
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
-  def namedCaptures: List[NamedCapture] = {
+  val namedCaptures: List[NamedCapture] = {
     subMatches.flatMap(_.namedCaptures)
+  }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
   }
 }
 
@@ -80,8 +109,11 @@ class RepetitionMatch(
   val start: Int = subMatches.head.start
   val end: Int = subMatches.last.end
   val isLazy: Boolean = !isGreedy
-  def namedCaptures: List[NamedCapture] = {
+  val namedCaptures: List[NamedCapture] = {
     subMatches.flatMap(_.namedCaptures)
+  }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
   }
 }
 
@@ -93,8 +125,11 @@ class OptionalMatch(
   val start: Int = subMatch.start
   val end: Int = subMatch.end
   val isLazy: Boolean = !isGreedy
-  val namedCaptures: List[NamedCapture] = {
+  def namedCaptures: List[NamedCapture] = {
     subMatch.namedCaptures
+  }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
   }
 }
 
@@ -108,6 +143,9 @@ class OrMatch(
   def namedCaptures: List[NamedCapture] = {
     subMatch.namedCaptures
   }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
+  }
 }
 
 class NamedMatch(
@@ -119,5 +157,8 @@ class NamedMatch(
   val end: Int = subMatch.end
   def namedCaptures: List[NamedCapture] = {
     NamedCapture(name, subMatch) :: subMatch.namedCaptures
+  }
+  override val hashCode: Int = {
+    (docID, start, end, unorderedHash(namedCaptures)).##
   }
 }

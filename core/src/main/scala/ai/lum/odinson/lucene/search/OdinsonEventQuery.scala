@@ -12,6 +12,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.common.itertools.product
 
 case class ArgumentQuery(
   name: String,
@@ -333,16 +334,48 @@ class OdinsonEventSpans(
     true
   }
 
+  private def packageArgument(
+    arg: ArgumentSpans,
+    matches: Seq[OdinsonMatch]
+  ): Seq[Seq[NamedCapture]] = {
+    val packages = arg match {
+      case ArgumentSpans(name, min, Some(max), _) if min == max =>
+        // exact range (note that a range 1-1 means no quantifier)
+        matches.combinations(min).toList
+      case ArgumentSpans(name, min, Some(max), _) =>
+        // range with min and max (note that min could be 0)
+        if (matches.size < min) Nil
+        else if (matches.size > max) matches.combinations(max).toList
+        else Seq(matches)
+      case ArgumentSpans(name, min, None, _) =>
+        // at least min
+        if (matches.size < min) Nil
+        else Seq(matches)
+    }
+    for (pkg <- packages) yield {
+      pkg.map(m => NamedCapture(arg.name, m))
+    }
+  }
+
+  private def packageArguments(
+    args: Array[(ArgumentSpans, OdinsonMatch)]
+  ): Seq[Seq[NamedCapture]] = {
+    val packaged = args.groupBy(_._1).map { case (arg, values) =>
+      // values is a sequence of (arg, match) tuples, so discard the arg
+      val matches = values.map(_._2)
+      packageArgument(arg, matches)
+    }
+    // return cartesian product of arguments
+    product(packaged.toList).map(_.flatten)
+  }
+
   // get an event sketch and return a sequence of EventMatch objects
   private def packageEvents(
     sketch: (OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)])
   ): Array[EventMatch] = {
     val trigger = sketch._1
-    // TODO handle argument quantifiers
-    val namedCaptures = sketch._2.map {
-      case (arg, m) => NamedCapture(arg.name, m)
-    }
-    Array(new EventMatch(trigger, namedCaptures.toList))
+    val argumentPackages = packageArguments(sketch._2)
+    argumentPackages.map(args => new EventMatch(trigger, args.toList)).toArray
   }
 
   private def matchEvents(): Array[EventMatch] = {
