@@ -137,11 +137,7 @@ class ExtractorEngine(
     indexSearcher.odinSearch(after, odinsonQuery, n)
   }
 
-  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
-    // TODO by default this should use the field that was stored for display
-    // IMHO it should be `raw`, but it shouldn't be hardcoded
-    getTokens(scoreDoc.doc, "raw")
-  }
+  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = getTokens(scoreDoc.doc, displayField)
 
   def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
     getTokens(scoreDoc.doc, fieldName)
