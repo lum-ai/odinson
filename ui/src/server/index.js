@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const express = require('express');
-//const os = require('os');
+// const os = require('os');
 
 const cors = require('cors');
 
@@ -12,18 +12,30 @@ const config = require('../../config');
 app.use(cors());
 app.use(express.static('dist'));
 
+app.get('/api/corpus', (req, res) => {
+  console.log('Request to /api/corpus ...');
+  axios.get(`${config.odinsonApiBaseUrl}/corpus`, {
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    responseType: 'json'
+  }).then((results) => {
+    res.json(results.data);
+  }).catch((error) => {
+    res.json(error.response.data);
+  });
+});
+
 app.get('/api/sentence', (req, res) => {
   const data = {};
   data[config.sentParams.sentId] = req.query[config.sentParams.sentId];
   console.log(data);
   axios.get(`${config.odinsonApiBaseUrl}/sentence`, {
-    headers: {'Access-Control-Allow-Origin': '*'},
+    headers: {'Access-Control-Allow-Origin': '*' },
     params: data,
     responseType: 'json'
-  }).then(results => {
-    res.json(results.data)
-  }).catch(error => {
-    res.json(error.response.data)
+  }).then((results) => {
+    res.json(results.data);
+  }).catch((error) => {
+    res.json(error.response.data);
   });
 });
 
@@ -34,7 +46,7 @@ app.get('/api/search', (req, res) => {
   // handle parent query
   const pq = req.query[config.queryParams.parentQuery];
   if (pq) {
-    data[config.queryParams.parentQuery]   = pq;
+    data[config.queryParams.parentQuery] = pq;
     console.log(`parentQuery: ${pq}`);
   }
   // handle page
@@ -50,27 +62,27 @@ app.get('/api/search', (req, res) => {
   }
   // handle commit
   const commit = req.query[config.queryParams.commit];
-  if (commit === true || commit === "true") {
-    data[config.queryParams.commit]   = true;
+  if (commit === true || commit === 'true') {
+    data[config.queryParams.commit] = true;
     console.log(`commit: ${commit}`);
   }
   // handle label
   const label = req.query[config.queryParams.label];
   if (label) {
-    data[config.queryParams.label]   = label;
+    data[config.queryParams.label] = label;
     console.log(`label: ${label}`);
   }
   console.log(data);
   axios.get(`${config.odinsonApiBaseUrl}/search`, {
-    headers: {'Access-Control-Allow-Origin': '*'},
+    headers: { 'Access-Control-Allow-Origin': '*' },
     params: data,
     responseType: 'json'
-  }).then(results => {
+  }).then((results) => {
     //console.log(results.data);
-    res.json(results.data)
-  }).catch(error => {
+    res.json(results.data);
+  }).catch((error) => {
     //console.log(error.response)
-    res.json(error.response.data)
+    res.json(error.response.data);
   });
 });
 
@@ -81,7 +93,7 @@ app.get('/api/rich-search', (req, res) => {
   // handle parent query
   const pq = req.query[config.queryParams.parentQuery];
   if (pq) {
-    data[config.queryParams.parentQuery]   = pq;
+    data[config.queryParams.parentQuery] = pq;
     console.log(`parentQuery: ${pq}`);
   }
   // handle page
@@ -97,27 +109,27 @@ app.get('/api/rich-search', (req, res) => {
   }
   // handle commit
   const commit = req.query[config.queryParams.commit];
-  if (commit === true || commit === "true") {
-    data[config.queryParams.commit]   = true;
+  if (commit === true || commit === 'true') {
+    data[config.queryParams.commit] = true;
     console.log(`commit: ${commit}`);
   }
   // handle label
   const label = req.query[config.queryParams.label];
   if (label) {
-    data[config.queryParams.label]   = label;
+    data[config.queryParams.label] = label;
     console.log(`label: ${label}`);
   }
   console.log(data);
   axios.get(`${config.odinsonApiBaseUrl}/rich-search`, {
-    headers: {'Access-Control-Allow-Origin': '*'},
+    headers: { 'Access-Control-Allow-Origin': '*' },
     params: data,
     responseType: 'json'
-  }).then(results => {
+  }).then((results) => {
     //console.log(results.data);
-    res.json(results.data)
-  }).catch(error => {
+    res.json(results.data);
+  }).catch((error) => {
     //console.log(error.response)
-    res.json(error.response.data)
+    res.json(error.response.data);
   });
 });
 

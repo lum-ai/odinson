@@ -7,7 +7,6 @@
 GET     /                               controllers.Default.redirect(to = "/api")
 
 GET     /api/buildinfo                  controllers.OdinsonController.buildInfo(pretty: Option[Boolean])
-GET     /api/config                     controllers.OdinsonController.configInfo
 
 # API spec
 GET     /api                            controllers.OpenApiController.openAPI
@@ -23,6 +22,9 @@ GET     /api/sentence                   controllers.OdinsonController.sentenceJs
 
 # counts
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
+
+# corpus info and statistics
+GET     /api/corpus                    controllers.OdinsonController.corpusInfo(pretty: Option[Boolean])
 
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])

@@ -102,3 +102,7 @@ mark {
 .parentDoc {
   padding: 10px 0 20px 0;
 }
+
+.odinsonSearchButton:focus {
+  outline: none;
+}

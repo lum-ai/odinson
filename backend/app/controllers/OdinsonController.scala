@@ -1,12 +1,14 @@
 package controllers
 
 import java.io.File
+import java.nio.file.Path
 import javax.inject._
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
-import play.api.mvc._
+import play.api.http.ContentTypes
 import play.api.libs.json._
+import play.api.mvc._
 import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
@@ -17,6 +19,7 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.{ BuildInfo, ExtractorEngine, OdinsonMatch, NamedCapture }
 import ai.lum.odinson.digraph.Vocabulary
+import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
@@ -37,22 +40,42 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
-  def buildInfo(pretty: Option[Boolean]) = Action {
-    val json = jsonBuildInfo
-    pretty match {
-      case Some(true) => Ok(Json.prettyPrint(json))
-      case _ => Ok(json)
+  /** convenience methods for formatting Play 2 Json */
+  implicit class JsonOps(json: JsValue) {
+    def format(pretty: Option[Boolean]): Result = pretty match {
+      case Some(true) => Ok(Json.prettyPrint(json)).as(ContentTypes.JSON)
+      case _ => Ok(json).as(ContentTypes.JSON)
     }
   }
 
-  def configInfo = Action {
-    val options = ConfigRenderOptions.concise.setFormatted(true).setJson(true)
-    val jsonString = config.root.render(options)
-    Ok(jsonString).as(JSON)
+  def buildInfo(pretty: Option[Boolean]) = Action.async {
+    Future {
+      val json = jsonBuildInfo
+      json.format(pretty)
+    }(odinsonContext)
   }
 
   def numDocs = Action {
-    Ok(extractorEngine.indexReader.numDocs.toString)
+    Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
+  }
+
+  /** Information about the current corpus. <br>
+    * Directory name, num docs, num dependency types, etc.
+    */
+  def corpusInfo(pretty: Option[Boolean]) = Action.async {
+    Future {
+      val numDocs = extractorEngine.indexReader.numDocs
+      val corpusDir = config[File]("odinson.indexDir").getName
+      val depsVocabSize = {
+        loadVocabulary.terms.toSet.size
+      }
+      val json = Json.obj(
+        "numDocs" -> numDocs,
+        "corpus"   -> corpusDir,
+        "distinctDependencyRelations" -> depsVocabSize
+      )
+      json.format(pretty)
+    }(odinsonContext)
   }
 
   def getDocId(luceneDocId: Int): String = {
@@ -66,19 +89,21 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     doc.getValues(sentenceIdField).head.toInt
   }
 
+  def loadVocabulary: Vocabulary = {
+    val indexPath = config[Path]("odinson.indexDir")
+    val indexDir = FSDirectory.open(indexPath)
+    Vocabulary.fromDirectory(indexDir)
+  }
 
   /** Retrieves vocabulary of dependencies for the current index.
     */
   def dependenciesVocabulary(pretty: Option[Boolean]) = Action.async {
     Future {
       // NOTE: It's possible the vocabulary could change if the index is updated
-      val vocabulary = Vocabulary.fromIndex(config[File]("odinson.indexDir"))
+      val vocabulary = loadVocabulary
       val vocab = vocabulary.terms.toList.sorted
       val json  = Json.toJson(vocab)
-      pretty match {
-        case Some(true) => Ok(Json.prettyPrint(json))
-        case _ => Ok(json)
-      }
+      json.format(pretty)
     }(odinsonContext)
   }
 
@@ -88,10 +113,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   def sentenceJsonForSentId(odinsonDocId: Int, pretty: Option[Boolean]) = Action.async {
     Future {
       val json  = mkAbridgedSentence(odinsonDocId)
-      pretty match {
-        case Some(true) => Ok(Json.prettyPrint(json))
-        case _ => Ok(json)
-      }
+      json.format(pretty)
     }(odinsonContext)
   }
 
@@ -145,10 +167,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
       implicit val metadataFormat = Json.format[DocumentMetadata]
       val json = Json.toJson(jdata)
-      pretty match {
-        case Some(true) => Ok(Json.prettyPrint(json))
-        case _ => Ok(json)
-      }
+      json.format(pretty)
     }(odinsonContext)
   }
 
@@ -234,10 +253,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         }
 
         val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
-        pretty match {
-          case Some(true) => Ok(Json.prettyPrint(json))
-          case _ => Ok(json)
-        }
+        json.format(pretty)
       } catch {
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
