@@ -9,9 +9,9 @@ object MatchSelector {
   // implements algorithm to select match(es) based on specified query
   // e.g., greedy vs lazy, prefer leftmost clause of ORs
   // NOTE There could be more than one matches at the first starting point due to event unpacking
-  def pickMatches(matches: ArrayBuffer[OdinsonMatch]): List[OdinsonMatch] = {
+  def pickMatches(matches: Seq[OdinsonMatch]): List[OdinsonMatch] = {
     matches.foldRight(List.empty[OdinsonMatch]) {
-      case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ++ ms
+      case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ::: ms
       case (m, ms) => m :: ms
     }
   }
