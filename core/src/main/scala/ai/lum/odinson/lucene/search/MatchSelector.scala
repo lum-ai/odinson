@@ -6,22 +6,26 @@ import ai.lum.odinson._
 
 object MatchSelector {
 
-  // implements algorithm to select match based on specified query
+  // implements algorithm to select match(es) based on specified query
   // e.g., greedy vs lazy, prefer leftmost clause of ORs
-  def pickMatch(matches: ArrayBuffer[OdinsonMatch]): OdinsonMatch = {
-    matches.reduce(pickMatchFromPair)
+  // NOTE There could be more than one matches at the first starting point due to event unpacking
+  def pickMatches(matches: ArrayBuffer[OdinsonMatch]): List[OdinsonMatch] = {
+    matches.foldRight(List.empty[OdinsonMatch]) {
+      case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ++ ms
+      case (m, ms) => m :: ms
+    }
   }
 
-  private def pickMatchFromPair(lhs: OdinsonMatch, rhs: OdinsonMatch): OdinsonMatch = {
+  private def pickMatchFromPair(lhs: OdinsonMatch, rhs: OdinsonMatch): List[OdinsonMatch] = {
     @tailrec
-    def traverse(left: List[OdinsonMatch], right: List[OdinsonMatch]): OdinsonMatch = {
+    def traverse(left: List[OdinsonMatch], right: List[OdinsonMatch]): List[OdinsonMatch] = {
       (left, right) match {
         // left and right are both OR matches
         case ((l:OrMatch) :: lTail, (r:OrMatch) :: rTail) =>
           // if left is the leftmost clause then return lhs
-          if (l.clauseID < r.clauseID) lhs
+          if (l.clauseID < r.clauseID) List(lhs)
           // if right is the leftmost clause then return rhs
-          else if (l.clauseID > r.clauseID) rhs
+          else if (l.clauseID > r.clauseID) List(rhs)
           // keep traversing the tree
           else traverse(l.subMatch :: lTail, r.subMatch :: rTail)
 
@@ -29,14 +33,14 @@ object MatchSelector {
         case ((l:OptionalMatch) :: lTail, (r:OptionalMatch) :: rTail) =>
           if (l.isGreedy && r.isGreedy) {
             // if both are greedy return the longest
-            if (l.length > r.length) lhs
-            else if (l.length < r.length) rhs
+            if (l.length > r.length) List(lhs)
+            else if (l.length < r.length) List(rhs)
             // if they are both the same length then keep going
             else traverse(l.subMatch :: lTail, r.subMatch :: rTail)
           } else if (r.isLazy && r.isLazy) {
             // if both are lazy return the shortest
-            if (l.length < r.length) lhs
-            else if (l.length > r.length) rhs
+            if (l.length < r.length) List(lhs)
+            else if (l.length > r.length) List(rhs)
             // if they are both the same length then keep going
             else traverse(l.subMatch :: lTail, r.subMatch :: rTail)
           } else {
@@ -48,14 +52,14 @@ object MatchSelector {
         case ((l:RepetitionMatch) :: lTail, (r: RepetitionMatch) :: rTail) =>
           if (l.isGreedy && r.isGreedy) {
             // if both are greedy return the longest
-            if (l.length > r.length) lhs
-            else if (l.length < r.length) rhs
+            if (l.length > r.length) List(lhs)
+            else if (l.length < r.length) List(rhs)
             // if they are both the same length then keep going
             else traverse(l.subMatches ::: lTail, r.subMatches ::: rTail)
           } else if (l.isLazy && r.isLazy) {
             // if both are lazy return the shortest
-            if (l.length < r.length) lhs
-            else if (l.length > r.length) rhs
+            if (l.length < r.length) List(lhs)
+            else if (l.length > r.length) List(rhs)
             // if they are both the same length then keep going
             else traverse(l.subMatches ::: lTail, r.subMatches ::: rTail)
           } else {
@@ -69,9 +73,7 @@ object MatchSelector {
           traverse(left, right)
 
         case (l, r) =>
-          // if either the left or the right matches are empty
-          // then something is wrong
-          ???
+          List(lhs, rhs)
 
       }
     }
@@ -86,10 +88,10 @@ object MatchSelector {
         case m: NamedMatch => m.subMatch :: tail
         case m: ConcatMatch => m.subMatches ::: tail
         case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
+        case m: EventMatch => tail
         case m: RepetitionMatch => ???
         case m: OptionalMatch => ???
         case m: OrMatch => ???
-        case m: EventMatch => ???
       }
     }
   }

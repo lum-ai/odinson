@@ -384,20 +384,30 @@ class OdinsonEventSpans(
     val graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
     // get all trigger candidates
     val triggerMatches = getAllMatches(triggerSpans)
-    // use dependency graph to confirm connection between trigger and required arg
-    var eventSketches = matchArgument(graph, triggerMatches, requiredSpans.head)
-    for (arg <- requiredSpans.tail) {
-      val newTriggerCandidates = eventSketches.keys.toArray
-      val argMatches = matchArgument(graph, newTriggerCandidates, arg)
-      val newEventSketches = argMatches.transform { (trigger, matches) =>
-        eventSketches(trigger) ++ matches
+    var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
+    if (requiredSpans.nonEmpty) {
+      // use dependency graph to confirm connection between trigger and required arg
+      eventSketches = matchArgument(graph, triggerMatches, requiredSpans.head)
+      for (arg <- requiredSpans.tail) {
+        val newTriggerCandidates = eventSketches.keys.toArray
+        val argMatches = matchArgument(graph, newTriggerCandidates, arg)
+        val newEventSketches = argMatches.transform { (trigger, matches) =>
+          eventSketches(trigger) ++ matches
+        }
+        eventSketches = newEventSketches
       }
-      eventSketches = newEventSketches
+      // if no trigger matches all required args then we're done
+      if (eventSketches.isEmpty) return Array.empty
     }
-    // if no trigger matches all required args then we're done
-    if (eventSketches.isEmpty) return Array.empty
-    // if all required arguments have a valid connection to the trigger
-    // then try to retrieve all matching optional arguments
+    // either all required args have a valid connection to the trigger,
+    // or there are no required args,
+    if (eventSketches.isEmpty) {
+      // if no required args, then all triggers matches are valid event matches
+      for (t <- triggerMatches) {
+        eventSketches = eventSketches.updated(t, Array.empty)
+      }
+    }
+    // try to retrieve all matching optional arguments
     for (arg <- optionalSpans) {
       if (advanceArgToDoc(arg, docID())) {
         val triggerCandidates = eventSketches.keys.toArray

@@ -31,9 +31,9 @@ class OdinsonScorer(
     spans.odinDoStartCurrentDoc()
     // get to first match
     spans.nextStartPosition()
-    var currentMatch = getCurrentMatchAndAdvance(spans)
-    while (currentMatch.isDefined) {
-      collectedMatches += currentMatch.get
+    var currentMatches = getCurrentMatchesAndAdvance(spans)
+    while (currentMatches.nonEmpty) {
+      collectedMatches ++= currentMatches
       // FIXME is sloppy frequency and doCurrentSpans() done once per survivor match? (i.e. here)
       // or once per overlapping match? (i.e. in getCurrentMatchAndAdvance)
       if (docScorer == null) {  // scores not required
@@ -42,7 +42,7 @@ class OdinsonScorer(
         accSloppyFreq += docScorer.computeSlopFactor(spans.width())
       }
       spans.odinDoCurrentSpans()
-      currentMatch = getCurrentMatchAndAdvance(spans)
+      currentMatches = getCurrentMatchesAndAdvance(spans)
     }
     assert(spans.startPosition() == Spans.NO_MORE_POSITIONS, "incorrect final start position, " + spans)
     assert(spans.endPosition() == Spans.NO_MORE_POSITIONS, "incorrect final end position, " + spans)
@@ -51,10 +51,10 @@ class OdinsonScorer(
   // - consumes all matches with the same start position
   // - selects the span to return
   // - leaves the spans iterator at the nest start position
-  private def getCurrentMatchAndAdvance(spans: OdinsonSpans): Option[OdinsonMatch] = {
+  private def getCurrentMatchesAndAdvance(spans: OdinsonSpans): Seq[OdinsonMatch] = {
     val startPosition = spans.startPosition()
     if (startPosition == Spans.NO_MORE_POSITIONS) {
-      return None
+      return Nil
     }
     // gather all matches with the same start position
     val currentMatches = ArrayBuffer(spans.odinsonMatch)
@@ -64,13 +64,13 @@ class OdinsonScorer(
       nextStart = spans.nextStartPosition()
     }
     // select final match
-    val finalMatch = MatchSelector.pickMatch(currentMatches)
+    val finalMatches = MatchSelector.pickMatches(currentMatches)
     // advance to next match that doesn't overlap with current result
-    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatch.end) {
+    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatches.last.end) {
       nextStart = spans.nextStartPosition()
     }
-    // return result
-    Some(finalMatch)
+    // return results
+    finalMatches
   }
 
   private def scoreCurrentDoc(): Float = {
