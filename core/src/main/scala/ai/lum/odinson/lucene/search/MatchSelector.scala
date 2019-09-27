@@ -72,8 +72,10 @@ object MatchSelector {
           val right = expandFirstMatch(rightMatches)
           traverse(left, right)
 
-        case (l, r) =>
+        case (Nil, Nil) =>
           List(lhs, rhs)
+
+        case _ => ???
 
       }
     }
@@ -85,13 +87,13 @@ object MatchSelector {
       case Nil => Nil
       case head :: tail => head match {
         case m: NGramMatch => tail
-        case m: NamedMatch => m.subMatch :: tail
-        case m: ConcatMatch => m.subMatches ::: tail
-        case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
         case m: EventMatch => tail
-        case m: RepetitionMatch => ???
-        case m: OptionalMatch => ???
-        case m: OrMatch => ???
+        case m: OrMatch       => m.subMatch :: tail
+        case m: NamedMatch    => m.subMatch :: tail
+        case m: OptionalMatch => m.subMatch :: tail
+        case m: ConcatMatch     => m.subMatches ::: tail
+        case m: RepetitionMatch => m.subMatches ::: tail
+        case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
       }
     }
   }
