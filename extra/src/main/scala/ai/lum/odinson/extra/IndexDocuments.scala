@@ -1,7 +1,6 @@
 package ai.lum.odinson.extra
 
 import java.io._
-import scala.collection.GenSeq
 import scala.util.{ Try, Success, Failure }
 import com.typesafe.scalalogging.LazyLogging
 import ai.lum.common.ConfigFactory
@@ -17,33 +16,34 @@ object IndexDocuments extends App with LazyLogging {
 
   val writer = OdinsonIndexWriter.fromConfig()
 
-  // a sequence of (File, Document) tuples that *may* be parallel
-  val filesAndDocs: GenSeq[(File, Document)] =
+  logger.info("Gathering documents")
+
+  val documentFiles =
     if (synchronizeOrderWithDocumentId) {
       // files ordered by the id of the document
       docsDir.listFilesByWildcard("*.json", recursive = true)
-        .map(f => (f, Document.fromJson(f)))
+        .map(f => (Document.fromJson(f).id.toInt, f))
         .toSeq
-        // NOTE we convert to int to preserve functionality added in PR #37
-        // but maybe we should sort lexicographically instead
-        .sortBy(_._2.id.toInt)
+        .sortBy(_._1)
+        .map(_._2)
     } else {
       docsDir.listFilesByWildcard("*.json", recursive = true)
-        .map(f => (f, Document.fromJson(f)))
-        .toSeq.par // make parallel sequence
+        .toSeq.par
     }
 
+  logger.info("Indexing documents")
+
   // index documents
-  for (fileWithDoc <- filesAndDocs) {
-    val (file, doc) = fileWithDoc
+  for (f <- documentFiles) {
     Try {
+      val doc = Document.fromJson(f)
       val block = writer.mkDocumentBlock(doc)
       writer.addDocuments(block)
     } match {
       case Success(_) =>
-        logger.info(s"Indexed ${file.getName}")
+        logger.info(s"Indexed ${f.getName}")
       case Failure(e) =>
-        logger.error(s"Failed to index ${file.getName}", e)
+        logger.error(s"Failed to index ${f.getName}", e)
     }
 
   }
