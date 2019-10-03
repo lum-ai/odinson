@@ -135,7 +135,7 @@ class GraphTraversalSpans(
     while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
       buffer += spans.odinsonMatch
     }
-    buffer.distinct
+    buffer
   }
 
   private def mkInvIndex(spans: Seq[OdinsonMatch]): Map[Int, Seq[OdinsonMatch]] = {
