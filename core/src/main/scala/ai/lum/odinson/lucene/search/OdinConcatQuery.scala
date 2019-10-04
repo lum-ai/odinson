@@ -130,7 +130,7 @@ class OdinConcatQuery(
       matchStart
     }
 
-    private def getAllMatches(spans: OdinsonSpans): Seq[OdinsonMatch] = {
+    private def getAllMatches(spans: OdinsonSpans): ArrayBuffer[OdinsonMatch] = {
       val buffer = ArrayBuffer.empty[OdinsonMatch]
       while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
         buffer += spans.odinsonMatch
@@ -139,33 +139,56 @@ class OdinConcatQuery(
     }
 
     private def concatSpansPair(
-        lhs: Seq[OdinsonMatch],
-        rhs: Seq[OdinsonMatch]
-    ): Seq[OdinsonMatch] = {
-      if (lhs.isEmpty || rhs.isEmpty) return Seq.empty
-      val lhsGrouped = lhs.groupBy(_.end)
-      val rhsGrouped = rhs.groupBy(_.start)
-      val keys = (lhsGrouped.keySet intersect rhsGrouped.keySet).toArray
-      for {
-        k <- keys
-        l <- lhsGrouped(k)
-        r <- rhsGrouped(k)
-      } yield {
-        (l, r) match {
-          case (l: ConcatMatch, r: ConcatMatch) =>
-            new ConcatMatch(l.subMatches ++ r.subMatches)
-          case (l: ConcatMatch, r) =>
-            new ConcatMatch(l.subMatches :+ r)
-          case (l, r: ConcatMatch) =>
-            new ConcatMatch(l +: r.subMatches)
-          case (l, r) =>
-            new ConcatMatch(List(l, r))
+      lhs: ArrayBuffer[OdinsonMatch],
+      rhs: ArrayBuffer[OdinsonMatch],
+    ): ArrayBuffer[OdinsonMatch] = {
+      if (lhs.isEmpty || rhs.isEmpty) return ArrayBuffer.empty
+      val maxLength = if (lhs.length > rhs.length) lhs.length else rhs.length
+      val results = new ArrayBuffer[OdinsonMatch](maxLength)
+      val lhsSorted = lhs.sortBy(_.end)
+      var i = 0
+      var j = 0
+      while (i < lhsSorted.length && j < rhs.length) {
+        val l = lhsSorted(i)
+        val r = rhs(j)
+        if (l.end < r.start) {
+          // advance left
+          i += 1
+        } else if (l.end > r.start) {
+          // advance right
+          j += 1
+        } else {
+          // position to concatenate
+          val pos = lhsSorted(i).end
+          var iStop = lhsSorted.indexWhere(_.end > pos, i)
+          if (iStop == -1) iStop = lhsSorted.length
+          var jStop = rhs.indexWhere(_.start > pos, j)
+          if (jStop == -1) jStop = rhs.length
+          for {
+            ii <- i until iStop
+            jj <- j until jStop
+          } {
+            val r = (lhsSorted(ii), rhs(jj)) match {
+              case (l: ConcatMatch, r: ConcatMatch) =>
+                new ConcatMatch(l.subMatches ++ r.subMatches)
+              case (l: ConcatMatch, r) =>
+                new ConcatMatch(l.subMatches :+ r)
+              case (l, r: ConcatMatch) =>
+                new ConcatMatch(l +: r.subMatches)
+              case (l, r) =>
+                new ConcatMatch(List(l, r))
+            }
+            results += r
+          }
+          i = iStop
+          j = jStop
         }
       }
+      results
     }
 
-    private def concatSpans(spans: Array[OdinsonSpans]): Seq[OdinsonMatch] = {
-      var results: Seq[OdinsonMatch] = null
+    private def concatSpans(spans: Array[OdinsonSpans]): ArrayBuffer[OdinsonMatch] = {
+      var results: ArrayBuffer[OdinsonMatch] = null
       // var numWildcards: Int = 0
       // if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
       //   return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
@@ -269,7 +292,7 @@ class OdinConcatQuery(
               // }
               results = concatSpansPair(results, getAllMatches(s))
             }
-            if (results.isEmpty) return Seq.empty
+            if (results.isEmpty) return ArrayBuffer.empty
         }
       }
       // any remaining wildcards to append?
