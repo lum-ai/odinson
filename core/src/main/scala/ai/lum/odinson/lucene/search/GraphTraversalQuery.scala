@@ -129,15 +129,6 @@ class GraphTraversalSpans(
     matchStart
   }
 
-  // FIXME this is repeated in OdinConcatQuery
-  private def getAllMatches(spans: OdinsonSpans): Seq[OdinsonMatch] = {
-    val buffer = ArrayBuffer.empty[OdinsonMatch]
-    while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
-      buffer += spans.odinsonMatch
-    }
-    buffer
-  }
-
   private def mkInvIndex(spans: Seq[OdinsonMatch]): Map[Int, Seq[OdinsonMatch]] = {
     val index = HashMap.empty[Int, ArrayBuffer[OdinsonMatch]]
     for {
@@ -154,8 +145,8 @@ class GraphTraversalSpans(
       dstSpans: OdinsonSpans
   ): Seq[OdinsonMatch] = {
     val results: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
-    val dstIndex = mkInvIndex(getAllMatches(dstSpans))
-    for (src <- getAllMatches(srcSpans)) {
+    val dstIndex = mkInvIndex(dstSpans.getAllMatches())
+    for (src <- srcSpans.getAllMatches()) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
       results ++= dsts
         .flatMap(dstIndex)

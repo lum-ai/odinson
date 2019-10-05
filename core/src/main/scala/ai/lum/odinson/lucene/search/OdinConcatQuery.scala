@@ -130,14 +130,6 @@ class OdinConcatQuery(
       matchStart
     }
 
-    private def getAllMatches(spans: OdinsonSpans): ArrayBuffer[OdinsonMatch] = {
-      val buffer = ArrayBuffer.empty[OdinsonMatch]
-      while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
-        buffer += spans.odinsonMatch
-      }
-      buffer
-    }
-
     private def concatSpansPair(
       leftSpans: ArrayBuffer[OdinsonMatch],
       rightSpans: ArrayBuffer[OdinsonMatch],
@@ -287,7 +279,7 @@ class OdinConcatQuery(
           case s =>
             if (results == null) {
               // these are our first spans
-              results = getAllMatches(s)
+              results = s.getAllMatches()
               // prepend wildcards if needed
               // if (numWildcards > 0) {
               //   results = for {
@@ -305,7 +297,7 @@ class OdinConcatQuery(
               //   } yield r.copy(end = r.end + numWildcards)
               //   numWildcards = 0
               // }
-              results = concatSpansPair(results, getAllMatches(s))
+              results = concatSpansPair(results, s.getAllMatches())
             }
             if (results.isEmpty) return ArrayBuffer.empty
         }

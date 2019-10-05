@@ -1,5 +1,6 @@
 package ai.lum.odinson.lucene.search.spans
 
+import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.search.spans.Spans
 import ai.lum.odinson._
 
@@ -14,6 +15,8 @@ import ai.lum.odinson._
  */
 abstract class OdinsonSpans extends Spans {
 
+  import Spans._
+
   def odinsonMatch: OdinsonMatch = {
     new NGramMatch(docID(), startPosition(), endPosition())
   }
@@ -23,5 +26,13 @@ abstract class OdinsonSpans extends Spans {
   def odinDoStartCurrentDoc() = doStartCurrentDoc()
 
   def odinDoCurrentSpans() = doCurrentSpans()
+
+  def getAllMatches(): ArrayBuffer[OdinsonMatch] = {
+    val buffer = new ArrayBuffer[OdinsonMatch]
+    while (nextStartPosition() != NO_MORE_POSITIONS) {
+      buffer += odinsonMatch
+    }
+    buffer
+  }
 
 }
