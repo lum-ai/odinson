@@ -139,51 +139,66 @@ class OdinConcatQuery(
     }
 
     private def concatSpansPair(
-      lhs: ArrayBuffer[OdinsonMatch],
-      rhs: ArrayBuffer[OdinsonMatch],
+      leftSpans: ArrayBuffer[OdinsonMatch],
+      rightSpans: ArrayBuffer[OdinsonMatch],
     ): ArrayBuffer[OdinsonMatch] = {
-      if (lhs.isEmpty || rhs.isEmpty) return ArrayBuffer.empty
-      val maxLength = if (lhs.length > rhs.length) lhs.length else rhs.length
+      // if either side is empty then there is nothing to concatenate
+      if (leftSpans.isEmpty || rightSpans.isEmpty) return ArrayBuffer.empty
+      // allocate space for results
+      val leftLength = leftSpans.length
+      val rightLength = rightSpans.length
+      val maxLength = if (leftLength > rightLength) leftLength else rightLength
       val results = new ArrayBuffer[OdinsonMatch](maxLength)
-      val lhsSorted = lhs.sortBy(_.end)
+      // leftSpans and rightSpans are sorted by start
+      // but we need leftSpans sorted by end
+      val leftSpansSorted = leftSpans.sortBy(_.end)
+      // indexes for leftSpansSorted and rightSpans
       var i = 0
       var j = 0
-      while (i < lhsSorted.length && j < rhs.length) {
-        val l = lhsSorted(i)
-        val r = rhs(j)
-        if (l.end < r.start) {
+      // iterate over spans
+      while (i < leftLength && j < rightLength) {
+        val left = leftSpansSorted(i)
+        val right = rightSpans(j)
+        if (left.end < right.start) {
           // advance left
           i += 1
-        } else if (l.end > r.start) {
+        } else if (left.end > right.start) {
           // advance right
           j += 1
         } else {
           // position to concatenate
-          val pos = lhsSorted(i).end
-          var iStop = lhsSorted.indexWhere(_.end > pos, i)
-          if (iStop == -1) iStop = lhsSorted.length
-          var jStop = rhs.indexWhere(_.start > pos, j)
-          if (jStop == -1) jStop = rhs.length
+          val pos = left.end
+          // one after the last left span with end == pos
+          var iStop = leftSpansSorted.indexWhere(_.end > pos, i)
+          if (iStop == -1) iStop = leftLength
+          // one after the last right span with start == pos
+          var jStop = rightSpans.indexWhere(_.start > pos, j)
+          if (jStop == -1) jStop = rightLength
+          // iterate over all pairs of spans that should be concatenated
           for {
-            ii <- i until iStop
-            jj <- j until jStop
+            l <- i until iStop
+            r <- j until jStop
           } {
-            val r = (lhsSorted(ii), rhs(jj)) match {
-              case (l: ConcatMatch, r: ConcatMatch) =>
-                new ConcatMatch(l.subMatches ++ r.subMatches)
-              case (l: ConcatMatch, r) =>
-                new ConcatMatch(l.subMatches :+ r)
-              case (l, r: ConcatMatch) =>
-                new ConcatMatch(l +: r.subMatches)
-              case (l, r) =>
-                new ConcatMatch(List(l, r))
+            // concatenate
+            val concatenated = (leftSpansSorted(l), rightSpans(r)) match {
+              case (lhs: ConcatMatch, rhs: ConcatMatch) =>
+                new ConcatMatch(lhs.subMatches ++ rhs.subMatches)
+              case (lhs: ConcatMatch, rhs) =>
+                new ConcatMatch(lhs.subMatches :+ rhs)
+              case (lhs, rhs: ConcatMatch) =>
+                new ConcatMatch(lhs +: rhs.subMatches)
+              case (lhs, rhs) =>
+                new ConcatMatch(List(lhs, rhs))
             }
-            results += r
+            // add to results
+            results += concatenated
           }
+          // advance both sides to next spans
           i = iStop
           j = jStop
         }
       }
+      // return results
       results
     }
 
