@@ -2,7 +2,7 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{ List => JList, Map => JMap, Set => JSet }
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -131,16 +131,17 @@ class OdinConcatQuery(
     }
 
     private def concatSpansPair(
-      leftSpans: ArrayBuffer[OdinsonMatch],
-      rightSpans: ArrayBuffer[OdinsonMatch],
-    ): ArrayBuffer[OdinsonMatch] = {
+      leftSpans: Array[OdinsonMatch],
+      rightSpans: Array[OdinsonMatch],
+    ): Array[OdinsonMatch] = {
       // if either side is empty then there is nothing to concatenate
-      if (leftSpans.isEmpty || rightSpans.isEmpty) return ArrayBuffer.empty
-      // allocate space for results
+      if (leftSpans.isEmpty || rightSpans.isEmpty) return Array.empty
+      // make array builder
       val leftLength = leftSpans.length
       val rightLength = rightSpans.length
       val maxLength = if (leftLength > rightLength) leftLength else rightLength
-      val results = new ArrayBuffer[OdinsonMatch](maxLength)
+      val builder = new ArrayBuilder.ofRef[OdinsonMatch]
+      builder.sizeHint(maxLength)
       // leftSpans and rightSpans are sorted by start
       // but we need leftSpans sorted by end
       val leftSpansSorted = leftSpans.sortBy(_.end)
@@ -183,7 +184,7 @@ class OdinConcatQuery(
                 new ConcatMatch(List(lhs, rhs))
             }
             // add to results
-            results += concatenated
+            builder += concatenated
           }
           // advance both sides to next spans
           i = iStop
@@ -191,11 +192,11 @@ class OdinConcatQuery(
         }
       }
       // return results
-      results
+      builder.result()
     }
 
-    private def concatSpans(spans: Array[OdinsonSpans]): ArrayBuffer[OdinsonMatch] = {
-      var results: ArrayBuffer[OdinsonMatch] = null
+    private def concatSpans(spans: Array[OdinsonSpans]): Array[OdinsonMatch] = {
+      var results: Array[OdinsonMatch] = null
       // var numWildcards: Int = 0
       // if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
       //   return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
@@ -299,7 +300,7 @@ class OdinConcatQuery(
               // }
               results = concatSpansPair(results, s.getAllMatches())
             }
-            if (results.isEmpty) return ArrayBuffer.empty
+            if (results.isEmpty) return Array.empty
         }
       }
       // any remaining wildcards to append?

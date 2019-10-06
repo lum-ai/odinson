@@ -1,7 +1,7 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
-import scala.collection.mutable.{ ArrayBuffer, HashMap }
+import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -143,17 +143,17 @@ class GraphTraversalSpans(
       traversal: GraphTraversal,
       srcSpans: OdinsonSpans,
       dstSpans: OdinsonSpans
-  ): Seq[OdinsonMatch] = {
-    val results: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
+  ): Array[OdinsonMatch] = {
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
     val dstIndex = mkInvIndex(dstSpans.getAllMatches())
     for (src <- srcSpans.getAllMatches()) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
-      results ++= dsts
+      builder ++= dsts
         .flatMap(dstIndex)
         .distinct
         .map(dst => new GraphTraversalMatch(src, dst))
     }
-    results
+    builder.result()
   }
 
 }

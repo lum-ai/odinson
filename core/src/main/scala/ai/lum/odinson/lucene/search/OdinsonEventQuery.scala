@@ -2,7 +2,7 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
 import scala.annotation.tailrec
-import scala.collection.mutable.{ ArrayBuffer, HashMap }
+import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap }
 import scala.collection.JavaConverters._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -240,15 +240,6 @@ class OdinsonEventSpans(
     matchStart
   }
 
-  // gets all OdinsonMatches from an OdinsonSpans iterator for the current doc
-  private def getAllMatches(spans: OdinsonSpans): Array[OdinsonMatch] = {
-    val buffer = ArrayBuffer.empty[OdinsonMatch]
-    while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
-      buffer += spans.odinsonMatch
-    }
-    buffer.toArray
-  }
-
   // returns a map from token index to all matches that contain that token
   private def mkInvertedIndex(
     matches: Seq[OdinsonMatch]
@@ -268,16 +259,16 @@ class OdinsonEventSpans(
     srcMatches: Array[OdinsonMatch],
     dstMatches: Array[OdinsonMatch]
   ): Array[OdinsonMatch] = {
-    val results = ArrayBuffer.empty[OdinsonMatch]
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
     val dstIndex = mkInvertedIndex(dstMatches)
     for (src <- srcMatches) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
-      results ++= dsts
+      builder ++= dsts
         .flatMap(dstIndex)
         .distinct
         .map(dst => new GraphTraversalMatch(src, dst))
     }
-    results.toArray
+    builder.result()
   }
 
   // performs the full traversal from trigger to argument
@@ -288,7 +279,7 @@ class OdinsonEventSpans(
   ): Array[OdinsonMatch] = {
     var currentSpans = srcMatches
     for ((traversal, spans) <- fullTraversal) {
-      val dstMatches = getAllMatches(spans)
+      val dstMatches = spans.getAllMatches()
       currentSpans = matchPairs(graph, traversal, currentSpans, dstMatches)
       if (currentSpans.isEmpty) return Array.empty
     }
@@ -383,7 +374,7 @@ class OdinsonEventSpans(
     // but we need to confirm using the dependency graph
     val graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
     // get all trigger candidates
-    val triggerMatches = getAllMatches(triggerSpans)
+    val triggerMatches = triggerSpans.getAllMatches()
     var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
     if (requiredSpans.nonEmpty) {
       // use dependency graph to confirm connection between trigger and required arg

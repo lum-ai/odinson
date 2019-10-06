@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search.spans
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.search.spans.Spans
 import ai.lum.odinson._
 
@@ -27,12 +27,12 @@ abstract class OdinsonSpans extends Spans {
 
   def odinDoCurrentSpans() = doCurrentSpans()
 
-  def getAllMatches(): ArrayBuffer[OdinsonMatch] = {
-    val buffer = new ArrayBuffer[OdinsonMatch]
+  def getAllMatches(): Array[OdinsonMatch] = {
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
     while (nextStartPosition() != NO_MORE_POSITIONS) {
-      buffer += odinsonMatch
+      builder += odinsonMatch
     }
-    buffer
+    builder.result()
   }
 
 }
