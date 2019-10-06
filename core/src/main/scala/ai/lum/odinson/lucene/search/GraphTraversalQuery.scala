@@ -17,6 +17,7 @@ import ai.lum.odinson.lucene.util._
 class GraphTraversalQuery(
     val defaultTokenField: String,
     val dependenciesField: String,
+    val sentenceLengthField: String,
     val src: OdinsonQuery,
     val traversal: GraphTraversal,
     val dst: OdinsonQuery
@@ -38,7 +39,7 @@ class GraphTraversalQuery(
     val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinsonQuery]
     val rewrittenDst = dst.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (src != rewrittenSrc || dst != rewrittenDst) {
-      new GraphTraversalQuery(defaultTokenField, dependenciesField, rewrittenSrc, traversal, rewrittenDst)
+      new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, rewrittenSrc, traversal, rewrittenDst)
     } else {
       super.rewrite(reader)
     }
@@ -75,7 +76,8 @@ class GraphTraversalQuery(
       val dstSpans = dstWeight.getSpans(context, requiredPostings)
       if (srcSpans == null || dstSpans == null) return null
       val graphPerDoc = reader.getSortedDocValues(dependenciesField)
-      new GraphTraversalSpans(Array(srcSpans, dstSpans), traversal, graphPerDoc)
+      val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
+      new GraphTraversalSpans(Array(srcSpans, dstSpans), traversal, graphPerDoc, numWordsPerDoc)
     }
 
   }
@@ -85,7 +87,8 @@ class GraphTraversalQuery(
 class GraphTraversalSpans(
     val subSpans: Array[OdinsonSpans],
     val traversal: GraphTraversal,
-    val graphPerDoc: SortedDocValues
+    val graphPerDoc: SortedDocValues,
+    val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 
   import Spans._
@@ -100,12 +103,15 @@ class GraphTraversalSpans(
   // dependency graph
   private var graph: DirectedGraph = null
 
+  private var maxToken: Long = -1
+
   override def odinsonMatch: OdinsonMatch = topPositionOdinsonMatch
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
     graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
-    pq = QueueByPosition.mkPositionQueue(matchPairs(graph, traversal, srcSpans, dstSpans))
+    maxToken = numWordsPerDoc.get(docID())
+    pq = QueueByPosition.mkPositionQueue(matchPairs(graph, maxToken.toInt, traversal, srcSpans, dstSpans))
     if (pq.size() > 0) {
       atFirstInCurrentDoc = true
       topPositionOdinsonMatch = null
@@ -129,23 +135,24 @@ class GraphTraversalSpans(
     matchStart
   }
 
-  private def mkInvIndex(spans: Seq[OdinsonMatch]): Map[Int, Seq[OdinsonMatch]] = {
-    val index = HashMap.empty[Int, ArrayBuffer[OdinsonMatch]]
+  private def mkInvIndex(spans: Seq[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
+    val index = Array.fill(maxToken) { new ArrayBuffer[OdinsonMatch] }
     for {
       s <- spans
       i <- s.tokenInterval
-    } index.getOrElseUpdate(i, ArrayBuffer.empty) += s
-    index.toMap.withDefaultValue(Seq.empty)
+    } index(i) += s
+    index
   }
 
   private def matchPairs(
       graph: DirectedGraph,
+      maxToken: Int,
       traversal: GraphTraversal,
       srcSpans: OdinsonSpans,
       dstSpans: OdinsonSpans
   ): Array[OdinsonMatch] = {
     val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    val dstIndex = mkInvIndex(dstSpans.getAllMatches())
+    val dstIndex = mkInvIndex(dstSpans.getAllMatches(), maxToken)
     for (src <- srcSpans.getAllMatches()) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
       builder ++= dsts

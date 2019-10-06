@@ -189,7 +189,7 @@ class QueryCompiler(
           val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(traversal)))
           val dstQuery = mkOdinsonQuery(dst).map(q => addConstraint(q, mkEndConstraint(traversal)))
           if (srcQuery.isDefined && dstQuery.isDefined) {
-            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, srcQuery.get, traversal, dstQuery.get)
+            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, traversal, dstQuery.get)
             Some(q)
           } else {
             None
