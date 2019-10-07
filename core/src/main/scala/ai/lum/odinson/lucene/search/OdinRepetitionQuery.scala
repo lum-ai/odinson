@@ -1,7 +1,7 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -86,7 +86,7 @@ class OdinRepetitionSpans(
   // a first start position is available in current doc for nextStartPosition
   protected var atFirstInCurrentDoc: Boolean = false
 
-  private var stretch: IndexedSeq[OdinsonMatch] = ArrayBuffer.empty
+  private var stretch: Array[OdinsonMatch] = Array.empty
   private var startIndex: Int = 0
   private var numReps: Int = 0
 
@@ -152,25 +152,25 @@ class OdinRepetitionSpans(
 
   // collect all consecutive matches
   // and return them in an array
-  private def getStretch(): IndexedSeq[OdinsonMatch] = {
+  private def getStretch(): Array[OdinsonMatch] = {
     var end = spans.startPosition()
-    val stretch = ArrayBuffer.empty[OdinsonMatch]
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
     while (spans.startPosition() == end) {
-      stretch += spans.odinsonMatch
+      builder += spans.odinsonMatch
       end = spans.endPosition()
       spans.nextStartPosition()
     }
-    stretch
+    builder.result()
   }
 
   // get the next stretch that is of size `min` or bigger
   // or return empty if there is no such a stretch in the document
-  private def getNextStretch(): IndexedSeq[OdinsonMatch] = {
+  private def getNextStretch(): Array[OdinsonMatch] = {
     while (spans.startPosition() != NO_MORE_POSITIONS) {
       val stretch = getStretch()
       if (stretch.length >= min) return stretch
     }
-    IndexedSeq.empty
+    Array.empty
   }
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {

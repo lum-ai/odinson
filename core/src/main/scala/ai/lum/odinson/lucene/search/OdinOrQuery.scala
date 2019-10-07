@@ -2,7 +2,7 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{ List => JList, Map => JMap, Set => JSet }
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -63,21 +63,19 @@ class OdinOrQuery(
       if (terms == null) {
         return null // field does not exist
       }
-      val subSpans = new ArrayBuffer[OdinsonSpans](clauses.size)
+      val builder = new ArrayBuilder.ofRef[OdinsonSpans]
+      builder.sizeHint(clauses.size)
       for (weight <- subWeights) {
         val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinsonSpans]
         if (subSpan != null) {
-          subSpans += subSpan
+          builder += subSpan
         }
       }
-      if (subSpans.length == 0) {
-        return null
-      } else if (subSpans.length == 1) {
-        val s = subSpans(0)
-        assert(s.isInstanceOf[OdinsonSpans])
-        return s.asInstanceOf[OdinsonSpans]
+      builder.result() match {
+        case Array() => null
+        case Array(s: OdinsonSpans) => s
+        case subSpans => new OdinOrSpans(subSpans)
       }
-      new OdinOrSpans(subSpans.toArray)
     }
 
   }
