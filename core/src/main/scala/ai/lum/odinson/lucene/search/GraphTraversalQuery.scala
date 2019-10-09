@@ -10,6 +10,7 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
+import ai.lum.odinson.serialization.UnsafeSerializer
 
 /** Traverses the graph from `src` to `dst` following the traversal pattern.
  *  Returns `dst` if there is a match.
@@ -109,7 +110,7 @@ class GraphTraversalSpans(
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
-    graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
+    graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
     maxToken = numWordsPerDoc.get(docID())
     pq = QueueByPosition.mkPositionQueue(matchPairs(graph, maxToken.toInt, traversal, srcSpans, dstSpans))
     if (pq.size() > 0) {

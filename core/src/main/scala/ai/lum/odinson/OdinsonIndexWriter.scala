@@ -19,6 +19,7 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.DisplayUtils._
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
+import ai.lum.odinson.serialization.UnsafeSerializer
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -122,7 +123,7 @@ class OdinsonIndexWriter(
       case f: GraphField =>
         val in  = new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(f.incomingEdges))
         val out = new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(f.outgoingEdges))
-        val bytes = mkDirectedGraph(f).toBytes
+        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(f))
         if (bytes.length <= sortedDocValuesFieldMaxSize) {
           val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
           Seq(graph, in, out)

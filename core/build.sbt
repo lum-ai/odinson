@@ -17,7 +17,6 @@ libraryDependencies ++= {
     "com.h2database" % "h2" % "1.4.198",
     "com.lihaoyi" %% "upickle" % "0.7.5",
     "com.lihaoyi" %% "fastparse" % "2.1.0",
-    "com.twitter" %% "chill" % "0.9.3"
   )
 
 }

@@ -1,7 +1,5 @@
 package ai.lum.odinson.digraph
 
-import ai.lum.odinson.serialization.OdinKryoPool
-
 /** Represents a directed graph (i.e. dependency parse).
  *
  *  @param incoming array whose elements correspond to the incoming edges of each token
@@ -14,20 +12,4 @@ case class DirectedGraph(
     incoming: Array[Array[Int]],
     outgoing: Array[Array[Int]],
     roots: Array[Int]
-) {
-
-  def toBytes: Array[Byte] = DirectedGraph.kryoPool.toBytesWithClass(this)
-
-}
-
-object DirectedGraph {
-
-  private val poolSize = 1 // TODO pull from config
-
-  private val kryoPool = new OdinKryoPool(poolSize)
-
-  def fromBytes(bytes: Array[Byte]): DirectedGraph = {
-    kryoPool.fromBytes(bytes).asInstanceOf[DirectedGraph]
-  }
-
-}
+)

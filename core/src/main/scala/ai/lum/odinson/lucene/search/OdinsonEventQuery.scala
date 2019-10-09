@@ -12,6 +12,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.common.itertools.product
 
 case class ArgumentQuery(
@@ -372,7 +373,7 @@ class OdinsonEventSpans(
   private def matchEvents(): Array[EventMatch] = {
     // at this point, all required arguments seem to match
     // but we need to confirm using the dependency graph
-    val graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
+    val graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
     // get all trigger candidates
     val triggerMatches = triggerSpans.getAllMatches()
     var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
