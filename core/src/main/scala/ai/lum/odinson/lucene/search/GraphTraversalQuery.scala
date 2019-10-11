@@ -136,12 +136,33 @@ class GraphTraversalSpans(
     matchStart
   }
 
-  private def mkInvIndex(spans: Seq[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
-    val index = Array.fill(maxToken) { new ArrayBuffer[OdinsonMatch] }
-    for {
-      s <- spans
-      i <- s.tokenInterval
-    } index(i) += s
+  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
+    val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
+    // empty buffer meant to stay empty and be reused
+    val empty = new ArrayBuffer[OdinsonMatch]
+    // add mentions at the corresponding token positions
+    var i = 0
+    while (i < spans.length) {
+      val s = spans(i)
+      i += 1
+      var j = s.start
+      while (j < s.end) {
+        if (index(j) == null) {
+          // make a new buffer at this position
+          index(j) = new ArrayBuffer[OdinsonMatch]
+        }
+        index(j) += s
+        j += 1
+      }
+    }
+    // add the empty buffer everywhere else
+    i = 0
+    while (i < index.length) {
+      if (index(i) == null) {
+        index(i) = empty
+      }
+      i += 1
+    }
     index
   }
 
