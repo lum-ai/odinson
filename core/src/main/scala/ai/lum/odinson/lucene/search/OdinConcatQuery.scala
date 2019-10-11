@@ -175,13 +175,22 @@ class OdinConcatQuery(
             // concatenate
             val concatenated = (leftSpansSorted(l), rightSpans(r)) match {
               case (lhs: ConcatMatch, rhs: ConcatMatch) =>
-                new ConcatMatch(lhs.subMatches ++ rhs.subMatches)
+                val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + rhs.subMatches.length)
+                System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
+                System.arraycopy(rhs.subMatches, 0, subMatches, lhs.subMatches.length, rhs.subMatches.length)
+                new ConcatMatch(subMatches)
               case (lhs: ConcatMatch, rhs) =>
-                new ConcatMatch(lhs.subMatches :+ rhs)
+                val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + 1)
+                System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
+                subMatches(lhs.subMatches.length) = rhs
+                new ConcatMatch(subMatches)
               case (lhs, rhs: ConcatMatch) =>
-                new ConcatMatch(lhs +: rhs.subMatches)
+                val subMatches = new Array[OdinsonMatch](rhs.subMatches.length + 1)
+                subMatches(0) = lhs
+                System.arraycopy(rhs.subMatches, 0, subMatches, 1, rhs.subMatches.length)
+                new ConcatMatch(subMatches)
               case (lhs, rhs) =>
-                new ConcatMatch(List(lhs, rhs))
+                new ConcatMatch(Array(lhs, rhs))
             }
             // add to results
             builder += concatenated
@@ -201,7 +210,10 @@ class OdinConcatQuery(
       // if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
       //   return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
       // }
-      for (s <- spans) {
+      var i = 0
+      while (i < spans.length) {
+        val s = spans(i)
+        i += 1
         s match {
           // // count wildcards
           // case s: AllNGramsSpans =>

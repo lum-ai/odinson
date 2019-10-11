@@ -55,13 +55,13 @@ object MatchSelector {
             if (l.length > r.length) List(lhs)
             else if (l.length < r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(l.subMatches ::: lTail, r.subMatches ::: rTail)
+            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
           } else if (l.isLazy && r.isLazy) {
             // if both are lazy return the shortest
             if (l.length < r.length) List(lhs)
             else if (l.length > r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(l.subMatches ::: lTail, r.subMatches ::: rTail)
+            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
           } else {
             // something is wrong
             ???
@@ -91,8 +91,8 @@ object MatchSelector {
         case m: OrMatch       => m.subMatch :: tail
         case m: NamedMatch    => m.subMatch :: tail
         case m: OptionalMatch => m.subMatch :: tail
-        case m: ConcatMatch     => m.subMatches ::: tail
-        case m: RepetitionMatch => m.subMatches ::: tail
+        case m: ConcatMatch     => m.subMatches.toList ::: tail
+        case m: RepetitionMatch => m.subMatches.toList ::: tail
         case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
       }
     }

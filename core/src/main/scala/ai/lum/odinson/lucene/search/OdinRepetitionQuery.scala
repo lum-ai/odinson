@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{ Arrays, Map => JMap, Set => JSet }
 import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -188,8 +188,7 @@ class OdinRepetitionSpans(
   }
 
   override def odinsonMatch: OdinsonMatch = {
-    // FIXME avoid converting to list
-    val subMatches = stretch.slice(startIndex, startIndex + numReps).toList
+    val subMatches = Arrays.copyOfRange(stretch, startIndex, startIndex + numReps)
     new RepetitionMatch(subMatches, isGreedy)
   }
 

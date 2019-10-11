@@ -351,14 +351,14 @@ class OdinsonEventSpans(
 
   private def packageArguments(
     args: Array[(ArgumentSpans, OdinsonMatch)]
-  ): Seq[Seq[NamedCapture]] = {
+  ): Array[Array[NamedCapture]] = {
     val packaged = args.groupBy(_._1).map { case (arg, values) =>
       // values is a sequence of (arg, match) tuples, so discard the arg
       val matches = values.map(_._2)
       packageArgument(arg, matches)
     }
     // return cartesian product of arguments
-    product(packaged.toList).map(_.flatten)
+    product(packaged.toSeq).map(_.flatten.toArray).toArray
   }
 
   // get an event sketch and return a sequence of EventMatch objects
@@ -367,7 +367,7 @@ class OdinsonEventSpans(
   ): Array[EventMatch] = {
     val trigger = sketch._1
     val argumentPackages = packageArguments(sketch._2)
-    argumentPackages.map(args => new EventMatch(trigger, args.toList)).toArray
+    argumentPackages.map(args => new EventMatch(trigger, args))
   }
 
   private def matchEvents(): Array[EventMatch] = {
