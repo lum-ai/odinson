@@ -162,11 +162,15 @@ class OdinConcatQuery(
           // position to concatenate
           val pos = left.end
           // one after the last left span with end == pos
-          var iStop = leftSpansSorted.indexWhere(_.end > pos, i)
-          if (iStop == -1) iStop = leftLength
+          var iStop = i
+          while (iStop < leftSpansSorted.length && leftSpansSorted(iStop).end == pos) {
+            iStop += 1
+          }
           // one after the last right span with start == pos
-          var jStop = rightSpans.indexWhere(_.start > pos, j)
-          if (jStop == -1) jStop = rightLength
+          var jStop = j
+          while (jStop < rightSpans.length && rightSpans(jStop).start == pos) {
+            jStop += 1
+          }
           // iterate over all pairs of spans that should be concatenated
           for {
             l <- i until iStop
