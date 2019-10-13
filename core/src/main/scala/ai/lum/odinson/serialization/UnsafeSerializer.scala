@@ -121,30 +121,30 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
     val outgoingSlices = getIntArray()
     val roots = getIntArray()
     // incoming
-    val incoming = new Array[Array[Int]](incomingSlices.length / 2)
+    val incoming = new Array[Array[Int]](incomingSlices.length - 1)
     var i = 0
-    while (i < incomingSlices.length) {
+    while (i < incomingSlices.length - 1) {
       val from = incomingSlices(i)
       val to = incomingSlices(i + 1)
       if (from == to) {
-        incoming(i / 2) = Array.emptyIntArray
+        incoming(i) = Array.emptyIntArray
       } else {
-        incoming(i / 2) = Arrays.copyOfRange(incomingFlat, from, to)
+        incoming(i) = Arrays.copyOfRange(incomingFlat, from, to)
       }
-      i += 2
+      i += 1
     }
     // outgoing
-    val outgoing = new Array[Array[Int]](outgoingSlices.length / 2)
+    val outgoing = new Array[Array[Int]](outgoingSlices.length - 1)
     i = 0
-    while (i < outgoingSlices.length) {
+    while (i < outgoingSlices.length - 1) {
       val from = outgoingSlices(i)
       val to = outgoingSlices(i + 1)
       if (from == to) {
-        outgoing(i / 2) = Array.emptyIntArray
+        outgoing(i) = Array.emptyIntArray
       } else {
-        outgoing(i / 2) = Arrays.copyOfRange(outgoingFlat, from, to)
+        outgoing(i) = Arrays.copyOfRange(outgoingFlat, from, to)
       }
-      i += 2
+      i += 1
     }
     DirectedGraph(incoming, outgoing, roots)
   }
@@ -192,28 +192,24 @@ object UnsafeSerializer {
   /** converts a DirectedGraph into a FlatGraph for serialization */
   def flattenGraph(g: DirectedGraph): FlatGraph = {
     val incomingFlat = g.incoming.flatten
-    val incomingSlices = new Array[Int](g.incoming.length * 2)
+    val incomingSlices = new Array[Int](g.incoming.length + 1)
     val outgoingFlat = g.outgoing.flatten
-    val outgoingSlices = new Array[Int](g.outgoing.length * 2)
+    val outgoingSlices = new Array[Int](g.outgoing.length + 1)
     val roots = g.roots
     // populate incomingSlices
     var inStart = 0
     for (i <- g.incoming.indices) {
-      val slice = i * 2
-      val inStop = inStart + g.incoming(i).length
-      incomingSlices(slice) = inStart
-      incomingSlices(slice + 1) = inStop
-      inStart = inStop
+      incomingSlices(i) = inStart
+      inStart += g.incoming(i).length
     }
+    incomingSlices(incomingSlices.length - 1) = inStart
     // populate outgoingSlices
     var outStart = 0
     for (i <- g.outgoing.indices) {
-      val slice = i * 2
-      val outStop = outStart + g.outgoing(i).length
-      outgoingSlices(slice) = outStart
-      outgoingSlices(slice + 1) = outStop
-      outStart = outStop
+      outgoingSlices(i) = outStart
+      outStart += g.outgoing(i).length
     }
+    outgoingSlices(outgoingSlices.length - 1) = outStart
     new FlatGraph(
       incomingFlat, incomingSlices,
       outgoingFlat, outgoingSlices,
