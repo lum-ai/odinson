@@ -48,105 +48,26 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
     pos += bytesToCopy
   }
 
-  /** get a FlatGraph from bytes at the current position */
-  def getFlatGraph(): FlatGraph = {
+  /** get a DirectedGraph from bytes at the current position */
+  def getDirectedGraph(): DirectedGraph = {
     val incomingFlat = getIntArray()
     val incomingSlices = getIntArray()
     val outgoingFlat = getIntArray()
     val outgoingSlices = getIntArray()
     val roots = getIntArray()
-    new FlatGraph(
+    new DirectedGraph(
       incomingFlat, incomingSlices,
       outgoingFlat, outgoingSlices,
       roots)
   }
 
-  /** put a FlatGraph in bytes at the current position */
-  def putFlatGraph(g: FlatGraph): Unit = {
+  /** put a DirectedGraph in bytes at the current position */
+  def putDirectedGraph(g: DirectedGraph): Unit = {
     putIntArray(g.incomingFlat)
     putIntArray(g.incomingSlices)
     putIntArray(g.outgoingFlat)
     putIntArray(g.outgoingSlices)
     putIntArray(g.roots)
-  }
-
-  /** get a DirectedGraph from bytes at the current position */
-  def getDirectedGraph(): DirectedGraph = {
-    // incoming
-    val nIncoming = getInt()
-    val incoming = new Array[Array[Int]](nIncoming)
-    var i = 0
-    while (i < nIncoming) {
-      incoming(i) = getIntArray()
-      i += 1
-    }
-    // outgoing
-    val nOutgoing = getInt()
-    val outgoing = new Array[Array[Int]](nOutgoing)
-    i = 0
-    while (i < nOutgoing) {
-      outgoing(i) = getIntArray()
-      i += 1
-    }
-    // roots
-    val roots = getIntArray()
-    DirectedGraph(incoming, outgoing, roots)
-  }
-
-  /** put a DirectedGraph in bytes at the current position */
-  def putDirectedGraph(g: DirectedGraph): Unit = {
-    // incoming
-    putInt(g.incoming.length)
-    var i = 0
-    while (i < g.incoming.length) {
-      putIntArray(g.incoming(i))
-      i += 1
-    }
-    // outgoing
-    putInt(g.outgoing.length)
-    i = 0
-    while (i < g.outgoing.length) {
-      putIntArray(g.outgoing(i))
-      i += 1
-    }
-    // roots
-    putIntArray(g.roots)
-  }
-
-  /** get FlatMap from bytes at current position and convert to DirectedGraph */
-  def getFlatGraphAndUnflatten(): DirectedGraph = {
-    val incomingFlat = getIntArray()
-    val incomingSlices = getIntArray()
-    val outgoingFlat = getIntArray()
-    val outgoingSlices = getIntArray()
-    val roots = getIntArray()
-    // incoming
-    val incoming = new Array[Array[Int]](incomingSlices.length - 1)
-    var i = 0
-    while (i < incomingSlices.length - 1) {
-      val from = incomingSlices(i)
-      val to = incomingSlices(i + 1)
-      if (from == to) {
-        incoming(i) = Array.emptyIntArray
-      } else {
-        incoming(i) = Arrays.copyOfRange(incomingFlat, from, to)
-      }
-      i += 1
-    }
-    // outgoing
-    val outgoing = new Array[Array[Int]](outgoingSlices.length - 1)
-    i = 0
-    while (i < outgoingSlices.length - 1) {
-      val from = outgoingSlices(i)
-      val to = outgoingSlices(i + 1)
-      if (from == to) {
-        outgoing(i) = Array.emptyIntArray
-      } else {
-        outgoing(i) = Arrays.copyOfRange(outgoingFlat, from, to)
-      }
-      i += 1
-    }
-    DirectedGraph(incoming, outgoing, roots)
   }
 
 }
@@ -166,58 +87,22 @@ object UnsafeSerializer {
   /** size of an int in bytes */
   val sizeOfInt = 4
 
-  class FlatGraph(
-    val incomingFlat: Array[Int],
-    val incomingSlices: Array[Int],
-    val outgoingFlat: Array[Int],
-    val outgoingSlices: Array[Int],
-    val roots: Array[Int],
-  )
-
   /** converts a DirectedGraph into an array of bytes */
   def graphToBytes(g: DirectedGraph): Array[Byte] = {
-    val flat = flattenGraph(g)
-    val size = sizeOfFlatGraph(flat)
+    val size = sizeOfDirectedGraph(g)
     val bytes = new Array[Byte](size)
     val ser = new UnsafeSerializer(bytes)
-    ser.putFlatGraph(flat)
+    ser.putDirectedGraph(g)
     ser.bytes
   }
 
   def bytesToGraph(bytes: Array[Byte]): DirectedGraph = {
     val ser = new UnsafeSerializer(bytes)
-    ser.getFlatGraphAndUnflatten()
+    ser.getDirectedGraph()
   }
 
-  /** converts a DirectedGraph into a FlatGraph for serialization */
-  def flattenGraph(g: DirectedGraph): FlatGraph = {
-    val incomingFlat = g.incoming.flatten
-    val incomingSlices = new Array[Int](g.incoming.length + 1)
-    val outgoingFlat = g.outgoing.flatten
-    val outgoingSlices = new Array[Int](g.outgoing.length + 1)
-    val roots = g.roots
-    // populate incomingSlices
-    var inStart = 0
-    for (i <- g.incoming.indices) {
-      incomingSlices(i) = inStart
-      inStart += g.incoming(i).length
-    }
-    incomingSlices(incomingSlices.length - 1) = inStart
-    // populate outgoingSlices
-    var outStart = 0
-    for (i <- g.outgoing.indices) {
-      outgoingSlices(i) = outStart
-      outStart += g.outgoing(i).length
-    }
-    outgoingSlices(outgoingSlices.length - 1) = outStart
-    new FlatGraph(
-      incomingFlat, incomingSlices,
-      outgoingFlat, outgoingSlices,
-      roots)
-  }
-
-  /** returns the number of bytes required to store a FlatGraph */
-  def sizeOfFlatGraph(g: FlatGraph): Int = {
+  /** returns the number of bytes required to store a DirectedGraph */
+  def sizeOfDirectedGraph(g: DirectedGraph): Int = {
     var size = 0
     size += sizeOfInt
     size += g.incomingFlat.length * sizeOfInt

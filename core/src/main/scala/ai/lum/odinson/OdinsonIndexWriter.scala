@@ -153,7 +153,7 @@ class OdinsonIndexWriter(
     } yield n
     val incoming = incomingEdges.map(toLabelIds)
     val outgoing = outgoingEdges.map(toLabelIds)
-    DirectedGraph(incoming, outgoing, roots)
+    DirectedGraph.mkGraph(incoming, outgoing, roots)
   }
 
 }
