@@ -1,7 +1,6 @@
 package ai.lum.odinson.serialization
 
 import sun.misc.Unsafe
-import java.util.Arrays
 import ai.lum.odinson.digraph.DirectedGraph
 
 class UnsafeSerializer(val bytes: Array[Byte]) {
