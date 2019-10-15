@@ -98,7 +98,7 @@ class OdinsonEventQuery(
   val dependenciesField: String,
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(trigger, requiredArguments, optionalArguments, dependenciesField)
+  override def hashCode: Int = (trigger, requiredArguments, optionalArguments, dependenciesField).##
 
   def toString(field: String): String = {
     val triggerStr = trigger.toString(field)

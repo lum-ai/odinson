@@ -16,7 +16,7 @@ class OdinsonFilteredQuery(
   val filter: Query,
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(query, filter)
+  override def hashCode: Int = (query, filter).##
 
   def toString(field: String): String = s"FiltereqQuery($query)"
 

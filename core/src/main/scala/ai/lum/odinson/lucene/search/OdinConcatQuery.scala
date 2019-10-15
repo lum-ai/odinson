@@ -18,7 +18,7 @@ class OdinConcatQuery(
     val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(defaultTokenField, clauses)
+  override def hashCode: Int = (clauses, defaultTokenField, sentenceLengthField).##
 
   def toString(field: String): String = {
     val clausesStr = clauses.map(_.toString(field)).mkString(",")

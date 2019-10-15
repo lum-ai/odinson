@@ -15,7 +15,7 @@ class OdinsonOptionalQuery(
     val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(query)
+  override def hashCode: Int = (query, sentenceLengthField, isGreedy).##
 
   def toString(field: String): String = {
     val q = query.toString(field)

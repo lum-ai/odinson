@@ -13,7 +13,7 @@ class OdinQueryNamedCapture(
     val captureName: String
 ) extends OdinsonQuery {
 
-  override def hashCode: Int = mkHash(query, captureName)
+  override def hashCode: Int = (query, captureName).##
 
   def getField(): String = query.getField()
 

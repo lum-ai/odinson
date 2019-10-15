@@ -19,7 +19,7 @@ class OdinRepetitionQuery(
   require(min > 0, "min must be positive")
   require(min <= max, "min can't be bigger than max")
 
-  override def hashCode: Int = mkHash(query, min, max)
+  override def hashCode: Int = (query, min, max, isGreedy).##
 
   def toString(field: String): String = {
     val q = query.toString(field)

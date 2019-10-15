@@ -17,7 +17,7 @@ class OdinOrQuery(
     val field: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(field, clauses)
+  override def hashCode: Int = (clauses, field).##
 
   def toString(field: String): String = {
     val clausesStr = clauses.map(_.toString(field)).mkString(",")

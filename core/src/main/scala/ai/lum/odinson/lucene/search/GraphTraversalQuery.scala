@@ -25,7 +25,7 @@ class GraphTraversalQuery(
 ) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
-  override def hashCode: Int = mkHash(defaultTokenField, src, dst, traversal)
+  override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, traversal, dst).##
 
   def toString(field: String): String = {
     val s = src.toString(field)

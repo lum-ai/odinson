@@ -13,7 +13,7 @@ class OdinsonSpanContainingQuery(
     val little: OdinsonQuery // the filter
 ) extends OdinsonQuery {
 
-  override def hashCode: Int = mkHash(big, little)
+  override def hashCode: Int = (big, little).##
 
   def getField(): String = big.getField()
 

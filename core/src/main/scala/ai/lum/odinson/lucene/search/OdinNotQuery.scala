@@ -13,7 +13,7 @@ class OdinNotQuery(
     val field: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(include, exclude)
+  override def hashCode: Int = (include, exclude, field).##
 
   def toString(field: String): String = {
     "NotQuery(" + include.toString(field) + "," + exclude.toString(field) + ")"

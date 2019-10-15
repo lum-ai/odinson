@@ -10,7 +10,7 @@ class LookaheadQuery(
   val query: OdinsonQuery,
 ) extends OdinsonQuery {
 
-  override def hashCode: Int = mkHash(query)
+  override def hashCode: Int = (query).##
 
   def getField(): String = query.getField()
 

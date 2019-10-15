@@ -9,7 +9,7 @@ import ai.lum.odinson.lucene.search.spans._
 /** Wraps a SpanQuery to add OdinsonQuery functionality. */
 class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 
-  override def hashCode: Int = mkHash(query)
+  override def hashCode: Int = (query).##
 
   def getField(): String = query.getField()
 
