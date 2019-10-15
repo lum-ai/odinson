@@ -127,27 +127,18 @@ class OdinRepetitionSpans(
   def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
   def twoPhaseCurrentDocMatches(): Boolean = {
-    if (stretch.isEmpty) {
-      spans.nextStartPosition()
-      stretch = getNextStretch()
+    if (spans.nextStartPosition() == NO_MORE_POSITIONS) {
+      return false
+    }
+    stretch = getNextStretch()
+    if (stretch.nonEmpty) {
+      atFirstInCurrentDoc = true
       startIndex = 0
       numReps = min
+      true
+    } else {
+      false
     }
-    while (stretch.nonEmpty) {
-      if (numReps > max || startIndex + numReps > stretch.length) {
-        startIndex += 1
-        numReps = min
-      }
-      if (startIndex + numReps <= stretch.length) {
-        atFirstInCurrentDoc = true
-        return true
-      }
-      // if we reach this point then we need a new stretch
-      stretch = getNextStretch()
-      startIndex = 0
-      numReps = min
-    }
-    false
   }
 
   // collect all consecutive matches
