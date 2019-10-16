@@ -162,8 +162,20 @@ class QueryCompiler(
         case Seq() => None
         case Seq(q) => Some(q)
         case clauses =>
-          val q = new OdinConcatQuery(clauses, defaultTokenField, sentenceLengthField)
-          Some(q)
+          // collapse consecutive wildcards
+          val newClauses = clauses.foldRight(List.empty[OdinsonQuery]) {
+            case (c1:AllNGramsQuery, (c2:AllNGramsQuery) :: cs) =>
+              val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
+              c :: cs
+            case (c , cs) => c :: cs
+          }
+          // if collapsed into a single query then don't concatenate
+          val query = newClauses match {
+            case List(q) => q
+            case qs => new OdinConcatQuery(qs, defaultTokenField, sentenceLengthField)
+          }
+          // return resulting query
+          Some(query)
       }
 
     // named captures
@@ -225,14 +237,17 @@ class QueryCompiler(
     case Ast.LazyRepetitionPattern(pattern, 1, Some(1)) =>
       mkOdinsonQuery(pattern)
 
-    case Ast.LazyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, Some(m)) if n == m =>
-      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
-      Some(q)
-
     case Ast.LazyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q => new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = false)
+      }
+
+    case Ast.LazyRepetitionPattern(pattern, n, Some(m)) if n == m =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q: AllNGramsQuery => new AllNGramsQuery(defaultTokenField, sentenceLengthField, q.n * n)
+        case q => new OdinRepetitionQuery(q, n, m, isGreedy = false)
       }
 
     case Ast.LazyRepetitionPattern(pattern, min, Some(max)) =>
@@ -270,14 +285,17 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
       mkOdinsonQuery(pattern)
 
-    case Ast.GreedyRepetitionPattern(Ast.ConstraintPattern(Ast.Wildcard), n, Some(m)) if n == m =>
-      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, n)
-      Some(q)
-
     case Ast.GreedyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q => new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = true)
+      }
+
+    case Ast.GreedyRepetitionPattern(pattern, n, Some(m)) if n == m =>
+      mkOdinsonQuery(pattern).map {
+        case q: AllNGramsQuery if q.n == 0 => q
+        case q: AllNGramsQuery => new AllNGramsQuery(defaultTokenField, sentenceLengthField, q.n * n)
+        case q => new OdinRepetitionQuery(q, n, m, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
