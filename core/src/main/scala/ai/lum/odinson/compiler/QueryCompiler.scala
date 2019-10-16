@@ -162,11 +162,21 @@ class QueryCompiler(
         case Seq() => None
         case Seq(q) => Some(q)
         case clauses =>
-          // collapse consecutive wildcards
+          // handle consecutive wildcards and nested concatenations
           val newClauses = clauses.foldRight(List.empty[OdinsonQuery]) {
             case (c1:AllNGramsQuery, (c2:AllNGramsQuery) :: cs) =>
+              // merge consecutive wildcards
               val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
               c :: cs
+            case (concat:OdinConcatQuery, cs) =>
+              // expand nested concatenations
+              (concat.clauses.last, cs.head) match {
+                case (c1: AllNGramsQuery, c2: AllNGramsQuery) =>
+                  // take care of consecutive wildcards when expanding
+                  val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
+                  concat.clauses.init ::: List(c) ::: cs.tail
+                case _ => concat.clauses ::: cs
+              }
             case (c , cs) => c :: cs
           }
           // if collapsed into a single query then don't concatenate
