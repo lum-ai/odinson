@@ -54,6 +54,8 @@ class AllNGramsSpans(
 
   private var matchStart: Int = -1
 
+  private var matchEnd: Int = -1
+
   private var currentDoc: Int = -1
 
   private val maxDoc: Int = reader.maxDoc()
@@ -72,8 +74,11 @@ class AllNGramsSpans(
       if (nextDocId >= maxDoc) {
         NO_MORE_DOCS
       } else {
-        val numWords = numWordsPerDoc.get(nextDocId)
-        if (numWords == 0) {
+        maxToken = numWordsPerDoc.get(nextDocId)
+        // Check that the sentence is big enough.
+        // If n == 0 we should skip docs with maxToken 0 anyway
+        // because those are metadata documents, not sentences.
+        if (maxToken < n || maxToken == 0) {
           getNextDocId(nextDocId + 1)
         } else {
           nextDocId
@@ -82,25 +87,26 @@ class AllNGramsSpans(
     }
     currentDoc = getNextDocId(target)
     if (currentDoc != NO_MORE_DOCS) {
-      // get number of tokens in sentence
-      maxToken = numWordsPerDoc.get(currentDoc)
       // reset positions in document
       matchStart = -1
+      matchEnd = -1
     }
     currentDoc
   }
 
   def nextStartPosition(): Int = {
     matchStart += 1
-    if (matchStart + n > maxToken) {
+    matchEnd = matchStart + n
+    if (matchEnd > maxToken) {
       matchStart = NO_MORE_POSITIONS
+      matchEnd = NO_MORE_POSITIONS
     }
     matchStart
   }
 
   def startPosition(): Int = matchStart
 
-  def endPosition(): Int = matchStart + n
+  def endPosition(): Int = matchEnd
 
   def collect(collector: SpanCollector): Unit = ???
 
