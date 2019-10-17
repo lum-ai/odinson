@@ -236,14 +236,6 @@ class QueryCompiler(
           new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
       }
 
-    case Ast.LazyRepetitionPattern(pattern, 0, Some(max)) =>
-      mkOdinsonQuery(pattern).map {
-        case q: AllNGramsQuery if q.n == 0 => q
-        case q =>
-          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = false)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
-      }
-
     case Ast.LazyRepetitionPattern(pattern, 1, Some(1)) =>
       mkOdinsonQuery(pattern)
 
@@ -263,6 +255,14 @@ class QueryCompiler(
     case Ast.LazyRepetitionPattern(pattern, min, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
+        case q: AllNGramsQuery =>
+          val clauses = for (i <- min to max) yield {
+            new AllNGramsQuery(defaultTokenField, sentenceLengthField, i * q.n)
+          }
+          new OdinOrQuery(clauses.toList, defaultTokenField)
+        case q if min == 0 =>
+          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = false)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = false)
       }
 
@@ -281,14 +281,6 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = true)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
-      }
-
-    case Ast.GreedyRepetitionPattern(pattern, 0, Some(max)) =>
-      mkOdinsonQuery(pattern).map {
-        case q: AllNGramsQuery if q.n == 0 => q
-        case q =>
-          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = true)
           new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
       }
 
@@ -311,6 +303,14 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, min, Some(max)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
+        case q: AllNGramsQuery =>
+          val clauses = for (i <- max to min by -1) yield {
+            new AllNGramsQuery(defaultTokenField, sentenceLengthField, i * q.n)
+          }
+          new OdinOrQuery(clauses.toList, defaultTokenField)
+        case q if min == 0 =>
+          val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = true)
       }
 
