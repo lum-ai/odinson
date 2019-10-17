@@ -175,30 +175,7 @@ class OdinConcatQuery(
           for {
             l <- i until iStop
             r <- j until jStop
-          } {
-            // concatenate
-            val concatenated = (leftSpansSorted(l), rightSpans(r)) match {
-              case (lhs: ConcatMatch, rhs: ConcatMatch) =>
-                val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + rhs.subMatches.length)
-                System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
-                System.arraycopy(rhs.subMatches, 0, subMatches, lhs.subMatches.length, rhs.subMatches.length)
-                new ConcatMatch(subMatches)
-              case (lhs: ConcatMatch, rhs) =>
-                val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + 1)
-                System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
-                subMatches(lhs.subMatches.length) = rhs
-                new ConcatMatch(subMatches)
-              case (lhs, rhs: ConcatMatch) =>
-                val subMatches = new Array[OdinsonMatch](rhs.subMatches.length + 1)
-                subMatches(0) = lhs
-                System.arraycopy(rhs.subMatches, 0, subMatches, 1, rhs.subMatches.length)
-                new ConcatMatch(subMatches)
-              case (lhs, rhs) =>
-                new ConcatMatch(Array(lhs, rhs))
-            }
-            // add to results
-            builder += concatenated
-          }
+          } builder += concatMatches(leftSpansSorted(l), rightSpans(r))
           // advance both sides to next spans
           i = iStop
           j = jStop
@@ -208,124 +185,39 @@ class OdinConcatQuery(
       builder.result()
     }
 
+    def concatMatches(lhs: OdinsonMatch, rhs: OdinsonMatch): OdinsonMatch = {
+      (lhs, rhs) match {
+        case (lhs: ConcatMatch, rhs: ConcatMatch) =>
+          val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + rhs.subMatches.length)
+          System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
+          System.arraycopy(rhs.subMatches, 0, subMatches, lhs.subMatches.length, rhs.subMatches.length)
+          new ConcatMatch(subMatches)
+        case (lhs: ConcatMatch, rhs) =>
+          val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + 1)
+          System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
+          subMatches(lhs.subMatches.length) = rhs
+          new ConcatMatch(subMatches)
+        case (lhs, rhs: ConcatMatch) =>
+          val subMatches = new Array[OdinsonMatch](rhs.subMatches.length + 1)
+          subMatches(0) = lhs
+          System.arraycopy(rhs.subMatches, 0, subMatches, 1, rhs.subMatches.length)
+          new ConcatMatch(subMatches)
+        case (lhs, rhs) =>
+          new ConcatMatch(Array(lhs, rhs))
+      }
+    }
+
     private def concatSpans(spans: Array[OdinsonSpans]): Array[OdinsonMatch] = {
       var results: Array[OdinsonMatch] = null
-      // var numWildcards: Int = 0
-      // if (spans.forall(_.isInstanceOf[AllNGramsSpans])) {
-      //   return getAllMatches(new AllNGramsSpans(reader, numWordsPerDoc, spans.length))
-      // }
       var i = 0
       while (i < spans.length) {
-        val s = spans(i)
-        i += 1
-        s match {
-          // // count wildcards
-          // case s: AllNGramsSpans =>
-          //   numWildcards += s.n
-          // // unbounded ranges
-          // case s: OdinRangeSpans if results != null && s.spans.isInstanceOf[AllNGramsSpans] && s.max == Int.MaxValue =>
-          //   // append wildcards if needed
-          //   if (numWildcards > 0) {
-          //     results = for {
-          //       r <- results
-          //       if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-          //     } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
-          //     numWildcards = 0
-          //   }
-          //   results = for {
-          //     r <- results
-          //     end <- r.span.end + s.min to numWordsPerDoc.get(docID()).toInt
-          //   } yield SpanWithCaptures(Span(r.span.start, end), r.captures)
-          // // optimize exact repetitions of wildcards
-          // case s: OdinRangeSpans if s.spans.isInstanceOf[AllNGramsSpans] && s.min == s.max =>
-          //   numWildcards += s.spans.asInstanceOf[AllNGramsSpans].n * s.min
-          // // optimize ranges of wildcards
-          // // NOTE that results can't be null (we need to have some spans)
-          // case s: OdinRangeSpans if results != null && s.spans.isInstanceOf[AllNGramsSpans] =>
-          //   // append wildcards if needed
-          //   if (numWildcards > 0) {
-          //     results = for {
-          //       r <- results
-          //       if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-          //     } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
-          //     numWildcards = 0
-          //   }
-          //   var newResults: Seq[SpanWithCaptures] = Vector.empty
-          //   for (n <- s.min to s.max) {
-          //     val rs = for {
-          //       r <- results
-          //       if r.span.end + n <= numWordsPerDoc.get(docID())
-          //     } yield SpanWithCaptures(Span(r.span.start, r.span.end + n), r.captures)
-          //     newResults ++= rs
-          //   }
-          //   results = newResults
-          //   if (results.isEmpty) return Seq.empty
-          // // optimize optional operator '?'
-          // // NOTE that we rely on the fact that the zero width match is the first of the subspans; this is enforced by the compiler
-          // // NOTE that results can't be null (we need to have some spans)
-          // case s: OdinOrSpans if results != null && s.subSpans.head.isInstanceOf[AllNGramsSpans] && s.subSpans.head.asInstanceOf[AllNGramsSpans].n == 0 =>
-          //   // append wildcards if needed
-          //   if (numWildcards > 0) {
-          //     results = for {
-          //       r <- results
-          //       if r.span.end + numWildcards <= numWordsPerDoc.get(docID())
-          //     } yield SpanWithCaptures(Span(r.span.start, r.span.end + numWildcards), r.captures)
-          //     numWildcards = 0
-          //   }
-          //   // evaluate clauses
-          //   val originalResults = results
-          //   for (clause <- s.subSpans.tail) {
-          //     val newResults = clause match {
-          //       case c: AllNGramsSpans =>
-          //         val n = c.n
-          //         for {
-          //           r <- originalResults
-          //           if r.span.end + n <= numWordsPerDoc.get(docID())
-          //         } yield SpanWithCaptures(Span(r.span.start, r.span.end + n), r.captures)
-          //       case s: OdinRangeSpans if results != null && s.spans.isInstanceOf[AllNGramsSpans] && s.max == Int.MaxValue =>
-          //         for {
-          //           r <- results
-          //           end <- r.span.end + s.min until numWordsPerDoc.get(docID()).toInt
-          //         } yield SpanWithCaptures(Span(r.span.start, end), r.captures)
-          //       case c =>
-          //         concatSpansPair(originalResults, getAllSpansWithCaptures(c))
-          //     }
-          //     results ++= newResults
-          //   }
-          // general case
-          case s =>
-            if (results == null) {
-              // these are our first spans
-              results = s.getAllMatches()
-              // prepend wildcards if needed
-              // if (numWildcards > 0) {
-              //   results = for {
-              //     r <- results
-              //     if r.start - numWildcards >= 0
-              //   } yield r.copy(start = r.start - numWildcards)
-              //   numWildcards = 0
-              // }
-            } else {
-              // append wildcards if needed
-              // if (numWildcards > 0) {
-              //   results = for {
-              //     r <- results
-              //     if r.end + numWildcards <= numWordsPerDoc.get(docID())
-              //   } yield r.copy(end = r.end + numWildcards)
-              //   numWildcards = 0
-              // }
-              results = concatSpansPair(results, s.getAllMatches())
-            }
-            if (results.isEmpty) return Array.empty
+        results = spans(i) match {
+          case s if results == null => s.getAllMatches()
+          case s => concatSpansPair(results, s.getAllMatches())
         }
+        if (results.isEmpty) return Array.empty
+        i += 1
       }
-      // any remaining wildcards to append?
-      // if (numWildcards > 0) {
-      //   results = for {
-      //     r <- results
-      //     if r.end + numWildcards <= numWordsPerDoc.get(docID())
-      //   } yield r.copy(end = r.end + numWildcards)
-      // }
       results
     }
 
