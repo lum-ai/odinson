@@ -408,8 +408,11 @@ class OdinsonEventSpans(
     var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
     if (requiredSpans.nonEmpty) {
       // use dependency graph to confirm connection between trigger and required arg
-      eventSketches = matchArgument(graph, maxToken, triggerMatches, requiredSpans.head)
-      for (arg <- requiredSpans.tail) {
+      eventSketches = matchArgument(graph, maxToken, triggerMatches, requiredSpans(0))
+      var i = 1
+      while (i < requiredSpans.length) {
+        val arg = requiredSpans(i)
+        i += 1
         val newTriggerCandidates = eventSketches.keys.toArray
         val argMatches = matchArgument(graph, maxToken, newTriggerCandidates, arg)
         val newEventSketches = argMatches.transform { (trigger, matches) =>
@@ -424,12 +427,18 @@ class OdinsonEventSpans(
     // or there are no required args,
     if (eventSketches.isEmpty) {
       // if no required args, then all triggers matches are valid event matches
-      for (t <- triggerMatches) {
+      var i = 0
+      while (i < triggerMatches.length) {
+        val t = triggerMatches(i)
+        i += 1
         eventSketches = eventSketches.updated(t, Array.empty)
       }
     }
     // try to retrieve all matching optional arguments
-    for (arg <- optionalSpans) {
+    var i = 0
+    while (i < optionalSpans.length) {
+      val arg = optionalSpans(i)
+      i += 1
       if (advanceArgToDoc(arg, docID())) {
         val triggerCandidates = eventSketches.keys.toArray
         val argMatches = matchArgument(graph, maxToken, triggerCandidates, arg)
