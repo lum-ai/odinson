@@ -141,7 +141,7 @@ class QueryCompiler(
         triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.head._1))
       }
       // return event query
-      val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField)
+      val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField, sentenceLengthField)
       Some(q)
 
     // disjunctive patterns

@@ -96,6 +96,7 @@ class OdinsonEventQuery(
   val requiredArguments: List[ArgumentQuery],
   val optionalArguments: List[ArgumentQuery],
   val dependenciesField: String,
+  val sentenceLengthField: String,
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (trigger, requiredArguments, optionalArguments, dependenciesField).##
@@ -118,7 +119,8 @@ class OdinsonEventQuery(
         rewrittenTrigger,
         rewrittenRequiredArguments,
         rewrittenOptionalArguments,
-        dependenciesField
+        dependenciesField,
+        sentenceLengthField,
       )
     } else {
       super.rewrite(reader)
@@ -185,6 +187,8 @@ class OdinsonEventQuery(
       val subSpans = triggerSpans :: requiredSpans.flatMap(_.subSpans)
       // get graphs
       val graphPerDoc = context.reader.getSortedDocValues(dependenciesField)
+      // get token counts
+      val numWordsPerDoc = context.reader.getNumericDocValues(sentenceLengthField)
       // return event spans
       new OdinsonEventSpans(
         subSpans.toArray,
@@ -192,6 +196,7 @@ class OdinsonEventQuery(
         requiredSpans,
         optionalSpans,
         graphPerDoc,
+        numWordsPerDoc,
       )
     }
 
@@ -205,6 +210,7 @@ class OdinsonEventSpans(
   val requiredSpans: List[ArgumentSpans],
   val optionalSpans: List[ArgumentSpans],
   val graphPerDoc: SortedDocValues,
+  val numWordsPerDoc: NumericDocValues,
 ) extends ConjunctionSpans {
 
   import Spans._
@@ -242,26 +248,46 @@ class OdinsonEventSpans(
   }
 
   // returns a map from token index to all matches that contain that token
-  private def mkInvertedIndex(
-    matches: Seq[OdinsonMatch]
-  ): Map[Int, ArrayBuffer[OdinsonMatch]] = {
-    val index = HashMap.empty[Int, ArrayBuffer[OdinsonMatch]]
-    for {
-      m <- matches
-      i <- m.tokenInterval
-    } index.getOrElseUpdate(i, ArrayBuffer.empty) += m
-    index.toMap.withDefaultValue(ArrayBuffer.empty)
+  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
+    val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
+    // empty buffer meant to stay empty and be reused
+    val empty = new ArrayBuffer[OdinsonMatch]
+    // add mentions at the corresponding token positions
+    var i = 0
+    while (i < spans.length) {
+      val s = spans(i)
+      i += 1
+      var j = s.start
+      while (j < s.end) {
+        if (index(j) == null) {
+          // make a new buffer at this position
+          index(j) = new ArrayBuffer[OdinsonMatch]
+        }
+        index(j) += s
+        j += 1
+      }
+    }
+    // add the empty buffer everywhere else
+    i = 0
+    while (i < index.length) {
+      if (index(i) == null) {
+        index(i) = empty
+      }
+      i += 1
+    }
+    index
   }
 
   // performs one step in the full traversal
   private def matchPairs(
     graph: DirectedGraph,
+    maxToken: Int,
     traversal: GraphTraversal,
     srcMatches: Array[OdinsonMatch],
     dstMatches: Array[OdinsonMatch]
   ): Array[OdinsonMatch] = {
     val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    val dstIndex = mkInvertedIndex(dstMatches)
+    val dstIndex = mkInvIndex(dstMatches, maxToken)
     for (src <- srcMatches) {
       val dsts = traversal.traverseFrom(graph, src.tokenInterval)
       builder ++= dsts
@@ -275,13 +301,14 @@ class OdinsonEventSpans(
   // performs the full traversal from trigger to argument
   private def matchFullTraversal(
     graph: DirectedGraph,
+    maxToken: Int,
     srcMatches: Array[OdinsonMatch],
     fullTraversal: Seq[(GraphTraversal, OdinsonSpans)]
   ): Array[OdinsonMatch] = {
     var currentSpans = srcMatches
     for ((traversal, spans) <- fullTraversal) {
       val dstMatches = spans.getAllMatches()
-      currentSpans = matchPairs(graph, traversal, currentSpans, dstMatches)
+      currentSpans = matchPairs(graph, maxToken, traversal, currentSpans, dstMatches)
       if (currentSpans.isEmpty) return Array.empty
     }
     currentSpans
@@ -299,11 +326,12 @@ class OdinsonEventSpans(
   // returns a map from trigger to all its captured arguments
   private def matchArgument(
     graph: DirectedGraph,
+    maxToken: Int,
     srcMatches: Array[OdinsonMatch],
     argument: ArgumentSpans
   ): Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = {
     if (srcMatches.isEmpty) return Map.empty
-    val matches = matchFullTraversal(graph, srcMatches, argument.fullTraversal)
+    val matches = matchFullTraversal(graph, maxToken, srcMatches, argument.fullTraversal)
     matches
       .groupBy(getStartOfPath) // the start should be the trigger
       .transform((k,v) => v.map(m => (argument, m)))
@@ -374,15 +402,16 @@ class OdinsonEventSpans(
     // at this point, all required arguments seem to match
     // but we need to confirm using the dependency graph
     val graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
+    val maxToken = numWordsPerDoc.get(docID()).toInt
     // get all trigger candidates
     val triggerMatches = triggerSpans.getAllMatches()
     var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
     if (requiredSpans.nonEmpty) {
       // use dependency graph to confirm connection between trigger and required arg
-      eventSketches = matchArgument(graph, triggerMatches, requiredSpans.head)
+      eventSketches = matchArgument(graph, maxToken, triggerMatches, requiredSpans.head)
       for (arg <- requiredSpans.tail) {
         val newTriggerCandidates = eventSketches.keys.toArray
-        val argMatches = matchArgument(graph, newTriggerCandidates, arg)
+        val argMatches = matchArgument(graph, maxToken, newTriggerCandidates, arg)
         val newEventSketches = argMatches.transform { (trigger, matches) =>
           eventSketches(trigger) ++ matches
         }
@@ -403,7 +432,7 @@ class OdinsonEventSpans(
     for (arg <- optionalSpans) {
       if (advanceArgToDoc(arg, docID())) {
         val triggerCandidates = eventSketches.keys.toArray
-        val argMatches = matchArgument(graph, triggerCandidates, arg)
+        val argMatches = matchArgument(graph, maxToken, triggerCandidates, arg)
         val newEventSketches = eventSketches.transform { (trigger, matches) =>
           matches ++ argMatches.getOrElse(trigger, Array.empty)
         }
