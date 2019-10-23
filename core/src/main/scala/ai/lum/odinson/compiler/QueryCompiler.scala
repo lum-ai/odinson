@@ -8,6 +8,7 @@ import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+import com.ibm.icu.text.Normalizer2
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
@@ -27,7 +28,9 @@ class QueryCompiler(
     val normalizeQueriesToDefaultField: Boolean
 ) {
 
-  val parser = new QueryParser(allTokenFields, defaultTokenField, normalizeQueriesToDefaultField)
+  val parser = new QueryParser(allTokenFields, defaultTokenField)
+
+  val normalizer = Normalizer2.getNFKCCasefoldInstance()
 
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
@@ -351,19 +354,28 @@ class QueryCompiler(
     }
   }
 
+  /** Returns a Term object with its value normalized if needed */
+  def mkTerm(name: String, value: String): Term = {
+    if (normalizeQueriesToDefaultField && name == defaultTokenField) {
+      new Term(name, normalizer.normalize(value))
+    } else {
+      new Term(name, value)
+    }
+  }
+
   def mkConstraintQuery(ast: Ast.Constraint): OdinsonQuery = ast match {
 
     case Ast.FieldConstraint(name, Ast.StringMatcher(string)) =>
-      val spanTermQuery = new SpanTermQuery(new Term(name, string))
+      val spanTermQuery = new SpanTermQuery(mkTerm(name, string))
       new OdinQueryWrapper(maybeMask(spanTermQuery))
 
     case Ast.FieldConstraint(name, Ast.RegexMatcher(regex)) =>
-      val regexpQuery = new RegexpQuery(new Term(name, regex))
+      val regexpQuery = new RegexpQuery(mkTerm(name, regex))
       val spanQuery = new SpanMultiTermQueryWrapper(regexpQuery)
       new OdinQueryWrapper(maybeMask(spanQuery))
 
     case Ast.FuzzyConstraint(name, Ast.StringMatcher(string)) =>
-      val fuzzyQuery = new FuzzyQuery(new Term(name, string))
+      val fuzzyQuery = new FuzzyQuery(mkTerm(name, string))
       val spanQuery = new SpanMultiTermQueryWrapper(fuzzyQuery)
       new OdinQueryWrapper(maybeMask(spanQuery))
 
