@@ -264,7 +264,7 @@ class QueryParser(
         val clauses = List.fill(n)(traversal)
         Ast.ConcatenatedTraversal(clauses)
       case (traversal, Some(GreedyQuantifier(m, Some(n)))) if m < n =>
-        val required = List.fill(n)(traversal)
+        val required = List.fill(m)(traversal)
         val optional = List.fill(n - m)(Ast.OptionalTraversal(traversal))
         Ast.ConcatenatedTraversal(required ++ optional)
     }
