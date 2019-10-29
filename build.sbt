@@ -7,9 +7,7 @@ scalaVersion in ThisBuild := "2.12.10"
 lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
-  excludeDependencies += "commons-logging" % "commons-logging",
-  resolvers +=
-    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+  excludeDependencies += "commons-logging" % "commons-logging"
 )
 
 lazy val core = project
