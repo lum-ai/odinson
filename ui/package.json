@@ -2,6 +2,7 @@
   "name": "odinson-ui",
   "version": "0.1.0",
   "description": "Basic Odinson UI using React, Node.js, Express and Webpack.",
+  "private": true,
   "main": "src/server/index.js",
   "scripts": {
     "build": "webpack --mode production",
@@ -10,6 +11,14 @@
     "server": "nodemon src/server/index.js",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lum-ai/odinson.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lum-ai/odinson/issues"
+  },
+  "homepage": "https://github.com/lum-ai/odinson",
   "author": "Lum AI",
   "license": "Apache-2.0",
   "dependencies": {

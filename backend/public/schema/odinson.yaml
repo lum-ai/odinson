@@ -317,6 +317,14 @@ paths:
       summary: Information about the current version of this app.
       description: Provides detailed build information about the currently running app.
       operationId: buildinfo
+      parameters:
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: "A JSON object containing build information."
@@ -332,6 +340,14 @@ paths:
       summary: Information about the current corpus.
       description: Provides information about the current corpus.
       operationId: corpus
+      parameters:
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: "A JSON object containing corpus information."
@@ -339,6 +355,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CorpusInfo'
+
+  /api/config:
+    get:
+      tags:
+        - info
+      summary: Project config.
+      description: Retrieve project config as json.
+      operationId: config
+      parameters:
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: "A JSON object containing config information."
+          content:
+            application/json:
+              schema:
+                type: object
 
 components:
   schemas:
