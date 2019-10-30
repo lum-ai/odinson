@@ -60,6 +60,12 @@ class TestEvents extends FlatSpec with Matchers {
     testEventArguments(m, desiredArgs)
   }
 
+  it should "not find event with mentions from the state when the state is empty" in {
+    val q = ee.compiler.compileEventQuery(pattern)
+    val results = ee.query(q, 1)
+    results.totalHits should equal (0)
+  }
+
   it should "populate the state with NPs" in {
     val results = ee.query("[chunk=B-NP][chunk=I-NP]*")
     results.totalHits should equal (1)
@@ -79,7 +85,7 @@ class TestEvents extends FlatSpec with Matchers {
     ee.state.index()
   }
 
-  it should "find event with mentions from the state" in {
+  it should "find event with mentions from the state when the state is populated" in {
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 1)
     results.totalHits should equal (1)
