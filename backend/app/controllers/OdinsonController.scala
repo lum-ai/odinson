@@ -48,11 +48,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }
   }
 
-  def buildInfo(pretty: Option[Boolean]) = Action.async {
-    Future {
-      val json = jsonBuildInfo
-      json.format(pretty)
-    }(odinsonContext)
+  def buildInfo(pretty: Option[Boolean]) = Action {
+    Ok(BuildInfo.toJson).as(ContentTypes.JSON)
   }
 
   def numDocs = Action {
@@ -262,21 +259,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       }
     }(odinsonContext)
   }
-
-  val jsonBuildInfo: JsValue = Json.obj(
-    "name"                  -> BuildInfo.name,
-    "version"               -> BuildInfo.version,
-    "scalaVersion"          -> BuildInfo.scalaVersion,
-    "sbtVersion"            -> BuildInfo.sbtVersion,
-    "libraryDependencies"   -> BuildInfo.libraryDependencies,
-    "scalacOptions"         -> BuildInfo.scalacOptions,
-    "gitCurrentBranch"      -> BuildInfo.gitCurrentBranch,
-    "gitHeadCommit"         -> BuildInfo.gitHeadCommit,
-    "gitHeadCommitDate"     -> BuildInfo.gitHeadCommitDate,
-    "gitUncommittedChanges" -> BuildInfo.gitUncommittedChanges,
-    "builtAtString"         -> BuildInfo.builtAtString,
-    "builtAtMillis"         -> BuildInfo.builtAtMillis
-  )
 
   def mkJson(odinsonQuery: String, parentQuery: Option[String], duration: Float, results: OdinResults, enriched: Boolean): JsValue = {
 
