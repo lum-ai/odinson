@@ -53,14 +53,9 @@ object ProcessorsUtils {
     val maybeLemma = s.lemmas.map(lemmas => TokensField(lemmaTokenField, lemmas))
     val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
-    val maybeDeps = s.dependencies.map(deps => GraphField(dependenciesField, convertEdges(deps.incomingEdges), convertEdges(deps.outgoingEdges), deps.roots))
+    val maybeDeps = s.dependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
     val fields = Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
     OdinsonSentence(s.size, fields.flatten)
-  }
-
-  /** convert edges type */
-  private def convertEdges(edges: Array[Array[(Int, String)]]): Seq[Seq[(Int, String)]] = {
-    edges.map(_.toSeq).toSeq
   }
 
 }

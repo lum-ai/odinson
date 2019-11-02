@@ -3,6 +3,7 @@ package ai.lum.odinson
 import java.io.File
 import java.util.Date
 import java.time.{ LocalDate, ZoneId }
+import scala.collection.mutable.ArrayBuilder
 import upickle.default._
 import ai.lum.common.FileUtils._
 
@@ -34,7 +35,7 @@ object Document {
 
 
 case class Sentence(
-  numTokens: Long,
+  numTokens: Int,
   fields: Seq[Field]
 ) {
   def toJson: String = write(this)
@@ -83,11 +84,28 @@ object TokensField {
 
 case class GraphField(
   name: String,
-  incomingEdges: Seq[Seq[(Int, String)]],
-  outgoingEdges: Seq[Seq[(Int, String)]],
+  edges: Seq[(Int, Int, String)],
   roots: Set[Int],
   store: Boolean = false,
-) extends Field
+) extends Field {
+
+  def mkIncomingEdges(numTokens: Int): Array[Array[(Int, String)]] = {
+    val incoming = Array.fill(numTokens)(new ArrayBuilder.ofRef[(Int, String)])
+    for ((src, dst, label) <- edges) {
+      incoming(dst) += Tuple2(src, label)
+    }
+    incoming.map(_.result())
+  }
+
+  def mkOutgoingEdges(numTokens: Int): Array[Array[(Int, String)]] = {
+    val outgoing = Array.fill(numTokens)(new ArrayBuilder.ofRef[(Int, String)])
+    for ((src, dst, label) <- edges) {
+      outgoing(src) += Tuple2(dst, label)
+    }
+    outgoing.map(_.result())
+  }
+
+}
 
 object GraphField {
   implicit val rw: ReadWriter[GraphField] = macroRW

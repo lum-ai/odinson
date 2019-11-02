@@ -90,7 +90,7 @@ class OdinsonIndexWriter(
     sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
     for {
       odinsonField <- s.fields
-      luceneField <- mkLuceneFields(odinsonField)
+      luceneField <- mkLuceneFields(odinsonField, s)
     } sent.add(luceneField)
     val normFields = s.fields
       .collect { case f: TokensField => f }
@@ -100,6 +100,30 @@ class OdinsonIndexWriter(
     sent
   }
 
+  /** returns a sequence of lucene fields corresponding to the provided odinson field */
+  def mkLuceneFields(f: Field, s: Sentence): Seq[lucenedoc.Field] = {
+    f match {
+      case f: GraphField =>
+        val incomingEdges = f.mkIncomingEdges(s.numTokens)
+        val outgoingEdges = f.mkOutgoingEdges(s.numTokens)
+        val roots = f.roots.toArray
+        val in  = new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(incomingEdges))
+        val out = new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(outgoingEdges))
+        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(incomingEdges, outgoingEdges, roots))
+        if (bytes.length <= sortedDocValuesFieldMaxSize) {
+          val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
+          Seq(graph, in, out)
+        } else {
+          logger.warn(s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes")
+          Seq.empty
+        }
+      case f =>
+        // fallback to the lucene fields that don't require sentence information
+        mkLuceneFields(f)
+    }
+  }
+
+  /** returns a sequence of lucene fields corresponding to the provided odinson field */
   def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
     f match {
       case f: DateField =>
@@ -120,25 +144,7 @@ class OdinsonIndexWriter(
       case f: TokensField =>
         val tokensField = new lucenedoc.TextField(f.name, new OdinsonTokenStream(f.tokens))
         Seq(tokensField)
-      case f: GraphField =>
-        val in  = new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(f.incomingEdges))
-        val out = new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(f.outgoingEdges))
-        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(f))
-        if (bytes.length <= sortedDocValuesFieldMaxSize) {
-          val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
-          Seq(graph, in, out)
-        } else {
-          logger.warn(s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes")
-          Seq.empty
-        }
     }
-  }
-
-  def mkDirectedGraph(f: GraphField): DirectedGraph = {
-    val incomingEdges = f.incomingEdges.map(_.toArray).toArray
-    val outgoingEdges = f.outgoingEdges.map(_.toArray).toArray
-    val roots = f.roots.toArray
-    mkDirectedGraph(incomingEdges, outgoingEdges, roots)
   }
 
   def mkDirectedGraph(
