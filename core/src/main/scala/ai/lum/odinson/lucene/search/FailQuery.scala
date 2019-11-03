@@ -8,7 +8,7 @@ import ai.lum.odinson.lucene.search.spans._
 
 class FailQuery(val field: String) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(field)
+  override def hashCode: Int = (field).##
 
   def toString(field: String): String = "FailQuery"
 

@@ -1,23 +1,22 @@
 package ai.lum.odinson.extra
 
 import java.io.File
-import java.text.NumberFormat
-
 import scala.util.control.NonFatal
 import scala.collection.immutable.ListMap
 import jline.console.ConsoleReader
 import jline.console.history.FileHistory
 import jline.console.completer.{ ArgumentCompleter, StringsCompleter }
 import com.typesafe.config.Config
+import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
+import ai.lum.common.DisplayUtils._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.utils.ConfigFactory
 
 
 object Shell extends App {
@@ -43,13 +42,6 @@ object Shell extends App {
   sys.addShutdownHook {
     history.flush()
   }
-
-  // number formatter
-  val intFormatter = NumberFormat.getIntegerInstance()
-  val numFormatter = NumberFormat.getInstance()
-  numFormatter.setMaximumFractionDigits(2)
-  def fmt(n: Int): String = intFormatter.format(n.toLong)
-  def fmt(n: Float): String = numFormatter.format(n.toDouble)
 
   // setup searcher
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
@@ -108,7 +100,7 @@ object Shell extends App {
             case ":settings" => printSettings()
             case ":more" => printMore(maxMatchesDisplay)
             case ":corpus" =>
-              println("Number of sentences: " + fmt(extractorEngine.numDocs()))
+              println("Number of sentences: " + extractorEngine.numDocs.display)
               // TODO maybe print some more stuff?
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
@@ -149,7 +141,7 @@ object Shell extends App {
   def printBuildInfo(): Unit = {
     println(s"Name: ${BuildInfo.name}")
     println(s"Version: ${BuildInfo.version}")
-    println(s"Build date: ${BuildInfo.builtAtString}")
+    println(s"Build date: ${BuildInfo.builtAt}")
     print(s"Commit: ${BuildInfo.gitHeadCommit}")
     if (BuildInfo.gitUncommittedChanges) print(" (with uncommitted changes)")
     println()
@@ -207,14 +199,14 @@ object Shell extends App {
       return
     }
     val end = start + results.scoreDocs.length - 1
-    println(s"found ${fmt(total)} matches in ${fmt(duration)} seconds")
-    println(s"showing ${fmt(start)} to ${fmt(end)}\n")
+    println(s"found ${total.display} matches in ${duration.display} seconds")
+    println(s"showing ${start.display} to ${end.display}\n")
     for (hit <- results.scoreDocs) {
       val doc = extractorEngine.doc(hit.doc)
       val docID = doc.getField("docId").stringValue
-      println(s"Doc $docID (score = ${hit.score})")
-      val spans = hit.matches.map(_.span).toVector
-      val captures = hit.matches.flatMap(_.captures).toVector
+      println(s"Doc $docID (lucene doc = ${hit.doc}   score = ${hit.score})")
+      val spans = hit.matches.toVector
+      val captures = hit.matches.flatMap(_.namedCaptures).toVector
       // FIXME: print statements used for debugging, please remove
       // println("spans: " + spans)
       // println("captures: " + captures)

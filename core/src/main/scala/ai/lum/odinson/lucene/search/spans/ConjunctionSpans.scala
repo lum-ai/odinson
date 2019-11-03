@@ -29,8 +29,9 @@ trait ConjunctionSpans extends OdinsonSpans {
   protected var oneExhaustedInCurrentDoc: Boolean = false
 
   // use to move to next doc with all clauses
-  val conjunction: DocIdSetIterator = {
-    ConjunctionDISI.intersectSpans(Arrays.asList(subSpans:_*))
+  val conjunction: DocIdSetIterator = subSpans match {
+    case Array(disi) => disi
+    case subSpans => ConjunctionDISI.intersectSpans(Arrays.asList(subSpans:_*))
   }
 
   def cost(): Long = conjunction.cost()

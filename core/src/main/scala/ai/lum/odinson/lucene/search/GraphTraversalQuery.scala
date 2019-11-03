@@ -1,14 +1,16 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
-import scala.collection.mutable.{ ArrayBuffer, HashMap }
+import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
+import ai.lum.odinson.serialization.UnsafeSerializer
 
 /** Traverses the graph from `src` to `dst` following the traversal pattern.
  *  Returns `dst` if there is a match.
@@ -16,13 +18,14 @@ import ai.lum.odinson.lucene.util._
 class GraphTraversalQuery(
     val defaultTokenField: String,
     val dependenciesField: String,
+    val sentenceLengthField: String,
     val src: OdinsonQuery,
     val traversal: GraphTraversal,
     val dst: OdinsonQuery
 ) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
-  override def hashCode: Int = mkHash(defaultTokenField, src, dst, traversal)
+  override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, traversal, dst).##
 
   def toString(field: String): String = {
     val s = src.toString(field)
@@ -37,7 +40,7 @@ class GraphTraversalQuery(
     val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinsonQuery]
     val rewrittenDst = dst.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (src != rewrittenSrc || dst != rewrittenDst) {
-      new GraphTraversalQuery(defaultTokenField, dependenciesField, rewrittenSrc, traversal, rewrittenDst)
+      new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, rewrittenSrc, traversal, rewrittenDst)
     } else {
       super.rewrite(reader)
     }
@@ -74,7 +77,8 @@ class GraphTraversalQuery(
       val dstSpans = dstWeight.getSpans(context, requiredPostings)
       if (srcSpans == null || dstSpans == null) return null
       val graphPerDoc = reader.getSortedDocValues(dependenciesField)
-      new GraphTraversalSpans(Array(srcSpans, dstSpans), traversal, graphPerDoc)
+      val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
+      new GraphTraversalSpans(Array(srcSpans, dstSpans), traversal, graphPerDoc, numWordsPerDoc)
     }
 
   }
@@ -84,7 +88,8 @@ class GraphTraversalQuery(
 class GraphTraversalSpans(
     val subSpans: Array[OdinsonSpans],
     val traversal: GraphTraversal,
-    val graphPerDoc: SortedDocValues
+    val graphPerDoc: SortedDocValues,
+    val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 
   import Spans._
@@ -93,20 +98,24 @@ class GraphTraversalSpans(
 
   // resulting spans sorted by position
   private var pq: QueueByPosition = null
-  // named captures corresponding to the top span in the queue
-  private var topPositionCaptures: List[NamedCapture] = Nil
+
+  private var topPositionOdinsonMatch: OdinsonMatch = null
+
   // dependency graph
   private var graph: DirectedGraph = null
 
-  override def namedCaptures: List[NamedCapture] = topPositionCaptures
+  private var maxToken: Long = -1
+
+  override def odinsonMatch: OdinsonMatch = topPositionOdinsonMatch
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
-    graph = DirectedGraph.fromBytes(graphPerDoc.get(docID()).bytes)
-    pq = QueueByPosition.mkPositionQueue(matchPairs(graph, traversal, srcSpans, dstSpans))
+    graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
+    maxToken = numWordsPerDoc.get(docID())
+    pq = QueueByPosition.mkPositionQueue(matchPairs(graph, maxToken.toInt, traversal, srcSpans, dstSpans))
     if (pq.size() > 0) {
       atFirstInCurrentDoc = true
-      topPositionCaptures = Nil
+      topPositionOdinsonMatch = null
       true
     } else {
       false
@@ -116,50 +125,64 @@ class GraphTraversalSpans(
   def nextStartPosition(): Int = {
     atFirstInCurrentDoc = false
     if (pq.size() > 0) {
-      val SpanWithCaptures(span, captures) = pq.pop()
-      matchStart = span.start
-      matchEnd = span.end
-      topPositionCaptures = captures
+      topPositionOdinsonMatch = pq.pop()
+      matchStart = topPositionOdinsonMatch.start
+      matchEnd = topPositionOdinsonMatch.end
     } else {
       matchStart = NO_MORE_POSITIONS
       matchEnd = NO_MORE_POSITIONS
-      topPositionCaptures = Nil
+      topPositionOdinsonMatch = null
     }
     matchStart
   }
 
-  // FIXME this is repeated in OdinConcatQuery
-  private def getAllSpansWithCaptures(spans: OdinsonSpans): Seq[SpanWithCaptures] = {
-    val buffer = ArrayBuffer.empty[SpanWithCaptures]
-    while (spans.nextStartPosition() != NO_MORE_POSITIONS) {
-      buffer += spans.spanWithCaptures
+  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
+    val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
+    // empty buffer meant to stay empty and be reused
+    val empty = new ArrayBuffer[OdinsonMatch]
+    // add mentions at the corresponding token positions
+    var i = 0
+    while (i < spans.length) {
+      val s = spans(i)
+      i += 1
+      var j = s.start
+      while (j < s.end) {
+        if (index(j) == null) {
+          // make a new buffer at this position
+          index(j) = new ArrayBuffer[OdinsonMatch]
+        }
+        index(j) += s
+        j += 1
+      }
     }
-    buffer
-  }
-
-  private def mkInvIndex(spans: Seq[SpanWithCaptures]): Map[Int, Seq[SpanWithCaptures]] = {
-    val index = HashMap.empty[Int, ArrayBuffer[SpanWithCaptures]]
-    for {
-      s <- spans
-      i <- s.span.interval
-    } index.getOrElseUpdate(i, ArrayBuffer.empty) += s
-    index.toMap.withDefaultValue(Seq.empty)
+    // add the empty buffer everywhere else
+    i = 0
+    while (i < index.length) {
+      if (index(i) == null) {
+        index(i) = empty
+      }
+      i += 1
+    }
+    index
   }
 
   private def matchPairs(
       graph: DirectedGraph,
+      maxToken: Int,
       traversal: GraphTraversal,
       srcSpans: OdinsonSpans,
       dstSpans: OdinsonSpans
-  ): Seq[SpanWithCaptures] = {
-    val results: ArrayBuffer[SpanWithCaptures] = ArrayBuffer.empty
-    val dstIndex = mkInvIndex(getAllSpansWithCaptures(dstSpans))
-    for (src <- getAllSpansWithCaptures(srcSpans)) {
-      val dsts = traversal.traverseFrom(graph, src.span.interval)
-      results ++= dsts.flatMap(dstIndex)
-        .map(r => r.copy(captures = src.captures ++ r.captures)) // accumulate named captures
+  ): Array[OdinsonMatch] = {
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
+    val dstIndex = mkInvIndex(dstSpans.getAllMatches(), maxToken)
+    for (src <- srcSpans.getAllMatches()) {
+      val dsts = traversal.traverseFrom(graph, src.tokenInterval)
+      builder ++= dsts
+        .flatMap(dstIndex)
+        .distinct
+        .map(dst => new GraphTraversalMatch(src, dst))
     }
-    results
+    builder.result()
   }
 
 }

@@ -4,6 +4,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
@@ -12,7 +13,7 @@ class OdinQueryNamedCapture(
     val captureName: String
 ) extends OdinsonQuery {
 
-  override def hashCode: Int = mkHash(query, captureName)
+  override def hashCode: Int = (query, captureName).##
 
   def getField(): String = query.getField()
 
@@ -71,5 +72,7 @@ class OdinSpansNamedCapture(
   def positionsCost(): Float = spans.positionsCost()
   override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
-  override def namedCaptures: List[NamedCapture] = (captureName, span) :: spans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = {
+    new NamedMatch(spans.odinsonMatch, captureName)
+  }
 }

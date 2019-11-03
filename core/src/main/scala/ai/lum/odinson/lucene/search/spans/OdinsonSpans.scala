@@ -1,7 +1,8 @@
 package ai.lum.odinson.lucene.search.spans
 
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.search.spans.Spans
-import ai.lum.odinson.lucene._
+import ai.lum.odinson._
 
 /**
  * Iterates through combinations of start/end positions per-doc.
@@ -14,16 +15,24 @@ import ai.lum.odinson.lucene._
  */
 abstract class OdinsonSpans extends Spans {
 
-  def span = Span(startPosition(), endPosition())
+  import Spans._
 
-  def spanWithCaptures: SpanWithCaptures = SpanWithCaptures(span, namedCaptures)
+  def odinsonMatch: OdinsonMatch = {
+    new NGramMatch(docID(), startPosition(), endPosition())
+  }
 
   def width(): Int = 0
-
-  def namedCaptures: List[NamedCapture] = Nil
 
   def odinDoStartCurrentDoc() = doStartCurrentDoc()
 
   def odinDoCurrentSpans() = doCurrentSpans()
+
+  def getAllMatches(): Array[OdinsonMatch] = {
+    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
+    while (nextStartPosition() != NO_MORE_POSITIONS) {
+      builder += odinsonMatch
+    }
+    builder.result()
+  }
 
 }

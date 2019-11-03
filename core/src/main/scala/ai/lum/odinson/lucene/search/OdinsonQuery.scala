@@ -2,7 +2,6 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, TreeMap, Collection }
 import scala.collection.JavaConverters._
-import scala.util.hashing.MurmurHash3
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 
@@ -21,12 +20,6 @@ abstract class OdinsonQuery extends Query {
   override def equals(that: Any): Boolean = that match {
     case that: OdinsonQuery => that.canEqual(this) && this.hashCode == that.hashCode
     case _ => false
-  }
-
-  /** helper to construct hashes in subclasses */
-  protected def mkHash(objs: Any*): Int = {
-    val seed = classHash()
-    MurmurHash3.orderedHash(objs, seed)
   }
 
   def getField(): String

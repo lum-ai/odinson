@@ -6,25 +6,26 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search.spans._
 
-/** Wraps a SpanQuery to add OdinsonQuery functionality. */
-class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
+class LookbehindQuery(
+  val query: OdinsonQuery,
+) extends OdinsonQuery {
 
   override def hashCode: Int = (query).##
 
   def getField(): String = query.getField()
 
-  def toString(field: String): String = s"Wrapped(${query.toString(field)})"
+  def toString(field: String): String = s"Lookbehind(${query.toString(field)})"
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[SpanWeight]
-    val termContexts = SpanQuery.getTermContexts(weight)
-    new OdinWeightWrapper(this, searcher, termContexts, weight)
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+    val termContexts = OdinsonQuery.getTermContexts(weight)
+    new LookbehindWeight(this, searcher, termContexts, weight)
   }
 
   override def rewrite(reader: IndexReader): Query = {
-    val rewritten = query.rewrite(reader).asInstanceOf[SpanQuery]
+    val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinQueryWrapper(rewritten)
+      new LookbehindQuery(rewritten)
     } else {
       super.rewrite(reader)
     }
@@ -32,14 +33,16 @@ class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 
 }
 
-class OdinWeightWrapper(
-    query: OdinsonQuery,
-    searcher: IndexSearcher,
-    termContexts: JMap[Term, TermContext],
-    val weight: SpanWeight
+class LookbehindWeight(
+  query: OdinsonQuery,
+  searcher: IndexSearcher,
+  termContexts: JMap[Term, TermContext],
+  val weight: OdinsonWeight,
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
-  def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
+  def extractTerms(terms: JSet[Term]): Unit = {
+    weight.extractTerms(terms)
+  }
 
   def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = {
     weight.extractTermContexts(contexts)
@@ -47,17 +50,22 @@ class OdinWeightWrapper(
 
   def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
-    if (spans == null) null else new OdinSpansWrapper(spans)
+    if (spans == null) null else new LookbehindSpans(spans)
   }
 
 }
 
-class OdinSpansWrapper(val spans: Spans) extends OdinsonSpans {
+class LookbehindSpans(
+  val spans: OdinsonSpans,
+) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
   def docID(): Int = spans.docID()
-  def nextStartPosition(): Int = spans.nextStartPosition()
-  def startPosition(): Int = spans.startPosition()
+  def nextStartPosition(): Int = {
+    spans.nextStartPosition()
+    spans.endPosition() // zero-width match
+  }
+  def startPosition(): Int = spans.endPosition() // zero-width match
   def endPosition(): Int = spans.endPosition()
   def cost(): Long = spans.cost()
   def collect(collector: SpanCollector): Unit = spans.collect(collector)

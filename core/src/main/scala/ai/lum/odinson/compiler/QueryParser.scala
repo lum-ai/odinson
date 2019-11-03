@@ -1,18 +1,89 @@
 package ai.lum.odinson.compiler
 
-import com.ibm.icu.text.Normalizer2
 import fastparse._
 import ScriptWhitespace._
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields
     val defaultTokenField: String,   // the name of the default token field
-    val normalizeQueriesToDefaultField: Boolean
 ) {
+
+  import QueryParser._
 
   // parser's entry point
   def parseQuery(query: String) = parse(query, odinsonPattern(_)).get.value
   def parseQuery2(query: String) = parse(query, odinsonPattern(_))
+
+  // FIXME temporary entrypoint
+  def parseEventQuery(query: String) = parse(query, eventPattern(_), verboseFailures = true).get.value
+
+  def eventPattern[_: P]: P[Ast.EventPattern] = {
+    P(Start ~ "trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1) ~ End).map {
+      case (trigger, arguments) => Ast.EventPattern(trigger, arguments.toList)
+    }
+  }
+
+  def argumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(existingArgumentPattern | promotedArgumentPattern)
+  }
+
+  // the argument must be a mention that already exists in the state
+  def existingArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~/
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
+    ).map {
+      case (name, label, quant, traversalsWithSurface, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        // if the end of the argument pattern is a surface pattern
+        // then we want to use it to constrain the retrieved mention
+        val pattern = lastTraversal match {
+          case Some(t) => traversalsWithSurface :+ (t, mention)
+          case None =>
+            val (lastHop, lastSurface) = traversalsWithSurface.last
+            traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
+        }
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
+    }
+  }
+
+  // the argument will be promoted to a mention if it isn't one already
+  def promotedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ ":" ~ "^" ~/ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~/
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
+    ).map {
+      case (name, label, quant, traversalsWithSurface, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        val pattern = lastTraversal match {
+          case Some(t) =>
+            // if we don't have a final token pattern then assume a wildcard
+            val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
+            val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
+            traversalsWithSurface :+ (t, mentionOrWildcard)
+          case None =>
+            // if there is a final token pattern then use it to filter an existing mention
+            // or use it as the result if there is no matching mention
+            val (lastHop, lastSurface) = traversalsWithSurface.last
+            val conditionedMention = Ast.FilterPattern(mention, lastSurface)
+            val mentionOrPattern = Ast.DisjunctivePattern(List(conditionedMention, lastSurface))
+            traversalsWithSurface.init :+ (lastHop, mentionOrPattern)
+        }
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = true)
+    }
+  }
 
   // grammar's top-level symbol
   def odinsonPattern[_: P]: P[Ast.Pattern] = {
@@ -46,7 +117,7 @@ class QueryParser(
   }
 
   def quantifiedPattern[_: P]: P[Ast.Pattern] = {
-    P(atomicPattern ~ quantifier(includeLazy = false).?).map {
+    P(atomicPattern ~ quantifier(includeLazy = true).?).map {
       case (pattern, None) => pattern
       case (pattern, Some(GreedyQuantifier(min, max))) => Ast.GreedyRepetitionPattern(pattern, min, max)
       case (pattern, Some(LazyQuantifier(min, max)))   => Ast.LazyRepetitionPattern(pattern, min, max)
@@ -62,7 +133,7 @@ class QueryParser(
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
-    P("(?<" ~ Literals.javaIdentifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
+    P("(?<" ~ Literals.identifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
       case (name, pattern) => Ast.NamedCapturePattern(name, pattern)
     }
   }
@@ -80,10 +151,6 @@ class QueryParser(
   // quantifiers
   //
   ///////////////////////////
-
-  sealed trait Quantifier
-  case class GreedyQuantifier(min: Int, max: Option[Int]) extends Quantifier
-  case class LazyQuantifier(min: Int, max: Option[Int]) extends Quantifier
 
   def quantifier[_: P](includeLazy: Boolean): P[Quantifier] = {
     P(quantOperator(includeLazy) | range(includeLazy) | repetition)
@@ -197,7 +264,7 @@ class QueryParser(
         val clauses = List.fill(n)(traversal)
         Ast.ConcatenatedTraversal(clauses)
       case (traversal, Some(GreedyQuantifier(m, Some(n)))) if m < n =>
-        val required = List.fill(n)(traversal)
+        val required = List.fill(m)(traversal)
         val optional = List.fill(n - m)(Ast.OptionalTraversal(traversal))
         Ast.ConcatenatedTraversal(required ++ optional)
     }
@@ -237,28 +304,24 @@ class QueryParser(
     P(explicitConstraint | defaultFieldConstraint)
   }
 
-  // unicode/case normalization
-  private val normalizer = Normalizer2.getNFKCCasefoldInstance()
-  private def maybeNormalize(s: String): String = {
-    if (normalizeQueriesToDefaultField) normalizer.normalize(s) else s
-  }
-
   def defaultFieldConstraint[_: P]: P[Ast.Constraint] = {
     P(defaultFieldRegexConstraint | defaultFieldStringConstraint)
   }
 
   def defaultFieldStringConstraint[_: P]: P[Ast.Constraint] = {
-    P(Literals.string ~ "~".!.?).map {
+    // a negative lookahead is required to ensure that this constraint
+    // is not followed by a colon, if it is then it actually is an argument name
+    P(Literals.string ~ !":" ~ "~".!.?).map {
       case (string, None) =>
-        Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(maybeNormalize(string)))
+        Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(string))
       case (string, Some(_)) =>
-        Ast.FuzzyConstraint(defaultTokenField, Ast.StringMatcher(maybeNormalize(string)))
+        Ast.FuzzyConstraint(defaultTokenField, Ast.StringMatcher(string))
     }
   }
 
   def defaultFieldRegexConstraint[_: P]: P[Ast.Constraint] = {
     P(Literals.regex).map { regex =>
-      Ast.FieldConstraint(defaultTokenField, Ast.RegexMatcher(maybeNormalize(regex)))
+      Ast.FieldConstraint(defaultTokenField, Ast.RegexMatcher(regex))
     }
   }
 
@@ -307,7 +370,7 @@ class QueryParser(
   }
 
   def stringFieldConstraint[_: P]: P[Ast.Constraint] = {
-    P(fieldName ~ StringIn("=", "!=").! ~ stringMatcher ~ "~".!.?).map {
+    P(fieldName ~ StringIn("=", "!=").! ~ extendedStringMatcher ~ "~".!.?).map {
       case (name, "=",  matcher, None)    => Ast.FieldConstraint(name, matcher)
       case (name, "!=", matcher, None)    => Ast.NegatedConstraint(Ast.FieldConstraint(name, matcher))
       case (name, "=",  matcher, Some(_)) => Ast.FuzzyConstraint(name, matcher)
@@ -318,13 +381,17 @@ class QueryParser(
 
   // any value in `allTokenFields` is a valid field name
   def fieldName[_: P]: P[String] = {
-    P(Literals.javaIdentifier).flatMap { identifier =>
+    P(Literals.identifier).flatMap { identifier =>
       if (allTokenFields contains identifier) Pass(identifier) else Fail
     }
   }
 
   def anyMatcher[_: P]: P[Ast.Matcher] = {
-    P(stringMatcher | regexMatcher)
+    P(extendedStringMatcher | regexMatcher)
+  }
+
+  def extendedStringMatcher[_: P]: P[Ast.StringMatcher] = {
+    P(Literals.extendedString.map(Ast.StringMatcher))
   }
 
   def stringMatcher[_: P]: P[Ast.StringMatcher] = {
@@ -334,5 +401,13 @@ class QueryParser(
   def regexMatcher[_: P]: P[Ast.RegexMatcher] = {
     P(Literals.regex.map(Ast.RegexMatcher))
   }
+
+}
+
+object QueryParser {
+
+  sealed trait Quantifier
+  case class GreedyQuantifier(min: Int, max: Option[Int]) extends Quantifier
+  case class LazyQuantifier(min: Int, max: Option[Int]) extends Quantifier
 
 }

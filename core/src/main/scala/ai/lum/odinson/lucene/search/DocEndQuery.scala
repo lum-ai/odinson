@@ -11,7 +11,7 @@ class DocEndQuery(
     val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(defaultTokenField)
+  override def hashCode: Int = (defaultTokenField, sentenceLengthField).##
 
   def toString(field: String): String = "DocEndQuery"
 

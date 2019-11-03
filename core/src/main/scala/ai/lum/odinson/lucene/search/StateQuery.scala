@@ -13,7 +13,7 @@ class StateQuery(
   val state: State
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(field, state)
+  override def hashCode: Int = (field, label, state).##
 
   def toString(field: String): String = "StateQuery"
 

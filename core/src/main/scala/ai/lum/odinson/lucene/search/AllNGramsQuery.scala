@@ -12,7 +12,7 @@ class AllNGramsQuery(
     val n: Int
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(defaultTokenField, n)
+  override def hashCode: Int = (defaultTokenField, sentenceLengthField, n).##
 
   def toString(field: String): String = s"AllNGramsQuery($n)"
 
@@ -54,6 +54,8 @@ class AllNGramsSpans(
 
   private var matchStart: Int = -1
 
+  private var matchEnd: Int = -1
+
   private var currentDoc: Int = -1
 
   private val maxDoc: Int = reader.maxDoc()
@@ -67,29 +69,44 @@ class AllNGramsSpans(
   def nextDoc(): Int = advance(currentDoc + 1)
 
   def advance(target: Int): Int = {
-    if (target >= maxDoc) {
-      currentDoc = NO_MORE_DOCS
-    } else {
-      currentDoc = target
-      // get number of tokens in sentence
-      maxToken = numWordsPerDoc.get(currentDoc)
+    @annotation.tailrec
+    def getNextDocId(nextDocId: Int): Int = {
+      if (nextDocId >= maxDoc) {
+        NO_MORE_DOCS
+      } else {
+        maxToken = numWordsPerDoc.get(nextDocId)
+        // Check that the sentence is big enough.
+        // If n == 0 we should skip docs with maxToken 0 anyway
+        // because those are metadata documents, not sentences.
+        if (maxToken < n || maxToken == 0) {
+          getNextDocId(nextDocId + 1)
+        } else {
+          nextDocId
+        }
+      }
+    }
+    currentDoc = getNextDocId(target)
+    if (currentDoc != NO_MORE_DOCS) {
       // reset positions in document
       matchStart = -1
+      matchEnd = -1
     }
     currentDoc
   }
 
   def nextStartPosition(): Int = {
     matchStart += 1
-    if (matchStart + n > maxToken) {
+    matchEnd = matchStart + n
+    if (matchEnd > maxToken) {
       matchStart = NO_MORE_POSITIONS
+      matchEnd = NO_MORE_POSITIONS
     }
     matchStart
   }
 
   def startPosition(): Int = matchStart
 
-  def endPosition(): Int = matchStart + n
+  def endPosition(): Int = matchEnd
 
   def collect(collector: SpanCollector): Unit = ???
 

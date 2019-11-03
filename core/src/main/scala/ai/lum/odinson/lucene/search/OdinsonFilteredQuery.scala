@@ -5,6 +5,7 @@ import java.util.{ Map => JMap, Set => JSet }
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import DocIdSetIterator._
@@ -15,7 +16,7 @@ class OdinsonFilteredQuery(
   val filter: Query,
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(query, filter)
+  override def hashCode: Int = (query, filter).##
 
   def toString(field: String): String = s"FiltereqQuery($query)"
 
@@ -94,7 +95,11 @@ class OdinsonFilteredQuery(
     def startPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.startPosition()
     def endPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.endPosition()
 
-    override def namedCaptures: List[NamedCapture] = spans.namedCaptures
+    override def odinsonMatch: OdinsonMatch = {
+      // FIXME do we need an OdinsonMatch specifically for filtered queries?
+      spans.odinsonMatch
+    }
+
     def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
     def nextDoc(): Int = {

@@ -2,11 +2,12 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{ List => JList, Map => JMap, Set => JSet }
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
+import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
@@ -16,7 +17,7 @@ class OdinOrQuery(
     val field: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int = mkHash(field, clauses)
+  override def hashCode: Int = (clauses, field).##
 
   def toString(field: String): String = {
     val clausesStr = clauses.map(_.toString(field)).mkString(",")
@@ -62,39 +63,37 @@ class OdinOrQuery(
       if (terms == null) {
         return null // field does not exist
       }
-      val subSpans = new ArrayBuffer[OdinsonSpans](clauses.size)
+      val builder = new ArrayBuilder.ofRef[OdinsonSpans]
+      builder.sizeHint(clauses.size)
       for (weight <- subWeights) {
         val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinsonSpans]
         if (subSpan != null) {
-          subSpans += subSpan
+          builder += subSpan
         }
       }
-      if (subSpans.length == 0) {
-        return null
-      } else if (subSpans.length == 1) {
-        val s = subSpans(0)
-        assert(s.isInstanceOf[OdinsonSpans])
-        return s.asInstanceOf[OdinsonSpans]
+      builder.result() match {
+        case Array() => null
+        case Array(s: OdinsonSpans) => s
+        case subSpans => new OdinOrSpans(subSpans)
       }
-      val byDocQueue = new DisiPriorityQueue(subSpans.length)
-      for (spans <- subSpans) {
-        byDocQueue.add(new DisiWrapper(spans))
-      }
-      val byPositionQueue = new SpanPositionQueue(subSpans.length) // when empty use -1
-      new OdinOrSpans(subSpans.toArray, byDocQueue, byPositionQueue)
     }
 
   }
 
 }
 
-class OdinOrSpans(
-    val subSpans: Array[OdinsonSpans],
-    val byDocQueue: DisiPriorityQueue,
-    val byPositionQueue: SpanPositionQueue
-) extends OdinsonSpans {
+class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
+
+  private val getClauseID = subSpans.zipWithIndex.toMap
 
   private var topPositionSpans: OdinsonSpans = null
+
+  private val byDocQueue = new DisiPriorityQueue(subSpans.length)
+  for (spans <- subSpans) {
+    byDocQueue.add(new DisiWrapper(spans))
+  }
+
+  private val byPositionQueue = new SpanPositionQueue(subSpans.length)
 
   def nextDoc(): Int = {
     topPositionSpans = null
@@ -237,9 +236,8 @@ class OdinOrSpans(
     else topPositionSpans.endPosition()
   }
 
-  override def namedCaptures: List[NamedCapture] = {
-    if (topPositionSpans == null) Nil
-    else topPositionSpans.namedCaptures
+  override def odinsonMatch: OdinsonMatch = {
+    new OrMatch(topPositionSpans.odinsonMatch, getClauseID(topPositionSpans))
   }
 
   override def width(): Int = topPositionSpans.width()
