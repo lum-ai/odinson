@@ -15,9 +15,14 @@ lazy val core = project
   .settings(commonSettings)
   .settings(
     buildInfoPackage := "ai.lum.odinson",
-    buildInfoOptions += BuildInfoOption.BuildTime,
+    buildInfoOptions += BuildInfoOption.ToJson,
     buildInfoKeys := Seq[BuildInfoKey](
       name, version, scalaVersion, sbtVersion, libraryDependencies, scalacOptions,
+      "builtAt" -> {
+        val date = new java.util.Date
+        val formatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+        formatter.format(date)
+      },
       "gitCurrentBranch" -> { git.gitCurrentBranch.value },
       "gitHeadCommit" -> { git.gitHeadCommit.value.getOrElse("") },
       "gitHeadCommitDate" -> { git.gitHeadCommitDate.value.getOrElse("") },

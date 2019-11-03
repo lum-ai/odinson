@@ -143,7 +143,7 @@ object Shell extends App {
   def printBuildInfo(): Unit = {
     println(s"Name: ${BuildInfo.name}")
     println(s"Version: ${BuildInfo.version}")
-    println(s"Build date: ${BuildInfo.builtAtString}")
+    println(s"Build date: ${BuildInfo.builtAt}")
     print(s"Commit: ${BuildInfo.gitHeadCommit}")
     if (BuildInfo.gitUncommittedChanges) print(" (with uncommitted changes)")
     println()

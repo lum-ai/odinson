@@ -137,7 +137,17 @@ class ExtractorEngine(
     indexSearcher.odinSearch(after, odinsonQuery, n)
   }
 
-  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = getTokens(scoreDoc.doc, displayField)
+  def getString(m: OdinsonMatch): String = {
+    getTokens(m).mkString(" ")
+  }
+
+  def getTokens(m: OdinsonMatch): Array[String] = {
+    getTokens(m.docID, displayField).slice(m.start, m.end)
+  }
+
+  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
+    getTokens(scoreDoc.doc, displayField)
+  }
 
   def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
     getTokens(scoreDoc.doc, fieldName)
