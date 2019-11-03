@@ -15,10 +15,8 @@ class TestTraversals extends FlatSpec with Matchers {
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val Array(m1, m2) = results.scoreDocs.head.matches
-    m1.start should equal (14)
-    m1.end should equal (15)
-    m2.start should equal (16)
-    m2.end should equal (17)
+    ee.getString(m1) should equal ("horses")
+    ee.getString(m2) should equal ("cattle")
   }
 
 }
