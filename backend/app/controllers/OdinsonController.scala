@@ -34,7 +34,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val config             = ConfigFactory.load()
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
-  val wordTokenField     = config[String]("odinson.index.wordTokenField")
+  val wordTokenField     = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
 
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
@@ -50,6 +50,12 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
 
   def buildInfo(pretty: Option[Boolean]) = Action {
     Ok(BuildInfo.toJson).as(ContentTypes.JSON)
+  }
+
+  def configInfo(pretty: Option[Boolean]) = Action {
+    val options = ConfigRenderOptions.concise.setJson(true)
+    val json = Json.parse(config.root.render(options))
+    json.format(pretty)
   }
 
   def numDocs = Action {

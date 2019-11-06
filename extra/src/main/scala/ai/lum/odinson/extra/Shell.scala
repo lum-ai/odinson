@@ -1,6 +1,7 @@
 package ai.lum.odinson.extra
 
 import java.io.File
+
 import scala.util.control.NonFatal
 import scala.collection.immutable.ListMap
 import jline.console.ConsoleReader
@@ -36,13 +37,14 @@ object Shell extends App {
   val config = ConfigFactory.load()
   var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
   val prompt = config[String]("odinson.shell.prompt")
+  val displayField = config[String]("odinson.displayField")
   val history = new FileHistory(config[File]("odinson.shell.history"))
 
   // we must flush the history before exiting
   sys.addShutdownHook {
     history.flush()
   }
-
+  
   // setup searcher
   val extractorEngine = ExtractorEngine.fromConfig("odinson")
 
@@ -210,7 +212,13 @@ object Shell extends App {
       // FIXME: print statements used for debugging, please remove
       // println("spans: " + spans)
       // println("captures: " + captures)
-      val res = ConsoleHighlighter.highlight(reader = extractorEngine.indexReader, docId = hit.doc, spans = spans, captures = captures)
+      val res = ConsoleHighlighter.highlight(
+        reader = extractorEngine.indexReader,
+        docId = hit.doc,
+        field = displayField,
+        spans = spans,
+        captures = captures
+      )
       println(res)
       println()
     }

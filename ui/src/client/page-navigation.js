@@ -19,6 +19,8 @@ function PageNavigation(props) {
     handleRightClick
   } = props;
 
+  const pageStatement = `${currentPage} out of ${totalPages}`;
+
   if (totalPages < 1) {
     return null;
   }
@@ -50,7 +52,7 @@ function PageNavigation(props) {
           />
         </Tooltip>
         <div className="pageNumbers">
-          {currentPage}
+          {pageStatement}
         </div>
         <Tooltip
           content="Go to next page"

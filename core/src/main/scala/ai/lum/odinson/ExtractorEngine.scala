@@ -23,6 +23,7 @@ import ai.lum.odinson.digraph.Vocabulary
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
+  val displayField: String,
   val state: State,
   val parentDocIdField: String
 ) {
@@ -141,13 +142,11 @@ class ExtractorEngine(
   }
 
   def getTokens(m: OdinsonMatch): Array[String] = {
-    getTokens(m.docID, "raw").slice(m.start, m.end)
+    getTokens(m.docID, displayField).slice(m.start, m.end)
   }
 
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
-    // TODO by default this should use the field that was stored for display
-    // IMHO it should be `raw`, but it shouldn't be hardcoded
-    getTokens(scoreDoc.doc, "raw")
+    getTokens(scoreDoc.doc, displayField)
   }
 
   def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
@@ -180,6 +179,7 @@ object ExtractorEngine {
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
+    val displayField = config[String]("displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
@@ -188,7 +188,13 @@ object ExtractorEngine {
     state.init()
     compiler.setState(state)
     val parentDocIdField = config[String]("index.documentIdField")
-    new ExtractorEngine(indexSearcher, compiler, state, parentDocIdField)
+    new ExtractorEngine(
+      indexSearcher,
+      compiler,
+      displayField,
+      state,
+      parentDocIdField
+    )
   }
 
 }
