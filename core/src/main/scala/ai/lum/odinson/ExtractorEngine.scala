@@ -75,6 +75,11 @@ class ExtractorEngine(
     query(compiler.mkQuery(odinsonQuery, parentQuery), n)
   }
 
+  /** executes query and returns all results */
+  def query(odinsonQuery: OdinsonQuery): OdinResults = {
+    query(odinsonQuery, indexReader.numDocs())
+  }
+
   /** executes query and returns at most n documents */
   def query(odinsonQuery: OdinsonQuery, n: Int): OdinResults = {
     indexSearcher.odinSearch(odinsonQuery, n)
