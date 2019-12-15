@@ -18,7 +18,7 @@ abstract class OdinsonSpans extends Spans {
   import Spans._
 
   def odinsonMatch: OdinsonMatch = {
-    new NGramMatch(docID(), startPosition(), endPosition())
+    new NGramMatch(startPosition(), endPosition())
   }
 
   def width(): Int = 0
