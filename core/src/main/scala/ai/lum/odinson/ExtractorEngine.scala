@@ -142,12 +142,12 @@ class ExtractorEngine(
     indexSearcher.odinSearch(after, odinsonQuery, n)
   }
 
-  def getString(m: OdinsonMatch): String = {
-    getTokens(m).mkString(" ")
+  def getString(docID: Int, m: OdinsonMatch): String = {
+    getTokens(docID, m).mkString(" ")
   }
 
-  def getTokens(m: OdinsonMatch): Array[String] = {
-    getTokens(m.docID, displayField).slice(m.start, m.end)
+  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
+    getTokens(docID, displayField).slice(m.start, m.end)
   }
 
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {

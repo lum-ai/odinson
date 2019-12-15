@@ -7,7 +7,6 @@ case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
 
 sealed trait OdinsonMatch {
 
-  def docID: Int
   def start: Int
   def end: Int
   def namedCaptures: Array[NamedCapture]
@@ -41,8 +40,6 @@ class EventMatch(
   val namedCaptures: Array[NamedCapture],
 ) extends OdinsonMatch {
 
-  val docID: Int = trigger.docID
-
   val start: Int = {
     var minStart = trigger.start
     var i = 0
@@ -68,7 +65,6 @@ class EventMatch(
 }
 
 class NGramMatch(
-  val docID: Int,
   val start: Int,
   val end: Int,
 ) extends OdinsonMatch {
@@ -81,7 +77,6 @@ class GraphTraversalMatch(
   val dstMatch: OdinsonMatch,
 ) extends OdinsonMatch {
 
-  val docID: Int = dstMatch.docID
   val start: Int = dstMatch.start
   val end: Int = dstMatch.end
 
@@ -100,7 +95,6 @@ class GraphTraversalMatch(
 class ConcatMatch(
   val subMatches: Array[OdinsonMatch]
 ) extends OdinsonMatch {
-  val docID: Int = subMatches(0).docID
   val start: Int = subMatches(0).start
   val end: Int = subMatches(subMatches.length - 1).end
   def namedCaptures: Array[NamedCapture] = {
@@ -112,7 +106,6 @@ class RepetitionMatch(
   val subMatches: Array[OdinsonMatch],
   val isGreedy: Boolean,
 ) extends OdinsonMatch {
-  val docID: Int = subMatches(0).docID
   val start: Int = subMatches(0).start
   val end: Int = subMatches(subMatches.length - 1).end
   val isLazy: Boolean = !isGreedy
@@ -125,7 +118,6 @@ class OptionalMatch(
   val subMatch: OdinsonMatch,
   val isGreedy: Boolean,
 ) extends OdinsonMatch {
-  val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
   val isLazy: Boolean = !isGreedy
@@ -138,7 +130,6 @@ class OrMatch(
   val subMatch: OdinsonMatch,
   val clauseID: Int,
 ) extends OdinsonMatch {
-  val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
   def namedCaptures: Array[NamedCapture] = {
@@ -151,7 +142,6 @@ class NamedMatch(
   val name: String,
 ) extends OdinsonMatch {
 
-  val docID: Int = subMatch.docID
   val start: Int = subMatch.start
   val end: Int = subMatch.end
 
