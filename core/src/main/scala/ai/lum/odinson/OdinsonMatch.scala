@@ -1,6 +1,7 @@
 package ai.lum.odinson
 
 import ai.lum.common.Interval
+import ai.lum.odinson.digraph.TraversedPath
 import ai.lum.odinson.lucene.search.ArgumentSpans
 
 case class NamedCapture(name: String, label: Option[String], capturedMatch: OdinsonMatch)
@@ -16,6 +17,18 @@ sealed trait OdinsonMatch {
 
   /** The interval of token indices that form this mention. */
   def tokenInterval: Interval = Interval.open(start, end)
+
+  /** A map from argument name to a sequence of matches.
+    *
+    * The value of the map is a sequence because there are events
+    * that can have several arguments with the same name.
+    * For example, in the biodomain, Binding may have several themes.
+    */
+  def arguments: Map[String, Array[OdinsonMatch]] = {
+    namedCaptures
+      .groupBy(_.name)
+      .transform((k,v) => v.map(_.capturedMatch))
+  }
 
 }
 
@@ -81,6 +94,7 @@ class NGramMatch(
 class GraphTraversalMatch(
   val srcMatch: OdinsonMatch,
   val dstMatch: OdinsonMatch,
+  val traversedPath: TraversedPath,
 ) extends OdinsonMatch {
 
   val start: Int = dstMatch.start
