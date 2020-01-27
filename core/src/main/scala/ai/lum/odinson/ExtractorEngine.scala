@@ -132,6 +132,32 @@ class ExtractorEngine(
     mentions.distinct
   }
 
+  def explain(d: OdinsonScoreDoc, m: OdinsonMatch): Option[Explanation] = {
+    m match {
+      case m: GraphTraversalMatch =>
+        val tokens = getTokens(d)
+        val vocab = compiler.dependenciesVocabulary
+        val steps = m.traversedPath.path.map { step =>
+          val label = maybeQuote(vocab.getTerm(step.edgeLabel).get)
+          val direction = if (step.direction == "incoming") "<" else ">"
+          s"$direction$label"
+        }
+        val src = tokens.slice(m.srcMatch.start, m.srcMatch.end).mkString(" ")
+        val dst = tokens.slice(m.dstMatch.start, m.dstMatch.end).mkString(" ")
+        val path = steps.mkString(" ")
+        val explanation = new Explanation(src, dst, path)
+        Some(explanation)
+      case _ => None
+    }
+  }
+
+  // FIXME move this method to somewhere else
+  // utils maybe?
+  def maybeQuote(s: String): String = {
+    val isValidIdentifier = "^[a-zA-Z_][a-zA-Z0-9_]*$".r.findFirstIn(s).isDefined
+    if (isValidIdentifier) s else "\"" + s.escapeJava + "\""
+  }
+
   /** executes query and returns all results */
   def query(odinsonQuery: OdinsonQuery): OdinResults = {
     query(odinsonQuery, false)
