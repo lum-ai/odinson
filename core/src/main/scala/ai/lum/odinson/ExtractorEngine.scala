@@ -20,6 +20,9 @@ import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.StateFactory
 import ai.lum.odinson.utils.OdinResultsIterator
+import ai.lum.odinson.utils.QueryUtils._
+
+
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
@@ -161,18 +164,6 @@ class ExtractorEngine(
         Some(explanation)
       case _ => None
     }
-  }
-
-  // FIXME move this method to somewhere else
-  // utils maybe?
-  def maybeQuoteWord(s: String): String = {
-    val isValidIdentifier = "^[a-zA-Z_][a-zA-Z0-9_]*$".r.findFirstIn(s).isDefined
-    if (isValidIdentifier) s else "\"" + s.escapeJava + "\""
-  }
-
-  def maybeQuoteLabel(s: String): String = {
-    val isValidIdentifier = "^[a-zA-Z_][a-zA-Z0-9_:-]*$".r.findFirstIn(s).isDefined
-    if (isValidIdentifier) s else "\"" + s.escapeJava + "\""
   }
 
   /** executes query and returns all results */
