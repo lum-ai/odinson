@@ -137,15 +137,27 @@ class ExtractorEngine(
       case m: GraphTraversalMatch =>
         val tokens = getTokens(d)
         val vocab = compiler.dependenciesVocabulary
-        val steps = m.traversedPath.path.map { step =>
-          val label = maybeQuote(vocab.getTerm(step.edgeLabel).get)
+        var path = ""
+        var lexPath = ""
+        var first = true
+        for (step <- m.traversedPath.path) {
+          val from = maybeQuoteWord(tokens(step.from))
+          val to = maybeQuoteWord(tokens(step.to))
+          val label = maybeQuoteLabel(vocab.getTerm(step.edgeLabel).get)
           val direction = if (step.direction == "incoming") "<" else ">"
-          s"$direction$label"
+          if (first) {
+            path += s"$direction$label"
+            lexPath += s"$direction$label"
+            first = false
+          } else {
+            path += s" $direction$label"
+            lexPath += s" $from $direction$label"
+          }
         }
+        val sentence = tokens.mkString(" ")
         val src = tokens.slice(m.srcMatch.start, m.srcMatch.end).mkString(" ")
         val dst = tokens.slice(m.dstMatch.start, m.dstMatch.end).mkString(" ")
-        val path = steps.mkString(" ")
-        val explanation = new Explanation(src, dst, path)
+        val explanation = new Explanation(sentence, src, dst, path, lexPath)
         Some(explanation)
       case _ => None
     }
@@ -153,8 +165,13 @@ class ExtractorEngine(
 
   // FIXME move this method to somewhere else
   // utils maybe?
-  def maybeQuote(s: String): String = {
+  def maybeQuoteWord(s: String): String = {
     val isValidIdentifier = "^[a-zA-Z_][a-zA-Z0-9_]*$".r.findFirstIn(s).isDefined
+    if (isValidIdentifier) s else "\"" + s.escapeJava + "\""
+  }
+
+  def maybeQuoteLabel(s: String): String = {
+    val isValidIdentifier = "^[a-zA-Z_][a-zA-Z0-9_:-]*$".r.findFirstIn(s).isDefined
     if (isValidIdentifier) s else "\"" + s.escapeJava + "\""
   }
 

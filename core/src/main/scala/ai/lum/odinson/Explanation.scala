@@ -6,7 +6,9 @@ package ai.lum.odinson
 // so anything about this class is subject to change
 // use at your own risk
 class Explanation(
+  val sentence: String,
   val src: String,
   val dst: String,
   val path: String,
+  val lexicalizedPath: String,
 )
