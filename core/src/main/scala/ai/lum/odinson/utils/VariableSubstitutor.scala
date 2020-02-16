@@ -29,7 +29,7 @@ class VariableSubstitutor(private var variables: Map[String, String]) {
     this
   }
 
-  def replace(source: String): String = {
+  def apply(source: String): String = {
     substitutor.replace(source)
   }
 
@@ -40,6 +40,7 @@ object VariableSubstitutor {
   private def mkStringSubstitutor(variables: Map[String, String]): StringSubstitutor = {
     new StringSubstitutor(variables.asJava)
       .setEnableSubstitutionInVariables(true)
+      .setEnableUndefinedVariableException(true)
   }
 
 }
