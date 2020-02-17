@@ -33,6 +33,8 @@ class ExtractorEngine(
 
   val indexReader = indexSearcher.getIndexReader()
 
+  val ruleReader = new RuleReader(compiler)
+
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
   }
@@ -53,6 +55,24 @@ class ExtractorEngine(
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
+  }
+
+  /** Apply the extractors and return all results */
+  def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
+    extractMentions(extractors, numDocs())
+  }
+
+  /** Apply the extractors and return results for at most `numSentences` */
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
+    for {
+      e <- extractors
+      results = query(e.query, numSentences)
+      scoreDoc <- results.scoreDocs
+      docFields = doc(scoreDoc.doc)
+      docId = docFields.getField("docId").stringValue
+      sentId = docFields.getField("sentId").stringValue
+      odinsonMatch <- scoreDoc.matches
+    } yield Mention(odinsonMatch, docId, sentId, e.name)
   }
 
   /** executes query and returns all results */
