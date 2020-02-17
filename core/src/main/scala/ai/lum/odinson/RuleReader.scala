@@ -57,6 +57,8 @@ class RuleReader(val compiler: QueryCompiler) {
   }
 
   def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
+    // The order in which the variable maps are concatenated is important.
+    // The variables provided should override the variables in the RuleFile.
     mkExtractors(f.rules, f.variables ++ variables)
   }
 
