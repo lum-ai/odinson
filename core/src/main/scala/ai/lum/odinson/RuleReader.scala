@@ -95,7 +95,7 @@ class RuleReader(val compiler: QueryCompiler) {
     data match {
       case data: JMap[_, _] =>
         val fields = data.asInstanceOf[JMap[String, Any]].asScala.toMap
-        def getField(name: String) = fields.get(name).getOrElse(s"'$name' is required").toString()
+        def getField(name: String) = fields.get(name).getOrElse(sys.error(s"'$name' is required")).toString()
         val name = getField("name")
         val ruletype = getField("type")
         val pattern = getField("pattern")
