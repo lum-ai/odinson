@@ -72,7 +72,7 @@ class ExtractorEngine(
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, docId, sentId, e.name)
+    } yield Mention(odinsonMatch, scoreDoc.doc, docId, sentId, e.name)
   }
 
   /** executes query and returns all results */
@@ -164,6 +164,10 @@ class ExtractorEngine(
 
   def getString(docID: Int, m: OdinsonMatch): String = {
     getTokens(docID, m).mkString(" ")
+  }
+
+  def getTokens(m: Mention): Array[String] = {
+    getTokens(m.luceneDocId, m.odinsonMatch)
   }
 
   def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {

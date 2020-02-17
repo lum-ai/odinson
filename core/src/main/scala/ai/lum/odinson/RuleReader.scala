@@ -29,8 +29,9 @@ case class RuleFile(
 case class Mention(
   odinsonMatch: OdinsonMatch,
   // label
-  docID: String,
-  sentenceID: String,
+  luceneDocId: Int,
+  docId: String,
+  sentenceId: String,
   foundBy: String,
 )
 
