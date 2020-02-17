@@ -36,14 +36,23 @@ case class Mention(
 
 class RuleReader(val compiler: QueryCompiler) {
 
+  /** gets the contents of a rule file and returns a sequence of extractors ready to be used */
   def compileRuleFile(input: String): Seq[Extractor] = {
     compileRuleFile(input, Map.empty)
   }
 
+  /** Gets the contents of a rule file as well as a map of variables.
+   *  Returns a sequence of extractors ready to be used.
+   *  The variables passed as an argument will override the variables declared in the file.
+   */
   def compileRuleFile(input: String, variables: Map[String, String]): Seq[Extractor] = {
     mkExtractors(parseRuleFile(input), variables)
   }
 
+  /** Parses the content of the rule file and returns a RuleFile object
+   *  that contains the parsed rules and the variables declared in the file.
+   *  Note that variable replacement hasn't happened yet.
+   */
   def parseRuleFile(input: String): RuleFile = {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
     val master = yaml.load(input).asInstanceOf[JMap[String, Any]].asScala.toMap
@@ -66,12 +75,17 @@ class RuleReader(val compiler: QueryCompiler) {
     mkExtractors(rules, Map.empty[String, String])
   }
 
+  /** Gets a sequence of rules as well as a variable map
+   *  and returns a sequence of extractors ready to be used.
+   */
   def mkExtractors(rules: Seq[Rule], variables: Map[String, String]): Seq[Extractor] = {
     val varsub = new VariableSubstitutor(variables)
     for (rule <- rules) yield mkExtractor(rule, varsub)
   }
 
   private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
+    // any field in the rule may contain variables,
+    // so we need to pass them through the variable substitutor
     val query = varsub(rule.ruletype) match {
       // TODO choose names
       case "basic" => compiler.compile(varsub(rule.pattern))
