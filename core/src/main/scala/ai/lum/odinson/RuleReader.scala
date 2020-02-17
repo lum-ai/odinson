@@ -29,9 +29,9 @@ case class RuleFile(
 case class Mention(
   odinsonMatch: OdinsonMatch,
   // label
-  foundBy: String,
   docID: String,
   sentenceID: Int,
+  foundBy: String,
 )
 
 class RuleReader(val compiler: QueryCompiler) {
@@ -70,15 +70,12 @@ class RuleReader(val compiler: QueryCompiler) {
   }
 
   private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
-    val ruletype = varsub(rule.ruletype)
-    val query = ruletype match {
-      case "simple" =>
-        compiler.compile(varsub(rule.pattern))
-      case "triggered" =>
-        compiler.compileEventQuery(varsub(rule.pattern))
-      case _ =>
-        sys.error(s"invalid rule type '$ruletype'")
-      }
+    val query = varsub(rule.ruletype) match {
+      // TODO choose names
+      case "basic" => compiler.compile(varsub(rule.pattern))
+      case "event" => compiler.compileEventQuery(varsub(rule.pattern))
+      case t => sys.error(s"invalid rule type '$t'")
+    }
     Extractor(rule.name, query)
   }
 
