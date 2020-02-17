@@ -30,7 +30,7 @@ case class Mention(
   odinsonMatch: OdinsonMatch,
   // label
   docID: String,
-  sentenceID: Int,
+  sentenceID: String,
   foundBy: String,
 )
 
