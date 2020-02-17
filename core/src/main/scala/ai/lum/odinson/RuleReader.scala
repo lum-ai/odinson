@@ -21,6 +21,8 @@ case class Extractor(
   query: OdinsonQuery,
 )
 
+case class RuleFile(rules: Seq[Rule], variables: Map[String, String])
+
 case class Mention(
   odinsonMatch: OdinsonMatch,
   // label
@@ -32,18 +34,20 @@ case class Mention(
 class RuleReader(val compiler: QueryCompiler) {
 
   def compileRuleFile(input: String, userVariables: Map[String, String] = Map.empty): Seq[Extractor] = {
-    val (fileVariables, rules) = parseRuleFile(input)
-    val variables = fileVariables ++ userVariables
-    mkExtractors(rules, variables)
+    val f = parseRuleFile(input)
+    val variables = f.variables ++ userVariables
+    mkExtractors(f.rules, variables)
   }
 
-  def parseRuleFile(input: String): (Map[String, String], Seq[Rule]) = {
+  def parseRuleFile(input: String): RuleFile = {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
     val master = yaml.load(input).asInstanceOf[JMap[String, Any]].asScala.toMap
     val variables = mkVariables(master)
     val rules = mkRules(master)
-    (variables, rules)
+    RuleFile(rules, variables)
   }
+
+  def mkExtractors(f: RuleFile): Seq[Extractor] = mkExtractors(f.rules, f.variables)
 
   def mkExtractors(rules: Seq[Rule], variables: Map[String, String] = Map.empty): Seq[Extractor] = {
     val varsub = new VariableSubstitutor(variables)
