@@ -33,10 +33,12 @@ case class Mention(
 
 class RuleReader(val compiler: QueryCompiler) {
 
-  def compileRuleFile(input: String, userVariables: Map[String, String] = Map.empty): Seq[Extractor] = {
-    val f = parseRuleFile(input)
-    val variables = f.variables ++ userVariables
-    mkExtractors(f.rules, variables)
+  def compileRuleFile(input: String): Seq[Extractor] = {
+    compileRuleFile(input, Map.empty)
+  }
+
+  def compileRuleFile(input: String, variables: Map[String, String]): Seq[Extractor] = {
+    mkExtractors(parseRuleFile(input), variables)
   }
 
   def parseRuleFile(input: String): RuleFile = {
@@ -47,9 +49,19 @@ class RuleReader(val compiler: QueryCompiler) {
     RuleFile(rules, variables)
   }
 
-  def mkExtractors(f: RuleFile): Seq[Extractor] = mkExtractors(f.rules, f.variables)
+  def mkExtractors(f: RuleFile): Seq[Extractor] = {
+    mkExtractors(f, Map.empty[String, String])
+  }
 
-  def mkExtractors(rules: Seq[Rule], variables: Map[String, String] = Map.empty): Seq[Extractor] = {
+  def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
+    mkExtractors(f.rules, f.variables ++ variables)
+  }
+
+  def mkExtractors(rules: Seq[Rule]): Seq[Extractor] = {
+    mkExtractors(rules, Map.empty[String, String])
+  }
+
+  def mkExtractors(rules: Seq[Rule], variables: Map[String, String]): Seq[Extractor] = {
     val varsub = new VariableSubstitutor(variables)
     rules.map(r => mkExtractor(r, varsub))
   }
