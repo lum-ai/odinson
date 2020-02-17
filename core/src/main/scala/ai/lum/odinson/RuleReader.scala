@@ -21,7 +21,10 @@ case class Extractor(
   query: OdinsonQuery,
 )
 
-case class RuleFile(rules: Seq[Rule], variables: Map[String, String])
+case class RuleFile(
+  rules: Seq[Rule],
+  variables: Map[String, String],
+)
 
 case class Mention(
   odinsonMatch: OdinsonMatch,
@@ -50,7 +53,7 @@ class RuleReader(val compiler: QueryCompiler) {
   }
 
   def mkExtractors(f: RuleFile): Seq[Extractor] = {
-    mkExtractors(f, Map.empty[String, String])
+    mkExtractors(f.rules, f.variables)
   }
 
   def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
@@ -63,7 +66,7 @@ class RuleReader(val compiler: QueryCompiler) {
 
   def mkExtractors(rules: Seq[Rule], variables: Map[String, String]): Seq[Extractor] = {
     val varsub = new VariableSubstitutor(variables)
-    rules.map(r => mkExtractor(r, varsub))
+    for (rule <- rules) yield mkExtractor(rule, varsub)
   }
 
   private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
