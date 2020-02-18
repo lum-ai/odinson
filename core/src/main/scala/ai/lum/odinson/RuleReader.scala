@@ -111,15 +111,11 @@ class RuleReader(val compiler: QueryCompiler) {
     }
   }
 
-  private def mkRules(data: Any): Seq[Rule] = {
-    data match {
-      case data: JMap[_, _] =>
-        data.get("rules") match {
-          case None => Seq.empty
-          case Some(rules: Collection[_]) =>
-            rules.asScala.map(mkRule).toSeq
-          case _ => sys.error("invalid rules data")
-        }
+  private def mkRules(data: Map[String, Any]): Seq[Rule] = {
+    data.get("rules") match {
+      case None => Seq.empty
+      case Some(rules: Collection[_]) =>
+        rules.asScala.map(mkRule).toSeq
       case _ => sys.error("invalid rules data")
     }
   }
