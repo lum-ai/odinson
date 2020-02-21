@@ -60,10 +60,20 @@ class TestEvents extends FlatSpec with Matchers {
     testEventArguments(m, desiredArgs)
   }
 
-  it should "not find event with mentions from the state when the state is empty" in {
+  it should "not throw an exception when it fails" in {
+    val pattern = """
+      trigger = [lemma=eat]
+      subject: ^NP = >nsubj xxx
+      object: ^NP = >dobj yyy
+    """
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 1)
     results.totalHits should equal (0)
+  }
+
+  it should "not find event with mentions from the state when the state is empty" in {
+    val q = ee.compiler.compileEventQuery(pattern)
+    noException should be thrownBy ee.query(q, 1)
   }
 
   it should "populate the state with NPs" in {
