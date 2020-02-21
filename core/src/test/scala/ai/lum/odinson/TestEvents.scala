@@ -67,12 +67,6 @@ class TestEvents extends FlatSpec with Matchers {
       object: ^NP = >dobj yyy
     """
     val q = ee.compiler.compileEventQuery(pattern)
-    val results = ee.query(q, 1)
-    results.totalHits should equal (0)
-  }
-
-  it should "not find event with mentions from the state when the state is empty" in {
-    val q = ee.compiler.compileEventQuery(pattern)
     noException should be thrownBy ee.query(q, 1)
   }
 
