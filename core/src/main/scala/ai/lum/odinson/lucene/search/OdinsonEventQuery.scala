@@ -86,7 +86,10 @@ case class ArgumentSpans(
 ) {
 
   def subSpans: List[OdinsonSpans] = {
-    fullTraversal.map(_._2)
+    val ss = fullTraversal.map(_._2)
+    // if any subspan is null then the whole argument should fail
+    if (ss.exists(s => s == null)) null
+    else ss
   }
 
 }
