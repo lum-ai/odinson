@@ -92,12 +92,11 @@ class QueryParser(
     ).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
         val pattern = lastTraversal match {
+          case None => traversalsWithSurface
           case Some(t) =>
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
             traversalsWithSurface :+ (t, wildcard)
-          case None =>
-            traversalsWithSurface
         }
         // get quantifier parameters
         val (min, max) = quant match {
@@ -334,7 +333,7 @@ class QueryParser(
   def defaultFieldStringConstraint[_: P]: P[Ast.Constraint] = {
     // a negative lookahead is required to ensure that this constraint
     // is not followed by a colon or an equals, or else it is an argument name
-    P(Literals.string ~ !(":"|"=") ~ "~".!.?).map {
+    P(Literals.string ~ !(":" | quantifier(includeLazy = false).? ~ "=") ~ "~".!.?).map {
       case (string, None) =>
         Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(string))
       case (string, Some(_)) =>
