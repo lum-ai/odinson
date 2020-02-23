@@ -24,7 +24,7 @@ class QueryParser(
   }
 
   def argumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(existingArgumentPattern | promotedArgumentPattern)
+    P(existingArgumentPattern | promotedArgumentPattern | untypedArgumentPattern)
   }
 
   // the argument must be a mention that already exists in the state
@@ -82,6 +82,29 @@ class QueryParser(
           case _ => (1, Some(1))
         }
         Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = true)
+    }
+  }
+
+  // the argument has no declared type
+  def untypedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~/
+      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
+    ).map {
+      case (name, quant, traversalsWithSurface, lastTraversal) =>
+        val pattern = lastTraversal match {
+          case Some(t) =>
+            // if we don't have a final token pattern then assume a wildcard
+            val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
+            traversalsWithSurface :+ (t, wildcard)
+          case None =>
+            traversalsWithSurface
+        }
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, "**UNDEFINED**", pattern.toList, min, max, promote = true)
     }
   }
 
@@ -310,8 +333,8 @@ class QueryParser(
 
   def defaultFieldStringConstraint[_: P]: P[Ast.Constraint] = {
     // a negative lookahead is required to ensure that this constraint
-    // is not followed by a colon, if it is then it actually is an argument name
-    P(Literals.string ~ !":" ~ "~".!.?).map {
+    // is not followed by a colon or an equals, or else it is an argument name
+    P(Literals.string ~ !(":"|"=") ~ "~".!.?).map {
       case (string, None) =>
         Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(string))
       case (string, Some(_)) =>
