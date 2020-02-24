@@ -60,6 +60,48 @@ class TestEvents extends FlatSpec with Matchers {
     testEventArguments(m, desiredArgs)
   }
 
+  it should "match when no label is provided" in {
+    val pattern = """
+      trigger = [lemma=eat]
+      subject = >nsubj [chunk=B-NP][chunk=I-NP]*
+      object = >dobj [chunk=B-NP][chunk=I-NP]*
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val results = ee.query(q, 1)
+    results.totalHits should equal (1)
+    results.scoreDocs.head.matches should have size 1
+    val m = results.scoreDocs.head.matches.head
+    // test trigger
+    testEventTrigger(m, start = 1, end = 2)
+    // test arguments
+    val desiredArgs = Seq(
+      Argument("subject", 0, 1),
+      Argument("object", 2, 4),
+    )
+    testEventArguments(m, desiredArgs)
+  }
+
+  it should "promote a token when no surface pattern is provided and label is not provided" in {
+    val pattern = """
+      trigger = [lemma=eat]
+      subject = >nsubj
+      object = >dobj
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val results = ee.query(q, 1)
+    results.totalHits should equal (1)
+    results.scoreDocs.head.matches should have size 1
+    val m = results.scoreDocs.head.matches.head
+    // test trigger
+    testEventTrigger(m, start = 1, end = 2)
+    // test arguments
+    val desiredArgs = Seq(
+      Argument("subject", 0, 1),
+      Argument("object", 3, 4),
+    )
+    testEventArguments(m, desiredArgs)
+  }
+
   it should "not throw an exception when it fails" in {
     val pattern = """
       trigger = [lemma=eat]
