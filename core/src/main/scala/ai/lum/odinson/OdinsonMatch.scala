@@ -1,7 +1,7 @@
 package ai.lum.odinson
 
-import scala.util.hashing.MurmurHash3._
 import ai.lum.common.Interval
+import ai.lum.odinson.lucene.search.ArgumentSpans
 
 case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
 
@@ -62,6 +62,20 @@ class EventMatch(
     maxEnd
   }
 
+}
+
+/** This class represents a partial event match
+ *  that has to be packaged into actual event mentions.
+ *  This class is for internal purposes only and should
+ *  never be seen by an end user.
+ */
+class EventSketch(
+  val trigger: OdinsonMatch,
+  val argSketches: Array[(ArgumentSpans, OdinsonMatch)],
+) extends OdinsonMatch {
+  val start: Int = trigger.start
+  val end: Int = trigger.end
+  def namedCaptures: Array[NamedCapture] = Array.empty
 }
 
 class NGramMatch(
