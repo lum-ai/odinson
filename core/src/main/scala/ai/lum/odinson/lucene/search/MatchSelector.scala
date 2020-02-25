@@ -122,8 +122,12 @@ object MatchSelector {
 
   private def packageArgument(
     arg: ArgumentSpans,
-    matches: Seq[OdinsonMatch],
+    allMatches: Seq[OdinsonMatch],
   ): Seq[Seq[NamedCapture]] = {
+    val matches = for {
+      g <- groupMatches(allMatches)
+      m <- pickMatches(g)
+    } yield m
     val packages = arg match {
       case ArgumentSpans(name, min, Some(max), _) if min == max =>
         // exact range (note that a range 1-1 means no quantifier)
@@ -141,6 +145,24 @@ object MatchSelector {
     for (pkg <- packages) yield {
       pkg.map(m => NamedCapture(arg.name, m))
     }
+  }
+
+  private def groupMatches(matches: Seq[OdinsonMatch]): Seq[Seq[OdinsonMatch]] = {
+    val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
+    for (m <- matches) {
+      var found = false
+      for (b <- buckets) {
+        // buckets should never be empty
+        if (b.head.tokenInterval intersects m.tokenInterval) {
+          b += m
+          found = true
+        }
+      }
+      if (!found) {
+        buckets += ArrayBuffer(m)
+      }
+    }
+    buckets
   }
 
 }
