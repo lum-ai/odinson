@@ -151,14 +151,19 @@ object MatchSelector {
     val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
     for (m <- matches) {
       var found = false
-      for (b <- buckets) {
-        // buckets should never be empty
-        if (b.head.tokenInterval intersects m.tokenInterval) {
+      var i = 0
+      while (!found && i < buckets.size) {
+        val b = buckets(i)
+        i += 1
+        // check if m belongs to the current bucket
+        // (buckets should never be empty)
+        if (m.tokenInterval intersects b.head.tokenInterval) {
           b += m
           found = true
         }
       }
       if (!found) {
+        // add new bucket
         buckets += ArrayBuffer(m)
       }
     }
