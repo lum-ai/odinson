@@ -39,29 +39,8 @@ class EventMatch(
   val trigger: OdinsonMatch,
   val namedCaptures: Array[NamedCapture],
 ) extends OdinsonMatch {
-
-  val start: Int = {
-    var minStart = trigger.start
-    var i = 0
-    while (i < namedCaptures.length) {
-      val cStart = namedCaptures(i).capturedMatch.start
-      if (cStart < minStart) minStart = cStart
-      i += 1
-    }
-    minStart
-  }
-
-  val end: Int = {
-    var maxEnd = trigger.end
-    var i = 0
-    while (i < namedCaptures.length) {
-      val cEnd = namedCaptures(i).capturedMatch.end
-      if (cEnd > maxEnd) maxEnd = cEnd
-      i += 1
-    }
-    maxEnd
-  }
-
+  val start: Int = trigger.start
+  val end: Int = trigger.end
 }
 
 /** This class represents a partial event match
