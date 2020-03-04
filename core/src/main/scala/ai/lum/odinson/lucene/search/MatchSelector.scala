@@ -81,7 +81,17 @@ object MatchSelector {
 
       }
     }
-    traverse(List(lhs), List(rhs))
+
+    if (lhs.start == rhs.start) {
+      // if both mentions start at the same place then use our selection algorithm
+      traverse(List(lhs), List(rhs))
+    } else if (lhs.tokenInterval intersects rhs.tokenInterval) {
+      // if they don't start at the same place but they intersect then choose the leftmost
+      List(lhs)
+    } else {
+      // can't decide, return both
+      List(lhs, rhs)
+    }
   }
 
   private def expandFirstMatch(ms: List[OdinsonMatch]): List[OdinsonMatch] = {
