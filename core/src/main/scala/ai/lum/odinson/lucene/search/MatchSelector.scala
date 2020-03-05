@@ -11,10 +11,13 @@ object MatchSelector {
   // e.g., greedy vs lazy, prefer leftmost clause of ORs
   // NOTE There could be more than one matches at the first starting point due to event unpacking
   def pickMatches(matches: Seq[OdinsonMatch]): List[OdinsonMatch] = {
-    matches.foldRight(List.empty[OdinsonMatch]) {
-      case ((m: EventSketch), ms) => packageEvents(m) ::: ms
+    val selectedMatches = matches.foldRight(List.empty[OdinsonMatch]) {
       case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ::: ms
       case (m, ms) => m :: ms
+    }
+    selectedMatches.flatMap {
+      case m: EventSketch => packageEvents(m)
+      case m => List(m)
     }
   }
 
@@ -99,8 +102,8 @@ object MatchSelector {
       case Nil => Nil
       case head :: tail => head match {
         case m: NGramMatch  => tail
-        case m: EventMatch  => tail
-        case m: EventSketch => ???
+        case m: EventMatch  => ???
+        case m: EventSketch => m.trigger :: tail
         case m: OrMatch       => m.subMatch :: tail
         case m: NamedMatch    => m.subMatch :: tail
         case m: OptionalMatch => m.subMatch :: tail
