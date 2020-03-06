@@ -118,7 +118,7 @@ object MatchSelector {
   private def packageEvents(sketch: EventSketch): List[EventMatch] = {
     val trigger = sketch.trigger
     val argumentPackages = packageArguments(sketch.argSketches)
-    argumentPackages.map(args => new EventMatch(trigger, args))
+    argumentPackages.map(args => new EventMatch(trigger, args, sketch.argumentMetadata))
   }
 
   private def packageArguments(

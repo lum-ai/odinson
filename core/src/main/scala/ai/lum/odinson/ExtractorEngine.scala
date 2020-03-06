@@ -59,12 +59,18 @@ class ExtractorEngine(
 
   /** Apply the extractors and return all results */
   def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
-    extractMentions(extractors, numDocs())
+    extractMentions(extractors, false)
+  }
+
+  /** Apply the extractors and return all results */
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean): Seq[Mention] = {
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps)
   }
 
   /** Apply the extractors and return results for at most `numSentences` */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
-    for {
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean): Seq[Mention] = {
+    // extract mentions
+    val mentions = for {
       e <- extractors
       results = query(e.query, numSentences)
       scoreDoc <- results.scoreDocs
@@ -73,6 +79,17 @@ class ExtractorEngine(
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
     } yield Mention(odinsonMatch, scoreDoc.doc, docId, sentId, e.name)
+    // if needed, filter results to discard trigger overlaps
+    if (allowTriggerOverlaps) {
+      mentions
+    } else {
+      mentions.flatMap { m =>
+        m.odinsonMatch match {
+          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+          case _ => Some(m)
+        }
+      }
+    }
   }
 
   /** executes query and returns all results */
