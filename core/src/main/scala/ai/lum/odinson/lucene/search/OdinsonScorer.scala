@@ -50,7 +50,7 @@ class OdinsonScorer(
 
   // - consumes all matches with the same start position
   // - selects the span to return
-  // - leaves the spans iterator at the nest start position
+  // - leaves the spans iterator at the next start position
   private def getCurrentMatchesAndAdvance(spans: OdinsonSpans): Seq[OdinsonMatch] = {
     val startPosition = spans.startPosition()
     if (startPosition == Spans.NO_MORE_POSITIONS) {
