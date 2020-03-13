@@ -47,7 +47,7 @@ class ExtractorEngine(
     val booleanQuery = new LuceneBooleanQuery.Builder()
     val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    val q2 = new QueryParser("type", analyzer).parse("root")
+    val q2 = new QueryParser("type", analyzer).parse("metadata")
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))

@@ -17,7 +17,8 @@ GET     /api/search                     controllers.OdinsonController.runQuery(o
 GET     /api/rich-search                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = true, pretty: Option[Boolean])
 
 # parent doc
-GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
+#GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
+
 # sentence json
 GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentId: Int, pretty: Option[Boolean])
 

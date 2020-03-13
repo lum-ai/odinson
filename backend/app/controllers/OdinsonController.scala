@@ -32,6 +32,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   extends AbstractController(cc) {
 
   val config             = ConfigFactory.load()
+  val docsDir            = config[File]("odinson.docsDir")
   val docIdField         = config[String]("odinson.index.documentIdField")
   val sentenceIdField    = config[String]("odinson.index.sentenceIdField")
   val wordTokenField     = config[String]("odinson.displayField")
@@ -115,64 +116,69 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     */
   def sentenceJsonForSentId(odinsonDocId: Int, pretty: Option[Boolean]) = Action.async {
     Future {
+      // ensure doc id is correct
       val json  = mkAbridgedSentence(odinsonDocId)
       json.format(pretty)
     }(odinsonContext)
   }
 
-  // FIXME: add these fields to config under odinson.extra.
-  def getParentMetadata(docId: String): DocumentMetadata = {
-    val parentDoc = extractorEngine.getParentDoc(docId)
-    val authors: Option[Seq[String]] = Try(parentDoc.getFields("author").map(_.stringValue)) match {
-      case Success(v) => if (v.nonEmpty) Some(v) else None
-      case Failure(_) => None
-    }
+  // // FIXME: add these fields to config under odinson.extra.
+  // def getParentMetadata(docId: String): DocumentMetadata = {
+  //   val parentDoc = extractorEngine.getParentDoc(docId)
+  //   //val fileName  = parentDoc.getField
+  //   //val odinsonDoc = Document.fromJson()
+  //   //
+  //   // FIXME: these fields no longer exist
+  //   val authors: Option[Seq[String]] = Try(parentDoc.getFields("author").map(_.stringValue)) match {
+  //     case Success(v) => if (v.nonEmpty) Some(v) else None
+  //     case Failure(_) => None
+  //   }
 
-    val title: Option[String] = Try(parentDoc.getField("title").stringValue) match {
-      case Success(v) => if (v.nonEmpty) Some(v) else None
-      case Failure(_) => None
-    }
+  //   val title: Option[String] = Try(parentDoc.getField("title").stringValue) match {
+  //     case Success(v) => if (v.nonEmpty) Some(v) else None
+  //     case Failure(_) => None
+  //   }
 
-    val venue: Option[String] = Try(parentDoc.getField("venue").stringValue) match {
-      case Success(v) => if (v.nonEmpty) Some(v) else None
-      case Failure(_) => None
-    }
+  //   val venue: Option[String] = Try(parentDoc.getField("venue").stringValue) match {
+  //     case Success(v) => if (v.nonEmpty) Some(v) else None
+  //     case Failure(_) => None
+  //   }
 
-    val year: Option[Int] = Try(parentDoc.getField("year").numericValue.intValue) match {
-      case Success(v) => Some(v)
-      case Failure(_) => None
-    }
+  //   val year: Option[Int] = Try(parentDoc.getField("year").numericValue.intValue) match {
+  //     case Success(v) => Some(v)
+  //     case Failure(_) => None
+  //   }
 
-    val doi: Option[String] = Try(parentDoc.getField("doi").stringValue) match {
-      case Success(v) => if (v.nonEmpty) Some(v) else None
-      case Failure(_) => None
-    }
+  //   val doi: Option[String] = Try(parentDoc.getField("doi").stringValue) match {
+  //     case Success(v) => if (v.nonEmpty) Some(v) else None
+  //     case Failure(_) => None
+  //   }
 
-    val url: Option[String] = Try(parentDoc.getField("url").stringValue) match {
-      case Success(v) => if (v.nonEmpty) Some(v) else None
-      case Failure(_) => None
-    }
+  //   val url: Option[String] = Try(parentDoc.getField("url").stringValue) match {
+  //     case Success(v) => if (v.nonEmpty) Some(v) else None
+  //     case Failure(_) => None
+  //   }
 
-    DocumentMetadata(
-      docId = docId,
-      authors = authors,
-      title = title,
-      doi = doi,
-      url = url,
-      year = year,
-      venue = venue
-    )
-  }
+  //   DocumentMetadata(
+  //     docId = docId,
+  //     authors = authors,
+  //     title = title,
+  //     doi = doi,
+  //     url = url,
+  //     year = year,
+  //     venue = venue
+  //   )
+  // }
 
-  def getParent(docId: String, pretty: Option[Boolean]) = Action.async {
-    Future {
-      val jdata = getParentMetadata(docId)
+  // def getParent(docId: String, pretty: Option[Boolean]) = Action.async {
+  //   Future {
+  //     val jdata = getParentMetadata(docId)
 
-      implicit val metadataFormat = Json.format[DocumentMetadata]
-      val json = Json.toJson(jdata)
-      json.format(pretty)
-    }(odinsonContext)
-  }
+  //     implicit val metadataFormat = Json.format[DocumentMetadata]
+  //     val json = Json.toJson(jdata)
+  //     json.format(pretty)
+  //   }(odinsonContext)
+  // }
 
   /** Stores query results in state.
     *
@@ -320,15 +326,19 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     )
   }
 
-  def retrieveSentenceJson(odinsonDocId: Int): JsValue = {
-    val sent  = extractorEngine.indexSearcher.doc(odinsonDocId)
-    val bin   = sent.getBinaryValue("json-binary").bytes
-    Json.parse(DocUtils.bytesToJsonString(bin))
+  def retrieveSentenceJson(sentenceIndex: Int, parentDocId: String): JsValue = {
+    val parentDoc = extractorEngine.getParentDoc(parentDocId)
+    val odinsonDocFile = new File(docsDir, parentDoc.getField("fileName").stringValue)
+    val docJson: JsValue = Json.parse(odinsonDocFile.readString(java.nio.charset.StandardCharsets.UTF_8))
+    (docJson \ "sentences")(sentenceIndex)
   }
 
   def mkAbridgedSentence(odinsonDocId: Int): JsValue = {
-    val unabridgedJson = retrieveSentenceJson(odinsonDocId)
-    unabridgedJson.as[JsObject] - "startOffsets" - "endOffsets" - "raw"
+    val sentenceIndex = getSentenceIndex(odinsonDocId)
+    val parentId = getDocId(odinsonDocId)
+    val unabridgedJson = retrieveSentenceJson(sentenceIndex, parentId)
+    unabridgedJson
+    //unabridgedJson.as[JsObject] - "startOffsets" - "endOffsets" - "raw"
   }
 
 }

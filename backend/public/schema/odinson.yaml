@@ -162,30 +162,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryError'
 
-  /api/parent:
-    get:
-      tags:
-        - core
-      summary: |
-        Retrieves metadata on the parent document associated with some docId.
-      description: |
-        Retrieves metadata on the parent document associated with some docId.
-      operationId: parent
-      parameters:
-        - name: docId
-          in: query
-          description: |
-            The document ID for the last document seen in the previous page of results.
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Metadata describing the parent document.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentMetadata'
+  # /api/parent:
+  #   get:
+  #     tags:
+  #       - core
+  #     summary: |
+  #       Retrieves metadata on the parent document associated with some docId.
+  #     description: |
+  #       Retrieves metadata on the parent document associated with some docId.
+  #     operationId: parent
+  #     parameters:
+  #       - name: docId
+  #         in: query
+  #         description: |
+  #           The document ID for the last document seen in the previous page of results.
+  #         required: false
+  #         schema:
+  #           type: string
+  #     responses:
+  #       '200':
+  #         description: Metadata describing the parent document.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/DocumentMetadata'
 
   /api/sentence:
     get:
@@ -233,45 +233,45 @@ paths:
                 format: int32
                 example: 10000
 
-  /api/most-common:
-    get:
-      tags:
-        - statistics
-      summary: |
-        Determines the most frequent matching spans for the provided pattern.
-      description: |
-        Determines the most frequent matching spans for the provided pattern.  Counts ignore case. Optionally request counts for only one argument.
-      operationId: most-common
-      parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-        - name: k
-          in: query
-          description: |
-            The top k most-frequent patterns.
-          required: true
-          schema:
-            type: integer
-            format: int32
-            minimum: 1
-            exclusiveMinimum: false
-          example: 3
-        - name: arg
-          in: query
-          description: |
-            (Optional) name of the argument to define frequency by.
-          required: false
-          type: string
-          example: "cause"
-      responses:
-        '200':
-          description: Top k most common matches (ignores case). Optionally specify the argument to define frequency on.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MatchFrequency'
+  # /api/most-common:
+  #   get:
+  #     tags:
+  #       - statistics
+  #     summary: |
+  #       Determines the most frequent matching spans for the provided pattern.
+  #     description: |
+  #       Determines the most frequent matching spans for the provided pattern.  Counts ignore case. Optionally request counts for only one argument.
+  #     operationId: most-common
+  #     parameters:
+  #       - $ref: '#/components/schemas/OdinsonPattern'
+  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #       - name: k
+  #         in: query
+  #         description: |
+  #           The top k most-frequent patterns.
+  #         required: true
+  #         schema:
+  #           type: integer
+  #           format: int32
+  #           minimum: 1
+  #           exclusiveMinimum: false
+  #         example: 3
+  #       - name: arg
+  #         in: query
+  #         description: |
+  #           (Optional) name of the argument to define frequency by.
+  #         required: false
+  #         type: string
+  #         example: "cause"
+  #     responses:
+  #       '200':
+  #         description: Top k most common matches (ignores case). Optionally specify the argument to define frequency on.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: array
+  #               items:
+  #                 $ref: '#/components/schemas/MatchFrequency'
 
   /api/dependencies-vocabulary:
     get:
@@ -291,24 +291,24 @@ paths:
                   type: string
                   description: A dependency relation.
 
-  /api/export:
-    get:
-      tags:
-        - export
-      summary: Match an Odinson pattern and export results to a TSV file.
-      description: Match an Odinson pattern and export results to a TSV file (includes header).
-      operationId: export-results
-      parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-      responses:
-        '200':
-          description: "A TSV file of matches. START and END are character spans relative to the beginning of the sentence."
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+  # /api/export:
+  #   get:
+  #     tags:
+  #       - export
+  #     summary: Match an Odinson pattern and export results to a TSV file.
+  #     description: Match an Odinson pattern and export results to a TSV file (includes header).
+  #     operationId: export-results
+  #     parameters:
+  #       - $ref: '#/components/schemas/OdinsonPattern'
+  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #     responses:
+  #       '200':
+  #         description: "A TSV file of matches. START and END are character spans relative to the beginning of the sentence."
+  #         content:
+  #           application/octet-stream:
+  #             schema:
+  #               type: string
+  #               format: binary
 
   /api/buildinfo:
     get:
@@ -356,28 +356,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/CorpusInfo'
 
-  /api/config:
-    get:
-      tags:
-        - info
-      summary: Project config.
-      description: Retrieve project config as json.
-      operationId: config
-      parameters:
-        - name: pretty
-          in: query
-          description: |
-            Whether or not to pretty print the response.
-          required: false
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: "A JSON object containing config information."
-          content:
-            application/json:
-              schema:
-                type: object
+  # /api/config:
+  #   get:
+  #     tags:
+  #       - info
+  #     summary: Project config.
+  #     description: Retrieve project config as json.
+  #     operationId: config
+  #     parameters:
+  #       - name: pretty
+  #         in: query
+  #         description: |
+  #           Whether or not to pretty print the response.
+  #         required: false
+  #         schema:
+  #           type: boolean
+  #     responses:
+  #       '200':
+  #         description: "A JSON object containing config information."
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
 
 components:
   schemas:
@@ -387,7 +387,7 @@ components:
       in: query
       required: true
       type: string
-      description: An Odison pattern.
+      description: An Odinson pattern.
       example: "[lemma=phosphorylate] []"
 
     ParentDocumentQuery:
@@ -414,21 +414,21 @@ components:
           description: The similarity score for the returned term.
           example: 0.673
 
-    MatchFrequency:
-      type: object
-      required:
-        - match
-        - count
-      properties:
-        match:
-          type: string
-          description: Matched span of text after case folding.
-          example: phosphorylated protein
-        similarity:
-          type: integer
-          format: int32
-          description: The raw frequency of the match.
-          example: 60
+    # MatchFrequency:
+    #   type: object
+    #   required:
+    #     - match
+    #     - count
+    #   properties:
+    #     match:
+    #       type: string
+    #       description: Matched span of text after case folding.
+    #       example: phosphorylated protein
+    #     similarity:
+    #       type: integer
+    #       format: int32
+    #       description: The raw frequency of the match.
+    #       example: 60
 
     OdinsonSpan:
       type: object
@@ -585,7 +585,7 @@ components:
           format: int32
           description: The index of this sentence in the parent document (0-based).
         sentence:
-          $ref: '#/components/schemas/BasicSentence'
+          $ref: '#/components/schemas/OdinsonSentence'
           description: Token attributes and annotations for this sentence to aid in further refining queries.
         matches:
           type: array
@@ -593,184 +593,118 @@ components:
             $ref: '#/components/schemas/OdinsonMatch'
           description: The list of matching spans for this document.
 
-    DocumentMetadata:
+    # DocumentMetadata:
+    #   type: object
+    #   required:
+    #     - docId
+    #   properties:
+    #     docId:
+    #       type: string
+    #       description: A unique ID identifying this parent document.
+    #     authors:
+    #       type: array
+    #       description: The names of the authors in order of appearance.
+    #       items:
+    #         type: string
+    #         description: Author name.
+    #     title:
+    #       type: string
+    #       description: The title of this document.
+    #     doi:
+    #       type: string
+    #       description: "The digital object identifier for this document.  Retrieve document details using https://doi.org/{doi}"
+    #     url:
+    #       type: string
+    #       description: "URL for document"
+    #     venue:
+    #       type: string
+    #       description: The venue in which this document was published.
+    #     year:
+    #       type: integer
+    #       format: int32
+    #       description: The year this document was published.
+
+    OdinsonSentence:
       type: object
       required:
-        - docId
+        - numTokens
+        - fields
       properties:
-        docId:
-          type: string
-          description: A unique ID identifying this parent document.
-        authors:
-          type: array
-          description: The names of the authors in order of appearance.
-          items:
-            type: string
-            description: Author name.
-        title:
-          type: string
-          description: The title of this document.
-        doi:
-          type: string
-          description: "The digital object identifier for this document.  Retrieve document details using https://doi.org/{doi}"
-        url:
-          type: string
-          description: "URL for document"
-        venue:
-          type: string
-          description: The venue in which this document was published.
-        year:
+        numTokens:
           type: integer
           format: int32
-          description: The year this document was published.
+          description: |
+            The number of tokens in the sentence.
+        fields:
+          type: array
+          description: |
+            An array of token and sentence-level attributes
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/OdinsonTokensField'
+              - $ref: '#/components/schemas/OdinsonGraphField'
 
-    BasicSentence:
-      type: object
-      required:
-        - words
-        #      - raw
-        - graphs
-      properties:
-        words:
-          type: array
-          description: |
-            The tokens for this sentence.
-          items:
-            type: string
-        lemmas:
-          type: array
-          description: |
-            The lemma form of each token in this sentence.
-          items:
-            type: string
-        tags:
-          type: array
-          description: |
-            The part of speech tag for each token in this sentence.
-          items:
-            type: string
-        chunks:
-          type: array
-          description: |
-            The BIO-style chunk label designating a coarse XP assignment for each token in this sentence.
-          items:
-            type: string
-        entities:
-          type: array
-          description: |
-            The BIO-style entity label for each token in this sentence.
-          items:
-            type: string
-        graphs:
-          $ref: "#/components/schemas/GraphMap"
-
-    Sentence:
-      type: object
-      required:
-        - words
-        - startOffsets
-        - endOffsets
-        #      - raw
-        #      - tags
-        #      - lemmas
-        #      - entities
-        #      - norms
-        #      - chunks
-        - graphs
-      properties:
-        words:
-          type: array
-          description: |
-            The tokens for this sentence.
-          items:
-            type: string
-        lemmas:
-          type: array
-          description: |
-            The lemma form of each token in this sentence.
-          items:
-            type: string
-        tags:
-          type: array
-          description: |
-            The part of speech tag for each token in this sentence.
-          items:
-            type: string
-        chunks:
-          type: array
-          description: |
-            The BIO-style chunk label designating a coarse XP assignment for each token in this sentence.
-          items:
-            type: string
-        entities:
-          type: array
-          description: |
-            The BIO-style entity label for each token in this sentence.
-          items:
-            type: string
-        startOffsets:
-          type: array
-          description: |
-            The character-based start offset for each token in this sentence.
-          items:
-            type: integer
-            format: int32
-        endOffsets:
-          type: array
-          description: |
-            The character-based end offset for each token in this sentence.
-          items:
-            type: integer
-            format: int32
-        graphs:
-          $ref: "#/components/schemas/GraphMap"
-
-    GraphMap:
+    TokensField:
       type: object
       description: |
-        Map of graph name -> DirectedGraph.
-      additionalProperties:
-        type: string
-        description: |
-          The name of a DirectedGraph.
-    DirectedGraph:
-      type: object
+        A type of token attribute.
       properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.TokensField
+        name:
+          type: string
+          description: |
+            The type of token attribute.
+          example: lemma
+        tokens:
+          type: array
+          description: |
+            The attribute of type `name` associated with each token.
+          items:
+            oneOf:
+              - type: string
+              - type: integer
+
+    GraphField:
+      type: object
+      description: |
+        A type of directed graph.
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.GraphField
+        name:
+          type: string
+          description: |
+            The type of graph.
+          example: dependencies
         edges:
           type: array
           description: |
-            A edges comprising this graph.
+            Edges comprising this graph.
           items:
             $ref: '#/components/schemas/Edge'
         roots:
           type: array
           description: |
-            The token indices corresponding to the root nodes for this DirectedGraph.
+            The token indices corresponding to the root nodes for this directed graph.
           items:
             type: integer
             format: int32
 
     Edge:
-      type: object
-      required:
-        - source
-        - destination
-        - relation
-      properties:
-        source:
-          type: integer
-          format: int32
-          description: |
-            The token index for the source vertex.
-        destination:
-          type: integer
-          format: int32
-          description: |
-            The token index for the destination vertex.
-        relation:
-          type: string
-          description: |
-            The relation to which this Edge corresponds.
+      type: array
+      items: 
+        oneOf:
+          - type: string
+          - type: integer
+      minItems: 3
+      maxItems: 3
+      description: |
+        [token index for the source vertex, token index for the destination vertex, The relation to which this Edge corresponds]
 
     BuildInfo:
       type: object

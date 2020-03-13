@@ -58,4 +58,30 @@ object AnnotateText extends App with LazyLogging {
     }
   }
 
+    // Produce one doc per section of paper
+  // def annotateNxmlFile(f: File): Seq[Document] = {
+  //   //doc.id = Some(f.getBaseName())
+  // }
+
+
+  // // NOTE parses the documents in parallel
+  // for (f <- textDir.listFilesByWildcard("*.nxml", caseSensitive = false, recursive = true).toSeq.par) {
+  //   val docFile = new File(docsDir, f.getBaseName() + ".json")
+
+  //   if (docFile.exists) {
+  //     logger.warn(s"${docFile.getCanonicalPath} already exists")
+  //   } else {
+  //     Try {
+  //       val docs = annotateTextFile(f)
+  //       val docFile = new File(docsDir, f.getBaseName() + ".json")
+  //       docFile.writeString(doc.toJson)
+  //     } match {
+  //       case Success(_) =>
+  //         logger.info(s"Annotated ${f.getCanonicalPath}")
+  //       case Failure(e) =>
+  //         logger.error(s"Failed to process ${f.getName}", e)
+  //     }
+  //   }
+  // }
+
 }
