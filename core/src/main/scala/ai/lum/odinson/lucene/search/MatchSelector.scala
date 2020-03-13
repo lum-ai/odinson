@@ -2,6 +2,7 @@ package ai.lum.odinson.lucene.search
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
+import ai.lum.common.itertools.product
 import ai.lum.odinson._
 
 object MatchSelector {
@@ -10,9 +11,13 @@ object MatchSelector {
   // e.g., greedy vs lazy, prefer leftmost clause of ORs
   // NOTE There could be more than one matches at the first starting point due to event unpacking
   def pickMatches(matches: Seq[OdinsonMatch]): List[OdinsonMatch] = {
-    matches.foldRight(List.empty[OdinsonMatch]) {
+    val selectedMatches = matches.foldRight(List.empty[OdinsonMatch]) {
       case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ::: ms
       case (m, ms) => m :: ms
+    }
+    selectedMatches.flatMap {
+      case m: EventSketch => packageEvents(m)
+      case m => List(m)
     }
   }
 
@@ -79,15 +84,26 @@ object MatchSelector {
 
       }
     }
-    traverse(List(lhs), List(rhs))
+
+    if (lhs.start == rhs.start) {
+      // if both mentions start at the same place then use our selection algorithm
+      traverse(List(lhs), List(rhs))
+    } else if (lhs.tokenInterval intersects rhs.tokenInterval) {
+      // if they don't start at the same place but they intersect then choose the leftmost
+      List(lhs)
+    } else {
+      // can't decide, return both
+      List(lhs, rhs)
+    }
   }
 
   private def expandFirstMatch(ms: List[OdinsonMatch]): List[OdinsonMatch] = {
     ms match {
       case Nil => Nil
       case head :: tail => head match {
-        case m: NGramMatch => tail
-        case m: EventMatch => tail
+        case m: NGramMatch  => tail
+        case m: EventMatch  => ???
+        case m: EventSketch => m.trigger :: tail
         case m: OrMatch       => m.subMatch :: tail
         case m: NamedMatch    => m.subMatch :: tail
         case m: OptionalMatch => m.subMatch :: tail
@@ -96,6 +112,75 @@ object MatchSelector {
         case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
       }
     }
+  }
+
+  /** get an event sketch and return a sequence of EventMatch objects */
+  private def packageEvents(sketch: EventSketch): List[EventMatch] = {
+    val trigger = sketch.trigger
+    val argumentPackages = packageArguments(sketch.argSketches)
+    argumentPackages.map(args => new EventMatch(trigger, args, sketch.argumentMetadata))
+  }
+
+  private def packageArguments(
+    args: Array[(ArgumentSpans, OdinsonMatch)]
+  ): List[Array[NamedCapture]] = {
+    val packaged = args.groupBy(_._1).map { case (arg, values) =>
+      // values is a sequence of (arg, match) tuples, so discard the arg
+      val matches = values.map(_._2)
+      packageArgument(arg, matches)
+    }
+    // return cartesian product of arguments
+    product(packaged.toSeq).map(_.flatten.toArray).toList
+  }
+
+  private def packageArgument(
+    arg: ArgumentSpans,
+    allMatches: Seq[OdinsonMatch],
+  ): Seq[Seq[NamedCapture]] = {
+    val matches = for {
+      g <- groupMatches(allMatches)
+      m <- pickMatches(g)
+    } yield m
+    val packages = arg match {
+      case ArgumentSpans(name, min, Some(max), _) if min == max =>
+        // exact range (note that a range 1-1 means no quantifier)
+        matches.combinations(min).toList
+      case ArgumentSpans(name, min, Some(max), _) =>
+        // range with min and max (note that min could be 0)
+        if (matches.size < min) Nil
+        else if (matches.size > max) matches.combinations(max).toList
+        else Seq(matches)
+      case ArgumentSpans(name, min, None, _) =>
+        // at least min
+        if (matches.size < min) Nil
+        else Seq(matches)
+    }
+    for (pkg <- packages) yield {
+      pkg.map(m => NamedCapture(arg.name, m))
+    }
+  }
+
+  private def groupMatches(matches: Seq[OdinsonMatch]): Seq[Seq[OdinsonMatch]] = {
+    val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
+    for (m <- matches) {
+      var found = false
+      var i = 0
+      while (!found && i < buckets.size) {
+        val b = buckets(i)
+        i += 1
+        // check if m belongs to the current bucket
+        // (buckets should never be empty)
+        if (m.tokenInterval intersects b.head.tokenInterval) {
+          b += m
+          found = true
+        }
+      }
+      if (!found) {
+        // add new bucket
+        buckets += ArrayBuffer(m)
+      }
+    }
+    buckets
   }
 
 }

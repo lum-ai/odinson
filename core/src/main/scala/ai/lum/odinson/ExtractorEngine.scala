@@ -33,6 +33,8 @@ class ExtractorEngine(
 
   val indexReader = indexSearcher.getIndexReader()
 
+  val ruleReader = new RuleReader(compiler)
+
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
   }
@@ -53,6 +55,41 @@ class ExtractorEngine(
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
+  }
+
+  /** Apply the extractors and return all results */
+  def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
+    extractMentions(extractors, false)
+  }
+
+  /** Apply the extractors and return all results */
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean): Seq[Mention] = {
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps)
+  }
+
+  /** Apply the extractors and return results for at most `numSentences` */
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean): Seq[Mention] = {
+    // extract mentions
+    val mentions = for {
+      e <- extractors
+      results = query(e.query, numSentences)
+      scoreDoc <- results.scoreDocs
+      docFields = doc(scoreDoc.doc)
+      docId = docFields.getField("docId").stringValue
+      sentId = docFields.getField("sentId").stringValue
+      odinsonMatch <- scoreDoc.matches
+    } yield Mention(odinsonMatch, scoreDoc.doc, docId, sentId, e.name)
+    // if needed, filter results to discard trigger overlaps
+    if (allowTriggerOverlaps) {
+      mentions
+    } else {
+      mentions.flatMap { m =>
+        m.odinsonMatch match {
+          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+          case _ => Some(m)
+        }
+      }
+    }
   }
 
   /** executes query and returns all results */
@@ -144,6 +181,10 @@ class ExtractorEngine(
 
   def getString(docID: Int, m: OdinsonMatch): String = {
     getTokens(docID, m).mkString(" ")
+  }
+
+  def getTokens(m: Mention): Array[String] = {
+    getTokens(m.luceneDocId, m.odinsonMatch)
   }
 
   def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {

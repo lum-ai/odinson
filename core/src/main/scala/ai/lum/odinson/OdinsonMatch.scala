@@ -1,7 +1,7 @@
 package ai.lum.odinson
 
-import scala.util.hashing.MurmurHash3._
 import ai.lum.common.Interval
+import ai.lum.odinson.lucene.search.ArgumentSpans
 
 case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
 
@@ -35,33 +35,51 @@ object OdinsonMatch {
   val emptyNamedCaptures = new Array[NamedCapture](0)
 }
 
+/** helper class to store the metadata related to an EventMention's argument,
+ *  like it's name and some information about its quantifiers.
+ */
+case class ArgumentMetadata(name: String, min: Int, max: Option[Int])
+
 class EventMatch(
   val trigger: OdinsonMatch,
   val namedCaptures: Array[NamedCapture],
+  val argumentMetadata: Array[ArgumentMetadata],
 ) extends OdinsonMatch {
 
-  val start: Int = {
-    var minStart = trigger.start
-    var i = 0
-    while (i < namedCaptures.length) {
-      val cStart = namedCaptures(i).capturedMatch.start
-      if (cStart < minStart) minStart = cStart
-      i += 1
+  val start: Int = trigger.start
+  val end: Int = trigger.end
+
+  /** Removes all arguments that overlap with the trigger and returns Some(EventMention)
+   *  if the surviving arguments still satisfy the event specification (e.g. all required arguments survive),
+   *  or None if the surviving arguments are not sufficient to construct a valid EventMention.
+   */
+  def removeTriggerOverlaps: Option[EventMatch] = {
+    val captures = namedCaptures.filterNot(_.capturedMatch.tokenInterval intersects trigger.tokenInterval)
+    val groupedCaptures = captures.groupBy(_.name)
+    for (meta <- argumentMetadata) {
+      val numMatches = groupedCaptures.get(meta.name).map(_.length).getOrElse(0)
+      if (numMatches < meta.min) {
+        return None
+      }
     }
-    minStart
+    Some(new EventMatch(trigger, captures, argumentMetadata))
   }
 
-  val end: Int = {
-    var maxEnd = trigger.end
-    var i = 0
-    while (i < namedCaptures.length) {
-      val cEnd = namedCaptures(i).capturedMatch.end
-      if (cEnd > maxEnd) maxEnd = cEnd
-      i += 1
-    }
-    maxEnd
-  }
+}
 
+/** This class represents a partial event match
+ *  that has to be packaged into actual event mentions.
+ *  This class is for internal purposes only and should
+ *  never be seen by an end user.
+ */
+class EventSketch(
+  val trigger: OdinsonMatch,
+  val argSketches: Array[(ArgumentSpans, OdinsonMatch)],
+) extends OdinsonMatch {
+  val start: Int = trigger.start
+  val end: Int = trigger.end
+  val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
+  val argumentMetadata: Array[ArgumentMetadata] = argSketches.map(a => ArgumentMetadata(a._1.name, a._1.min, a._1.max))
 }
 
 class NGramMatch(

@@ -13,7 +13,6 @@ import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.serialization.UnsafeSerializer
-import ai.lum.common.itertools.product
 
 case class ArgumentQuery(
   name: String,
@@ -86,7 +85,10 @@ case class ArgumentSpans(
 ) {
 
   def subSpans: List[OdinsonSpans] = {
-    fullTraversal.map(_._2)
+    val ss = fullTraversal.map(_._2)
+    // if any subspan is null then the whole argument should fail
+    if (ss.exists(s => s == null)) null
+    else ss
   }
 
 }
@@ -354,51 +356,7 @@ class OdinsonEventSpans(
     true
   }
 
-  private def packageArgument(
-    arg: ArgumentSpans,
-    matches: Seq[OdinsonMatch]
-  ): Seq[Seq[NamedCapture]] = {
-    val packages = arg match {
-      case ArgumentSpans(name, min, Some(max), _) if min == max =>
-        // exact range (note that a range 1-1 means no quantifier)
-        matches.combinations(min).toList
-      case ArgumentSpans(name, min, Some(max), _) =>
-        // range with min and max (note that min could be 0)
-        if (matches.size < min) Nil
-        else if (matches.size > max) matches.combinations(max).toList
-        else Seq(matches)
-      case ArgumentSpans(name, min, None, _) =>
-        // at least min
-        if (matches.size < min) Nil
-        else Seq(matches)
-    }
-    for (pkg <- packages) yield {
-      pkg.map(m => NamedCapture(arg.name, m))
-    }
-  }
-
-  private def packageArguments(
-    args: Array[(ArgumentSpans, OdinsonMatch)]
-  ): Array[Array[NamedCapture]] = {
-    val packaged = args.groupBy(_._1).map { case (arg, values) =>
-      // values is a sequence of (arg, match) tuples, so discard the arg
-      val matches = values.map(_._2)
-      packageArgument(arg, matches)
-    }
-    // return cartesian product of arguments
-    product(packaged.toSeq).map(_.flatten.toArray).toArray
-  }
-
-  // get an event sketch and return a sequence of EventMatch objects
-  private def packageEvents(
-    sketch: (OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)])
-  ): Array[EventMatch] = {
-    val trigger = sketch._1
-    val argumentPackages = packageArguments(sketch._2)
-    argumentPackages.map(args => new EventMatch(trigger, args))
-  }
-
-  private def matchEvents(): Array[EventMatch] = {
+  private def matchEvents(): Array[EventSketch] = {
     // at this point, all required arguments seem to match
     // but we need to confirm using the dependency graph
     val graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
@@ -449,7 +407,9 @@ class OdinsonEventSpans(
       }
     }
     // then put together the resulting event mentions
-    eventSketches.flatMap(packageEvents).toArray
+    eventSketches
+      .map { case (t, args) => new EventSketch(t, args) }
+      .toArray
   }
 
 }
