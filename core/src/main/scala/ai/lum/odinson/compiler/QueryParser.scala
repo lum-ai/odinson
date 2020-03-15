@@ -2,6 +2,7 @@ package ai.lum.odinson.compiler
 
 import fastparse._
 import ScriptWhitespace._
+import ai.lum.odinson.Mention
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields
@@ -103,7 +104,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, "**UNDEFINED**", pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, Mention.DefaultLabel, pattern.toList, min, max, promote = true)
     }
   }
 

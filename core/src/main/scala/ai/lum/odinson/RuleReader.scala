@@ -10,13 +10,14 @@ import ai.lum.odinson.utils.VariableSubstitutor
 
 case class Rule(
   name: String,
+  label: String,
   ruletype: String,
   pattern: String,
 )
 
 case class Extractor(
   name: String,
-  // label
+  label: String,
   // priority
   query: OdinsonQuery,
 )
@@ -24,15 +25,6 @@ case class Extractor(
 case class RuleFile(
   rules: Seq[Rule],
   variables: Map[String, String],
-)
-
-case class Mention(
-  odinsonMatch: OdinsonMatch,
-  // label
-  luceneDocId: Int,
-  docId: String,
-  sentenceId: String,
-  foundBy: String,
 )
 
 class RuleReader(val compiler: QueryCompiler) {
@@ -88,12 +80,11 @@ class RuleReader(val compiler: QueryCompiler) {
     // any field in the rule may contain variables,
     // so we need to pass them through the variable substitutor
     val query = varsub(rule.ruletype) match {
-      // TODO choose names
       case "basic" => compiler.compile(varsub(rule.pattern))
       case "event" => compiler.compileEventQuery(varsub(rule.pattern))
       case t => sys.error(s"invalid rule type '$t'")
     }
-    Extractor(rule.name, query)
+    Extractor(varsub(rule.name), varsub(rule.label), query)
   }
 
   private def mkVariables(data: Map[String, Any]): Map[String, String] = {
@@ -124,11 +115,13 @@ class RuleReader(val compiler: QueryCompiler) {
     data match {
       case data: JMap[_, _] =>
         val fields = data.asInstanceOf[JMap[String, Any]].asScala.toMap
-        def getField(name: String) = fields.get(name).getOrElse(sys.error(s"'$name' is required")).toString()
-        val name = getField("name")
-        val ruletype = getField("type")
-        val pattern = getField("pattern")
-        Rule(name, ruletype, pattern)
+        def getField(name: String, default: => Any) = fields.get(name).getOrElse(default).toString()
+        def getRequiredField(name: String) = getField(name, sys.error(s"'$name' is required"))
+        val name = getRequiredField("name")
+        val label = getField("label", Mention.DefaultLabel)
+        val ruletype = getRequiredField("type")
+        val pattern = getRequiredField("pattern")
+        Rule(name, label, ruletype, pattern)
       case _ => sys.error("invalid rule data")
     }
   }
