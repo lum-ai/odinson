@@ -79,12 +79,14 @@ class RuleReader(val compiler: QueryCompiler) {
   private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
     // any field in the rule may contain variables,
     // so we need to pass them through the variable substitutor
+    val name = varsub(rule.name)
+    val label = varsub(rule.label)
     val query = varsub(rule.ruletype) match {
       case "basic" => compiler.compile(varsub(rule.pattern))
       case "event" => compiler.compileEventQuery(varsub(rule.pattern))
       case t => sys.error(s"invalid rule type '$t'")
     }
-    Extractor(varsub(rule.name), varsub(rule.label), query)
+    Extractor(name, label, query)
   }
 
   private def mkVariables(data: Map[String, Any]): Map[String, String] = {
