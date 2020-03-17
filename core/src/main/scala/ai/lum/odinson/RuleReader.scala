@@ -81,11 +81,15 @@ class RuleReader(val compiler: QueryCompiler) {
     // so we need to pass them through the variable substitutor
     val name = varsub(rule.name)
     val label = varsub(rule.label)
-    val query = varsub(rule.ruletype) match {
-      case "basic" => compiler.compile(varsub(rule.pattern))
-      case "event" => compiler.compileEventQuery(varsub(rule.pattern))
+    val ruletype = varsub(rule.ruletype)
+    val pattern = varsub(rule.pattern)
+    // compile query
+    val query = ruletype match {
+      case "basic" => compiler.compile(pattern)
+      case "event" => compiler.compileEventQuery(pattern)
       case t => sys.error(s"invalid rule type '$t'")
     }
+    // return an extractor
     Extractor(name, label, query)
   }
 
