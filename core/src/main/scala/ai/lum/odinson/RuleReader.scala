@@ -137,14 +137,14 @@ class RuleReader(val compiler: QueryCompiler) {
       case data: JMap[_, _] =>
         val fields = data.asInstanceOf[JMap[String, Any]].asScala.toMap
         // helper function to retrieve an optional field
-        def getField(name: String, default: => Any) =
-          fields.get(name).map(_.toString())
+        def getField(name: String) =
+          fields.get(name).map(_.toString)
         // helper function to retrieve a required field
         def getRequiredField(name: String) =
-          fields.get(name).getOrElse(sys.error(s"'$name' is required")).toString()
+          getField(name).getOrElse(sys.error(s"'$name' is required"))
         // read fields
         val name = getRequiredField("name")
-        val label = getField("label", Mention.DefaultLabel)
+        val label = getField("label")
         val ruletype = getRequiredField("type")
         val pattern = getRequiredField("pattern")
         // return rule

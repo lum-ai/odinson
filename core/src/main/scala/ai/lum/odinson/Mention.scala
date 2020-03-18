@@ -40,7 +40,3 @@ case class Mention(
   }
 
 }
-
-object Mention {
-  val DefaultLabel = "**UNDEFINED**"
-}
