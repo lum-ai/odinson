@@ -19,10 +19,24 @@ case class Mention(
     * that can have several arguments with the same name.
     * For example, in the biodomain, Binding may have several themes.
     */
-  def arguments: Map[String, Array[OdinsonMatch]] = {
-    odinsonMatch.namedCaptures
+  def arguments: Map[String, Array[Mention]] = {
+    odinsonMatch
+      .namedCaptures
       .groupBy(_.name)
-      .transform((k,v) => v.map(_.capturedMatch))
+      .transform { (k,v) =>
+        v.map { c =>
+          Mention(
+            c.capturedMatch,
+            c.label,
+            luceneDocId,
+            luceneSegmentDocId,
+            luceneSegmentDocBase,
+            docId,
+            sentenceId,
+            // we mark the captures as matched by the same rule as the whole match
+            foundBy)
+        }
+      }
   }
 
 }

@@ -16,6 +16,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 
 case class ArgumentQuery(
   name: String,
+  label: String,
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonQuery)]
@@ -25,7 +26,7 @@ case class ArgumentQuery(
     val traversal = fullTraversal
       .map(h => s"(${h._1}, ${h._2.toString(field)})")
       .mkString("(", ", ", ")")
-    s"ArgumentQuery($name, $min, $max, $traversal)"
+    s"ArgumentQuery($name, $label, $min, $max, $traversal)"
   }
 
   def createWeight(
@@ -36,7 +37,7 @@ case class ArgumentQuery(
       val w = q.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
       (g, w)
     }
-    ArgumentWeight(name, min, max, allWeights)
+    ArgumentWeight(name, label, min, max, allWeights)
   }
 
   def rewrite(reader: IndexReader): ArgumentQuery = {
@@ -45,7 +46,7 @@ case class ArgumentQuery(
       (g, r)
     }
     if (rewrittenTraversal != fullTraversal) {
-      ArgumentQuery(name, min, max, rewrittenTraversal)
+      ArgumentQuery(name, label, min, max, rewrittenTraversal)
     } else {
       this
     }
@@ -55,6 +56,7 @@ case class ArgumentQuery(
 
 case class ArgumentWeight(
   name: String,
+  label: String,
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonWeight)]
@@ -68,7 +70,7 @@ case class ArgumentWeight(
       val s = w.getSpans(context, requiredPostings)
       (g, s)
     }
-    ArgumentSpans(name, min, max, allSpans)
+    ArgumentSpans(name, label, min, max, allSpans)
   }
 
   def subWeights: List[OdinsonWeight] = {
@@ -79,6 +81,7 @@ case class ArgumentWeight(
 
 case class ArgumentSpans(
   name: String,
+  label: String,
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonSpans)]

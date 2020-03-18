@@ -193,8 +193,8 @@ class QueryCompiler(
 
     // named captures
 
-    case Ast.NamedCapturePattern(name, pattern) =>
-      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name))
+    case Ast.NamedCapturePattern(name, label, pattern) =>
+      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name, label))
 
     // mentions
 
@@ -343,7 +343,7 @@ class QueryCompiler(
     }
     // make argument query
     val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
-    Some(ArgumentQuery(arg.name, arg.min, arg.max, fullTraversal))
+    Some(ArgumentQuery(arg.name, arg.label, arg.min, arg.max, fullTraversal))
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {

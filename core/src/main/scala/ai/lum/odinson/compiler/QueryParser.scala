@@ -156,8 +156,10 @@ class QueryParser(
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
-    P("(?<" ~ Literals.identifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
-      case (name, pattern) => Ast.NamedCapturePattern(name, pattern)
+    P("(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")").map {
+      case (name, maybeLabel, pattern) =>
+        val label = maybeLabel.getOrElse(Mention.DefaultLabel)
+        Ast.NamedCapturePattern(name, label, pattern)
     }
   }
 
