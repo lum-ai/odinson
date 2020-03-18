@@ -65,16 +65,21 @@ class RuleReader(val compiler: QueryCompiler) {
     RuleFile(rules, variables)
   }
 
+  /** gets a RuleFile and returns a sequence of extractors */
   def mkExtractors(f: RuleFile): Seq[Extractor] = {
     mkExtractors(f.rules, f.variables)
   }
 
+  /** Gets a RuleFile and a variable map and returns a sequence of extractors.
+   *  Variables in RuleFile are overridden by the ones provided as argument to this function.
+   */
   def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
     // The order in which the variable maps are concatenated is important.
     // The variables provided should override the variables in the RuleFile.
     mkExtractors(f.rules, f.variables ++ variables)
   }
 
+  /** gets a sequence of rules and returns a sequence of extractors */
   def mkExtractors(rules: Seq[Rule]): Seq[Extractor] = {
     mkExtractors(rules, Map.empty[String, String])
   }
