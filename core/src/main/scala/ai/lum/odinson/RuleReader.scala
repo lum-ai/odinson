@@ -8,6 +8,19 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.utils.VariableSubstitutor
 
+/** A RuleFile is the result of parsing a yaml file.
+ *  At this point variables haven't been replaced
+ *  and patterns haven't been compiled
+ */
+case class RuleFile(
+  rules: Seq[Rule],
+  variables: Map[String, String],
+)
+
+/** A Rule represents a single rule parsed from a yaml file.
+ *  Its variables haven't been replaced and its pattern.
+ *  hasn't been compiled.
+ */
 case class Rule(
   name: String,
   label: String,
@@ -15,16 +28,14 @@ case class Rule(
   pattern: String,
 )
 
+/** An Extractor is a compiled Rule.
+ *  It is ready to be executed by the ExtractionEngine.
+ */
 case class Extractor(
   name: String,
   label: String,
   // priority
   query: OdinsonQuery,
-)
-
-case class RuleFile(
-  rules: Seq[Rule],
-  variables: Map[String, String],
 )
 
 class RuleReader(val compiler: QueryCompiler) {
