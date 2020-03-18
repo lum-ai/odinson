@@ -4,7 +4,7 @@ import ai.lum.common.Interval
 
 case class Mention(
   odinsonMatch: OdinsonMatch,
-  label: String,
+  label: Option[String],
   luceneDocId: Int,
   luceneSegmentDocId: Int,
   luceneSegmentDocBase: Int,

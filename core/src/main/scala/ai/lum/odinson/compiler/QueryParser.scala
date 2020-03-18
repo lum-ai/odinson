@@ -2,7 +2,6 @@ package ai.lum.odinson.compiler
 
 import fastparse._
 import ScriptWhitespace._
-import ai.lum.odinson.Mention
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields
@@ -50,7 +49,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
+        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = false)
     }
   }
 
@@ -82,7 +81,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = true)
     }
   }
 
@@ -104,7 +103,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, Mention.DefaultLabel, pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, None, pattern.toList, min, max, promote = true)
     }
   }
 
@@ -158,8 +157,7 @@ class QueryParser(
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
     P("(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")").map {
       case (name, maybeLabel, pattern) =>
-        val label = maybeLabel.getOrElse(Mention.DefaultLabel)
-        Ast.NamedCapturePattern(name, label, pattern)
+        Ast.NamedCapturePattern(name, maybeLabel, pattern)
     }
   }
 

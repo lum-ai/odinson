@@ -27,7 +27,7 @@ object Ast {
   case class ConstraintPattern(constraint: Constraint) extends Pattern
   case class DisjunctivePattern(patterns: List[Pattern]) extends Pattern
   case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
-  case class NamedCapturePattern(name: String, label: String, pattern: Pattern) extends Pattern
+  case class NamedCapturePattern(name: String, label: Option[String], pattern: Pattern) extends Pattern
   case class MentionPattern(argName: Option[String], label: String) extends Pattern
   case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
   case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
@@ -38,7 +38,7 @@ object Ast {
   case class EventPattern(trigger: Pattern, arguments: List[ArgumentPattern]) extends Pattern
   case class ArgumentPattern(
     name: String,
-    label: String,
+    label: Option[String],
     fullTraversal: List[(Traversal, Pattern)],
     min: Int,
     max: Option[Int],

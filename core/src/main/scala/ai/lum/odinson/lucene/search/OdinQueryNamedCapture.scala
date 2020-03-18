@@ -11,7 +11,7 @@ import ai.lum.odinson.lucene.search.spans._
 class OdinQueryNamedCapture(
     val query: OdinsonQuery,
     val captureName: String,
-    val captureLabel: String
+    val captureLabel: Option[String],
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (query, captureName).##
@@ -43,7 +43,7 @@ class OdinWeightNamedCapture(
     termContexts: JMap[Term, TermContext],
     val weight: OdinsonWeight,
     val captureName: String,
-    val captureLabel: String,
+    val captureLabel: Option[String],
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
@@ -62,7 +62,7 @@ class OdinWeightNamedCapture(
 class OdinSpansNamedCapture(
     val spans: OdinsonSpans,
     val captureName: String,
-    val captureLabel: String,
+    val captureLabel: Option[String],
 ) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)

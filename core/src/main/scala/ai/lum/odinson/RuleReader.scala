@@ -23,7 +23,7 @@ case class RuleFile(
  */
 case class Rule(
   name: String,
-  label: String,
+  label: Option[String],
   ruletype: String,
   pattern: String,
 )
@@ -33,7 +33,7 @@ case class Rule(
  */
 case class Extractor(
   name: String,
-  label: String,
+  label: Option[String],
   // priority
   query: OdinsonQuery,
 )
@@ -96,7 +96,7 @@ class RuleReader(val compiler: QueryCompiler) {
     // any field in the rule may contain variables,
     // so we need to pass them through the variable substitutor
     val name = varsub(rule.name)
-    val label = varsub(rule.label)
+    val label = rule.label.map(varsub.apply)
     val ruletype = varsub(rule.ruletype)
     val pattern = varsub(rule.pattern)
     // compile query
@@ -136,12 +136,12 @@ class RuleReader(val compiler: QueryCompiler) {
     data match {
       case data: JMap[_, _] =>
         val fields = data.asInstanceOf[JMap[String, Any]].asScala.toMap
-        // helper function to retrieve a field
+        // helper function to retrieve an optional field
         def getField(name: String, default: => Any) =
-          fields.get(name).getOrElse(default).toString()
+          fields.get(name).map(_.toString())
         // helper function to retrieve a required field
         def getRequiredField(name: String) =
-          getField(name, sys.error(s"'$name' is required"))
+          fields.get(name).getOrElse(sys.error(s"'$name' is required")).toString()
         // read fields
         val name = getRequiredField("name")
         val label = getField("label", Mention.DefaultLabel)

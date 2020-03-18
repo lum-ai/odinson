@@ -3,7 +3,7 @@ package ai.lum.odinson
 import ai.lum.common.Interval
 import ai.lum.odinson.lucene.search.ArgumentSpans
 
-case class NamedCapture(name: String, label: String, capturedMatch: OdinsonMatch)
+case class NamedCapture(name: String, label: Option[String], capturedMatch: OdinsonMatch)
 
 sealed trait OdinsonMatch {
 
@@ -146,7 +146,7 @@ class OrMatch(
 class NamedMatch(
   val subMatch: OdinsonMatch,
   val name: String,
-  val label: String,
+  val label: Option[String],
 ) extends OdinsonMatch {
 
   val start: Int = subMatch.start

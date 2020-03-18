@@ -16,7 +16,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 
 case class ArgumentQuery(
   name: String,
-  label: String,
+  label: Option[String],
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonQuery)]
@@ -56,7 +56,7 @@ case class ArgumentQuery(
 
 case class ArgumentWeight(
   name: String,
-  label: String,
+  label: Option[String],
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonWeight)]
@@ -81,7 +81,7 @@ case class ArgumentWeight(
 
 case class ArgumentSpans(
   name: String,
-  label: String,
+  label: Option[String],
   min: Int,
   max: Option[Int],
   fullTraversal: List[(GraphTraversal, OdinsonSpans)]
