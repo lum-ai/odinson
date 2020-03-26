@@ -59,9 +59,9 @@ object QueryUtils {
       case (min, Some(max)) if min == max => s"{$min}"
       case (min, Some(max)) => s"{$min,$max}"
     }
-    if (reluctant) {
-      // exact repetition can't be reluctant
-      if (max.isDefined && min == max.get) q else s"$q?"
+    // exact repetition can't be reluctant
+    if (reluctant && (max.isEmpty || min != max.get)) {
+      s"$q?"
     } else {
       q
     }
