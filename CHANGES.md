@@ -9,3 +9,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Enforce quantifier semantics in `event` rules.
 ### Added
 - Added option to allow arguments that overlap with the trigger in event mentions (disallowed by default)
+- Added `QueryUtils.quantifier()` to make a quantifier string from some requirements, e.g. min and max repetitions.
