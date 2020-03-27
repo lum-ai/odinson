@@ -48,8 +48,6 @@ object QueryUtils {
   def quantifier(min: Int, max: Option[Int], reluctant: Boolean): String = {
     def error(msg: String) = throw new IllegalArgumentException(msg)
     val q = (min, max) match {
-      case (_, Some(0)) => error("max can't be zero")
-      case (1, Some(1)) => ""  // no quantifier needed
       case (0, Some(1)) => "?"
       case (0, None) => "*"
       case (1, None) => "+"
