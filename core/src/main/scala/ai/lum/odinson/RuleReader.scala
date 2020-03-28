@@ -8,31 +8,34 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.utils.VariableSubstitutor
 
-case class Rule(
-  name: String,
-  ruletype: String,
-  pattern: String,
-)
-
-case class Extractor(
-  name: String,
-  // label
-  // priority
-  query: OdinsonQuery,
-)
-
+/** A RuleFile is the result of parsing a yaml file.
+ *  At this point variables haven't been replaced
+ *  and patterns haven't been compiled
+ */
 case class RuleFile(
   rules: Seq[Rule],
   variables: Map[String, String],
 )
 
-case class Mention(
-  odinsonMatch: OdinsonMatch,
-  // label
-  luceneDocId: Int,
-  docId: String,
-  sentenceId: String,
-  foundBy: String,
+/** A Rule represents a single rule parsed from a yaml file.
+ *  Its variables haven't been replaced and its pattern.
+ *  hasn't been compiled.
+ */
+case class Rule(
+  name: String,
+  label: Option[String],
+  ruletype: String,
+  pattern: String,
+)
+
+/** An Extractor is a compiled Rule.
+ *  It is ready to be executed by the ExtractionEngine.
+ */
+case class Extractor(
+  name: String,
+  label: Option[String],
+  // priority
+  query: OdinsonQuery,
 )
 
 class RuleReader(val compiler: QueryCompiler) {
@@ -62,16 +65,21 @@ class RuleReader(val compiler: QueryCompiler) {
     RuleFile(rules, variables)
   }
 
+  /** gets a RuleFile and returns a sequence of extractors */
   def mkExtractors(f: RuleFile): Seq[Extractor] = {
     mkExtractors(f.rules, f.variables)
   }
 
+  /** Gets a RuleFile and a variable map and returns a sequence of extractors.
+   *  Variables in RuleFile are overridden by the ones provided as argument to this function.
+   */
   def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
     // The order in which the variable maps are concatenated is important.
     // The variables provided should override the variables in the RuleFile.
     mkExtractors(f.rules, f.variables ++ variables)
   }
 
+  /** gets a sequence of rules and returns a sequence of extractors */
   def mkExtractors(rules: Seq[Rule]): Seq[Extractor] = {
     mkExtractors(rules, Map.empty[String, String])
   }
@@ -87,13 +95,18 @@ class RuleReader(val compiler: QueryCompiler) {
   private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
     // any field in the rule may contain variables,
     // so we need to pass them through the variable substitutor
-    val query = varsub(rule.ruletype) match {
-      // TODO choose names
-      case "basic" => compiler.compile(varsub(rule.pattern))
-      case "event" => compiler.compileEventQuery(varsub(rule.pattern))
+    val name = varsub(rule.name)
+    val label = rule.label.map(varsub.apply)
+    val ruletype = varsub(rule.ruletype)
+    val pattern = varsub(rule.pattern)
+    // compile query
+    val query = ruletype match {
+      case "basic" => compiler.compile(pattern)
+      case "event" => compiler.compileEventQuery(pattern)
       case t => sys.error(s"invalid rule type '$t'")
     }
-    Extractor(rule.name, query)
+    // return an extractor
+    Extractor(name, label, query)
   }
 
   private def mkVariables(data: Map[String, Any]): Map[String, String] = {
@@ -114,8 +127,7 @@ class RuleReader(val compiler: QueryCompiler) {
   private def mkRules(data: Map[String, Any]): Seq[Rule] = {
     data.get("rules") match {
       case None => Seq.empty
-      case Some(rules: Collection[_]) =>
-        rules.asScala.map(mkRule).toSeq
+      case Some(rules: Collection[_]) => rules.asScala.map(mkRule).toSeq
       case _ => sys.error("invalid rules data")
     }
   }
@@ -124,11 +136,19 @@ class RuleReader(val compiler: QueryCompiler) {
     data match {
       case data: JMap[_, _] =>
         val fields = data.asInstanceOf[JMap[String, Any]].asScala.toMap
-        def getField(name: String) = fields.get(name).getOrElse(sys.error(s"'$name' is required")).toString()
-        val name = getField("name")
-        val ruletype = getField("type")
-        val pattern = getField("pattern")
-        Rule(name, ruletype, pattern)
+        // helper function to retrieve an optional field
+        def getField(name: String) =
+          fields.get(name).map(_.toString)
+        // helper function to retrieve a required field
+        def getRequiredField(name: String) =
+          getField(name).getOrElse(sys.error(s"'$name' is required"))
+        // read fields
+        val name = getRequiredField("name")
+        val label = getField("label")
+        val ruletype = getRequiredField("type")
+        val pattern = getRequiredField("pattern")
+        // return rule
+        Rule(name, label, ruletype, pattern)
       case _ => sys.error("invalid rule data")
     }
   }
