@@ -48,21 +48,18 @@ object QueryUtils {
   def quantifier(min: Int, max: Option[Int], reluctant: Boolean): String = {
     def error(msg: String) = throw new IllegalArgumentException(msg)
     val q = (min, max) match {
+      case (min, _) if min < 0 => error(s"min=$min can't be negative")
       case (0, Some(1)) => "?"
       case (0, None) => "*"
       case (1, None) => "+"
+      case (min, Some(max)) if min == max => s"{$min}"
       case (min, None) => s"{$min,}"
       case (0, Some(max)) => s"{,$max}"
       case (min, Some(max)) if min > max => error(s"min=$min > max=$max")
-      case (min, Some(max)) if min == max => s"{$min}"
       case (min, Some(max)) => s"{$min,$max}"
     }
     // exact repetition can't be reluctant
-    if (reluctant && (max.isEmpty || min != max.get)) {
-      s"$q?"
-    } else {
-      q
-    }
+    if (reluctant && (max.isEmpty || min != max.get)) s"$q?" else q
   }
 
 }
