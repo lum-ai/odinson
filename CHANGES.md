@@ -13,3 +13,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added optional label to rules and mentions
 - Added lucene segment information to `Mention`
 - Added optional `label` support to named capture syntax, i.e. `(?<name:label> ... )`
+- Added `QueryUtils.quantifier()` to make a quantifier string from some requirements, e.g. min and max repetitions.
