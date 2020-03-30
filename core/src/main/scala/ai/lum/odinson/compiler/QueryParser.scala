@@ -49,7 +49,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = false)
+        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = false)
     }
   }
 
@@ -81,7 +81,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, label, pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = true)
     }
   }
 
@@ -103,7 +103,7 @@ class QueryParser(
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, "**UNDEFINED**", pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, None, pattern.toList, min, max, promote = true)
     }
   }
 
@@ -155,8 +155,9 @@ class QueryParser(
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
-    P("(?<" ~ Literals.identifier.! ~ ">" ~ disjunctivePattern ~ ")").map {
-      case (name, pattern) => Ast.NamedCapturePattern(name, pattern)
+    P("(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")").map {
+      case (name, maybeLabel, pattern) =>
+        Ast.NamedCapturePattern(name, maybeLabel, pattern)
     }
   }
 

@@ -21,7 +21,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -42,7 +42,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -63,7 +63,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -85,7 +85,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("wild animals such", "wild animals such", "wild animals such", "wild cloven-footed animals such", "wild cloven-footed animals such")
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -109,7 +109,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("Some wild", "any wild")
     val expectedResults = List("animals", "animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -133,7 +133,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals")
     val expectedResults = List("elephants")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -157,7 +157,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors, allowTriggerOverlaps = true)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
                                 "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
                                 "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
@@ -186,7 +186,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("Some wild animals", "Some wild animals", "Some wild animals")
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -208,7 +208,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -229,7 +229,7 @@ class TestEventTriggers extends FlatSpec with Matchers {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.arguments("result").head))
+    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
   }

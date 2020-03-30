@@ -78,7 +78,7 @@ class ExtractorEngine(
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, scoreDoc.doc, docId, sentId, e.name)
+    } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
     // if needed, filter results to discard trigger overlaps
     if (allowTriggerOverlaps) {
       mentions

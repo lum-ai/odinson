@@ -196,10 +196,8 @@ object TestEvents extends FlatSpec with Matchers {
 
   def testEventArguments(m: OdinsonMatch, desiredArgs: Seq[Argument]): Unit = {
 
-    val matchArgs = for {
-      (name, args) <- m.arguments
-      arg <- args
-    } yield Argument(name, arg.start, arg.end)
+    val matchArgs = for (nc <- m.namedCaptures)
+      yield Argument(nc.name, nc.capturedMatch.start, nc.capturedMatch.end)
 
     // All desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)
