@@ -174,6 +174,21 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     }
   }
 
+  case class GrammarRequest(
+    rules: String,
+    parentQuery: Option[String] = None,
+    pageSize: Option[Int] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
+    pretty: Option[Boolean] = None
+  )
+
+  object GrammarRequest {
+    implicit val fmt = Json.format[GrammarRequest]
+    implicit val read = Json.reads[GrammarRequest]
+  }
+
+  // import play.api.libs.json.Json
+
   /**
   * Executes the provided Odinson grammar.
   * 
@@ -183,44 +198,46 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger. 
   * @return JSON of matches
   */
-  def executeGrammar(
-    rules: String,
-    parentQuery: Option[String], // FIXME: parent query should become a part of the grammar or each rule
-    pageSize: Option[Int], // FIXME: we currently cannot paginate results for grammars
-    allowTriggerOverlaps: Boolean,
-    pretty: Option[Boolean]
-  ) = Action.async {
-    Future {
-      try {
-        // rules -> OdinsonQuery
-        val baseExtractors = extractorEngine.ruleReader.compileRuleFile(rules)
-        val composedExtractors = parentQuery match {
-          case Some(pq) => 
-            val cpq = extractorEngine.compiler.mkParentQuery(pq)
-            baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
-          case None => baseExtractors
-        }
-        val start = System.currentTimeMillis()
-
-        val maxSentences: Int = pageSize match {
-          case Some(ps) => ps
-          case None => extractorEngine.numDocs()
-        }
-
-        val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps)
-        
-        val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
-
-        val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
-        json.format(pretty)
-      } catch {
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
+  def executeGrammar() = Action { request => 
+    println(s"body: ${request.body}")
+    //val json: JsValue = request.body.asJson.get
+    // FIXME: replace .get with validation check
+    val gr = request.body.asJson.get.as[GrammarRequest]
+    println(s"GrammarRequest: ${gr}")
+    val rules = gr.rules
+    val parentQuery = gr.parentQuery
+    val pageSize = gr.pageSize
+    val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
+    val pretty = gr.pretty
+    try {
+      // rules -> OdinsonQuery
+      val baseExtractors = extractorEngine.ruleReader.compileRuleFile(rules)
+      val composedExtractors = parentQuery match {
+        case Some(pq) => 
+          val cpq = extractorEngine.compiler.mkParentQuery(pq)
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+        case None => baseExtractors
       }
-    }(odinsonContext)
-  }
+      val start = System.currentTimeMillis()
+
+      val maxSentences: Int = pageSize match {
+        case Some(ps) => ps
+        case None => extractorEngine.numDocs()
+      }
+
+      val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps)
+      
+      val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+
+      val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
+      json.format(pretty)
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Status(400)(json)
+    }
+  }//(odinsonContext)
 
   /**
     *

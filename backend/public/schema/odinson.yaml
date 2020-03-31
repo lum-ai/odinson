@@ -125,7 +125,8 @@ paths:
         - in: body
           name: rules
           required: true
-          type: string
+          schema:
+            type: string
           description: |
             An Odinson grammar.
           # example: |
@@ -151,9 +152,9 @@ paths:
             format: int32
         - in: body
           name: allowTriggerOverlaps
-          required: true
+          required: false
           description: |
-            Whether or not event arguments are permitted to overlap with the event's trigger.
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
           schema:
             type: boolean
 
