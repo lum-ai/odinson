@@ -12,12 +12,12 @@ GET     /api/config                     controllers.OdinsonController.configInfo
 # API spec
 GET     /api                            controllers.OpenApiController.openAPI
 # search
-GET     /api/search                     controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
+GET     /api/execute/pattern                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
 
-GET     /api/rich-search                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = true, pretty: Option[Boolean])
+GET     /api/execute/grammar                controllers.OdinsonController.executeGrammar(rules: String, parentQuery: Option[String], pageSize: Option[Int], allowTriggerOverlaps: Boolean, pretty: Option[Boolean])
 
 # parent doc
-#GET     /api/parent                     controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
+#GET     /api/parent                    controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
 
 # sentence json
 GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentId: Int, pretty: Option[Boolean])

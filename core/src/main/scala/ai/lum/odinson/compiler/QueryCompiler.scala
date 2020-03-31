@@ -58,6 +58,8 @@ class QueryCompiler(
     compile(pattern)
   }
 
+  def mkParentQuery(parentPattern: String): Query = queryParser.parse(parentPattern)
+
   def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
     val query = compile(pattern)
     val parentQuery = queryParser.parse(parentPattern)

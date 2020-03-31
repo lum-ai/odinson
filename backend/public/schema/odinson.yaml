@@ -33,30 +33,43 @@ tags:
       Information about the app.
 
 paths:
-  /api/search:
+  /api/execute/pattern:
     get:
       tags:
         - core
       summary: |
         Performs an Odinson query against the corpus.
       description: |
-        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to subset the the documents to which the pattern should be applied.
+        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the query should be applied.
       operationId: search
       parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
+        - name: odinsonQuery
+          in: query
+          required: true
+          description: |
+            An Odinson pattern.
+          schema:
+            type: string
+          example: "[lemma=phosphorylate] []"
+        - name: parentQuery
+          in: query
+          required: true
+          type: string
+          schema:
+            type: string
+          description: |
+            A Lucene query to filter Documents before applying an Odinson pattern.
+          example: "year: 1973"
         - name: label
           in: query
           description: |
             The label to use when committing mentions to the State.
-          required: false
           schema:
             type: string
         - name: commit
           in: query
           description: |
             Whether or not the results of this query should be committed to the State.
-          required: false
           schema:
             type: boolean
         - name: prevDoc
@@ -97,64 +110,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryError'
 
-
-  /api/rich-search:
-    get:
+  /api/execute/grammar:
+    post:
       tags:
         - core
       summary: |
-        Performs an Odinson query against the corpus.
+        Executes an Odinson grammar against a corpus.
       description: |
-        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to subset the the documents to which the pattern should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
-      operationId: rich-search
+        Executes an Odinson grammar against a corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the grammar should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
+      operationId: execute-grammar
+      consumes:
+        - application/json
       parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-        - name: label
-          in: query
+        - in: body
+          name: rules
+          required: true
+          type: string
           description: |
-            The label to use when committing mentions to the State.
-          required: false
-          schema:
-            type: string
-        - name: commit
-          in: query
+            An Odinson grammar.
+          # example: |
+          #   rules:
+          #     - name: "example"
+          #       label: Death
+          #       type: event
+          #       pattern: |
+          #         trigger = [lemma=die]
+          #         date: ^Date  = >nmod_on
+        - in: body
+          name: parentQuery
+          type: string
           description: |
-            Whether or not the results of this query should be committed to the State.
-          required: false
-          schema:
-            type: boolean
-        - name: prevDoc
-          in: query
+            A Lucene query to filter Documents before applying an Odinson pattern.
+          example: "year: 1973"
+        - in: body
+          name: pageSize
           description: |
-            The document ID for the last document seen in the previous page of results.
-          required: false
+            The maximum number of sentences to execute the rules against.
           schema:
             type: integer
             format: int32
-            minimum: 1
-            exclusiveMinimum: false
-            maximum: 3
-            exclusiveMaximum: false
-          #example: 1
-        - name: prevScore
-          in: query
+        - in: body
+          name: allowTriggerOverlaps
+          required: true
           description: |
-            The score for the last document seen in the previous page of results.
-          required: false
+            Whether or not event arguments are permitted to overlap with the event's trigger.
           schema:
-            type: number
-            format: float
-          #example: 0.424
+            type: boolean
+
       responses:
         '200':
-          description: Paginated matches for the query.
+          description: Mentions matched by the grammar.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EnrichedResults'
+                $ref: '#/components/schemas/OdinsonGrammarResults'
         '400':
           description: Syntax error in query.
           content:
@@ -382,20 +391,73 @@ paths:
 components:
   schemas:
 
+    OdinsonGrammarResults:
+      type: object
+      required:
+        - odinsonDoc
+        - documentId
+        - sentenceIndex
+        - words
+        - foundBy
+        - match
+      properties:
+        odinsonDoc:
+          $ref: '#/components/schemas/odinsonDoc'
+        documentId:
+          $ref: '#/components/schemas/documentId'
+        sentenceIndex:
+          $ref: '#/components/schemas/sentenceIndex'
+        words:
+          $ref: '#/components/schemas/words'
+        label:
+          description: |
+            The label for this Mention.
+          type: string
+        foundBy:
+          description: |
+            The name of the rule which matched this Mention.
+          type: string
+        match:
+          $ref: '#/components/schemas/OdinsonMatch'
+    
+    OdinsonMention:
+      type: object
+      required:
+        - test
+      # properties:
+      #   odinsonDoc:
+      #     type: mention.luceneDocId
+      # // "score"         -> odinsonScoreDoc.score,
+      # "label"         -> mention.label,
+      # "documentId"    -> getDocId(mention.luceneDocId),
+      # "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
+      # "words"         -> JsArray(tokens.map(JsString)),
+      # "foundBy"       -> mention.foundBy,
+      # "match"       -> Json.arr(mkJson(mention.odinsonMatch))
+
+    OdinsonGrammar:
+      type: string
+      description: An Odinson pattern.
+      example: |
+      rules:
+        - name: "example"
+          label: Death
+          type: event
+          pattern: |
+            trigger = [lemma=die]
+            date: ^Date  = >nmod_on
+  
     OdinsonPattern:
       name: odinsonQuery
-      in: query
-      required: true
       type: string
       description: An Odinson pattern.
       example: "[lemma=phosphorylate] []"
 
     ParentDocumentQuery:
       name: parentQuery
-      in: query
-      required: false
       type: string
-      description: A Lucene query to filter Documents before applying an Odinson pattern.
+      description: |
+        A Lucene query to filter Documents before applying an Odinson pattern.
       example: "year: 1973"
 
     ScoredTerm:
@@ -520,6 +582,38 @@ components:
           items:
             $ref: '#/components/schemas/EnrichedDocHit'
 
+    odinsonDoc:
+      type: integer
+      format: int64
+      description: The internal ID for this Odinson Document.
+
+    score:
+      type: number
+      format: float
+      description: The Lucene score for this Document.
+
+    documentId:
+      type: string
+      description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
+
+    sentenceIndex:
+      type: integer
+      format: int32
+      description: The index of this sentence in the parent document (0-based).
+      
+    words:
+      type: array
+      description: Tokens for the document (sentence).
+      items:
+        type: string
+        description: A token.
+
+    matches:
+      type: array
+      items:
+        $ref: '#/components/schemas/OdinsonMatch'
+      description: The list of matching spans for this document.
+    
     DocHit:
       type: object
       required:
@@ -530,33 +624,12 @@ components:
         - words
         - matches
       properties:
-        odinsonDoc:
-          type: integer
-          format: int64
-          description: The internal ID for this Odinson Document.
-        score:
-          type: number
-          format: float
-          description: The Lucene score for this Document.
-        documentId:
-          type: string
-          description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
-        sentenceIndex:
-          type: integer
-          format: int32
-          description: The index of this sentence in the parent document (0-based).
-        words:
-          type: array
-          description: Tokens for the document (sentence).
-          items:
-            type: string
-            description: A token.
-        matches:
-          type: array
-          items:
-            $ref: '#/components/schemas/OdinsonMatch'
-          description: The list of matching spans for this document.
-
+        - $ref: '#/components/schemas/odinsonDoc'
+        - $ref: '#/components/schemas/score'
+        - $ref: '#/components/schemas/documentId'
+        - $ref: '#/components/schemas/sentenceIndex'
+        - $ref: '#/components/schemas/words'
+        - $ref: '#/components/schemas/matches'
 
     EnrichedDocHit:
       description: A `DocHit` that include sentence details.
@@ -570,29 +643,19 @@ components:
         - matches
       properties:
         odinsonDoc:
-          type: integer
-          format: int64
-          description: The internal ID for this Odinson Document.
+          $ref: '#/components/schemas/odinsonDoc'
         score:
-          type: number
-          format: float
-          description: The Lucene score for this Document.
+          $ref: '#/components/schemas/score'
         documentId:
-          type: string
-          description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
+          $ref: '#/components/schemas/documentId'
         sentenceIndex:
-          type: integer
-          format: int32
-          description: The index of this sentence in the parent document (0-based).
+          $ref: '#/components/schemas/sentenceIndex'
+        matches:
+          $ref: '#/components/schemas/matches'
         sentence:
           $ref: '#/components/schemas/OdinsonSentence'
           description: Token attributes and annotations for this sentence to aid in further refining queries.
-        matches:
-          type: array
-          items:
-            $ref: '#/components/schemas/OdinsonMatch'
-          description: The list of matching spans for this document.
-
+    
     # DocumentMetadata:
     #   type: object
     #   required:
@@ -644,7 +707,7 @@ components:
               - $ref: '#/components/schemas/OdinsonTokensField'
               - $ref: '#/components/schemas/OdinsonGraphField'
 
-    TokensField:
+    OdinsonTokensField:
       type: object
       description: |
         A type of token attribute.
@@ -667,7 +730,7 @@ components:
               - type: string
               - type: integer
 
-    GraphField:
+    OdinsonGraphField:
       type: object
       description: |
         A type of directed graph.
