@@ -21,14 +21,16 @@ object IndexDocuments extends App with LazyLogging {
   val documentFiles =
     if (synchronizeOrderWithDocumentId) {
       // files ordered by the id of the document
-      docsDir.listFilesByWildcards(wildcards, recursive = true)
+      docsDir
+        .listFilesByWildcards(wildcards, recursive = true)
         .map(f => (Document.fromJson(f).id.toInt, f))
         .toSeq
         .sortBy(_._1)
         .map(_._2)
     } else {
-      docsDir.listFilesByWildcards(wildcards, recursive = true)
-        .toSeq.par
+      docsDir
+        .listFilesByWildcards(wildcards, recursive = true)
+        .par
     }
 
   logger.info("Indexing documents")
