@@ -41,6 +41,9 @@ class OdinsonIndexWriter(
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
 
+  val normalizer = Normalizer2.getNFKCInstance()
+  val normalizerCasefold = Normalizer2.getNFKCCasefoldInstance()
+
   def addDocuments(block: Seq[lucenedoc.Document]): Unit = {
     addDocuments(block.asJava)
   }
@@ -90,19 +93,18 @@ class OdinsonIndexWriter(
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
     sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
     sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
+    // add fields
+    for {
+      odinsonField <- s.fields
+      luceneField <- mkLuceneFields(odinsonField, s)
+    } sent.add(luceneField)
     // add norm field
     val normFields = s.fields
       .collect { case f: TokensField => f }
       .filter(f => addToNormalizedField.contains(f.name))
       .map(f => f.tokens)
-    val normalizer = Normalizer2.getNFKCCasefoldInstance()
-    val tokenStream = new NormalizedTokenStream(normFields, normalizer)
+    val tokenStream = new NormalizedTokenStream(normFields, normalizerCasefold)
     sent.add(new lucenedoc.TextField(normalizedTokenField, tokenStream))
-    // add rest of fields
-    for {
-      odinsonField <- s.fields
-      luceneField <- mkLuceneFields(odinsonField, s)
-    } sent.add(luceneField)
     // return sentence
     sent
   }
@@ -131,31 +133,28 @@ class OdinsonIndexWriter(
   }
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
-  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
-    val normalizer = Normalizer2.getNFKCInstance()
-    f match {
-      case f: DateField =>
-        val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
-        if (f.store) {
-          val storedField = new lucenedoc.StoredField(f.name, f.date)
-          Seq(longField, storedField)
-        } else {
-          Seq(longField)
-        }
-      case f: StringField =>
-        val store = if (f.store) Store.YES else Store.NO
-        val string = normalizer.normalize(f.string)
-        val stringField = new lucenedoc.StringField(f.name, string, store)
-        Seq(stringField)
-      case f: TokensField if f.store =>
-        val text = normalizer.normalize(f.tokens.mkString(" "))
-        val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
-        Seq(tokensField)
-      case f: TokensField =>
-        val tokenStream = new NormalizedTokenStream(Seq(f.tokens), normalizer)
-        val tokensField = new lucenedoc.TextField(f.name, tokenStream)
-        Seq(tokensField)
-    }
+  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = f match {
+    case f: DateField =>
+      val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
+      if (f.store) {
+        val storedField = new lucenedoc.StoredField(f.name, f.date)
+        Seq(longField, storedField)
+      } else {
+        Seq(longField)
+      }
+    case f: StringField =>
+      val store = if (f.store) Store.YES else Store.NO
+      val string = normalizer.normalize(f.string)
+      val stringField = new lucenedoc.StringField(f.name, string, store)
+      Seq(stringField)
+    case f: TokensField if f.store =>
+      val text = normalizer.normalize(f.tokens.mkString(" "))
+      val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
+      Seq(tokensField)
+    case f: TokensField =>
+      val tokenStream = new NormalizedTokenStream(Seq(f.tokens), normalizer)
+      val tokensField = new lucenedoc.TextField(f.name, tokenStream)
+      Seq(tokensField)
   }
 
   def mkDirectedGraph(
@@ -165,7 +164,7 @@ class OdinsonIndexWriter(
   ): DirectedGraph = {
     def toLabelIds(tokenEdges: Array[(Int, String)]): Array[Int] = for {
       (tok, label) <- tokenEdges
-      labelId = vocabulary.getOrCreateId(label)
+      labelId = vocabulary.getOrCreateId(normalizer.normalize(label))
       n <- Array(tok, labelId)
     } yield n
     val incoming = incomingEdges.map(toLabelIds)

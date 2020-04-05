@@ -355,7 +355,7 @@ class QueryCompiler(
     }
   }
 
-  /** Returns a Term object with its value normalized if needed */
+  /** Returns a Term object with its value normalized */
   def mkTerm(name: String, value: String): Term = {
     if (casefoldQueriesToDefaultField && name == defaultTokenField) {
       new Term(name, normalizerCasefold.normalize(value))
@@ -476,9 +476,9 @@ class QueryCompiler(
 
   def mkLabelMatcher(m: Ast.Matcher): LabelMatcher = m match {
     case Ast.RegexMatcher(s) =>
-      new RegexLabelMatcher(s.r, dependenciesVocabulary)
+      new RegexLabelMatcher(normalizer.normalize(s).r, dependenciesVocabulary)
     case Ast.StringMatcher(s) =>
-      dependenciesVocabulary.getId(s) match {
+      dependenciesVocabulary.getId(normalizer.normalize(s)) match {
         case Some(id) => new ExactLabelMatcher(s, id)
         case None => FailLabelMatcher
       }
