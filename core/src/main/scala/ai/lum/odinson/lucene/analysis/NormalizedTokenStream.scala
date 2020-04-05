@@ -4,9 +4,10 @@ import com.ibm.icu.text.Normalizer2
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.{ CharTermAttribute, PositionIncrementAttribute }
 
-class NormalizedTokenStream(val tokenSeqs: Seq[Seq[String]]) extends TokenStream {
-
-  val normalizer = Normalizer2.getNFKCCasefoldInstance()
+class NormalizedTokenStream(
+  val tokenSeqs: Seq[Seq[String]],
+  val normalizer: Normalizer2,
+) extends TokenStream {
 
   val posIncrAtt = addAttribute(classOf[PositionIncrementAttribute])
   val termAtt = addAttribute(classOf[CharTermAttribute])
