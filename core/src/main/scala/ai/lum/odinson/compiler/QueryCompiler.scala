@@ -25,12 +25,13 @@ class QueryCompiler(
     val incomingTokenField: String,
     val outgoingTokenField: String,
     val dependenciesVocabulary: Vocabulary,
-    val normalizeQueriesToDefaultField: Boolean
+    val casefoldQueriesToDefaultField: Boolean
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
 
-  val normalizer = Normalizer2.getNFKCCasefoldInstance()
+  val normalizer = Normalizer2.getNFKCInstance()
+  val normalizerCasefold = Normalizer2.getNFKCCasefoldInstance()
 
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
@@ -356,10 +357,10 @@ class QueryCompiler(
 
   /** Returns a Term object with its value normalized if needed */
   def mkTerm(name: String, value: String): Term = {
-    if (normalizeQueriesToDefaultField && name == defaultTokenField) {
-      new Term(name, normalizer.normalize(value))
+    if (casefoldQueriesToDefaultField && name == defaultTokenField) {
+      new Term(name, normalizerCasefold.normalize(value))
     } else {
-      new Term(name, value)
+      new Term(name, normalizer.normalize(value))
     }
   }
 
@@ -570,7 +571,7 @@ object QueryCompiler {
       config[String]("compiler.incomingTokenField"),
       config[String]("compiler.outgoingTokenField"),
       vocabulary,
-      config[Boolean]("compiler.normalizeQueriesToDefaultField")
+      config[Boolean]("compiler.casefoldQueriesToDefaultField")
     )
   }
 
