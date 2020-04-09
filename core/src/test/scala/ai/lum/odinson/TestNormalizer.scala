@@ -37,4 +37,14 @@ class TestNormalizer extends FlatSpec with Matchers {
     Normalizer.normalize(c1, true) shouldEqual Normalizer.normalize(c2, true)
   }
 
+  it should "replace characters" in {
+    // example from "Fluent Python"
+    val text1 = "“Herr Voß: • ½ cup of Œtker™ caffè latte • bowl of açaí.”"
+    val text2 = "\"Herr Voss: - 1/2 cup of OEtker(TM) caffe latte - bowl of acai.\""
+    println(Normalizer.normalize(text1, true))
+    text1 should not equal text2
+    Normalizer.normalize(text1) should not equal Normalizer.normalize(text2)
+    Normalizer.normalize(text1, true) shouldEqual Normalizer.normalize(text2, true)
+  }
+
 }
