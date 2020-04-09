@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Changed
-- All strings are normalized with NFKC, except the norm field which uses NFKCCasefold.
+- All strings are normalized with NFC, except the norm field which uses NFKC with casefolding and diacritic stripping.
   This is the case both at index time and query time. This means you should reindex
   if you upgrade to this version.
 
