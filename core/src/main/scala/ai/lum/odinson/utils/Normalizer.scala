@@ -19,7 +19,9 @@ object Normalizer {
       // more agressive unicode normalization
       // case folding
       // diacritic removal
-      nfkc_cf.normalize(s.stripAccents)
+      nfkc_cf
+        .normalize(s.stripAccents)
+        .replace("\u2044", "/") // FRACTION SLASH
     } else {
       // unicode normalization
       // we use NFC as recommended by the W3C in https://www.w3.org/TR/charmod-norm/
