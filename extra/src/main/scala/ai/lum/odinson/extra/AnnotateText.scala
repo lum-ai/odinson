@@ -44,7 +44,7 @@ object AnnotateText extends App with LazyLogging {
 
   // NOTE parses the documents in parallel
   for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
-    val docFile = new File(docsDir, f.getBaseName() + ".json")
+    val docFile = new File(docsDir, f.getBaseName() + ".json.gz")
 
     if (docFile.exists) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")
