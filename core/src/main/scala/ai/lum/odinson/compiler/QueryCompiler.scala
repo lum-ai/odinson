@@ -8,10 +8,10 @@ import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import com.ibm.icu.text.Normalizer2
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
+import ai.lum.odinson.utils.Normalizer
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
@@ -25,13 +25,10 @@ class QueryCompiler(
     val incomingTokenField: String,
     val outgoingTokenField: String,
     val dependenciesVocabulary: Vocabulary,
-    val casefoldQueriesToDefaultField: Boolean
+    val aggressiveNormalizationToDefaultField: Boolean
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
-
-  val normalizer = Normalizer2.getNFKCInstance()
-  val normalizerCasefold = Normalizer2.getNFKCCasefoldInstance()
 
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
@@ -357,11 +354,8 @@ class QueryCompiler(
 
   /** Returns a Term object with its value normalized */
   def mkTerm(name: String, value: String): Term = {
-    if (casefoldQueriesToDefaultField && name == defaultTokenField) {
-      new Term(name, normalizerCasefold.normalize(value))
-    } else {
-      new Term(name, normalizer.normalize(value))
-    }
+    val aggressive = aggressiveNormalizationToDefaultField && name == defaultTokenField
+    new Term(name, Normalizer.normalize(value, aggressive))
   }
 
   def mkConstraintQuery(ast: Ast.Constraint): OdinsonQuery = ast match {
@@ -476,9 +470,9 @@ class QueryCompiler(
 
   def mkLabelMatcher(m: Ast.Matcher): LabelMatcher = m match {
     case Ast.RegexMatcher(s) =>
-      new RegexLabelMatcher(normalizer.normalize(s).r, dependenciesVocabulary)
+      new RegexLabelMatcher(Normalizer.normalize(s).r, dependenciesVocabulary)
     case Ast.StringMatcher(s) =>
-      dependenciesVocabulary.getId(normalizer.normalize(s)) match {
+      dependenciesVocabulary.getId(Normalizer.normalize(s)) match {
         case Some(id) => new ExactLabelMatcher(s, id)
         case None => FailLabelMatcher
       }
@@ -571,7 +565,7 @@ object QueryCompiler {
       config[String]("compiler.incomingTokenField"),
       config[String]("compiler.outgoingTokenField"),
       vocabulary,
-      config[Boolean]("compiler.casefoldQueriesToDefaultField")
+      config[Boolean]("compiler.aggressiveNormalizationToDefaultField")
     )
   }
 

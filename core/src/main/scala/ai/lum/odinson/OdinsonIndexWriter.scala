@@ -12,12 +12,12 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
-import com.ibm.icu.text.Normalizer2
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.DisplayUtils._
+import ai.lum.odinson.utils.Normalizer
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
@@ -40,9 +40,6 @@ class OdinsonIndexWriter(
   val writerConfig = new IndexWriterConfig(analyzer)
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
-
-  val normalizer = Normalizer2.getNFKCInstance()
-  val normalizerCasefold = Normalizer2.getNFKCCasefoldInstance()
 
   def addDocuments(block: Seq[lucenedoc.Document]): Unit = {
     addDocuments(block.asJava)
@@ -103,7 +100,7 @@ class OdinsonIndexWriter(
       .collect { case f: TokensField => f }
       .filter(f => addToNormalizedField.contains(f.name))
       .map(f => f.tokens)
-    val tokenStream = new NormalizedTokenStream(normFields, normalizerCasefold)
+    val tokenStream = new NormalizedTokenStream(normFields, aggressive = true)
     sent.add(new lucenedoc.TextField(normalizedTokenField, tokenStream))
     // return sentence
     sent
@@ -144,15 +141,15 @@ class OdinsonIndexWriter(
       }
     case f: StringField =>
       val store = if (f.store) Store.YES else Store.NO
-      val string = normalizer.normalize(f.string)
+      val string = Normalizer.normalize(f.string)
       val stringField = new lucenedoc.StringField(f.name, string, store)
       Seq(stringField)
     case f: TokensField if f.store =>
-      val text = normalizer.normalize(f.tokens.mkString(" "))
+      val text = Normalizer.normalize(f.tokens.mkString(" "))
       val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
       Seq(tokensField)
     case f: TokensField =>
-      val tokenStream = new NormalizedTokenStream(Seq(f.tokens), normalizer)
+      val tokenStream = new NormalizedTokenStream(Seq(f.tokens))
       val tokensField = new lucenedoc.TextField(f.name, tokenStream)
       Seq(tokensField)
   }
@@ -164,7 +161,7 @@ class OdinsonIndexWriter(
   ): DirectedGraph = {
     def toLabelIds(tokenEdges: Array[(Int, String)]): Array[Int] = for {
       (tok, label) <- tokenEdges
-      labelId = vocabulary.getOrCreateId(normalizer.normalize(label))
+      labelId = vocabulary.getOrCreateId(Normalizer.normalize(label))
       n <- Array(tok, labelId)
     } yield n
     val incoming = incomingEdges.map(toLabelIds)
