@@ -19,9 +19,13 @@ object Normalizer {
       // we will map some special characters to multichar strings
       val text = s
         .replaceAllLiterally("\u2122", "(TM)") // TRADE MARK SIGN
+        .replaceAllLiterally("\u00c6", "AE")   // LATIN CAPITAL LETTER AE
+        .replaceAllLiterally("\u00e6", "ae")   // LATIN SMALL LETTER AE
         .replaceAllLiterally("\u0152", "OE")   // LATIN CAPITAL LIGATURE OE
         .replaceAllLiterally("\u0153", "oe")   // LATIN SMALL LIGATURE OE
         .replaceAllLiterally("\u2021", "**")   // DOUBLE DAGGER
+        .replaceAllLiterally("\u00ab", "<<")   // LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+        .replaceAllLiterally("\u00bb", ">>")   // RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
 
         // TODO other mappings?
       // more agressive unicode normalization
