@@ -200,6 +200,9 @@ class OdinRepetitionSpans(
     if (getNextStretch()) {
       matches(startIndex).start
     } else {
+      matches = emptyMatchArray
+      startIndex = -1
+      numReps = -1
       NO_MORE_POSITIONS
     }
   }
