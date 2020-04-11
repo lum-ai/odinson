@@ -8,10 +8,10 @@ import org.apache.lucene.search.CollectionTerminatedException
 
 
 class OdinsonCollector(
-                        private val collectedResults: Array[OdinsonScoreDoc],
-                        private val after: Int,
-                        private val computeTotalHits: Boolean,
-                      ) extends Collector {
+  private val collectedResults: Array[OdinsonScoreDoc],
+  private val after: Int,
+  private val computeTotalHits: Boolean,
+) extends Collector {
 
   def this(numHits: Int, after: Int, computeTotalHits: Boolean) = {
     this(new Array[OdinsonScoreDoc](numHits), after, computeTotalHits)
