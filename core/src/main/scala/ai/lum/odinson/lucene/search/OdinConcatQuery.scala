@@ -135,7 +135,7 @@ class OdinConcatQuery(
       rightSpans: Array[OdinsonMatch],
     ): Array[OdinsonMatch] = {
       // if either side is empty then there is nothing to concatenate
-      if (leftSpans.isEmpty || rightSpans.isEmpty) return Array.empty
+      if (leftSpans.isEmpty || rightSpans.isEmpty) return emptyMatchArray
       // make array builder
       val leftLength = leftSpans.length
       val rightLength = rightSpans.length
@@ -215,7 +215,7 @@ class OdinConcatQuery(
           case s if results == null => s.getAllMatches()
           case s => concatSpansPair(results, s.getAllMatches())
         }
-        if (results.isEmpty) return Array.empty
+        if (results.isEmpty) return emptyMatchArray
         i += 1
       }
       results
