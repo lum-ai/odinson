@@ -17,6 +17,7 @@ import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.DisplayUtils._
+import ai.lum.odinson.utils.Normalizer
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
@@ -85,18 +86,23 @@ class OdinsonIndexWriter(
 
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
     val sent = new lucenedoc.Document
+    // add sentence metadata
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
     sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
     sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
+    // add fields
     for {
       odinsonField <- s.fields
       luceneField <- mkLuceneFields(odinsonField, s)
     } sent.add(luceneField)
+    // add norm field
     val normFields = s.fields
       .collect { case f: TokensField => f }
       .filter(f => addToNormalizedField.contains(f.name))
       .map(f => f.tokens)
-    sent.add(new lucenedoc.TextField(normalizedTokenField, new NormalizedTokenStream(normFields)))
+    val tokenStream = new NormalizedTokenStream(normFields, aggressive = true)
+    sent.add(new lucenedoc.TextField(normalizedTokenField, tokenStream))
+    // return sentence
     sent
   }
 
@@ -124,27 +130,28 @@ class OdinsonIndexWriter(
   }
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
-  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
-    f match {
-      case f: DateField =>
-        val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
-        if (f.store) {
-          val storedField = new lucenedoc.StoredField(f.name, f.date)
-          Seq(longField, storedField)
-        } else {
-          Seq(longField)
-        }
-      case f: StringField =>
-        val store = if (f.store) Store.YES else Store.NO
-        val stringField = new lucenedoc.StringField(f.name, f.string, store)
-        Seq(stringField)
-      case f: TokensField if f.store =>
-        val tokensField = new lucenedoc.TextField(f.name, f.tokens.mkString(" "), Store.YES)
-        Seq(tokensField)
-      case f: TokensField =>
-        val tokensField = new lucenedoc.TextField(f.name, new OdinsonTokenStream(f.tokens))
-        Seq(tokensField)
-    }
+  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = f match {
+    case f: DateField =>
+      val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
+      if (f.store) {
+        val storedField = new lucenedoc.StoredField(f.name, f.date)
+        Seq(longField, storedField)
+      } else {
+        Seq(longField)
+      }
+    case f: StringField =>
+      val store = if (f.store) Store.YES else Store.NO
+      val string = Normalizer.normalize(f.string)
+      val stringField = new lucenedoc.StringField(f.name, string, store)
+      Seq(stringField)
+    case f: TokensField if f.store =>
+      val text = Normalizer.normalize(f.tokens.mkString(" "))
+      val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
+      Seq(tokensField)
+    case f: TokensField =>
+      val tokenStream = new NormalizedTokenStream(Seq(f.tokens))
+      val tokensField = new lucenedoc.TextField(f.name, tokenStream)
+      Seq(tokensField)
   }
 
   def mkDirectedGraph(
@@ -154,7 +161,7 @@ class OdinsonIndexWriter(
   ): DirectedGraph = {
     def toLabelIds(tokenEdges: Array[(Int, String)]): Array[Int] = for {
       (tok, label) <- tokenEdges
-      labelId = vocabulary.getOrCreateId(label)
+      labelId = vocabulary.getOrCreateId(Normalizer.normalize(label))
       n <- Array(tok, labelId)
     } yield n
     val incoming = incomingEdges.map(toLabelIds)
