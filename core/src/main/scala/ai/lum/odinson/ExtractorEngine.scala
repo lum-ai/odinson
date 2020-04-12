@@ -243,6 +243,10 @@ object ExtractorEngine {
     )
   }
 
+  def inMemory(doc: Document): ExtractorEngine = {
+    inMemory(Seq(doc))
+  }
+
   def inMemory(docs: Seq[Document]): ExtractorEngine = {
     inMemory("odinson", docs)
   }

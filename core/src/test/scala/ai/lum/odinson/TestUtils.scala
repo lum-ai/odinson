@@ -37,7 +37,7 @@ object TestUtils {
     * Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc in-memory index ([[org.apache.lucene.store.RAMDirectory]])
     */
   def mkExtractorEngine(doc: Document): ExtractorEngine = {
-    ExtractorEngine.inMemory(Seq(doc))
+    ExtractorEngine.inMemory(doc)
   }
 
   def mkExtractorEngine(text: String): ExtractorEngine = {
