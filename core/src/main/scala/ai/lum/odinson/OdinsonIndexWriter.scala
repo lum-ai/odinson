@@ -16,8 +16,8 @@ import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.StringUtils._
 import ai.lum.common.DisplayUtils._
-import ai.lum.odinson.utils.Normalizer
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
@@ -141,11 +141,11 @@ class OdinsonIndexWriter(
       }
     case f: StringField =>
       val store = if (f.store) Store.YES else Store.NO
-      val string = Normalizer.normalize(f.string)
+      val string = f.string.normalizeUnicode
       val stringField = new lucenedoc.StringField(f.name, string, store)
       Seq(stringField)
     case f: TokensField if f.store =>
-      val text = Normalizer.normalize(f.tokens.mkString(" "))
+      val text = f.tokens.mkString(" ").normalizeUnicode
       val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
       Seq(tokensField)
     case f: TokensField =>
@@ -161,7 +161,7 @@ class OdinsonIndexWriter(
   ): DirectedGraph = {
     def toLabelIds(tokenEdges: Array[(Int, String)]): Array[Int] = for {
       (tok, label) <- tokenEdges
-      labelId = vocabulary.getOrCreateId(Normalizer.normalize(label))
+      labelId = vocabulary.getOrCreateId(label.normalizeUnicode)
       n <- Array(tok, labelId)
     } yield n
     val incoming = incomingEdges.map(toLabelIds)

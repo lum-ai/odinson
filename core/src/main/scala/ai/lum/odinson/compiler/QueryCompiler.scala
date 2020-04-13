@@ -9,9 +9,9 @@ import org.apache.lucene.search.spans._
 import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
+import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
-import ai.lum.odinson.utils.Normalizer
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
@@ -354,8 +354,11 @@ class QueryCompiler(
 
   /** Returns a Term object with its value normalized */
   def mkTerm(name: String, value: String): Term = {
-    val aggressive = aggressiveNormalizationToDefaultField && name == defaultTokenField
-    new Term(name, Normalizer.normalize(value, aggressive))
+    if (aggressiveNormalizationToDefaultField && name == defaultTokenField) {
+      new Term(name, value.normalizeUnicodeAggressively)
+    } else {
+      new Term(name, value.normalizeUnicode)
+    }
   }
 
   def mkConstraintQuery(ast: Ast.Constraint): OdinsonQuery = ast match {
@@ -470,9 +473,9 @@ class QueryCompiler(
 
   def mkLabelMatcher(m: Ast.Matcher): LabelMatcher = m match {
     case Ast.RegexMatcher(s) =>
-      new RegexLabelMatcher(Normalizer.normalize(s).r, dependenciesVocabulary)
+      new RegexLabelMatcher(s.normalizeUnicode.r, dependenciesVocabulary)
     case Ast.StringMatcher(s) =>
-      dependenciesVocabulary.getId(Normalizer.normalize(s)) match {
+      dependenciesVocabulary.getId(s.normalizeUnicode) match {
         case Some(id) => new ExactLabelMatcher(s, id)
         case None => FailLabelMatcher
       }

@@ -2,7 +2,7 @@ package ai.lum.odinson.lucene.analysis
 
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.{ CharTermAttribute, PositionIncrementAttribute }
-import ai.lum.odinson.utils.Normalizer
+import ai.lum.common.StringUtils._
 
 class NormalizedTokenStream(
   val tokenSeqs: Seq[Seq[String]],
@@ -24,7 +24,7 @@ class NormalizedTokenStream(
   private def mkSynonyms(tokenSeqs: Seq[Seq[String]]): Vector[Vector[String]] = {
     val synonyms = for (i <- tokenSeqs.head.indices) yield {
       tokenSeqs
-        .map(tokens => Normalizer.normalize(tokens(i), aggressive))
+        .map(tokens => if (aggressive) tokens(i).normalizeUnicodeAggressively else tokens(i).normalizeUnicode)
         .distinct
         .toVector
     }
