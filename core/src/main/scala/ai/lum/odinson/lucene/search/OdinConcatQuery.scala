@@ -124,6 +124,8 @@ class OdinConcatQuery(
         matchStart = topPositionOdinsonMatch.start
         matchEnd = topPositionOdinsonMatch.end
       } else {
+        pq = null
+        topPositionOdinsonMatch = null
         matchStart = NO_MORE_POSITIONS
         matchEnd = NO_MORE_POSITIONS
       }
@@ -135,11 +137,11 @@ class OdinConcatQuery(
       rightSpans: Array[OdinsonMatch],
     ): Array[OdinsonMatch] = {
       // if either side is empty then there is nothing to concatenate
-      if (leftSpans.isEmpty || rightSpans.isEmpty) return Array.empty
+      if (leftSpans.isEmpty || rightSpans.isEmpty) return emptyMatchArray
       // make array builder
       val leftLength = leftSpans.length
       val rightLength = rightSpans.length
-      val maxLength = if (leftLength > rightLength) leftLength else rightLength
+      val maxLength = leftLength * rightLength
       val builder = new ArrayBuilder.ofRef[OdinsonMatch]
       builder.sizeHint(maxLength)
       // leftSpans and rightSpans are sorted by start
@@ -215,7 +217,7 @@ class OdinConcatQuery(
           case s if results == null => s.getAllMatches()
           case s => concatSpansPair(results, s.getAllMatches())
         }
-        if (results.isEmpty) return Array.empty
+        if (results.isEmpty) return emptyMatchArray
         i += 1
       }
       results
