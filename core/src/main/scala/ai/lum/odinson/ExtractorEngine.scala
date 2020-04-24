@@ -243,4 +243,32 @@ object ExtractorEngine {
     )
   }
 
+  def inMemory(doc: Document): ExtractorEngine = {
+    inMemory(Seq(doc))
+  }
+
+  def inMemory(docs: Seq[Document]): ExtractorEngine = {
+    inMemory("odinson", docs)
+  }
+
+  def inMemory(path: String, docs: Seq[Document]): ExtractorEngine = {
+    val config = ConfigFactory.load()
+    inMemory(config[Config](path), docs)
+  }
+
+  def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
+    // make a memory index
+    val memWriter = OdinsonIndexWriter.inMemory
+    // add documents to index
+    for (doc <- docs) {
+      val block = memWriter.mkDocumentBlock(doc)
+      memWriter.addDocuments(block)
+    }
+    // finalize index writer
+    memWriter.commit()
+    memWriter.close()
+    // return extractor engine
+    ExtractorEngine.fromDirectory(config, memWriter.directory)
+  }
+
 }

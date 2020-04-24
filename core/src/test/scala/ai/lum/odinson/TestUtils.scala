@@ -37,12 +37,7 @@ object TestUtils {
     * Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc in-memory index ([[org.apache.lucene.store.RAMDirectory]])
     */
   def mkExtractorEngine(doc: Document): ExtractorEngine = {
-    val memWriter = OdinsonIndexWriter.inMemory
-    val block = memWriter.mkDocumentBlock(doc)
-    memWriter.addDocuments(block)
-    memWriter.commit()
-    memWriter.close()
-    ExtractorEngine.fromDirectory(odinsonConfig, memWriter.directory)
+    ExtractorEngine.inMemory(doc)
   }
 
   def mkExtractorEngine(text: String): ExtractorEngine = {
