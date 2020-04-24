@@ -57,6 +57,14 @@ class ExtractorEngine(
     docs.head
   }
 
+  def compileRules(rules: String): Seq[Extractor] = {
+    compileRules(rules, Map.empty)
+  }
+
+  def compileRules(rules: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rules, variables)
+  }
+
   /** Apply the extractors and return all results */
   def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
     extractMentions(extractors, false)
