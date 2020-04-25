@@ -139,9 +139,8 @@ class OdinsonScorer(
     collectedMatches.clear()
     spans.odinDoStartCurrentDoc()
     spans.nextStartPosition()
-    var odinsonMatch = spans.odinsonMatch
     while (spans.startPosition() != Spans.NO_MORE_POSITIONS) {
-      collectedMatches += odinsonMatch
+      collectedMatches += spans.odinsonMatch
       if (docScorer == null) {
         accSloppyFreq = 1
       } else {
@@ -149,7 +148,6 @@ class OdinsonScorer(
       }
       spans.odinDoCurrentSpans()
       spans.nextStartPosition()
-      odinsonMatch = spans.odinsonMatch
     }
   }
 
