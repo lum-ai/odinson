@@ -66,13 +66,13 @@ class ExtractorEngine(
   }
 
   /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
-    extractMentions(extractors, false)
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
+    extractMentions(extractors, numSentences, false, false)
   }
 
   /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean): Seq[Mention] = {
-    extractMentions(extractors, numDocs(), allowTriggerOverlaps, false)
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, allPossibleMatches: Boolean = false): Seq[Mention] = {
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps, allPossibleMatches)
   }
 
   /** Apply the extractors and return results for at most `numSentences` */
