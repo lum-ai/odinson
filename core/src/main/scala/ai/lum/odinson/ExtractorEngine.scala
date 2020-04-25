@@ -72,15 +72,15 @@ class ExtractorEngine(
 
   /** Apply the extractors and return all results */
   def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean): Seq[Mention] = {
-    extractMentions(extractors, numDocs(), allowTriggerOverlaps)
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps, false)
   }
 
   /** Apply the extractors and return results for at most `numSentences` */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean): Seq[Mention] = {
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, allPossibleMatches: Boolean): Seq[Mention] = {
     // extract mentions
     val mentions = for {
       e <- extractors
-      results = query(e.query, numSentences)
+      results = query(e.query, numSentences, allPossibleMatches)
       scoreDoc <- results.scoreDocs
       docFields = doc(scoreDoc.doc)
       docId = docFields.getField("docId").stringValue
