@@ -15,19 +15,32 @@ class OdinsonIndexSearcher(
     computeTotalHits: Boolean,
 ) extends IndexSearcher(context, executor) {
 
-  def this(r: IndexReader, e: ExecutorService, computeTotalHits: Boolean) = this(r.getContext(), e, computeTotalHits)
-  def this(r: IndexReader, e: ExecutionContext,  computeTotalHits: Boolean) =
+  def this(r: IndexReader, e: ExecutorService, computeTotalHits: Boolean) = {
+    this(r.getContext(), e, computeTotalHits)
+  }
+
+  def this(r: IndexReader, e: ExecutionContext,  computeTotalHits: Boolean) = {
     this(r.getContext(), ExecutionContextExecutorServiceBridge(e), computeTotalHits)
-  def this(r: IndexReader, computeTotalHits: Boolean) = this(r.getContext(), null, computeTotalHits)
+  }
+
+  def this(r: IndexReader, computeTotalHits: Boolean) = {
+    this(r.getContext(), null, computeTotalHits)
+  }
 
   def odinSearch(query: OdinsonQuery): OdinResults = {
     val n = readerContext.reader().maxDoc()
+    odinSearch(query, n)
+  }
+
+  def odinSearch(query: OdinsonQuery, n: Int): OdinResults = {
     odinSearch(null, query, n)
   }
 
-  def odinSearch(query: OdinsonQuery, n: Int): OdinResults = odinSearch(null, query, n)
-
   def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int): OdinResults = {
+    odinSearch(after, query, numHits, false)
+  }
+
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, allPossibleMatches: Boolean): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
       after == null || after.doc < limit,
@@ -35,7 +48,7 @@ class OdinsonIndexSearcher(
     )
     val cappedNumHits = math.min(numHits, limit)
     val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits)
+      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, allPossibleMatches)
       def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
         val results = collectors.iterator.asScala.map(_.odinResults).toArray
         OdinResults.merge(0, cappedNumHits, results, true)
