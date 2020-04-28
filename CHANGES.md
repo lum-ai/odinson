@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   if you upgrade to this version.
 ### Added
 - Added `ExtractorEngine.inMemory(...)` to help build an index in memory.
+- Added `allPossibleMatches` to `ExtractorEngine.extractMentions()` to retrieve all spans of tokens that could
+  be matched by the query. In other words, it skips the `MatchSelector`.
 
 ## [0.2.3] - 2020-03-27
 ### Fixed
