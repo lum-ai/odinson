@@ -2,7 +2,7 @@
 
 # Odinson
 
-Odinson can be used to rapidly query a natural language knowledge base and extract structured relations. Query patterns can be designed over (a) surface (e.g. #1), syntax (e.g., #2), or a combination of both (e.g., #3-5). These examples were executed over a collection of 8,479 scientific papers, corresponding to 1,105,737 sentences. Please note that the rapidity of the execution allows a user to dynamically develop these queries in _real-time_, immediately receiving feedback on the coverage and precision of the patterns at scale.
+Odinson can be used to rapidly query a natural language knowledge base and extract structured relations. Query patterns can be designed over (a) surface (e.g. #1), syntax (e.g., #2), or a combination of both (e.g., #3-5). These examples were executed over a collection of 8,479 scientific papers, corresponding to 1,105,737 sentences. Please note that the rapidity of the execution allows a user to dynamically develop these queries in _real-time_, immediately receiving feedback on the coverage and precision of the patterns at scale. Please see our [forthcoming LREC 2020 paper](https://lum.ai/docs/odinson.pdf) for technical details and evaluation.
 
 ## Project overview
 
