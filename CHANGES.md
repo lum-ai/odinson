@@ -8,9 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - `extra/AnnotateText` writes compressed json files
 - Reduce number of array allocations
-- All strings are normalized with NFC, except the norm field which uses NFKC with casefolding and diacritic stripping.
-  This is the case both at index time and query time. This means you should reindex
-  if you upgrade to this version.
+- All strings are normalized with NFKC, except the norm field which uses NFKC with casefolding,
+  diacritic stripping, and some extra character mappings. This is the case both at index time and query time.
+  This means you should reindex if you upgrade to this version.
 ### Added
 - Added `ExtractorEngine.inMemory(...)` to help build an index in memory.
 
