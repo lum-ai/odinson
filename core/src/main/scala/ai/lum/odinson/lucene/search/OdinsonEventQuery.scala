@@ -187,7 +187,7 @@ class OdinsonEventQuery(
       if (triggerSpans == null) return null
       // get argument spans
       val requiredSpans = requiredWeights.map(_.getSpans(context, requiredPostings))
-      if (requiredSpans.exists(_.subSpans == null)) return null
+      if (requiredSpans == null || requiredSpans.exists(s => s == null || s.subSpans == null)) return null
       // Optional arguments that fail should be removed from the list
       val optionalSpans = optionalWeights.flatMap{ w =>
         val spans = w.getSpans(context, requiredPostings)
