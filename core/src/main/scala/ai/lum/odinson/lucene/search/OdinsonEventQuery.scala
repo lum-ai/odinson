@@ -68,6 +68,7 @@ case class ArgumentWeight(
   ): ArgumentSpans = {
     val allSpans = fullTraversal.map { case (g, w) =>
       val s = w.getSpans(context, requiredPostings)
+      // if any subspan is null, then the entire argument should fail
       if (s == null) return null
       (g, s)
     }
@@ -187,11 +188,10 @@ class OdinsonEventQuery(
       if (triggerSpans == null) return null
       // get argument spans
       val requiredSpans = requiredWeights.map(_.getSpans(context, requiredPostings))
-      if (requiredSpans == null || requiredSpans.exists(s => s == null || s.subSpans == null)) return null
+      if (requiredSpans.exists(_ == null)) return null
       // Optional arguments that fail should be removed from the list
       val optionalSpans = optionalWeights.flatMap{ w =>
-        val spans = w.getSpans(context, requiredPostings)
-        Option(spans)
+        Option(w.getSpans(context, requiredPostings))
       }
       // subSpans is required by ConjunctionSpans
       val subSpans = triggerSpans :: requiredSpans.flatMap(_.subSpans)
