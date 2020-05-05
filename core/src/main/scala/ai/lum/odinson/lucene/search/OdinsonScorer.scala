@@ -57,8 +57,8 @@ class OdinsonScorer(
       return Nil
     }
     // gather all matches with the same start position
-    val currentMatches = ArrayBuffer(spans.odinsonMatch)
-    var nextStart = spans.nextStartPosition()
+    val currentMatches = ArrayBuffer.empty[OdinsonMatch]
+    var nextStart = spans.startPosition()
     while (nextStart == startPosition) {
       currentMatches += spans.odinsonMatch
       nextStart = spans.nextStartPosition()

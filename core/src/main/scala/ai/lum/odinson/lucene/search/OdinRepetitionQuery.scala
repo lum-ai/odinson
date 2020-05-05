@@ -86,9 +86,9 @@ class OdinRepetitionSpans(
   // a first start position is available in current doc for nextStartPosition
   protected var atFirstInCurrentDoc: Boolean = false
 
-  private var stretch: Array[OdinsonMatch] = Array.empty
-  private var startIndex: Int = 0
-  private var numReps: Int = 0
+  private var matches: Array[OdinsonMatch] = emptyMatchArray
+  private var startIndex: Int = -1
+  private var numReps: Int = -1
 
   def cost(): Long = spans.cost()
 
@@ -127,41 +127,37 @@ class OdinRepetitionSpans(
   def collect(collector: SpanCollector): Unit = spans.collect(collector)
 
   def twoPhaseCurrentDocMatches(): Boolean = {
-    if (spans.nextStartPosition() == NO_MORE_POSITIONS) {
-      return false
-    }
-    stretch = getNextStretch()
-    if (stretch.nonEmpty) {
+    startIndex = 0
+    numReps = 0
+    matches = spans.getAllMatches()
+    if (getNextStretch()) {
       atFirstInCurrentDoc = true
-      startIndex = 0
-      numReps = min
       true
     } else {
       false
     }
   }
 
-  // collect all consecutive matches
-  // and return them in an array
-  private def getStretch(): Array[OdinsonMatch] = {
-    var end = spans.startPosition()
-    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    while (spans.startPosition() == end) {
-      builder += spans.odinsonMatch
-      end = spans.endPosition()
-      spans.nextStartPosition()
+  private def getNextStretch(): Boolean = {
+    while (startIndex < matches.length) {
+      if (numReps == 0) {
+        numReps += 1
+      } else if (startIndex + numReps < matches.length && matches(startIndex+numReps-1).end == matches(startIndex+numReps).start) {
+        numReps += 1
+      } else {
+        startIndex += 1
+        numReps = 0
+      }
+      if (numReps > max || startIndex + numReps > matches.length) {
+        startIndex += 1
+        numReps = 0
+      } else if (numReps >= min) {
+        return true
+      }
     }
-    builder.result()
-  }
-
-  // get the next stretch that is of size `min` or bigger
-  // or return empty if there is no such a stretch in the document
-  private def getNextStretch(): Array[OdinsonMatch] = {
-    while (spans.startPosition() != NO_MORE_POSITIONS) {
-      val stretch = getStretch()
-      if (stretch.length >= min) return stretch
-    }
-    Array.empty
+    startIndex = -1
+    numReps = -1
+    false
   }
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
@@ -179,43 +175,36 @@ class OdinRepetitionSpans(
   }
 
   override def odinsonMatch: OdinsonMatch = {
-    val subMatches = Arrays.copyOfRange(stretch, startIndex, startIndex + numReps)
+    val subMatches = Arrays.copyOfRange(matches, startIndex, startIndex + numReps)
     new RepetitionMatch(subMatches, isGreedy)
   }
 
   def startPosition(): Int = {
     if (atFirstInCurrentDoc) -1
-    else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex).start
+    else if (startIndex == -1) NO_MORE_POSITIONS
+    else matches(startIndex).start
   }
 
   def endPosition(): Int = {
     if (atFirstInCurrentDoc) -1
-    else if (stretch.isEmpty) NO_MORE_POSITIONS
-    else stretch(startIndex + numReps - 1).end
+    else if (startIndex == -1) NO_MORE_POSITIONS
+    else matches(startIndex + numReps - 1).end
   }
 
   def nextStartPosition(): Int = {
     if (atFirstInCurrentDoc) {
       // we know we have a match because we checked previously
       atFirstInCurrentDoc = false
-      return stretch(startIndex).start
+      return matches(startIndex).start
     }
-    while (stretch.nonEmpty) {
-      numReps += 1
-      if (numReps > max || startIndex + numReps > stretch.length) {
-        startIndex += 1
-        numReps = min
-      }
-      if (startIndex + numReps <= stretch.length) {
-        return stretch(startIndex).start
-      }
-      // if we reach this point then we need a new stretch
-      stretch = getNextStretch()
-      startIndex = 0
-      numReps = min - 1
+    if (getNextStretch()) {
+      matches(startIndex).start
+    } else {
+      matches = emptyMatchArray
+      startIndex = -1
+      numReps = -1
+      NO_MORE_POSITIONS
     }
-    NO_MORE_POSITIONS
   }
 
 }
