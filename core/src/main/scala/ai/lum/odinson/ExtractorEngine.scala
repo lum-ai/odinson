@@ -195,6 +195,15 @@ class ExtractorEngine(
     odinsonQuery: OdinsonQuery,
     n: Int,
     after: OdinsonScoreDoc,
+  ): OdinResults = {
+    indexSearcher.odinSearch(after, odinsonQuery, n, false)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(
+    odinsonQuery: OdinsonQuery,
+    n: Int,
+    after: OdinsonScoreDoc,
     allPossibleMatches: Boolean,
   ): OdinResults = {
     indexSearcher.odinSearch(after, odinsonQuery, n, allPossibleMatches)
