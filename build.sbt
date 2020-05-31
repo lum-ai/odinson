@@ -17,7 +17,7 @@ lazy val core = project
     buildInfoPackage := "ai.lum.odinson",
     buildInfoOptions += BuildInfoOption.ToJson,
     buildInfoKeys := Seq[BuildInfoKey](
-      name, version, scalaVersion, sbtVersion, libraryDependencies, scalacOptions,
+      name, version, scalaVersion, sbtVersion,
       "builtAt" -> {
         val date = new java.util.Date
         val formatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
