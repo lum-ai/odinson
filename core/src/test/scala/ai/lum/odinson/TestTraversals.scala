@@ -11,7 +11,8 @@ class TestTraversals extends FlatSpec with Matchers {
 
   "Odinson" should "find all matches across conj_and" in {
     val pattern = "[word=cats] >conj_and [tag=/N.*/]"
-    val results = ee.query(pattern, 1)
+    val query = ee.compiler.mkQuery(pattern)
+    val results = ee.query(query, 1)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val doc = results.scoreDocs.head.doc
