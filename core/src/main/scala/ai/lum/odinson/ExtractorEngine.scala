@@ -100,26 +100,6 @@ class ExtractorEngine(
     }
   }
 
-//   /** executes query and returns all results */
-//   def query(odinsonQuery: String): OdinResults = {
-//     query(compiler.mkQuery(odinsonQuery))
-//   }
-
-//   /** executes query and returns at most n documents */
-//   def query(odinsonQuery: String, n: Int): OdinResults = {
-//     query(compiler.mkQuery(odinsonQuery), n)
-//   }
-
-//   /** executes query and returns at most n documents */
-//   def query(odinsonQuery: String, parentQuery: String): OdinResults = {
-//     query(odinsonQuery, parentQuery, indexReader.numDocs())
-//   }
-
-//   /** executes query and returns at most n documents */
-//   def query(odinsonQuery: String, parentQuery: String, n: Int): OdinResults = {
-//     query(compiler.mkQuery(odinsonQuery, parentQuery), n)
-//   }
-
   /** executes query and returns all results */
   def query(odinsonQuery: OdinsonQuery): OdinResults = {
     query(odinsonQuery, false)
@@ -139,56 +119,6 @@ class ExtractorEngine(
   def query(odinsonQuery: OdinsonQuery, n: Int, allPossibleMatches: Boolean): OdinResults = {
     query(odinsonQuery, n, null, allPossibleMatches)
   }
-
-//   /** executes query and returns next n results after the provided doc */
-//   def query(
-//     odinsonQuery: String,
-//     n: Int,
-//     afterDoc: Int,
-//     afterScore: Float,
-//     allPossibleMatches: Boolean,
-//   ): OdinResults = {
-//     query(
-//       compiler.mkQuery(odinsonQuery),
-//       n,
-//       new OdinsonScoreDoc(afterDoc, afterScore),
-//       allPossibleMatches,
-//     )
-//   }
-
-//   /** executes query and returns next n results after the provided doc */
-//   def query(
-//     odinsonQuery: String,
-//     parentQuery: String,
-//     n: Int,
-//     afterDoc: Int,
-//     afterScore: Float
-//   ): OdinResults = {
-//     query(
-//       compiler.mkQuery(odinsonQuery, parentQuery),
-//       n,
-//       new OdinsonScoreDoc(afterDoc, afterScore)
-//     )
-//   }
-
-//   /** executes query and returns next n results after the provided doc */
-//   def query(
-//     odinsonQuery: String,
-//     n: Int,
-//     after: OdinsonScoreDoc
-//   ): OdinResults = {
-//     query(compiler.mkQuery(odinsonQuery), n, after, false)
-//   }
-
-//   /** executes query and returns next n results after the provided doc */
-//   def query(
-//     odinsonQuery: String,
-//     parentQuery: String,
-//     n: Int,
-//     after: OdinsonScoreDoc
-//   ): OdinResults = {
-//     query(compiler.mkQuery(odinsonQuery, parentQuery), n, after)
-//   }
 
   /** executes query and returns next n results after the provided doc */
   def query(
