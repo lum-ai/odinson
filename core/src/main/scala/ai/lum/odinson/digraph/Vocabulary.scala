@@ -3,6 +3,7 @@ package ai.lum.odinson.digraph
 import java.io.IOException
 import scala.collection.mutable
 import org.apache.lucene.store.{ Directory, IOContext }
+import ai.lum.odinson.OdinsonIndexWriter
 
 /** This vocabulary is meant for the labels of the edges of the dependency graph.
  *  This object maps a term_id (int) to a symbol (string).
@@ -49,8 +50,6 @@ object Vocabulary {
 
   val sep = "\n"
 
-  val FILE_NAME = "dependencies.txt"
-
   def empty: Vocabulary = {
     new Vocabulary(mutable.ArrayBuffer.empty, mutable.HashMap.empty)
   }
@@ -65,7 +64,7 @@ object Vocabulary {
 
   def fromDirectory(directory: Directory): Vocabulary = try {
     // FIXME: is this the correct instantiation of IOContext?
-    val stream = directory.openInput(Vocabulary.FILE_NAME, new IOContext)
+    val stream = directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)
     Vocabulary.load(stream.readString())
   } catch {
     case e:IOException => Vocabulary.empty

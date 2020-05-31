@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `ExtractorEngine.inMemory(...)` to help build an index in memory.
 - Added `allPossibleMatches` to `ExtractorEngine.extractMentions()` to retrieve all spans of tokens that could
   be matched by the query. In other words, it skips the `MatchSelector`.
+- Added `buildinfo.json` file to the index to store versions and build info.
 ### Changed
 - `extra/AnnotateText` writes compressed json files
 - Reduce number of array allocations

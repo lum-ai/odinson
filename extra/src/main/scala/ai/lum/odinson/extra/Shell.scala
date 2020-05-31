@@ -149,10 +149,6 @@ object Shell extends App {
     println()
     println(s"Scala version: ${BuildInfo.scalaVersion}")
     println(s"Sbt version: ${BuildInfo.sbtVersion}")
-    println(s"Dependencies:")
-    BuildInfo.libraryDependencies.foreach(s => println("  " + s))
-    println(s"Scalac options:")
-    BuildInfo.scalacOptions.foreach(s => println("  " + s))
     println()
   }
 
