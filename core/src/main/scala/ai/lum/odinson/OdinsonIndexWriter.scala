@@ -18,6 +18,7 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.common.DisplayUtils._
+import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
@@ -36,6 +37,8 @@ class OdinsonIndexWriter(
   val maxNumberOfTokensPerSentence: Int,
 ) extends LazyLogging {
 
+  import OdinsonIndexWriter._
+
   val analyzer = new WhitespaceAnalyzer()
   val writerConfig = new IndexWriterConfig(analyzer)
   writerConfig.setOpenMode(OpenMode.CREATE)
@@ -53,9 +56,12 @@ class OdinsonIndexWriter(
 
   def close(): Unit = {
     // FIXME: is this the correct instantiation of IOContext?
-    val stream = directory.createOutput(Vocabulary.FILE_NAME, new IOContext)
-    stream.writeString(vocabulary.dump)
-    stream.close()
+    using (directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
+      stream.writeString(vocabulary.dump)
+    }
+    using (directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
+      stream.writeString(BuildInfo.toJson)
+    }
     writer.close()
   }
 
@@ -173,6 +179,9 @@ class OdinsonIndexWriter(
 
 
 object OdinsonIndexWriter {
+
+  val VOCABULARY_FILENAME = "dependencies.txt"
+  val BUILDINFO_FILENAME = "buildinfo.json"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig("odinson")
