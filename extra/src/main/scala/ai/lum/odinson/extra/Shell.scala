@@ -159,7 +159,8 @@ object Shell extends App {
   /** searches for pattern and prints the first n matches */
   def search(n: Int): Unit = {
     val start = System.currentTimeMillis()
-    val results = extractorEngine.query(query, n)
+    val q = extractorEngine.compiler.mkQuery(query)
+    val results = extractorEngine.query(q, n)
     val duration = (System.currentTimeMillis() - start) / 1000f
     after = results.scoreDocs.lastOption.getOrElse(null)
     totalHits = results.totalHits
@@ -178,7 +179,8 @@ object Shell extends App {
       return
     }
     val start = System.currentTimeMillis()
-    val results = extractorEngine.query(query, n, after)
+    val q = extractorEngine.compiler.mkQuery(query)
+    val results = extractorEngine.query(q, n, after)
     val duration = (System.currentTimeMillis() - start) / 1000f
     after = results.scoreDocs.lastOption.getOrElse(null)
     if (after == null) {
