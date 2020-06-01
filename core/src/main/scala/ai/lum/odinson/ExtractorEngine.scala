@@ -106,8 +106,8 @@ class ExtractorEngine(
   }
 
   /** executes query and returns all results */
-  def query(odinsonQuery: OdinsonQuery, allPossibleMatches: Boolean): OdinResults = {
-    query(odinsonQuery, indexReader.numDocs(), allPossibleMatches)
+  def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
   }
 
   /** executes query and returns at most n documents */
@@ -116,8 +116,8 @@ class ExtractorEngine(
   }
 
   /** executes query and returns at most n documents */
-  def query(odinsonQuery: OdinsonQuery, n: Int, allPossibleMatches: Boolean): OdinResults = {
-    query(odinsonQuery, n, null, allPossibleMatches)
+  def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, n, null, disableMatchSelector)
   }
 
   /** executes query and returns next n results after the provided doc */
@@ -134,9 +134,9 @@ class ExtractorEngine(
     odinsonQuery: OdinsonQuery,
     n: Int,
     after: OdinsonScoreDoc,
-    allPossibleMatches: Boolean,
+    disableMatchSelector: Boolean,
   ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, allPossibleMatches)
+    indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {

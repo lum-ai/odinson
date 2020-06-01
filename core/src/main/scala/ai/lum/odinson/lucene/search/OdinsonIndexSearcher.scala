@@ -40,7 +40,7 @@ class OdinsonIndexSearcher(
     odinSearch(after, query, numHits, false)
   }
 
-  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, allPossibleMatches: Boolean): OdinResults = {
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, disableMatchSelector: Boolean): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
       after == null || after.doc < limit,
@@ -48,7 +48,7 @@ class OdinsonIndexSearcher(
     )
     val cappedNumHits = math.min(numHits, limit)
     val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, allPossibleMatches)
+      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
       def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
         val results = collectors.iterator.asScala.map(_.odinResults).toArray
         OdinResults.merge(0, cappedNumHits, results, true)

@@ -11,19 +11,19 @@ class OdinsonCollector(
   private val collectedResults: Array[OdinsonScoreDoc],
   private val after: Int,
   private val computeTotalHits: Boolean,
-  private val allPossibleMatches: Boolean,
+  private val disableMatchSelector: Boolean,
 ) extends Collector {
 
-  def this(numHits: Int, after: Int, computeTotalHits: Boolean, allPossibleMatches: Boolean) = {
-    this(new Array[OdinsonScoreDoc](numHits), after, computeTotalHits, allPossibleMatches)
+  def this(numHits: Int, after: Int, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
+    this(new Array[OdinsonScoreDoc](numHits), after, computeTotalHits, disableMatchSelector)
   }
 
-  def this(numHits: Int, computeTotalHits: Boolean, allPossibleMatches: Boolean) = {
-    this(numHits, -1, computeTotalHits, allPossibleMatches)
+  def this(numHits: Int, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
+    this(numHits, -1, computeTotalHits, disableMatchSelector)
   }
 
-  def this(numHits: Int, afterDoc: OdinsonScoreDoc, computeTotalHits: Boolean, allPossibleMatches: Boolean) = {
-    this(numHits, if (afterDoc == null) -1 else afterDoc.doc, computeTotalHits, allPossibleMatches)
+  def this(numHits: Int, afterDoc: OdinsonScoreDoc, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
+    this(numHits, if (afterDoc == null) -1 else afterDoc.doc, computeTotalHits, disableMatchSelector)
   }
 
   private var totalHits: Int = 0
@@ -64,7 +64,7 @@ class OdinsonCollector(
         // for accurate totalHits count
         return
       }
-      val matches = if (allPossibleMatches) scorer.getAllPossibleMatches() else scorer.getMatches()
+      val matches = if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
@@ -89,7 +89,7 @@ class OdinsonCollector(
       if (doc <= afterDoc) {
         return
       }
-      val matches = if (allPossibleMatches) scorer.getAllPossibleMatches() else scorer.getMatches()
+      val matches = if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
