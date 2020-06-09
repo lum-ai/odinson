@@ -49,7 +49,7 @@ class ExtractorEngine(
     val booleanQuery = new LuceneBooleanQuery.Builder()
     val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    val q2 = new QueryParser("type", analyzer).parse("root")
+    val q2 = new QueryParser("type", analyzer).parse("metadata")
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
@@ -57,22 +57,30 @@ class ExtractorEngine(
     docs.head
   }
 
-  /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor]): Seq[Mention] = {
-    extractMentions(extractors, false)
+  def compileRules(rules: String): Seq[Extractor] = {
+    compileRules(rules, Map.empty)
+  }
+
+  def compileRules(rules: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rules, variables)
   }
 
   /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean): Seq[Mention] = {
-    extractMentions(extractors, numDocs(), allowTriggerOverlaps)
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
+    extractMentions(extractors, numSentences, false, false)
+  }
+
+  /** Apply the extractors and return all results */
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Seq[Mention] = {
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
   /** Apply the extractors and return results for at most `numSentences` */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean): Seq[Mention] = {
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
     // extract mentions
     val mentions = for {
       e <- extractors
-      results = query(e.query, numSentences)
+      results = query(e.query, numSentences, disableMatchSelector)
       scoreDoc <- results.scoreDocs
       docFields = doc(scoreDoc.doc)
       docId = docFields.getField("docId").stringValue
@@ -93,90 +101,42 @@ class ExtractorEngine(
   }
 
   /** executes query and returns all results */
-  def query(odinsonQuery: String): OdinResults = {
-    query(odinsonQuery, indexReader.numDocs())
-  }
-
-  /** executes query and returns at most n documents */
-  def query(odinsonQuery: String, n: Int): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery), n)
-  }
-
-  /** executes query and returns at most n documents */
-  def query(odinsonQuery: String, parentQuery: String): OdinResults = {
-    query(odinsonQuery, parentQuery, indexReader.numDocs())
-  }
-
-  /** executes query and returns at most n documents */
-  def query(odinsonQuery: String, parentQuery: String, n: Int): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery, parentQuery), n)
+  def query(odinsonQuery: OdinsonQuery): OdinResults = {
+    query(odinsonQuery, false)
   }
 
   /** executes query and returns all results */
-  def query(odinsonQuery: OdinsonQuery): OdinResults = {
-    query(odinsonQuery, indexReader.numDocs())
+  def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
   }
 
   /** executes query and returns at most n documents */
   def query(odinsonQuery: OdinsonQuery, n: Int): OdinResults = {
-    indexSearcher.odinSearch(odinsonQuery, n)
+    query(odinsonQuery, n, false)
   }
 
-  /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: String,
-    n: Int,
-    afterDoc: Int,
-    afterScore: Float
-  ): OdinResults = {
-    query(
-      compiler.mkQuery(odinsonQuery),
-      n,
-      new OdinsonScoreDoc(afterDoc, afterScore)
-    )
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: String,
-    parentQuery: String,
-    n: Int,
-    afterDoc: Int,
-    afterScore: Float
-  ): OdinResults = {
-    query(
-      compiler.mkQuery(odinsonQuery, parentQuery),
-      n,
-      new OdinsonScoreDoc(afterDoc, afterScore)
-    )
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: String,
-    n: Int,
-    after: OdinsonScoreDoc
-  ): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery), n, after)
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: String,
-    parentQuery: String,
-    n: Int,
-    after: OdinsonScoreDoc
-  ): OdinResults = {
-    query(compiler.mkQuery(odinsonQuery, parentQuery), n, after)
+  /** executes query and returns at most n documents */
+  def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, n, null, disableMatchSelector)
   }
 
   /** executes query and returns next n results after the provided doc */
   def query(
     odinsonQuery: OdinsonQuery,
     n: Int,
-    after: OdinsonScoreDoc
+    after: OdinsonScoreDoc,
   ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n)
+    indexSearcher.odinSearch(after, odinsonQuery, n, false)
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(
+    odinsonQuery: OdinsonQuery,
+    n: Int,
+    after: OdinsonScoreDoc,
+    disableMatchSelector: Boolean,
+  ): OdinResults = {
+    indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {
