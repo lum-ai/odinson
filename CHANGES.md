@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   This means you should reindex if you upgrade to this version.
 ### Fixed
 - Nullpointer exception related to event arguments.
+- size of roots array in `UnsafeSerializer`
 
 ## [0.2.3] - 2020-03-27
 ### Added
