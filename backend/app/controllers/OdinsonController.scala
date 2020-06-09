@@ -229,7 +229,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         case None => extractorEngine.numDocs()
       }
 
-      val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps, allPossibleMatches = false)
+      val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps, disableMatchSelector = false)
       
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
