@@ -8,6 +8,7 @@ patternsThatMatch.tsv
 
 ### Tests
 
+```
 scala.ai.lum.odinson = [
   TestArgsQuantifiers.scala
   TestEventTriggers.scala
@@ -20,6 +21,7 @@ scala.ai.lum.odinson = [
   TestUnsafeSerializer.scala
   TestUtils.scala
 ]
+```
 
 #### Description of the tests
 
