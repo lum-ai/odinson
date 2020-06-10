@@ -158,7 +158,6 @@ class TestEvents extends FlatSpec with Matchers {
         endToken = m.end,
       )
     }
-    ee.state.index()
   }
 
   it should "find event with mentions from the state when the state is populated" in {
