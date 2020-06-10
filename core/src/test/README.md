@@ -47,3 +47,51 @@ Simple tests for the extractor engine.
 3. tests ee.query with optionals
 4. tests a case where there is no match.
 5. tests event with location
+
+**testPattern.scala**
+
+1. test a file with patterns (patternsThatMatch.tsv)
+
+**TestRuleFile.scala**
+
+1. test an eventrule
+a. test if the aguments are corret
+
+**TestTraversals.scala**
+
+1. test matches that follow a dependency tree.
+
+**TestUnicodeNormalization.scala**
+
+1. unicode normalization
+2. unicode aggressive normalization
+3. normalize multi units
+4. check support to casefolding
+5. remove diacritics
+6. character replacement
+
+
+**TestUnsafeSerializer.scala**
+
+1. serialize and deserialize a graph and test if the serialization works
+
+**TestUnsafeSerializer.scala**
+
+Defines helper functions for testing.
+
+### Types of tests found
+
+1. Serialization
+2. Event rules
+3. Traversals
+4. Util (Unicode for now?)
+5. Patterns
+6. Quantifiers
+
+Groups that should be added?:
+
+7. Logical Operators
+8. Basic Functioning
+
+
+What to do with TestPatterns.scala
