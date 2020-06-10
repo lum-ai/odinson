@@ -5,23 +5,22 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import ai.lum.common.TryWithResources.using
 
 class HikariState(val url: String) extends State {
-
-  private val config = new HikariConfig
-  config.setJdbcUrl(url)
-  // TODO get from config?
-  config.setPoolName("odinson")
-  config.setUsername("")
-  config.setPassword("")
-  config.setMaximumPoolSize(10)
-  config.setMinimumIdle(2)
-  config.addDataSourceProperty("cachePrepStmts", "true")
-  config.addDataSourceProperty("prepStmtCacheSize", "256")
-  config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
-  private val ds = new HikariDataSource(config)
+  private val ds = {
+    val config = new HikariConfig
+    config.setJdbcUrl(url)
+    // TODO get from config?
+    config.setPoolName("odinson")
+    config.setUsername("")
+    config.setPassword("")
+    config.setMaximumPoolSize(10)
+    config.setMinimumIdle(2)
+    config.addDataSourceProperty("cachePrepStmts", "true")
+    config.addDataSourceProperty("prepStmtCacheSize", "256")
+    config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+    new HikariDataSource(config)
+  }
 
   init()
-
-
 
   def close(): Unit = {
     ds.close()
