@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import ai.lum.common.TryWithResources.using
 
-class HikariState(val url: String) extends State {
+class SqlState(val url: String) extends State {
   private val ds = {
     val config = new HikariConfig
     config.setJdbcUrl(url)

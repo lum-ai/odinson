@@ -152,8 +152,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         endToken   = odinsonMatch.end
       )
     }
-    // index for efficient lookup in subsequent queries
-    extractorEngine.state.index()
   }
 
   /**
