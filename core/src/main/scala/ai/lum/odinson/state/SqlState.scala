@@ -64,7 +64,6 @@ class SqlState(val url: String) extends State {
     endToken: Int
   ): Unit = {
     using(ds.getConnection()) { conn =>
-      // FIXME this should be altered to add several mentions in a single call
       val sql = """
         INSERT INTO mentions
           (doc_base, doc_id, label, start_token, end_token)
@@ -78,6 +77,30 @@ class SqlState(val url: String) extends State {
       stmt.setInt(4, startToken)
       stmt.setInt(5, endToken)
       stmt.executeUpdate()
+    }
+  }
+
+  // Reuse the same connection and prepared statement.
+  // TODO Group the mentions and insert multiple at a time.
+  override def addMentions(mentions: Iterator[(Int, Int, String, Int, Int)]): Unit = {
+    using(ds.getConnection()) { conn =>
+      val sql = """
+        INSERT INTO mentions
+          (doc_base, doc_id, label, start_token, end_token)
+        VALUES (?, ?, ?, ?, ?)
+        ;
+      """
+      val stmt = conn.prepareStatement(sql)
+
+      // FIXME this should be altered to add several mentions in a single call
+      mentions.foreach { mention =>
+        stmt.setInt(1, mention._1)
+        stmt.setInt(2, mention._2)
+        stmt.setString(3, mention._3)
+        stmt.setInt(4, mention._4)
+        stmt.setInt(5, mention._5)
+        stmt.executeUpdate()
+      }
     }
   }
 
@@ -135,9 +158,12 @@ class SqlState(val url: String) extends State {
   }
 
   /** delete all mentions from the state */
-  def delete(): Unit = {
+  // See https://examples.javacodegeeks.com/core-java/sql/delete-all-table-rows-example/.
+  // "TRUNCATE is faster than DELETE since it does not generate rollback information and does not
+  // fire any delete triggers."
+  override def delete(): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = "DELETE FROM mentions;"
+      val sql = "DELETE FROM mentions;" // TODO test TRUNCATE
       conn.createStatement().executeUpdate(sql)
     }
   }
