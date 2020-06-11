@@ -28,7 +28,7 @@ class SqlState(val url: String) extends State {
 
   def init(): Unit = {
     createTable()
-    createIndex()
+    createIndexes()
   }
 
   def createTable(): Unit = {
@@ -46,13 +46,25 @@ class SqlState(val url: String) extends State {
     }
   }
 
-  def createIndex(): Unit = {
+  def createIndexes(): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = """
-        CREATE INDEX IF NOT EXISTS mentions_index
-        ON mentions(doc_base, doc_id, label);
-      """
-      conn.createStatement().executeUpdate(sql)
+      {
+        val sql =
+          """
+            CREATE INDEX IF NOT EXISTS mentions_index
+            ON mentions(doc_base, doc_id, label);
+          """
+        conn.createStatement().executeUpdate(sql)
+      }
+
+      {
+        val sql =
+          """
+            CREATE INDEX IF NOT EXISTS docIds_index
+            ON mentions(doc_base, label);
+          """
+        conn.createStatement().executeUpdate(sql)
+      }
     }
   }
 
