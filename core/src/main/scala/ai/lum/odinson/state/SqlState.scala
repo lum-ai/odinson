@@ -116,6 +116,10 @@ class SqlState(val url: String) extends State {
     }
   }
 
+  // TODO: This should be in a separate, smaller table so that
+  // looking through it is faster and no DISTINCT is necessary.
+  // See MemoryState for guidance.
+
   /** Returns the segment-specific doc-ids that correspond
    *  to lucene documents that contain a mention with the
    *  specified label
