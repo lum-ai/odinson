@@ -1,4 +1,4 @@
-package ai.lum.odinson.basic
+package ai.lum.odinson.foundations
 
 import org.scalatest._
 

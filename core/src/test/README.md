@@ -13,7 +13,7 @@ Groups that should be added?
 8. Logical Operators
 9. Basic Functioning
 
-What to do with TestPatterns.scala
+What to do with TestPatterns.scala?
 
 ## Fixtures
 
