@@ -35,7 +35,7 @@ lazy val extra = project
   .aggregate(core)
   .dependsOn(core)
   .settings(commonSettings)
-  .enablePlugins(DockerPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(generalDockerSettings)
   .settings(
     packageName in Docker := "odinson-extras",
@@ -58,6 +58,7 @@ ThisBuild / gitDockerTag := {
 
 lazy val generalDockerSettings = {
   Seq(
+    parallelExecution in ThisBuild := false,
     // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
     dockerUsername := Some("lumai"),
     dockerAliases ++= Seq(
@@ -66,7 +67,10 @@ lazy val generalDockerSettings = {
     ),
     maintainer in Docker := "Gus Hahn-Powell <ghp@lum.ai>",
     // "openjdk:11-jre-alpine"
-    dockerBaseImage := "openjdk:11"
+    dockerBaseImage := "openjdk:11",
+    javaOptions in Universal ++= Seq(
+      "-Dodinson.dataDir=/app/data/odinson"
+    )
   )
 }
 
@@ -101,7 +105,7 @@ lazy val backend = project
     PlayKeys.devSettings += "play.server.http.address" -> "0.0.0.0",
     PlayKeys.devSettings += "play.server.http.idleTimeout" -> "infinite"
   )
-  .enablePlugins(DockerPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(generalDockerSettings)
   .settings(
     packageName in Docker := "odinson-rest-api",
