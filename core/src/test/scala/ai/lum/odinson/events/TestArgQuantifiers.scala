@@ -1,8 +1,8 @@
-package ai.lum.odinson
+package ai.lum.odinson.events
 
 import org.scalatest._
 
-//import ai.lum.odinson.{Document, TestUtils}
+import ai.lum.odinson.{Document, TestUtils}
 
 class TestArgQuantifiers extends FlatSpec with Matchers {
 

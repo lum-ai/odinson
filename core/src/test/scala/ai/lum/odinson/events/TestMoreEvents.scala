@@ -1,6 +1,8 @@
-package ai.lum.odinson
+package ai.lum.odinson.events
 
 import org.scalatest._
+
+import ai.lum.odinson.{TestUtils, Document, EventMatch, OdinsonMatch}
 
 class TestMoreEvents extends FlatSpec with Matchers {
 
