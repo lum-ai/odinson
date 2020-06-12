@@ -1,4 +1,4 @@
-package ai.lum.odinson
+package ai.lum.odinson.serialization
 
 import org.scalatest._
 import ai.lum.odinson.digraph.DirectedGraph

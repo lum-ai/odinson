@@ -1,6 +1,7 @@
-package ai.lum.odinson
+package ai.lum.odinson.traversals
 
 import org.scalatest._
+import ai.lum.odinson._
 
 class TestTraversals extends FlatSpec with Matchers {
 
