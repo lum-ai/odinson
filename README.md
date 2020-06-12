@@ -115,15 +115,15 @@ docker run \
 ```bash
 docker run \
   --name="odinson-rest-api" \
-  -d \
   -it \
   --rm \
-  --restart "on-failure" \
   -e "HOME=/app" \
   -p "0.0.0.0:9001:9000" \
   -v "/path/to/data/odinson:/app/data/odinson" \
   "lumai/odinson-rest-api:latest"
 ```
+
+After starting the service, open your browser to [localhost:9001](localhost:9001/api).
 
 **NOTE**: Replace `/path/to/data/odinson` with the path to the directory containing `docs` and `index` (created via `AnnotateText` and `IndexDocuments` runnables).
 

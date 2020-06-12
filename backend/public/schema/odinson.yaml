@@ -278,10 +278,10 @@ paths:
       summary: |
         Retrieves annotation details for a sentence.
       description: |
-        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentId.
+        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentenceId.
       operationId: sentence
       parameters:
-        - name: sentId
+        - name: sentenceId
           in: query
           description: |
             The sentence ID for which annotation details are being requested.
