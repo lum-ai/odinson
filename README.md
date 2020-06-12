@@ -118,6 +118,7 @@ docker run \
   -d \
   -it \
   --rm \
+  --restart "on-failure" \
   -e "HOME=/app" \
   -p "0.0.0.0:9001:9000" \
   -v "/path/to/data/odinson:/app/data/odinson" \
