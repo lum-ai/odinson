@@ -1,6 +1,8 @@
-package ai.lum.odinson
+package ai.lum.odinson.basic
 
 import org.scalatest._
+import ai.lum.odinson.TestUtils
+import ai.lum.odinson.Document
 
 class TestFields extends FlatSpec with Matchers {
 
