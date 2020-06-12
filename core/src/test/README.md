@@ -91,11 +91,12 @@ Defines helper functions for testing.
 4. Util (Unicode for now?)
 5. Patterns
 6. Quantifiers
+7. Basic tests (test very basic functionality)
 
 Groups that should be added?:
 
-7. Logical Operators
-8. Basic Functioning
+8. Logical Operators
+9. Basic Functioning
 
 What to do with TestPatterns.scala
 
