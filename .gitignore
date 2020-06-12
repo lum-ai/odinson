@@ -22,3 +22,6 @@ project/metals.sbt
 
 # vim swap files
 *.swp
+
+# ctags
+tags
