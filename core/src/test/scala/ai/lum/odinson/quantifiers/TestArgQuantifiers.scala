@@ -2,6 +2,8 @@ package ai.lum.odinson
 
 import org.scalatest._
 
+//import ai.lum.odinson.{Document, TestUtils}
+
 class TestArgQuantifiers extends FlatSpec with Matchers {
 
   import TestEvents._
@@ -90,5 +92,5 @@ class TestArgQuantifiers extends FlatSpec with Matchers {
     )
     testEventArguments(m, desiredArgs)
   }
-
 }
+
