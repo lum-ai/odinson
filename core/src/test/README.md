@@ -97,3 +97,12 @@ Groups that should be added?:
 
 
 What to do with TestPatterns.scala
+
+## Fixtures
+
+List of fixtures for core tests
+
+### Basic
+
+ExtractorEngine
+(Odinson)Document
