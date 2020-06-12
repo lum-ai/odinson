@@ -1,8 +1,10 @@
-package ai.lum.odinson
+package ai.lum.odinson.patterns
 
 import scala.io.Source
 import org.scalatest._
 import ai.lum.common.DisplayUtils._
+
+import ai.lum.odinson.TestUtils
 
 class TestPatterns extends FlatSpec with Matchers {
 
