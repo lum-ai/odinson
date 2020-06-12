@@ -72,6 +72,8 @@ a. test if the aguments are corret
 5. remove diacritics
 6. character replacement
 
+This is not testing anything from Odinson.
+This is testing something from lum.common should we put these tests anywhere else?
 
 **TestUnsafeSerializer.scala**
 
@@ -95,12 +97,16 @@ Groups that should be added?:
 7. Logical Operators
 8. Basic Functioning
 
-
 What to do with TestPatterns.scala
 
 ## Fixtures
 
 List of fixtures for core tests
+
+Righ now classes are extending FlatSpec with Matchers,
+but in the future I want to have a base class with the mixtures we need.
+
+
 
 ### Basic
 
