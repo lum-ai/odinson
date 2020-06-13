@@ -118,6 +118,7 @@ lazy val backend = project
       "-J-Xmx4G",
       // avoid writing a PID file
       "-Dplay.server.pidfile.path=/dev/null",
+      //"-Dplay.server.akka.requestTimeout=20s"
       "-Dlogger.resource=odinson-rest-logger.xml"
     )
   )

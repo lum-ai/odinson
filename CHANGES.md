@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- REST API endpoints for retrieving metadata and parent document; OpenAPI data model for `OdinsonDocument`, etc.
 - Containerized Odinson
   - Docker images for [`extra`](https://hub.docker.com/r/lumai/odinson-extras) and the [REST API](https://hub.docker.com/r/lumai/odinson-rest-api) using the [`sbt-native-packager` plugin](https://github.com/sbt/sbt-native-packager).
 - Added `ExtractorEngine.inMemory(...)` to help build an index in memory.
@@ -13,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be matched by the query. In other words, it skips the `MatchSelector`.
 - Added `buildinfo.json` file to the index to store versions and build info.
 ### Changed
+- REST API: `/api/parent` -> `/api/parent/by-document-id` & `/api/parent/by-sentence-id`
+- REST API: `sentId` param for `/api/sentence` -> `sentenceId`
+- REST API: `rules` param for `/api/execute/grammar` -> `grammar`
+- Retrieval of OdinsonSentence JSON via REST API
 - `extra/AnnotateText` writes compressed json files
 - Reduce number of array allocations
 - All strings are normalized with NFKC, except the norm field which uses NFKC with casefolding,
