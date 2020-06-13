@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### Added
 - REST API endpoints for retrieving metadata and parent document; OpenAPI data model for `OdinsonDocument`, etc.
+- Containerized Odinson
+  - Docker images for [`extra`](https://hub.docker.com/r/lumai/odinson-extras) and the [REST API](https://hub.docker.com/r/lumai/odinson-rest-api) using the [`sbt-native-packager` plugin](https://github.com/sbt/sbt-native-packager).
 - Added `ExtractorEngine.inMemory(...)` to help build an index in memory.
 - Added `disableMatchSelector` to `ExtractorEngine.extractMentions()` to retrieve all spans of tokens that could
   be matched by the query. In other words, it skips the `MatchSelector`.

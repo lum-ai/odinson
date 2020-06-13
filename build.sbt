@@ -1,6 +1,7 @@
 import ReleaseTransformations._
 import com.typesafe.sbt.packager.docker.DockerChmodType
 
+
 organization in ThisBuild := "ai.lum"
 
 scalaVersion in ThisBuild := "2.12.10"
@@ -84,13 +85,14 @@ lazy val backend = project
   .settings(
     name := "odinson-rest-api",
     libraryDependencies ++= {
-      val akkaV = "2.5.4"
+      val akkaV = "2.6.6"
       Seq(
         guice,
         jdbc,
         ehcache,
         ws,
-        "org.scalatestplus.play"  %% "scalatestplus-play" % "3.0.0" % Test,
+        "org.scalatestplus.play"  %% "scalatestplus-play" % "5.0.0" % Test,
+        "com.typesafe.akka" %% "akka-actor-typed" % akkaV,
         "com.typesafe.akka" %% "akka-protobuf" % akkaV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
@@ -112,12 +114,12 @@ lazy val backend = project
     mainClass in Compile := Some("play.core.server.ProdServerStart"),
     //dockerRepository := Some("index.docker.io"),
     dockerExposedPorts in Docker := Seq(9000),
-    //dockerChmodType := DockerChmodType.UserGroupWriteExecute
     javaOptions in Universal ++= Seq(
       "-J-Xmx4G",
       // avoid writing a PID file
       "-Dplay.server.pidfile.path=/dev/null",
       //"-Dplay.server.akka.requestTimeout=20s"
+      "-Dlogger.resource=odinson-rest-logger.xml"
     )
   )
 
