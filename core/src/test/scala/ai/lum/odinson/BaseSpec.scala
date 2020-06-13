@@ -15,7 +15,7 @@ import ai.lum.odinson.state.State
 // tests stuff
 import org.scalatest._
 
-class BaseSpec extends FlatSpec with Matchers  {
+class BaseSpec extends FlatSpec with Matchers with BaseFixtures {
 
 
 }
