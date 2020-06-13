@@ -38,6 +38,97 @@ The three apps in extra are:
 - **IndexDocuments**: reads the parsed documents and builds an odinson index
 - **Shell**: this is a shell where you can execute queries (we will replace this with the webapp soon)
 
+## Docker
+
+To build docker images locally, run the following command via [sbt](https://www.scala-sbt.org/1.x/docs/Setup.html):
+
+```bash
+sbt dockerize
+```
+We also publish images to [dockerhub](https://hub.docker.com/orgs/lumai/repositories) (see below for information on our docker images).
+
+#### Docker image for annotating text and indexing Odinson JSON documents
+
+```bash
+docker pull lumai/odinson-extras:latest
+```
+
+See [our repository](https://hub.docker.com/r/lumai/odinson-extras) for other tags.
+
+#### Docker image for running the Odinson REST API
+
+```bash
+docker pull lumai/odinson-rest-api:latest
+```
+
+See [our repository](https://hub.docker.com/r/lumai/odinson-rest-api) for other tags.
+
+### Annotating text
+
+```bash
+docker run \
+  --name="odinson-extras" \
+  -it \
+  --rm \
+  -e "HOME=/app" \
+  -e "JAVA_OPTS=-Dodinson.extra.processorType=CluProcessor" \
+  -v "/path/to/data/odinson:/app/data/odinson" \
+  --entrypoint "bin/annotate-text" \
+  "lumai/odinson-extras:latest"
+```
+
+**NOTE**: Replace `/path/to/data/odinson` with the path to the directory containing a directory called `text` containing the `.txt` files you want to annotate. Compressed OdinsonDocument JSON will be written to a directory called `docs` under whatever you use for `/path/to/data/odinson`.
+
+### Indexing documents
+
+```bash
+docker run \
+  --name="odinson-extras" \
+  -it \
+  --rm \
+  -e "HOME=/app" \
+  -v "/path/to/data/odinson:/app/data/odinson" \
+  --entrypoint "bin/index-documents" \
+  "lumai/odinson-extras:latest"
+```
+
+**NOTE**: Replace `/path/to/data/odinson` with the path to the directory containing `docs`. The index will be written to a directory called `index` under whatever you use for `/path/to/data/odinson`.
+
+### Odinson shell
+
+```bash
+docker run \
+  --name="odinson-extras" \
+  -it \
+  --rm \
+  -e "HOME=/app" \
+  -v "/path/to/data/odinson:/app/data/odinson" \
+  --entrypoint "bin/shell" \
+  "lumai/odinson-extras:latest"
+```
+
+**NOTE**: Replace `/path/to/data/odinson` with the path to the directory containing `index` (created via the `IndexDocuments` runnable).
+
+
+### Running the REST API
+
+```bash
+docker run \
+  --name="odinson-rest-api" \
+  -it \
+  --rm \
+  -e "HOME=/app" \
+  -p "0.0.0.0:9001:9000" \
+  -v "/path/to/data/odinson:/app/data/odinson" \
+  "lumai/odinson-rest-api:latest"
+```
+
+After starting the service, open your browser to [localhost:9001](localhost:9001/api).
+
+**NOTE**: Replace `/path/to/data/odinson` with the path to the directory containing `docs` and `index` (created via `AnnotateText` and `IndexDocuments` runnables).
+
+Logs can be viewed by running `docker logs -f "odinson-rest-api"`
+
 ## Examples
 
 We have made a few example queries to show how the system works. For this we used a collection of 8,479 scientific papers (or 1,105,737 sentences). Please note that the rapidity of the execution allows a user to dynamically develop these queries in real-time, immediately receiving feedback on the coverage and precision of the patterns at scale.
