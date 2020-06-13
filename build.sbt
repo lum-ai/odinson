@@ -1,4 +1,6 @@
 import ReleaseTransformations._
+import com.typesafe.sbt.packager.docker.DockerChmodType
+
 
 organization in ThisBuild := "ai.lum"
 
@@ -34,70 +36,46 @@ lazy val extra = project
   .aggregate(core)
   .dependsOn(core)
   .settings(commonSettings)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .settings(generalDockerSettings)
+  .settings(
+    packageName in Docker := "odinson-extras",
+    //mainClass in Compile := Some("ai.lum.odinson.extra.IndexDocuments"),
+    //dockerRepository := Some("index.docker.io"),
+    //dockerChmodType := DockerChmodType.UserGroupWriteExecute
+    javaOptions in Universal ++= Seq(
+      "-J-Xmx6G"
+    )
+  )
 
 
-lazy val backendAssemblySettings = {
-  mainClass in assembly := Some("play.core.server.ProdServerStart")
-  fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
-
-  assemblyMergeStrategy in assembly := {
-    case manifest if manifest.contains("MANIFEST.MF") =>
-      // We don't need manifest files since sbt-assembly will create
-      // one with the given settings
-      MergeStrategy.discard
-    case referenceOverrides if referenceOverrides.contains("reference-overrides.conf") =>
-      // Keep the content for all reference-overrides.conf files
-      MergeStrategy.concat
-    case logback if logback.endsWith("logback.xml")     => MergeStrategy.first
-    case netty if netty.endsWith("io.netty.versions.properties") => MergeStrategy.first
-    case "messages"                                     => MergeStrategy.concat
-    case PathList("META-INF", "terracotta", "public-api-types")  => MergeStrategy.concat
-    case PathList("play", "api", "libs", "ws", xs @ _*) => MergeStrategy.first
-    case PathList("javax", "servlet", xs @ _*)          => MergeStrategy.first
-    case PathList("javax", "transaction", xs @ _*)      => MergeStrategy.first
-    case PathList("javax", "mail", xs @ _*)             => MergeStrategy.first
-    case PathList("javax", "activation", xs @ _*)       => MergeStrategy.first
-    case x =>
-      // For all the other files, use the default sbt-assembly merge strategy
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
-  }
+// Docker settings
+val gitDockerTag = settingKey[String]("Git commit-based tag for docker")
+ThisBuild / gitDockerTag := {
+  val shortHash: String = git.gitHeadCommit.value.get.take(7)  
+  val uncommittedChanges: Boolean = (git.gitUncommittedChanges).value
+  s"""${shortHash}${if (uncommittedChanges) "-DIRTY" else ""}"""
 }
 
-lazy val backendDockerSettings = {
+lazy val generalDockerSettings = {
   Seq(
-    dockerfile in docker := {
-      val targetDir = "/app"
-      // the assembly task generates a fat jar
-      val artifact: File = assembly.value
-      val artifactTargetPath = s"$targetDir/${artifact.name}"
-      // val productionConf = "production.conf"
-      new Dockerfile {
-        from("openjdk:11")
-        add(artifact, artifactTargetPath)
-        // copy(new File(productionConf), file(s"$targetDir/$productionConf"))
-        entryPoint("java", "-Dpidfile.path=/dev/null", //s"-Dconfig.file=$targetDir/$productionConf",
-          "-jar", artifactTargetPath)
-      }
-    },
-    imageNames in docker := {
-      val commit = git.gitHeadCommit.value.getOrElse(s"v${version.value}")
-      Seq(
-        // sets the latest tag
-        ImageName(s"${organization.value}/${name.value}:latest"),
-        // use git hash
-        ImageName(s"${organization.value}/${name.value}:${commit}"),
-        // sets a name with a tag that contains the project version
-        ImageName(
-          namespace = Some(organization.value),
-          repository = name.value,
-          tag = Some("v" + version.value)
-        )
-      )
-    }
+    parallelExecution in ThisBuild := false,
+    // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
+    dockerUsername := Some("lumai"),
+    dockerAliases ++= Seq(
+      dockerAlias.value.withTag(Option("latest")),
+      dockerAlias.value.withTag(Option(gitDockerTag.value))
+    ),
+    maintainer in Docker := "Gus Hahn-Powell <ghp@lum.ai>",
+    // "openjdk:11-jre-alpine"
+    dockerBaseImage := "openjdk:11",
+    javaOptions in Universal ++= Seq(
+      "-Dodinson.dataDir=/app/data/odinson"
+    )
   )
 }
 
+// REST API
 lazy val backend = project
   .aggregate(core)
   .dependsOn(core % "test->test;compile->compile")
@@ -107,13 +85,14 @@ lazy val backend = project
   .settings(
     name := "odinson-rest-api",
     libraryDependencies ++= {
-      val akkaV = "2.5.4"
+      val akkaV = "2.6.6"
       Seq(
         guice,
         jdbc,
         ehcache,
         ws,
-        "org.scalatestplus.play"  %% "scalatestplus-play" % "3.0.0" % Test,
+        "org.scalatestplus.play"  %% "scalatestplus-play" % "5.0.0" % Test,
+        "com.typesafe.akka" %% "akka-actor-typed" % akkaV,
         "com.typesafe.akka" %% "akka-protobuf" % akkaV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV,
@@ -128,12 +107,23 @@ lazy val backend = project
     PlayKeys.devSettings += "play.server.http.address" -> "0.0.0.0",
     PlayKeys.devSettings += "play.server.http.idleTimeout" -> "infinite"
   )
-  .settings(backendAssemblySettings)
-  .settings(backendDockerSettings)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .settings(generalDockerSettings)
+  .settings(
+    packageName in Docker := "odinson-rest-api",
+    mainClass in Compile := Some("play.core.server.ProdServerStart"),
+    //dockerRepository := Some("index.docker.io"),
+    dockerExposedPorts in Docker := Seq(9000),
+    javaOptions in Universal ++= Seq(
+      "-J-Xmx4G",
+      // avoid writing a PID file
+      "-Dplay.server.pidfile.path=/dev/null",
+      "-Dlogger.resource=odinson-rest-logger.xml"
+    )
+  )
 
 
-
-// release steps
+// Release steps
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
@@ -148,7 +138,6 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,
   pushChanges
 )
-
 
 // Publishing settings
 
@@ -175,4 +164,5 @@ developers in ThisBuild := List(
 
 
 // tasks
-addCommandAlias("dockerizeRestApi", ";clean;compile;test;backend/docker")
+addCommandAlias("dockerize", ";clean;compile;test;docker:publishLocal")
+addCommandAlias("dockerizeAndPublish", ";clean;compile;test;docker:publish")
