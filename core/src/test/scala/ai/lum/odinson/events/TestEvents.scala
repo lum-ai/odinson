@@ -2,9 +2,11 @@ package ai.lum.odinson.events
 
 import org.scalatest._
 
-import ai.lum.odinson.{TestUtils, Document, EventMatch, OdinsonMatch}
+import ai.lum.odinson.{EventMatch, OdinsonMatch}
 
-class TestEvents extends FlatSpec with Matchers {
+import ai.lum.odinson.BaseSpec
+
+class TestEvents extends BaseSpec {
 
   import TestEvents._
 
@@ -17,8 +19,8 @@ class TestEvents extends FlatSpec with Matchers {
   """
 
   // extractor engine persists across tests (hacky way)
-  val doc = Document.fromJson(json)
-  val ee = TestUtils.mkExtractorEngine(doc)
+  val doc = getDocumentFromJson(json)
+  val ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with promoted entities" in {
     val pattern = """
