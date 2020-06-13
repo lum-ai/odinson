@@ -25,3 +25,6 @@ project/metals.sbt
 
 # ctags
 tags
+
+# bloop build server
+.bloop
