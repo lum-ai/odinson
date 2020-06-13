@@ -146,7 +146,8 @@ class TestEvents extends BaseSpec {
   }
 
   it should "populate the state with NPs" in {
-    val results = ee.query("[chunk=B-NP][chunk=I-NP]*")
+    val query = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    val results = ee.query(query)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     for {

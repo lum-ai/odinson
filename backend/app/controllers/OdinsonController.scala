@@ -133,8 +133,12 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     label: String = "Mention"
   ): Unit = {
     val results = parentQuery match {
-      case None => extractorEngine.query(odinsonQuery)
-      case Some(filter) => extractorEngine.query(odinsonQuery, filter)
+      case None =>
+        val q = extractorEngine.compiler.mkQuery(odinsonQuery)
+        extractorEngine.query(q)
+      case Some(filter) =>
+        val q = extractorEngine.compiler.mkQuery(odinsonQuery, filter)
+        extractorEngine.query(q)
     }
     for {
       scoreDoc <- results.scoreDocs
@@ -225,7 +229,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         case None => extractorEngine.numDocs()
       }
 
-      val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps)
+      val mentions: Seq[Mention] = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps, disableMatchSelector = false)
       
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
