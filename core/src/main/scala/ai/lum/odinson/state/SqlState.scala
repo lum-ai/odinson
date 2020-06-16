@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import ai.lum.common.TryWithResources.using
 
-class SqlState(val url: String) extends State {
+class SqlState(val url: String, protected val index: Long) extends State {
   private val ds = {
     val config = new HikariConfig
     config.setJdbcUrl(url)
@@ -33,8 +33,8 @@ class SqlState(val url: String) extends State {
 
   def createTable(): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = """
-        CREATE TABLE IF NOT EXISTS mentions (
+      val sql = s"""
+        CREATE TABLE IF NOT EXISTS mentions_$index (
           doc_base INT NOT NULL,       -- offset corresponding to lucene segment
           doc_id INT NOT NULL,         -- relative to lucene segment (not global)
           label VARCHAR(50) NOT NULL,  -- mention label
@@ -50,18 +50,18 @@ class SqlState(val url: String) extends State {
     using(ds.getConnection()) { conn =>
       {
         val sql =
-          """
-            CREATE INDEX IF NOT EXISTS mentions_index
-            ON mentions(doc_base, doc_id, label);
+          s"""
+            CREATE INDEX IF NOT EXISTS mentions_${index}_index
+            ON mentions_${index}(doc_base, doc_id, label);
           """
         conn.createStatement().executeUpdate(sql)
       }
 
       {
         val sql =
-          """
-            CREATE INDEX IF NOT EXISTS docIds_index
-            ON mentions(doc_base, label);
+          s"""
+            CREATE INDEX IF NOT EXISTS docIds_${index}_index
+            ON mentions_${index}(doc_base, label);
           """
         conn.createStatement().executeUpdate(sql)
       }
@@ -76,8 +76,8 @@ class SqlState(val url: String) extends State {
     endToken: Int
   ): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = """
-        INSERT INTO mentions
+      val sql = s"""
+        INSERT INTO mentions_$index
           (doc_base, doc_id, label, start_token, end_token)
         VALUES (?, ?, ?, ?, ?)
         ;
@@ -96,8 +96,8 @@ class SqlState(val url: String) extends State {
   // TODO Group the mentions and insert multiple at a time.
   override def addMentions(mentions: Iterator[(Int, Int, String, Int, Int)]): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = """
-        INSERT INTO mentions
+      val sql = s"""
+        INSERT INTO mentions_$index
           (doc_base, doc_id, label, start_token, end_token)
         VALUES (?, ?, ?, ?, ?)
         ;
@@ -126,9 +126,9 @@ class SqlState(val url: String) extends State {
    */
   def getDocIds(docBase: Int, label: String): Array[Int] = {
     using(ds.getConnection()) { conn =>
-      val sql = """
+      val sql = s"""
         SELECT DISTINCT doc_id
-        FROM mentions
+        FROM mentions_$index
         WHERE doc_base=? AND label=?
         ORDER BY doc_id
         ;
@@ -151,9 +151,9 @@ class SqlState(val url: String) extends State {
     label: String
   ): Array[(Int, Int)] = {
     using(ds.getConnection()) { conn =>
-      val sql = """
+      val sql = s"""
         SELECT start_token, end_token
-        FROM mentions
+        FROM mentions_$index
         WHERE doc_base=? AND doc_id=? AND label=?
         ORDER BY start_token, end_token
         ;
@@ -173,13 +173,17 @@ class SqlState(val url: String) extends State {
     }
   }
 
+  override def clear(): Unit = {
+    delete()
+  }
+
   /** delete all mentions from the state */
   // See https://examples.javacodegeeks.com/core-java/sql/delete-all-table-rows-example/.
   // "TRUNCATE is faster than DELETE since it does not generate rollback information and does not
   // fire any delete triggers."
-  override def delete(): Unit = {
+  protected def delete(): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = "DELETE FROM mentions;" // TODO test TRUNCATE
+      val sql = s"""DELETE FROM mentions_$index;""" // TODO test TRUNCATE
       conn.createStatement().executeUpdate(sql)
     }
   }
@@ -187,7 +191,7 @@ class SqlState(val url: String) extends State {
   /** delete all mentions with the provided label */
   def delete(label: String): Unit = {
     using(ds.getConnection()) { conn =>
-      val sql = "DELETE FROM mentions WHERE label=?;"
+      val sql = s"""DELETE FROM mentions_$index WHERE label=?;"""
       val stmt = conn.prepareStatement(sql)
       stmt.setString(1, label)
       stmt.executeUpdate()

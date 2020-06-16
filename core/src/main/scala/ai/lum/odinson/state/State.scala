@@ -13,6 +13,6 @@ trait State {
 
   def getMatches(docBase: Int, docId: Int, label: String): Array[(Int, Int)]
 
-  // It may be cleaper to delete everything than to create a new State.
-  def delete(): Unit = ???
+  // This may eventually go away, but it is needed for testing just now.
+  def clear(): Unit = ()
 }
