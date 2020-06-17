@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
+- Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
 - REST API endpoints for retrieving metadata and parent document; OpenAPI data model for `OdinsonDocument`, etc.
 - Containerized Odinson
   - Docker images for [`extra`](https://hub.docker.com/r/lumai/odinson-extras) and the [REST API](https://hub.docker.com/r/lumai/odinson-rest-api) using the [`sbt-native-packager` plugin](https://github.com/sbt/sbt-native-packager).
@@ -14,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be matched by the query. In other words, it skips the `MatchSelector`.
 - Added `buildinfo.json` file to the index to store versions and build info.
 ### Changed
+- Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
 - REST API: `/api/parent` -> `/api/parent/by-document-id` & `/api/parent/by-sentence-id`
 - REST API: `sentId` param for `/api/sentence` -> `sentenceId`
 - REST API: `rules` param for `/api/execute/grammar` -> `grammar`
