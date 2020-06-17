@@ -3,7 +3,9 @@ package ai.lum.common
 import org.scalatest._
 import ai.lum.common.StringUtils._
 
-class TestUnicodeNormalization extends FlatSpec with Matchers {
+import ai.lum.odinson.BaseSpec
+
+class TestUnicodeNormalization extends BaseSpec {
 
   "unicode normalization" should "normalize unicode strings" in {
     val s1 = "caf\u00e9"
