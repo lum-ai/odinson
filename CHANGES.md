@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
 - Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
+- Code coverage report.
 - REST API endpoints for retrieving metadata and parent document; OpenAPI data model for `OdinsonDocument`, etc.
 - Containerized Odinson
   - Docker images for [`extra`](https://hub.docker.com/r/lumai/odinson-extras) and the [REST API](https://hub.docker.com/r/lumai/odinson-rest-api) using the [`sbt-native-packager` plugin](https://github.com/sbt/sbt-native-packager).
