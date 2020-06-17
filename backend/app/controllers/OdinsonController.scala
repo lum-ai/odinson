@@ -2,10 +2,12 @@ package controllers
 
 import java.io.File
 import java.nio.file.Path
+
 import javax.inject._
+
 import scala.util.control.NonFatal
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
@@ -24,8 +26,9 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc, OdinsonQuery }
+import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.Mention
+import ai.lum.odinson.utils.OdinResultsIterator
 
 @Singleton
 class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents)
@@ -141,20 +144,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val q = extractorEngine.compiler.mkQuery(odinsonQuery, filter)
         extractorEngine.query(q)
     }
-    for {
-      scoreDoc <- results.scoreDocs
-      odinsonMatch <- scoreDoc.matches
-    } {
-      extractorEngine.state.addMention(
-        docBase    = scoreDoc.segmentDocBase,
-        docId      = scoreDoc.segmentDocId,
-        label      = label,
-        startToken = odinsonMatch.start,
-        endToken   = odinsonMatch.end
-      )
-    }
-    // index for efficient lookup in subsequent queries
-    extractorEngine.state.index()
+    extractorEngine.state.addMentions(OdinResultsIterator(results, label))
   }
 
   /**
