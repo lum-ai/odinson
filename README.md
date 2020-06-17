@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/lum-ai/odinson.svg?branch=master)](https://travis-ci.org/lum-ai/odinson)
 [![codecov](https://codecov.io/gh/lum-ai/odinson/branch/master/graph/badge.svg)](https://codecov.io/gh/lum-ai/odinson)
-![Scala CI](https://github.com/lum-ai/odinson/workflows/Scala%20CI/badge.svg)
+[![Scala CI](https://github.com/lum-ai/odinson/workflows/Scala%20CI/badge.svg)](https://github.com/lum-ai/odinson/actions)
 
 # Odinson
 
