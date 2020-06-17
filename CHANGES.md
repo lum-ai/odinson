@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- New organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
 - Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
 - Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
 - Code coverage report.
