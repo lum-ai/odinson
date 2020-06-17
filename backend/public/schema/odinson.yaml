@@ -19,20 +19,20 @@ tags:
   - name: "details"
     description: |
       Operations related to retrieving document details.
-  - name: "similarity"
-    description: |
-      Operations related to embeddings-based similarity.
+  # - name: "similarity"
+  #   description: |
+  #     Operations related to embeddings-based similarity.
   - name: "statistics"
     description: |
       Operations related to corpus statistics.
-  - name: "export"
-    description: |
-      Operations related to results export.
+  # - name: "export"
+  #   description: |
+  #     Operations related to results export.
   - name: "info"
     description: |
       Information about the app.
 
-paths:
+paths: 
   /api/execute/pattern:
     get:
       tags:
@@ -123,20 +123,21 @@ paths:
         - application/json
       parameters:
         - in: body
-          name: rules
+          name: grammar
           required: true
           schema:
             type: string
           description: |
             An Odinson grammar.
-          # example: |
-          #   rules:
-          #     - name: "example"
-          #       label: Death
-          #       type: event
-          #       pattern: |
-          #         trigger = [lemma=die]
-          #         date: ^Date  = >nmod_on
+          example: |
+            # an example grammar
+            rules:
+              - name: "example"
+                label: Death
+                type: event
+                pattern: |
+                  trigger = [lemma=die]
+                  date: ^Date  = >nmod_on
         - in: body
           name: parentQuery
           type: string
@@ -172,30 +173,103 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryError'
 
-  # /api/parent:
-  #   get:
-  #     tags:
-  #       - core
-  #     summary: |
-  #       Retrieves metadata on the parent document associated with some docId.
-  #     description: |
-  #       Retrieves metadata on the parent document associated with some docId.
-  #     operationId: parent
-  #     parameters:
-  #       - name: docId
-  #         in: query
-  #         description: |
-  #           The document ID for the last document seen in the previous page of results.
-  #         required: false
-  #         schema:
-  #           type: string
-  #     responses:
-  #       '200':
-  #         description: Metadata describing the parent document.
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/DocumentMetadata'
+  /api/metadata/by-document-id:
+    get:
+      tags:
+        - metadata
+      summary: |
+        Retrieves the OdinsonMetadata corresponding to the provided `documentId`.
+      operationId: search
+      parameters:
+        - name: documentId
+          in: query
+          required: true
+          description: |
+            The `documentId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: string
+          example: "PMC6360082"
+      responses:
+        '200':
+          description: OdinsonMetadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonMetadata'
+
+  /api/metadata/by-sentence-id:
+    get:
+      tags:
+        - metadata
+      summary: |
+        Retrieves the OdinsonMetadata corresponding to the provided `sentenceId`.
+      operationId: search
+      parameters:
+        - name: sentenceId
+          in: query
+          required: true
+          description: |
+            The `sentenceId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: integer
+            format: int64
+          example: 78
+      responses:
+        '200':
+          description: OdinsonMetadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonMetadata'
+
+  /api/parent/by-document-id:
+    get:
+      tags:
+        - details
+      summary: |
+        Retrieves the OdinsonDocument corresponding to the provided `documentId`.
+      operationId: search
+      parameters:
+        - name: documentId
+          in: query
+          required: true
+          description: |
+            The `documentId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: string
+          example: "PMC6360082"
+      responses:
+        '200':
+          description: An OdinsonDocument.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonDocument'
+
+  /api/parent/by-sentence-id:
+    get:
+      tags:
+        - details
+      summary: |
+        Retrieves the OdinsonDocument corresponding to the provided `sentenceId`.
+      operationId: search
+      parameters:
+        - name: sentenceId
+          in: query
+          required: true
+          description: |
+            The `sentenceId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: integer
+            format: int64
+          example: 78
+      responses:
+        '200':
+          description: An OdinsonDocument.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonDocument'
 
   /api/sentence:
     get:
@@ -204,10 +278,10 @@ paths:
       summary: |
         Retrieves annotation details for a sentence.
       description: |
-        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentId.
+        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentenceId.
       operationId: sentence
       parameters:
-        - name: sentId
+        - name: sentenceId
           in: query
           description: |
             The sentence ID for which annotation details are being requested.
@@ -222,7 +296,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sentence'
+                $ref: '#/components/schemas/OdinsonSentence'
 
   /api/numdocs:
     get:
@@ -335,6 +409,7 @@ paths:
           required: false
           schema:
             type: boolean
+
       responses:
         '200':
           description: "A JSON object containing build information."
@@ -395,15 +470,15 @@ components:
     OdinsonGrammarResults:
       type: object
       required:
-        - odinsonDoc
+        - sentenceId
         - documentId
         - sentenceIndex
         - words
         - foundBy
         - match
       properties:
-        odinsonDoc:
-          $ref: '#/components/schemas/odinsonDoc'
+        sentenceId:
+          $ref: '#/components/schemas/sentenceId'
         documentId:
           $ref: '#/components/schemas/documentId'
         sentenceIndex:
@@ -426,7 +501,7 @@ components:
       required:
         - test
       # properties:
-      #   odinsonDoc:
+      #   sentenceId:
       #     type: mention.luceneDocId
       # // "score"         -> odinsonScoreDoc.score,
       # "label"         -> mention.label,
@@ -583,7 +658,7 @@ components:
           items:
             $ref: '#/components/schemas/EnrichedDocHit'
 
-    odinsonDoc:
+    sentenceId:
       type: integer
       format: int64
       description: The internal ID for this Odinson Document.
@@ -618,14 +693,14 @@ components:
     DocHit:
       type: object
       required:
-        - odinsonDoc
+        - sentenceId
         - score
         - documentId
         - sentenceIndex
         - words
         - matches
       properties:
-        - $ref: '#/components/schemas/odinsonDoc'
+        - $ref: '#/components/schemas/sentenceId'
         - $ref: '#/components/schemas/score'
         - $ref: '#/components/schemas/documentId'
         - $ref: '#/components/schemas/sentenceIndex'
@@ -636,15 +711,15 @@ components:
       description: A `DocHit` that include sentence details.
       type: object
       required:
-        - odinsonDoc
+        - sentenceId
         - score
         - documentId
         - sentenceIndex
         - sentence
         - matches
       properties:
-        odinsonDoc:
-          $ref: '#/components/schemas/odinsonDoc'
+        sentenceId:
+          $ref: '#/components/schemas/sentenceId'
         score:
           $ref: '#/components/schemas/score'
         documentId:
@@ -656,37 +731,35 @@ components:
         sentence:
           $ref: '#/components/schemas/OdinsonSentence'
           description: Token attributes and annotations for this sentence to aid in further refining queries.
-    
-    # DocumentMetadata:
-    #   type: object
-    #   required:
-    #     - docId
-    #   properties:
-    #     docId:
-    #       type: string
-    #       description: A unique ID identifying this parent document.
-    #     authors:
-    #       type: array
-    #       description: The names of the authors in order of appearance.
-    #       items:
-    #         type: string
-    #         description: Author name.
-    #     title:
-    #       type: string
-    #       description: The title of this document.
-    #     doi:
-    #       type: string
-    #       description: "The digital object identifier for this document.  Retrieve document details using https://doi.org/{doi}"
-    #     url:
-    #       type: string
-    #       description: "URL for document"
-    #     venue:
-    #       type: string
-    #       description: The venue in which this document was published.
-    #     year:
-    #       type: integer
-    #       format: int32
-    #       description: The year this document was published.
+
+    OdinsonDocument:
+      type: object
+      required:
+        - id
+        - metadata
+        - sentences
+      properties:
+        id:
+          type: string
+          description: |
+            The ID for the document (ex. PMCXXXX).
+        metadata:
+          $ref: '#/components/schemas/OdinsonMetadata'
+        sentences:
+          type: array
+          description: |
+            All sentences in the OdinsonDocument.
+          items:
+            $ref: '#/components/schemas/OdinsonSentence'
+
+    OdinsonMetadata:
+      type: array
+      description: |
+        An array of document metadata properties
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/OdinsonStringField'
+          - $ref: '#/components/schemas/OdinsonDateField'
 
     OdinsonSentence:
       type: object
@@ -708,6 +781,64 @@ components:
               - $ref: '#/components/schemas/OdinsonTokensField'
               - $ref: '#/components/schemas/OdinsonGraphField'
 
+    OdinsonStringField:
+      type: object
+      description: |
+        Stores a property of type `String`.
+      required:
+        - $type
+        - name
+        - string
+        - store
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.StringField
+        name:
+          type: string
+          description: |
+            The name of the property (i.e., what information it denotes).
+          example: pmc
+        string:
+          type: string
+          description: |
+            The value corresponding to `name`
+          example: "6360082"
+        store:
+          type: boolean
+          description: |
+            Whether or not this Field should be stored in the Odinson index.
+
+    OdinsonDateField:
+      type: object
+      description: |
+        Stores date information (ex. a publication date).
+      required:
+        - $type
+        - name
+        - string
+        - store
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.DateField
+        name:
+          type: string
+          description: |
+            The name of the property (i.e., what information it denotes).
+          example: publicationDate
+        date:
+          type: string
+          description: |
+            The value corresponding to `name`.  A parseable date.
+          example: "2019-01-31"
+        store:
+          type: boolean
+          description: |
+            Whether or not this Field should be stored in the Odinson index.
+          
     OdinsonTokensField:
       type: object
       description: |

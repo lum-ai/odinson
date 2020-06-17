@@ -12,16 +12,21 @@ GET     /api/config                     controllers.OdinsonController.configInfo
 # API spec
 GET     /api                            controllers.OpenApiController.openAPI
 # search
-GET     /api/execute/pattern                controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
+GET     /api/execute/pattern            controllers.OdinsonController.runQuery(odinsonQuery: String, parentQuery: Option[String], label: Option[String], commit: Option[Boolean], prevDoc: Option[Int], prevScore: Option[Float], enriched: Boolean = false, pretty: Option[Boolean])
 
-POST    /api/execute/grammar                controllers.OdinsonController.executeGrammar()
-#GET    /api/execute/grammar                controllers.OdinsonController.executeGrammar(rules: String, parentQuery: Option[String], pageSize: Option[Int], allowTriggerOverlaps: Boolean, pretty: Option[Boolean])
+POST    /api/execute/grammar            controllers.OdinsonController.executeGrammar()
+#GET    /api/execute/grammar            controllers.OdinsonController.executeGrammar(grammar: String, parentQuery: Option[String], pageSize: Option[Int], allowTriggerOverlaps: Boolean, pretty: Option[Boolean])
 
 # parent doc
-#GET     /api/parent                    controllers.OdinsonController.getParent(docId: String, pretty: Option[Boolean])
+GET     /api/parent/by-document-id                    controllers.OdinsonController.getParentDocJsonByDocumentId(documentId: String, pretty: Option[Boolean])
+GET     /api/parent/by-sentence-id                    controllers.OdinsonController.getParentDocJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
+
+# metadata
+GET     /api/metadata/by-document-id                    controllers.OdinsonController.getMetadataJsonByDocumentId(documentId: String, pretty: Option[Boolean])
+GET     /api/metadata/by-sentence-id                    controllers.OdinsonController.getMetadataJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
 
 # sentence json
-GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentId: Int, pretty: Option[Boolean])
+GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentenceId: Int, pretty: Option[Boolean])
 
 # counts
 GET     /api/numdocs                    controllers.OdinsonController.numDocs

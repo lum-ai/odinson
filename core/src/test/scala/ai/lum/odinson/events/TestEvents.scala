@@ -1,5 +1,6 @@
 package ai.lum.odinson.events
 
+import ai.lum.odinson.utils.OdinResultsIterator
 import org.scalatest._
 
 import ai.lum.odinson.{EventMatch, OdinsonMatch}
@@ -150,19 +151,7 @@ class TestEvents extends BaseSpec {
     val results = ee.query(query)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
-    for {
-      scoreDoc <- results.scoreDocs
-      m <- scoreDoc.matches
-    } {
-      ee.state.addMention(
-        docBase = scoreDoc.segmentDocBase,
-        docId = scoreDoc.segmentDocId,
-        label = "NP",
-        startToken = m.start,
-        endToken = m.end,
-      )
-    }
-    ee.state.index()
+    ee.state.addMentions(OdinResultsIterator(results, "NP"))
   }
 
   it should "find event with mentions from the state when the state is populated" in {
