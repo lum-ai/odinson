@@ -1,13 +1,22 @@
 package ai.lum.odinson.events
 
 import org.scalatest._
-
 import ai.lum.odinson.{Document, EventMatch, OdinsonMatch}
 import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.Mention
 
 class TestEventTriggers extends BaseSpec {
 
   import TestEvents._
+
+  def getTrigger(ee: ExtractorEngine, mention: Mention): String = {
+    ee.getString(mention.luceneDocId, mention.odinsonMatch.asInstanceOf[EventMatch].trigger)
+  }
+
+  def getResult(ee: ExtractorEngine, mention: Mention): String = {
+    ee.getArgument(mention, "result")
+  }
 
   "Odinson" should "match events for all trigger mentions using a basic pattern" in {
     val json = """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[],"sentences":[{"numTokens":27,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Some","wild","animals","such","as","hedgehogs",",","coypu",",","and","any","wild","cloven-footed","animals","such","as","deer","and","zoo","animals","including","elephants","can","also","contract","it","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Some","wild","animals","such","as","hedgehogs",",","coypu",",","and","any","wild","cloven-footed","animals","such","as","deer","and","zoo","animals","including","elephants","can","also","contract","it","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["DT","JJ","NNS","JJ","IN","NNS",",","NN",",","CC","DT","JJ","JJ","NNS","JJ","IN","NNS","CC","NN","NNS","VBG","NNS","MD","RB","VB","PRP","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["some","wild","animal","such","as","hedgehog",",","coypu",",","and","any","wild","cloven-footed","animal","such","as","deer","and","zoo","animal","include","elephant","can","also","contract","it","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","I-NP","I-NP","B-PP","I-PP","B-NP","O","B-NP","O","O","B-NP","I-NP","I-NP","I-NP","B-PP","I-PP","B-NP","O","B-NP","I-NP","B-PP","B-NP","B-VP","I-VP","I-VP","B-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","roots":[24],"edges":[[2,0,"det"],[2,1,"amod"],[2,5,"nmod_such_as"],[2,7,"nmod_such_as"],[2,13,"nmod_such_as"],[3,4,"mwe"],[5,3,"case"],[5,6,"punct"],[5,7,"conj_and"],[5,8,"punct"],[5,9,"cc"],[5,13,"conj_and"],[13,10,"det"],[13,11,"amod"],[13,12,"amod"],[13,16,"nmod_such_as"],[13,19,"nmod_such_as"],[14,15,"mwe"],[16,14,"case"],[16,17,"cc"],[16,19,"conj_and"],[16,21,"nmod_including"],[19,18,"compound"],[21,20,"case"],[24,2,"nsubj"],[24,22,"aux"],[24,23,"advmod"],[24,25,"dobj"],[24,26,"punct"]]}]}]}"""
@@ -24,7 +33,7 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -45,7 +54,7 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -66,7 +75,7 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -87,8 +96,8 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val triggers = mentions.map(m => getTrigger(ee, m))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedTriggers = List("wild animals such", "wild animals such", "wild animals such", "wild cloven-footed animals such", "wild cloven-footed animals such")
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -111,8 +120,8 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val triggers = mentions.map(m => getTrigger(ee, m))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedTriggers = List("Some wild", "any wild")
     val expectedResults = List("animals", "animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -135,8 +144,8 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val triggers = mentions.map(m => getTrigger(ee, m))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedTriggers = List("Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals")
     val expectedResults = List("elephants")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -159,8 +168,8 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors, allowTriggerOverlaps = true)
-    val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val triggers = mentions.map(m => getTrigger(ee, m))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedTriggers = List("Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
                                 "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
                                 "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals",
@@ -188,8 +197,8 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val triggers = mentions.map(m => getTrigger(ee, m))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedTriggers = List("Some wild animals", "Some wild animals", "Some wild animals")
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -213,7 +222,7 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
   }
@@ -234,7 +243,7 @@ class TestEventTriggers extends BaseSpec {
       |""".stripMargin
     val extractors = ee.ruleReader.compileRuleFile(rules)
     val mentions = ee.extractMentions(extractors)
-    val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val animals = mentions.map(m => getResult(ee, m))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
   }

@@ -2,15 +2,15 @@ package ai.lum.odinson
 
 import ai.lum.common.Interval
 
-case class Mention(
-  odinsonMatch: OdinsonMatch,
-  label: Option[String],
-  luceneDocId: Int,
-  luceneSegmentDocId: Int,
-  luceneSegmentDocBase: Int,
-  docId: String,
-  sentenceId: String,
-  foundBy: String,
+class Mention(
+  val odinsonMatch: OdinsonMatch,
+  val label: Option[String],
+  val luceneDocId: Int,
+  val luceneSegmentDocId: Int,
+  val luceneSegmentDocBase: Int,
+  val docId: String,
+  val sentenceId: String,
+  val foundBy: String
 ) {
 
   /** A map from argument name to a sequence of matches.
@@ -19,13 +19,13 @@ case class Mention(
     * that can have several arguments with the same name.
     * For example, in the biodomain, Binding may have several themes.
     */
-  def arguments: Map[String, Array[Mention]] = {
+  def arguments(mentionFactory: MentionFactory /*= new DefaultMentionFactory*/): Map[String, Array[Mention]] = {
     odinsonMatch
       .namedCaptures
       .groupBy(_.name)
       .transform { (k,v) =>
         v.map { c =>
-          Mention(
+          mentionFactory.newMention(
             c.capturedMatch,
             c.label,
             luceneDocId,
@@ -39,4 +39,15 @@ case class Mention(
       }
   }
 
+  def copy(mentionFactory: MentionFactory /*= new DefaultMentionFactory*/,
+    odinsonMatch: OdinsonMatch = this.odinsonMatch,
+    label: Option[String] = this.label,
+    luceneDocId: Int = this.luceneDocId,
+    luceneSegmentDocId: Int = this.luceneSegmentDocId,
+    luceneSegmentDocBase: Int = this.luceneSegmentDocBase,
+    docId: String = this.docId,
+    sentenceId: String = this.sentenceId,
+    foundBy: String = this.foundBy): Mention = {
+      mentionFactory.newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, docId, sentenceId, foundBy)
+  }
 }

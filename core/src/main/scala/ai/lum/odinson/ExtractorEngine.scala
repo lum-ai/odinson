@@ -28,7 +28,8 @@ class ExtractorEngine(
   val compiler: QueryCompiler,
   val displayField: String,
   val state: State,
-  val parentDocIdField: String
+  val parentDocIdField: String,
+  val mentionFactory: MentionFactory
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -89,14 +90,14 @@ class ExtractorEngine(
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+    } yield mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
     // if needed, filter results to discard trigger overlaps
     if (allowTriggerOverlaps) {
       mentions
     } else {
       mentions.flatMap { m =>
         m.odinsonMatch match {
-          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(mentionFactory = mentionFactory, odinsonMatch = e))
           case _ => Some(m)
         }
       }
@@ -146,6 +147,10 @@ class ExtractorEngine(
     getTokens(docID, m).mkString(" ")
   }
 
+  def getArgument(mention: Mention, name: String): String = {
+    getString(mention.luceneDocId, mention.arguments(mentionFactory)(name).head.odinsonMatch)
+  }
+
   def getTokens(m: Mention): Array[String] = {
     getTokens(m.luceneDocId, m.odinsonMatch)
   }
@@ -169,6 +174,7 @@ class ExtractorEngine(
 }
 
 object ExtractorEngine {
+  lazy val defaultMentionFactory = new DefaultMentionFactory()
 
   def fromConfig(): ExtractorEngine = {
     fromConfig("odinson")
@@ -185,7 +191,7 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
+  def fromDirectory(config: Config, indexDir: Directory, mentionFactory: MentionFactory = defaultMentionFactory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val displayField = config[String]("displayField")
@@ -200,7 +206,8 @@ object ExtractorEngine {
       compiler,
       displayField,
       state,
-      parentDocIdField
+      parentDocIdField,
+      mentionFactory
     )
   }
 

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`
+  can be produced.  Include a `DefaultMentionFactory` to be used if one isn't provided.  Change `Mention` to be a
+  regular class instead of a case class to facilitate subclassing.
 - Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
 - Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
 - Code coverage report.
