@@ -30,6 +30,9 @@ class EventSpec extends BaseSpec {
         for (d <- desired) {
           matchedForThisRole should contain (d)
         }
+        // there shouldn't be any found arguments that we didn't want
+        val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
+        unwantedArgs shouldBe empty
       }
   }
 
