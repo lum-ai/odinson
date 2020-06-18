@@ -172,6 +172,8 @@ class TestEvents extends BaseSpec {
 
 }
 
+
+// TODO: move this to EventSpec
 object TestEvents extends FlatSpec with Matchers {
 
   case class Argument(name: String, start: Int, end: Int) {
