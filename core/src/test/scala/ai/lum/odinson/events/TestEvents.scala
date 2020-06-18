@@ -1,15 +1,12 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.utils.OdinResultsIterator
 import org.scalatest._
-
+import ai.lum.odinson.utils.OdinResultsIterator
 import ai.lum.odinson.{EventMatch, OdinsonMatch}
 
-import ai.lum.odinson.BaseSpec
+class TestEvents extends EventSpec {
 
-class TestEvents extends BaseSpec {
-
-  import TestEvents._
+//  import TestEvents._
 
   val json = """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
 
@@ -38,8 +35,8 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 2, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -61,8 +58,8 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 2, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -82,8 +79,8 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 3, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 3, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -103,8 +100,8 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 2, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -124,8 +121,8 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 3, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 3, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -164,56 +161,11 @@ class TestEvents extends BaseSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 2, 4),
+      createArgument("subject", 0, 1),
+      createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
-
 }
 
 
-// TODO: move this to EventSpec
-object TestEvents extends FlatSpec with Matchers {
-
-  case class Argument(name: String, start: Int, end: Int) {
-    override def toString: String = {
-      s"Argument(name=$name, start=$start, end=$end)"
-    }
-  }
-
-  def testEventTrigger(m: OdinsonMatch, start: Int, end: Int): Unit = {
-    m shouldBe an [EventMatch]
-    val em = m.asInstanceOf[EventMatch]
-    val trigger = em.trigger
-    trigger.start shouldEqual start
-    trigger.end shouldEqual end
-  }
-
-  def testEventArguments(m: OdinsonMatch, desiredArgs: Seq[Argument]): Unit = {
-
-    val matchArgs = for (nc <- m.namedCaptures)
-      yield Argument(nc.name, nc.capturedMatch.start, nc.capturedMatch.end)
-
-    // All desired args should be there, in the right number
-    val groupedMatched = matchArgs.groupBy(_.name)
-    val groupedDesired = desiredArgs.groupBy(_.name)
-
-    for ((desiredRole, desired) <- groupedDesired) {
-      // There should be arg(s) of the desired label
-      groupedMatched.keySet should contain (desiredRole)
-      // Should have the same number of arguments of that label
-      val matchedForThisRole = groupedMatched(desiredRole)
-      desired should have size matchedForThisRole.size
-      for (d <- desired) {
-        matchedForThisRole should contain (d)
-      }
-    }
-
-    // There shouldn't be any found arguments that we didn't want
-    val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
-    unwantedArgs shouldBe empty
-
-  }
-
-}
