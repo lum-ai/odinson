@@ -25,8 +25,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 = Seq(Argument("theme", 3, 5))
-    val desiredArgs2 = Seq(Argument("theme", 6, 7))
+    val desiredArgs1 = Seq(createArgument("theme", 3, 5))
+    val desiredArgs2 = Seq(createArgument("theme", 6, 7))
     testEventArguments(m1, desiredArgs1)
     testEventArguments(m2, desiredArgs2)
   }
@@ -45,8 +45,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 = Seq(Argument("theme", 3, 5))
-    val desiredArgs2 = Seq(Argument("theme", 6, 7))
+    val desiredArgs1 = Seq(createArgument("theme", 3, 5))
+    val desiredArgs2 = Seq(createArgument("theme", 6, 7))
     testEventArguments(m1, desiredArgs1)
     testEventArguments(m2, desiredArgs2)
   }
@@ -65,8 +65,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("theme", 3, 5),
-      Argument("theme", 6, 7),
+      createArgument("theme", 3, 5),
+      createArgument("theme", 6, 7),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -85,8 +85,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      Argument("theme", 3, 5),
-      Argument("theme", 6, 7),
+      createArgument("theme", 3, 5),
+      createArgument("theme", 6, 7),
     )
     testEventArguments(m, desiredArgs)
   }
