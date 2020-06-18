@@ -1,0 +1,17 @@
+vars:
+  chunk: "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
+
+rules:
+  - name: example-basic-rule
+    type: basic
+    pattern: |
+       (?<hypernym> ${chunk}) >nmod_such_as (?<hyponym> ${chunk})
+
+  - name: example-event-rule
+    type: event
+    pattern: |
+      trigger = cause|increase|decrease|affect
+      cause = >nsubj ${chunk}
+      effect = >dobj ${chunk}
+
+    

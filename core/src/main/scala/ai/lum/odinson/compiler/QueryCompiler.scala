@@ -8,8 +8,8 @@ import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import com.ibm.icu.text.Normalizer2
 import com.typesafe.config.Config
+import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.odinson.lucene.search._
@@ -25,12 +25,10 @@ class QueryCompiler(
     val incomingTokenField: String,
     val outgoingTokenField: String,
     val dependenciesVocabulary: Vocabulary,
-    val normalizeQueriesToDefaultField: Boolean
+    val aggressiveNormalizationToDefaultField: Boolean
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
-
-  val normalizer = Normalizer2.getNFKCCasefoldInstance()
 
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
@@ -57,6 +55,8 @@ class QueryCompiler(
   def mkQuery(pattern: String): OdinsonQuery = {
     compile(pattern)
   }
+
+  def mkParentQuery(parentPattern: String): Query = queryParser.parse(parentPattern)
 
   def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
     val query = compile(pattern)
@@ -193,8 +193,8 @@ class QueryCompiler(
 
     // named captures
 
-    case Ast.NamedCapturePattern(name, pattern) =>
-      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name))
+    case Ast.NamedCapturePattern(name, label, pattern) =>
+      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name, label))
 
     // mentions
 
@@ -343,7 +343,7 @@ class QueryCompiler(
     }
     // make argument query
     val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
-    Some(ArgumentQuery(arg.name, arg.min, arg.max, fullTraversal))
+    Some(ArgumentQuery(arg.name, arg.label, arg.min, arg.max, fullTraversal))
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {
@@ -354,12 +354,12 @@ class QueryCompiler(
     }
   }
 
-  /** Returns a Term object with its value normalized if needed */
+  /** Returns a Term object with its value normalized */
   def mkTerm(name: String, value: String): Term = {
-    if (normalizeQueriesToDefaultField && name == defaultTokenField) {
-      new Term(name, normalizer.normalize(value))
+    if (aggressiveNormalizationToDefaultField && name == defaultTokenField) {
+      new Term(name, value.normalizeUnicodeAggressively)
     } else {
-      new Term(name, value)
+      new Term(name, value.normalizeUnicode)
     }
   }
 
@@ -475,9 +475,9 @@ class QueryCompiler(
 
   def mkLabelMatcher(m: Ast.Matcher): LabelMatcher = m match {
     case Ast.RegexMatcher(s) =>
-      new RegexLabelMatcher(s.r, dependenciesVocabulary)
+      new RegexLabelMatcher(s.normalizeUnicode.r, dependenciesVocabulary)
     case Ast.StringMatcher(s) =>
-      dependenciesVocabulary.getId(s) match {
+      dependenciesVocabulary.getId(s.normalizeUnicode) match {
         case Some(id) => new ExactLabelMatcher(s, id)
         case None => FailLabelMatcher
       }
@@ -570,7 +570,7 @@ object QueryCompiler {
       config[String]("compiler.incomingTokenField"),
       config[String]("compiler.outgoingTokenField"),
       vocabulary,
-      config[Boolean]("compiler.normalizeQueriesToDefaultField")
+      config[Boolean]("compiler.aggressiveNormalizationToDefaultField")
     )
   }
 

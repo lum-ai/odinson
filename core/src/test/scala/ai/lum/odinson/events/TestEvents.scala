@@ -1,8 +1,13 @@
-package ai.lum.odinson
+package ai.lum.odinson.events
 
+import ai.lum.odinson.utils.OdinResultsIterator
 import org.scalatest._
 
-class TestEvents extends FlatSpec with Matchers {
+import ai.lum.odinson.{EventMatch, OdinsonMatch}
+
+import ai.lum.odinson.BaseSpec
+
+class TestEvents extends BaseSpec {
 
   import TestEvents._
 
@@ -15,8 +20,8 @@ class TestEvents extends FlatSpec with Matchers {
   """
 
   // extractor engine persists across tests (hacky way)
-  val doc = Document.fromJson(json)
-  val ee = TestUtils.mkExtractorEngine(doc)
+  val doc = getDocumentFromJson(json)
+  val ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with promoted entities" in {
     val pattern = """
@@ -142,22 +147,11 @@ class TestEvents extends FlatSpec with Matchers {
   }
 
   it should "populate the state with NPs" in {
-    val results = ee.query("[chunk=B-NP][chunk=I-NP]*")
+    val query = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    val results = ee.query(query)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
-    for {
-      scoreDoc <- results.scoreDocs
-      m <- scoreDoc.matches
-    } {
-      ee.state.addMention(
-        docBase = scoreDoc.segmentDocBase,
-        docId = scoreDoc.segmentDocId,
-        label = "NP",
-        startToken = m.start,
-        endToken = m.end,
-      )
-    }
-    ee.state.index()
+    ee.state.addMentions(OdinResultsIterator(results, "NP"))
   }
 
   it should "find event with mentions from the state when the state is populated" in {
@@ -196,10 +190,8 @@ object TestEvents extends FlatSpec with Matchers {
 
   def testEventArguments(m: OdinsonMatch, desiredArgs: Seq[Argument]): Unit = {
 
-    val matchArgs = for {
-      (name, args) <- m.arguments
-      arg <- args
-    } yield Argument(name, arg.start, arg.end)
+    val matchArgs = for (nc <- m.namedCaptures)
+      yield Argument(nc.name, nc.capturedMatch.start, nc.capturedMatch.end)
 
     // All desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)

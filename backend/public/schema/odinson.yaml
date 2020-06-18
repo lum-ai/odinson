@@ -19,44 +19,57 @@ tags:
   - name: "details"
     description: |
       Operations related to retrieving document details.
-  - name: "similarity"
-    description: |
-      Operations related to embeddings-based similarity.
+  # - name: "similarity"
+  #   description: |
+  #     Operations related to embeddings-based similarity.
   - name: "statistics"
     description: |
       Operations related to corpus statistics.
-  - name: "export"
-    description: |
-      Operations related to results export.
+  # - name: "export"
+  #   description: |
+  #     Operations related to results export.
   - name: "info"
     description: |
       Information about the app.
 
-paths:
-  /api/search:
+paths: 
+  /api/execute/pattern:
     get:
       tags:
         - core
       summary: |
         Performs an Odinson query against the corpus.
       description: |
-        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to subset the the documents to which the pattern should be applied.
+        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the query should be applied.
       operationId: search
       parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
+        - name: odinsonQuery
+          in: query
+          required: true
+          description: |
+            An Odinson pattern.
+          schema:
+            type: string
+          example: "[lemma=phosphorylate] []"
+        - name: parentQuery
+          in: query
+          required: true
+          type: string
+          schema:
+            type: string
+          description: |
+            A Lucene query to filter Documents before applying an Odinson pattern.
+          example: "year: 1973"
         - name: label
           in: query
           description: |
             The label to use when committing mentions to the State.
-          required: false
           schema:
             type: string
         - name: commit
           in: query
           description: |
             Whether or not the results of this query should be committed to the State.
-          required: false
           schema:
             type: boolean
         - name: prevDoc
@@ -97,64 +110,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryError'
 
-
-  /api/rich-search:
-    get:
+  /api/execute/grammar:
+    post:
       tags:
         - core
       summary: |
-        Performs an Odinson query against the corpus.
+        Executes an Odinson grammar against a corpus.
       description: |
-        Applies an Odinson pattern to the corpus.  Optionally include a doc-level Lucene query to subset the the documents to which the pattern should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
-      operationId: rich-search
+        Executes an Odinson grammar against a corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the grammar should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
+      operationId: execute-grammar
+      consumes:
+        - application/json
       parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-        - name: label
-          in: query
-          description: |
-            The label to use when committing mentions to the State.
-          required: false
+        - in: body
+          name: grammar
+          required: true
           schema:
             type: string
-        - name: commit
-          in: query
           description: |
-            Whether or not the results of this query should be committed to the State.
-          required: false
-          schema:
-            type: boolean
-        - name: prevDoc
-          in: query
+            An Odinson grammar.
+          example: |
+            # an example grammar
+            rules:
+              - name: "example"
+                label: Death
+                type: event
+                pattern: |
+                  trigger = [lemma=die]
+                  date: ^Date  = >nmod_on
+        - in: body
+          name: parentQuery
+          type: string
           description: |
-            The document ID for the last document seen in the previous page of results.
-          required: false
+            A Lucene query to filter Documents before applying an Odinson pattern.
+          example: "year: 1973"
+        - in: body
+          name: pageSize
+          description: |
+            The maximum number of sentences to execute the rules against.
           schema:
             type: integer
             format: int32
-            minimum: 1
-            exclusiveMinimum: false
-            maximum: 3
-            exclusiveMaximum: false
-          #example: 1
-        - name: prevScore
-          in: query
-          description: |
-            The score for the last document seen in the previous page of results.
+        - in: body
+          name: allowTriggerOverlaps
           required: false
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
           schema:
-            type: number
-            format: float
-          #example: 0.424
+            type: boolean
+
       responses:
         '200':
-          description: Paginated matches for the query.
+          description: Mentions matched by the grammar.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EnrichedResults'
+                $ref: '#/components/schemas/OdinsonGrammarResults'
         '400':
           description: Syntax error in query.
           content:
@@ -162,30 +173,103 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueryError'
 
-  /api/parent:
+  /api/metadata/by-document-id:
     get:
       tags:
-        - core
+        - metadata
       summary: |
-        Retrieves metadata on the parent document associated with some docId.
-      description: |
-        Retrieves metadata on the parent document associated with some docId.
-      operationId: parent
+        Retrieves the OdinsonMetadata corresponding to the provided `documentId`.
+      operationId: search
       parameters:
-        - name: docId
+        - name: documentId
           in: query
+          required: true
           description: |
-            The document ID for the last document seen in the previous page of results.
-          required: false
+            The `documentId` as returned by /api/execute/grammar or /api/execute/pattern.
           schema:
             type: string
+          example: "PMC6360082"
       responses:
         '200':
-          description: Metadata describing the parent document.
+          description: OdinsonMetadata.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentMetadata'
+                $ref: '#/components/schemas/OdinsonMetadata'
+
+  /api/metadata/by-sentence-id:
+    get:
+      tags:
+        - metadata
+      summary: |
+        Retrieves the OdinsonMetadata corresponding to the provided `sentenceId`.
+      operationId: search
+      parameters:
+        - name: sentenceId
+          in: query
+          required: true
+          description: |
+            The `sentenceId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: integer
+            format: int64
+          example: 78
+      responses:
+        '200':
+          description: OdinsonMetadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonMetadata'
+
+  /api/parent/by-document-id:
+    get:
+      tags:
+        - details
+      summary: |
+        Retrieves the OdinsonDocument corresponding to the provided `documentId`.
+      operationId: search
+      parameters:
+        - name: documentId
+          in: query
+          required: true
+          description: |
+            The `documentId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: string
+          example: "PMC6360082"
+      responses:
+        '200':
+          description: An OdinsonDocument.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonDocument'
+
+  /api/parent/by-sentence-id:
+    get:
+      tags:
+        - details
+      summary: |
+        Retrieves the OdinsonDocument corresponding to the provided `sentenceId`.
+      operationId: search
+      parameters:
+        - name: sentenceId
+          in: query
+          required: true
+          description: |
+            The `sentenceId` as returned by /api/execute/grammar or /api/execute/pattern.
+          schema:
+            type: integer
+            format: int64
+          example: 78
+      responses:
+        '200':
+          description: An OdinsonDocument.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OdinsonDocument'
 
   /api/sentence:
     get:
@@ -194,10 +278,10 @@ paths:
       summary: |
         Retrieves annotation details for a sentence.
       description: |
-        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentId.
+        Retrieves annotation details (tokens, parses, etc.)  for the sentence corresponding to the provided sentenceId.
       operationId: sentence
       parameters:
-        - name: sentId
+        - name: sentenceId
           in: query
           description: |
             The sentence ID for which annotation details are being requested.
@@ -212,7 +296,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sentence'
+                $ref: '#/components/schemas/OdinsonSentence'
 
   /api/numdocs:
     get:
@@ -233,45 +317,45 @@ paths:
                 format: int32
                 example: 10000
 
-  /api/most-common:
-    get:
-      tags:
-        - statistics
-      summary: |
-        Determines the most frequent matching spans for the provided pattern.
-      description: |
-        Determines the most frequent matching spans for the provided pattern.  Counts ignore case. Optionally request counts for only one argument.
-      operationId: most-common
-      parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-        - name: k
-          in: query
-          description: |
-            The top k most-frequent patterns.
-          required: true
-          schema:
-            type: integer
-            format: int32
-            minimum: 1
-            exclusiveMinimum: false
-          example: 3
-        - name: arg
-          in: query
-          description: |
-            (Optional) name of the argument to define frequency by.
-          required: false
-          type: string
-          example: "cause"
-      responses:
-        '200':
-          description: Top k most common matches (ignores case). Optionally specify the argument to define frequency on.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MatchFrequency'
+  # /api/most-common:
+  #   get:
+  #     tags:
+  #       - statistics
+  #     summary: |
+  #       Determines the most frequent matching spans for the provided pattern.
+  #     description: |
+  #       Determines the most frequent matching spans for the provided pattern.  Counts ignore case. Optionally request counts for only one argument.
+  #     operationId: most-common
+  #     parameters:
+  #       - $ref: '#/components/schemas/OdinsonPattern'
+  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #       - name: k
+  #         in: query
+  #         description: |
+  #           The top k most-frequent patterns.
+  #         required: true
+  #         schema:
+  #           type: integer
+  #           format: int32
+  #           minimum: 1
+  #           exclusiveMinimum: false
+  #         example: 3
+  #       - name: arg
+  #         in: query
+  #         description: |
+  #           (Optional) name of the argument to define frequency by.
+  #         required: false
+  #         type: string
+  #         example: "cause"
+  #     responses:
+  #       '200':
+  #         description: Top k most common matches (ignores case). Optionally specify the argument to define frequency on.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: array
+  #               items:
+  #                 $ref: '#/components/schemas/MatchFrequency'
 
   /api/dependencies-vocabulary:
     get:
@@ -291,24 +375,24 @@ paths:
                   type: string
                   description: A dependency relation.
 
-  /api/export:
-    get:
-      tags:
-        - export
-      summary: Match an Odinson pattern and export results to a TSV file.
-      description: Match an Odinson pattern and export results to a TSV file (includes header).
-      operationId: export-results
-      parameters:
-        - $ref: '#/components/schemas/OdinsonPattern'
-        - $ref: '#/components/schemas/ParentDocumentQuery'
-      responses:
-        '200':
-          description: "A TSV file of matches. START and END are character spans relative to the beginning of the sentence."
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+  # /api/export:
+  #   get:
+  #     tags:
+  #       - export
+  #     summary: Match an Odinson pattern and export results to a TSV file.
+  #     description: Match an Odinson pattern and export results to a TSV file (includes header).
+  #     operationId: export-results
+  #     parameters:
+  #       - $ref: '#/components/schemas/OdinsonPattern'
+  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #     responses:
+  #       '200':
+  #         description: "A TSV file of matches. START and END are character spans relative to the beginning of the sentence."
+  #         content:
+  #           application/octet-stream:
+  #             schema:
+  #               type: string
+  #               format: binary
 
   /api/buildinfo:
     get:
@@ -325,6 +409,7 @@ paths:
           required: false
           schema:
             type: boolean
+
       responses:
         '200':
           description: "A JSON object containing build information."
@@ -356,46 +441,99 @@ paths:
               schema:
                 $ref: '#/components/schemas/CorpusInfo'
 
-  /api/config:
-    get:
-      tags:
-        - info
-      summary: Project config.
-      description: Retrieve project config as json.
-      operationId: config
-      parameters:
-        - name: pretty
-          in: query
-          description: |
-            Whether or not to pretty print the response.
-          required: false
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: "A JSON object containing config information."
-          content:
-            application/json:
-              schema:
-                type: object
+  # /api/config:
+  #   get:
+  #     tags:
+  #       - info
+  #     summary: Project config.
+  #     description: Retrieve project config as json.
+  #     operationId: config
+  #     parameters:
+  #       - name: pretty
+  #         in: query
+  #         description: |
+  #           Whether or not to pretty print the response.
+  #         required: false
+  #         schema:
+  #           type: boolean
+  #     responses:
+  #       '200':
+  #         description: "A JSON object containing config information."
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
 
 components:
   schemas:
 
+    OdinsonGrammarResults:
+      type: object
+      required:
+        - sentenceId
+        - documentId
+        - sentenceIndex
+        - words
+        - foundBy
+        - match
+      properties:
+        sentenceId:
+          $ref: '#/components/schemas/sentenceId'
+        documentId:
+          $ref: '#/components/schemas/documentId'
+        sentenceIndex:
+          $ref: '#/components/schemas/sentenceIndex'
+        words:
+          $ref: '#/components/schemas/words'
+        label:
+          description: |
+            The label for this Mention.
+          type: string
+        foundBy:
+          description: |
+            The name of the rule which matched this Mention.
+          type: string
+        match:
+          $ref: '#/components/schemas/OdinsonMatch'
+    
+    OdinsonMention:
+      type: object
+      required:
+        - test
+      # properties:
+      #   sentenceId:
+      #     type: mention.luceneDocId
+      # // "score"         -> odinsonScoreDoc.score,
+      # "label"         -> mention.label,
+      # "documentId"    -> getDocId(mention.luceneDocId),
+      # "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
+      # "words"         -> JsArray(tokens.map(JsString)),
+      # "foundBy"       -> mention.foundBy,
+      # "match"       -> Json.arr(mkJson(mention.odinsonMatch))
+
+    OdinsonGrammar:
+      type: string
+      description: An Odinson pattern.
+      example: |
+      rules:
+        - name: "example"
+          label: Death
+          type: event
+          pattern: |
+            trigger = [lemma=die]
+            date: ^Date  = >nmod_on
+  
     OdinsonPattern:
       name: odinsonQuery
-      in: query
-      required: true
       type: string
-      description: An Odison pattern.
+      description: An Odinson pattern.
       example: "[lemma=phosphorylate] []"
 
     ParentDocumentQuery:
       name: parentQuery
-      in: query
-      required: false
       type: string
-      description: A Lucene query to filter Documents before applying an Odinson pattern.
+      description: |
+        A Lucene query to filter Documents before applying an Odinson pattern.
       example: "year: 1973"
 
     ScoredTerm:
@@ -414,21 +552,21 @@ components:
           description: The similarity score for the returned term.
           example: 0.673
 
-    MatchFrequency:
-      type: object
-      required:
-        - match
-        - count
-      properties:
-        match:
-          type: string
-          description: Matched span of text after case folding.
-          example: phosphorylated protein
-        similarity:
-          type: integer
-          format: int32
-          description: The raw frequency of the match.
-          example: 60
+    # MatchFrequency:
+    #   type: object
+    #   required:
+    #     - match
+    #     - count
+    #   properties:
+    #     match:
+    #       type: string
+    #       description: Matched span of text after case folding.
+    #       example: phosphorylated protein
+    #     similarity:
+    #       type: integer
+    #       format: int32
+    #       description: The raw frequency of the match.
+    #       example: 60
 
     OdinsonSpan:
       type: object
@@ -520,257 +658,248 @@ components:
           items:
             $ref: '#/components/schemas/EnrichedDocHit'
 
+    sentenceId:
+      type: integer
+      format: int64
+      description: The internal ID for this Odinson Document.
+
+    score:
+      type: number
+      format: float
+      description: The Lucene score for this Document.
+
+    documentId:
+      type: string
+      description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
+
+    sentenceIndex:
+      type: integer
+      format: int32
+      description: The index of this sentence in the parent document (0-based).
+      
+    words:
+      type: array
+      description: Tokens for the document (sentence).
+      items:
+        type: string
+        description: A token.
+
+    matches:
+      type: array
+      items:
+        $ref: '#/components/schemas/OdinsonMatch'
+      description: The list of matching spans for this document.
+    
     DocHit:
       type: object
       required:
-        - odinsonDoc
+        - sentenceId
         - score
         - documentId
         - sentenceIndex
         - words
         - matches
       properties:
-        odinsonDoc:
-          type: integer
-          format: int64
-          description: The internal ID for this Odinson Document.
-        score:
-          type: number
-          format: float
-          description: The Lucene score for this Document.
-        documentId:
-          type: string
-          description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
-        sentenceIndex:
-          type: integer
-          format: int32
-          description: The index of this sentence in the parent document (0-based).
-        words:
-          type: array
-          description: Tokens for the document (sentence).
-          items:
-            type: string
-            description: A token.
-        matches:
-          type: array
-          items:
-            $ref: '#/components/schemas/OdinsonMatch'
-          description: The list of matching spans for this document.
-
+        - $ref: '#/components/schemas/sentenceId'
+        - $ref: '#/components/schemas/score'
+        - $ref: '#/components/schemas/documentId'
+        - $ref: '#/components/schemas/sentenceIndex'
+        - $ref: '#/components/schemas/words'
+        - $ref: '#/components/schemas/matches'
 
     EnrichedDocHit:
       description: A `DocHit` that include sentence details.
       type: object
       required:
-        - odinsonDoc
+        - sentenceId
         - score
         - documentId
         - sentenceIndex
         - sentence
         - matches
       properties:
-        odinsonDoc:
-          type: integer
-          format: int64
-          description: The internal ID for this Odinson Document.
+        sentenceId:
+          $ref: '#/components/schemas/sentenceId'
         score:
-          type: number
-          format: float
-          description: The Lucene score for this Document.
+          $ref: '#/components/schemas/score'
         documentId:
-          type: string
-          description: The parent document's ID as provided at index time (uses org.clulab.processors.Document.id).
+          $ref: '#/components/schemas/documentId'
         sentenceIndex:
-          type: integer
-          format: int32
-          description: The index of this sentence in the parent document (0-based).
-        sentence:
-          $ref: '#/components/schemas/BasicSentence'
-          description: Token attributes and annotations for this sentence to aid in further refining queries.
+          $ref: '#/components/schemas/sentenceIndex'
         matches:
-          type: array
-          items:
-            $ref: '#/components/schemas/OdinsonMatch'
-          description: The list of matching spans for this document.
+          $ref: '#/components/schemas/matches'
+        sentence:
+          $ref: '#/components/schemas/OdinsonSentence'
+          description: Token attributes and annotations for this sentence to aid in further refining queries.
 
-    DocumentMetadata:
+    OdinsonDocument:
       type: object
       required:
-        - docId
+        - id
+        - metadata
+        - sentences
       properties:
-        docId:
+        id:
           type: string
-          description: A unique ID identifying this parent document.
-        authors:
+          description: |
+            The ID for the document (ex. PMCXXXX).
+        metadata:
+          $ref: '#/components/schemas/OdinsonMetadata'
+        sentences:
           type: array
-          description: The names of the authors in order of appearance.
+          description: |
+            All sentences in the OdinsonDocument.
           items:
-            type: string
-            description: Author name.
-        title:
-          type: string
-          description: The title of this document.
-        doi:
-          type: string
-          description: "The digital object identifier for this document.  Retrieve document details using https://doi.org/{doi}"
-        url:
-          type: string
-          description: "URL for document"
-        venue:
-          type: string
-          description: The venue in which this document was published.
-        year:
+            $ref: '#/components/schemas/OdinsonSentence'
+
+    OdinsonMetadata:
+      type: array
+      description: |
+        An array of document metadata properties
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/OdinsonStringField'
+          - $ref: '#/components/schemas/OdinsonDateField'
+
+    OdinsonSentence:
+      type: object
+      required:
+        - numTokens
+        - fields
+      properties:
+        numTokens:
           type: integer
           format: int32
-          description: The year this document was published.
+          description: |
+            The number of tokens in the sentence.
+        fields:
+          type: array
+          description: |
+            An array of token and sentence-level attributes
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/OdinsonTokensField'
+              - $ref: '#/components/schemas/OdinsonGraphField'
 
-    BasicSentence:
-      type: object
-      required:
-        - words
-        #      - raw
-        - graphs
-      properties:
-        words:
-          type: array
-          description: |
-            The tokens for this sentence.
-          items:
-            type: string
-        lemmas:
-          type: array
-          description: |
-            The lemma form of each token in this sentence.
-          items:
-            type: string
-        tags:
-          type: array
-          description: |
-            The part of speech tag for each token in this sentence.
-          items:
-            type: string
-        chunks:
-          type: array
-          description: |
-            The BIO-style chunk label designating a coarse XP assignment for each token in this sentence.
-          items:
-            type: string
-        entities:
-          type: array
-          description: |
-            The BIO-style entity label for each token in this sentence.
-          items:
-            type: string
-        graphs:
-          $ref: "#/components/schemas/GraphMap"
-
-    Sentence:
-      type: object
-      required:
-        - words
-        - startOffsets
-        - endOffsets
-        #      - raw
-        #      - tags
-        #      - lemmas
-        #      - entities
-        #      - norms
-        #      - chunks
-        - graphs
-      properties:
-        words:
-          type: array
-          description: |
-            The tokens for this sentence.
-          items:
-            type: string
-        lemmas:
-          type: array
-          description: |
-            The lemma form of each token in this sentence.
-          items:
-            type: string
-        tags:
-          type: array
-          description: |
-            The part of speech tag for each token in this sentence.
-          items:
-            type: string
-        chunks:
-          type: array
-          description: |
-            The BIO-style chunk label designating a coarse XP assignment for each token in this sentence.
-          items:
-            type: string
-        entities:
-          type: array
-          description: |
-            The BIO-style entity label for each token in this sentence.
-          items:
-            type: string
-        startOffsets:
-          type: array
-          description: |
-            The character-based start offset for each token in this sentence.
-          items:
-            type: integer
-            format: int32
-        endOffsets:
-          type: array
-          description: |
-            The character-based end offset for each token in this sentence.
-          items:
-            type: integer
-            format: int32
-        graphs:
-          $ref: "#/components/schemas/GraphMap"
-
-    GraphMap:
+    OdinsonStringField:
       type: object
       description: |
-        Map of graph name -> DirectedGraph.
-      additionalProperties:
-        type: string
-        description: |
-          The name of a DirectedGraph.
-    DirectedGraph:
-      type: object
+        Stores a property of type `String`.
+      required:
+        - $type
+        - name
+        - string
+        - store
       properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.StringField
+        name:
+          type: string
+          description: |
+            The name of the property (i.e., what information it denotes).
+          example: pmc
+        string:
+          type: string
+          description: |
+            The value corresponding to `name`
+          example: "6360082"
+        store:
+          type: boolean
+          description: |
+            Whether or not this Field should be stored in the Odinson index.
+
+    OdinsonDateField:
+      type: object
+      description: |
+        Stores date information (ex. a publication date).
+      required:
+        - $type
+        - name
+        - string
+        - store
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.DateField
+        name:
+          type: string
+          description: |
+            The name of the property (i.e., what information it denotes).
+          example: publicationDate
+        date:
+          type: string
+          description: |
+            The value corresponding to `name`.  A parseable date.
+          example: "2019-01-31"
+        store:
+          type: boolean
+          description: |
+            Whether or not this Field should be stored in the Odinson index.
+          
+    OdinsonTokensField:
+      type: object
+      description: |
+        A type of token attribute.
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.TokensField
+        name:
+          type: string
+          description: |
+            The type of token attribute.
+          example: lemma
+        tokens:
+          type: array
+          description: |
+            The attribute of type `name` associated with each token.
+          items:
+            oneOf:
+              - type: string
+              - type: integer
+
+    OdinsonGraphField:
+      type: object
+      description: |
+        A type of directed graph.
+      properties:
+        $type: 
+          type: string
+          description: |
+            ai.lum.odinson.GraphField
+        name:
+          type: string
+          description: |
+            The type of graph.
+          example: dependencies
         edges:
           type: array
           description: |
-            A edges comprising this graph.
+            Edges comprising this graph.
           items:
             $ref: '#/components/schemas/Edge'
         roots:
           type: array
           description: |
-            The token indices corresponding to the root nodes for this DirectedGraph.
+            The token indices corresponding to the root nodes for this directed graph.
           items:
             type: integer
             format: int32
 
     Edge:
-      type: object
-      required:
-        - source
-        - destination
-        - relation
-      properties:
-        source:
-          type: integer
-          format: int32
-          description: |
-            The token index for the source vertex.
-        destination:
-          type: integer
-          format: int32
-          description: |
-            The token index for the destination vertex.
-        relation:
-          type: string
-          description: |
-            The relation to which this Edge corresponds.
+      type: array
+      items: 
+        oneOf:
+          - type: string
+          - type: integer
+      minItems: 3
+      maxItems: 3
+      description: |
+        [token index for the source vertex, token index for the destination vertex, The relation to which this Edge corresponds]
 
     BuildInfo:
       type: object

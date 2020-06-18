@@ -57,8 +57,8 @@ class OdinsonScorer(
       return Nil
     }
     // gather all matches with the same start position
-    val currentMatches = ArrayBuffer(spans.odinsonMatch)
-    var nextStart = spans.nextStartPosition()
+    val currentMatches = ArrayBuffer.empty[OdinsonMatch]
+    var nextStart = spans.startPosition()
     while (nextStart == startPosition) {
       currentMatches += spans.odinsonMatch
       nextStart = spans.nextStartPosition()
@@ -106,9 +106,49 @@ class OdinsonScorer(
     accSloppyFreq
   }
 
+  /** Returns the actual matches for the current doc. */
   def getMatches(): Array[OdinsonMatch] = {
     ensureMatchesCollected()
     collectedMatches.toArray
+  }
+
+  /** Returns all possible matches for the current doc.
+   *
+   *  All (possibly overlapping) sequences of tokens that
+   *  could be considered a match for the given query
+   *  will be included in the results.
+   *
+   *  NOTE don't call this method and getMatches()
+   *  on the same scorer instance.
+   */
+  def getAllPossibleMatches(): Array[OdinsonMatch] = {
+    ensureAllPossibleMatchesCollected()
+    collectedMatches.toArray
+  }
+
+  private def ensureAllPossibleMatchesCollected(): Unit = {
+    val currentDoc = docID()
+    if (lastScoredDoc != currentDoc) {
+      collectAllPossibleMatchesCurrentDoc()
+      lastScoredDoc = currentDoc
+    }
+  }
+
+  private def collectAllPossibleMatchesCurrentDoc(): Unit = {
+    accSloppyFreq = 0
+    collectedMatches.clear()
+    spans.odinDoStartCurrentDoc()
+    spans.nextStartPosition()
+    while (spans.startPosition() != Spans.NO_MORE_POSITIONS) {
+      collectedMatches += spans.odinsonMatch
+      if (docScorer == null) {
+        accSloppyFreq = 1
+      } else {
+        accSloppyFreq += docScorer.computeSlopFactor(spans.width())
+      }
+      spans.odinDoCurrentSpans()
+      spans.nextStartPosition()
+    }
   }
 
 }

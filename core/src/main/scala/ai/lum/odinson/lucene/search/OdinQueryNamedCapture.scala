@@ -10,7 +10,8 @@ import ai.lum.odinson.lucene.search.spans._
 
 class OdinQueryNamedCapture(
     val query: OdinsonQuery,
-    val captureName: String
+    val captureName: String,
+    val captureLabel: Option[String],
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (query, captureName).##
@@ -22,13 +23,13 @@ class OdinQueryNamedCapture(
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
-    new OdinWeightNamedCapture(this, searcher, termContexts, weight, captureName)
+    new OdinWeightNamedCapture(this, searcher, termContexts, weight, captureName, captureLabel)
   }
 
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
     if (query != rewritten) {
-      new OdinQueryNamedCapture(rewritten, captureName)
+      new OdinQueryNamedCapture(rewritten, captureName, captureLabel)
     } else {
       super.rewrite(reader)
     }
@@ -41,7 +42,8 @@ class OdinWeightNamedCapture(
     searcher: IndexSearcher,
     termContexts: JMap[Term, TermContext],
     val weight: OdinsonWeight,
-    val captureName: String
+    val captureName: String,
+    val captureLabel: Option[String],
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
@@ -52,14 +54,15 @@ class OdinWeightNamedCapture(
 
   def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
-    if (spans == null) null else new OdinSpansNamedCapture(spans, captureName)
+    if (spans == null) null else new OdinSpansNamedCapture(spans, captureName, captureLabel)
   }
 
 }
 
 class OdinSpansNamedCapture(
     val spans: OdinsonSpans,
-    val captureName: String
+    val captureName: String,
+    val captureLabel: Option[String],
 ) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
@@ -73,6 +76,6 @@ class OdinSpansNamedCapture(
   override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
   override def odinsonMatch: OdinsonMatch = {
-    new NamedMatch(spans.odinsonMatch, captureName)
+    new NamedMatch(spans.odinsonMatch, captureName, captureLabel)
   }
 }

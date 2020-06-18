@@ -3,7 +3,7 @@ package ai.lum.odinson
 import ai.lum.common.Interval
 import ai.lum.odinson.lucene.search.ArgumentSpans
 
-case class NamedCapture(name: String, capturedMatch: OdinsonMatch)
+case class NamedCapture(name: String, label: Option[String], capturedMatch: OdinsonMatch)
 
 sealed trait OdinsonMatch {
 
@@ -16,18 +16,6 @@ sealed trait OdinsonMatch {
 
   /** The interval of token indices that form this mention. */
   def tokenInterval: Interval = Interval.open(start, end)
-
-  /** A map from argument name to a sequence of matches.
-    *
-    * The value of the map is a sequence because there are events
-    * that can have several arguments with the same name.
-    * For example, in the biodomain, Binding may have several themes.
-    */
-  def arguments: Map[String, Array[OdinsonMatch]] = {
-    namedCaptures
-      .groupBy(_.name)
-      .transform((k,v) => v.map(_.capturedMatch))
-  }
 
 }
 
@@ -158,6 +146,7 @@ class OrMatch(
 class NamedMatch(
   val subMatch: OdinsonMatch,
   val name: String,
+  val label: Option[String],
 ) extends OdinsonMatch {
 
   val start: Int = subMatch.start
@@ -166,7 +155,7 @@ class NamedMatch(
   def namedCaptures: Array[NamedCapture] = {
     val subCaps = subMatch.namedCaptures
     val newCaps = new Array[NamedCapture](subCaps.length + 1)
-    newCaps(0) = NamedCapture(name, subMatch)
+    newCaps(0) = NamedCapture(name, label, subMatch)
     System.arraycopy(subCaps, 0, newCaps, 1, subCaps.length)
     newCaps
   }

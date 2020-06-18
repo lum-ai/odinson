@@ -1,10 +1,12 @@
 package ai.lum.odinson.extra
 
 import java.io.File
+
 import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import org.clulab.processors.Processor
 import org.clulab.processors.clu.{ BioCluProcessor, CluProcessor }
+import org.clulab.processors.fastnlp.FastNLPProcessor
 import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
@@ -19,6 +21,7 @@ object AnnotateText extends App with LazyLogging {
   val processorType = config[String]("odinson.extra.processorType")
 
   val processor: Processor = processorType match {
+    case "FastNLPProcessor" => new FastNLPProcessor
     case "CluProcessor" => new CluProcessor
     case "BioCluProcessor" => new BioCluProcessor
   }
@@ -40,8 +43,8 @@ object AnnotateText extends App with LazyLogging {
   }
 
   // NOTE parses the documents in parallel
-  for (f <- textDir.listFilesByWildcard("*.txt", caseSensitive = false, recursive = true).toSeq.par) {
-    val docFile = new File(docsDir, f.getBaseName() + ".json")
+  for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
+    val docFile = new File(docsDir, f.getBaseName() + ".json.gz")
 
     if (docFile.exists) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")

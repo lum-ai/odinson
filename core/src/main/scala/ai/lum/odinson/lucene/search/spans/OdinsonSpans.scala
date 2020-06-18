@@ -28,9 +28,13 @@ abstract class OdinsonSpans extends Spans {
   def odinDoCurrentSpans() = doCurrentSpans()
 
   def getAllMatches(): Array[OdinsonMatch] = {
+    // if there are no matches then skip instantiating the builder
+    if (nextStartPosition() == NO_MORE_POSITIONS) return emptyMatchArray
+    // there is at least one match
     val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    while (nextStartPosition() != NO_MORE_POSITIONS) {
+    while (startPosition() != NO_MORE_POSITIONS) {
       builder += odinsonMatch
+      nextStartPosition()
     }
     builder.result()
   }

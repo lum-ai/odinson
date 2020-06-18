@@ -11,8 +11,7 @@ case class OdinsonRow(
   tokens: Seq[String],
   start: Int,
   end: Int,
-  matchingSpan: String,
-  metadata: DocumentMetadata
+  matchingSpan: String
 ) {
   def toRow(delimiter: String = OdinsonRow.BASE_DELIMITER): String = {
     Seq(
@@ -23,13 +22,7 @@ case class OdinsonRow(
       start,
       end,
       matchingSpan,
-      OdinsonRow.sterilizeAndQuote(docId),
-      OdinsonRow.sterilize(metadata.title.getOrElse("")),
-      metadata.authors.getOrElse(Nil).map(OdinsonRow.sterilize).mkString(OdinsonRow.ARRAY_DELIMITER),
-      metadata.venue.getOrElse(""),
-      metadata.year.getOrElse(""),
-      metadata.doi.getOrElse(""),
-      metadata.url.getOrElse(""),
+      OdinsonRow.sterilizeAndQuote(docId)
     ).mkString(delimiter)
   }
 }
@@ -45,13 +38,7 @@ object OdinsonRow {
     "START",
     "END",
     "MATCHING_SPAN",
-    "DOC_ID",
-    "TITLE",
-    "AUTHORS",
-    "VENUE",
-    "YEAR",
-    "DOI",
-    "URL"
+    "DOC_ID"
   ).mkString(delimiter)
 
   def sterilizeAndQuote(s: String) = s""""${sterilize(s)}""""
