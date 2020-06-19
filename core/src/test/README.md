@@ -1,3 +1,6 @@
+
+
+
 ### Types of tests
 
 1. Serialization
@@ -15,14 +18,35 @@ Groups that should be added?
 
 What to do with TestPatterns.scala?
 
-## Fixtures
+#### Fixtures
 
 List of fixtures for core tests.
 
 Righ now classes are extending FlatSpec with Matchers,
 but in the future I want to have a base class with the mixtures we need.
 
-### Basic
+#### Basic
 
 ExtractorEngine
 (Odinson) Document
+
+### Improving testing coverage
+
+**3 repos [#lines without coverage]**
+
+1. Play App [196]
+2. Core [790]
+3. Extra [254]
+
+#### Play App
+
+3 files: [OdinsonController, OpenApiController, OdinsonRow]
+
+#### Core
+
+68 files.
+
+Top lowest in testing:
+
+OndinsonDocument 46.6%
+QueryUtils.scala 0.0%
