@@ -6,8 +6,9 @@ import ai.lum.odinson.{Document, EventMatch, OdinsonMatch}
 
 class TestMoreEvents extends EventSpec {
   val json = getJsonDocument("3")
-  val doc = getDocumentFromJson(json)
-  val ee = Utils.mkExtractorEngine(doc)
+  
+  def doc = getDocumentFromJson(json)
+  def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "find two events with one tool each" in {
     val pattern = """

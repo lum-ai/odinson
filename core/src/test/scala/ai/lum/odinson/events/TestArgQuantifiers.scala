@@ -7,8 +7,8 @@ import ai.lum.odinson.{Document}
 class TestArgQuantifiers extends EventSpec {
   val json = getJsonDocument("1")
 
-  val doc = getDocumentFromJson(json)
-  val ee = Utils.mkExtractorEngine(doc)
+  def doc = getDocumentFromJson(json)
+  def ee = Utils.mkExtractorEngine(doc)
 
   def desiredArgs35: Seq[Argument] = Seq(createArgument("theme", 3, 5))
   def desiredArgs67: Seq[Argument] = Seq(createArgument("theme", 6, 7))

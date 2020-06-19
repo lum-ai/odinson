@@ -5,18 +5,12 @@ import ai.lum.odinson.utils.OdinResultsIterator
 import ai.lum.odinson.{EventMatch, OdinsonMatch}
 
 class TestEvents extends EventSpec {
-
-//  import TestEvents._
-  val json = getJsonDocument("5")
-  val pattern = """
-    trigger = [lemma=eat]
-    subject: NP = >nsubj
-    object: NP = >dobj
-  """
+  //  import TestEvents._
+  def json = getJsonDocument("5")
 
   // extractor engine persists across tests (hacky way)
-  val doc = getDocumentFromJson(json)
-  val ee = Utils.mkExtractorEngine(doc)
+  def doc = getDocumentFromJson(json)
+  def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with promoted entities" in {
     val pattern = """
@@ -124,7 +118,7 @@ class TestEvents extends EventSpec {
     )
     testEventArguments(m, desiredArgs)
   }
-
+   
   it should "not throw an exception when it fails" in {
     val pattern = """
       trigger = [lemma=eat]
@@ -134,24 +128,27 @@ class TestEvents extends EventSpec {
     val q = ee.compiler.compileEventQuery(pattern)
     noException should be thrownBy ee.query(q, 1)
   }
-
+  
   it should "not find event with mentions from the state when the state is empty" in {
-    val q = ee.compiler.compileEventQuery(pattern)
-    val results = ee.query(q, 1)
+    val persistantEe = Utils.mkExtractorEngine(doc)
+    val pattern = """
+      trigger = [lemma=eat]
+      subject: NP = >nsubj
+      object: NP = >dobj
+    """
+    var q = persistantEe.compiler.compileEventQuery(pattern)
+    var results = persistantEe.query(q, 1)
     results.totalHits should equal (0)
-  }
-
-  it should "populate the state with NPs" in {
-    val query = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
-    val results = ee.query(query)
+    //it should "populate the state with NPs" in {
+    val query = persistantEe.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    results = persistantEe.query(query)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
-    ee.state.addMentions(OdinResultsIterator(results, "NP"))
-  }
-
-  it should "find event with mentions from the state when the state is populated" in {
-    val q = ee.compiler.compileEventQuery(pattern)
-    val results = ee.query(q, 1)
+    persistantEe.state.addMentions(OdinResultsIterator(results, "NP"))
+    //it should "find event with mentions from the state when the state is populated" in {
+    q = persistantEe.compiler.compileEventQuery(pattern)
+    results = persistantEe.query(q, 1)
+    
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 1
     val m = results.scoreDocs.head.matches.head
@@ -159,8 +156,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      Argument("subject", 0, 1),
+      Argument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }

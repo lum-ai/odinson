@@ -5,8 +5,8 @@ import org.scalatest._
 class TestRuleFile extends EventSpec{
   val json = getJsonDocument("2")
   // extractor engine persists across tests (hacky way)
-  val doc = getDocumentFromJson(json)
-  val ee = Utils.mkExtractorEngine(doc)
+  def doc = getDocumentFromJson(json)
+  def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with rules defined in a rule file" in {
     val rules = """
