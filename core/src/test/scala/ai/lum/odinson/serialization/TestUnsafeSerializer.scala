@@ -2,7 +2,6 @@ package ai.lum.odinson.serialization
 
 import org.scalatest._
 import ai.lum.odinson.digraph.DirectedGraph
-import ai.lum.odinson.serialization.UnsafeSerializer
 
 import ai.lum.odinson.BaseSpec
 
