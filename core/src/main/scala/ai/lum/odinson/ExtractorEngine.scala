@@ -148,7 +148,7 @@ class ExtractorEngine(
   }
 
   def getArgument(mention: Mention, name: String): String = {
-    getString(mention.luceneDocId, mention.arguments(mentionFactory)(name).head.odinsonMatch)
+    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
   def getTokens(m: Mention): Array[String] = {
