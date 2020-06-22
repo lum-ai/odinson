@@ -50,12 +50,12 @@ trait MentionFactory {
       .namedCaptures
       // get all the matches for each name
       .groupBy(_.name)
-      .transform { (name, matches) =>
+      .transform { (name, captures) =>
         // Make a mention from each match in the named capture
-        matches.map { m =>
+        captures.map { capture =>
           newMention(
-            m.capturedMatch,
-            m.label,
+            capture.capturedMatch,
+            capture.label,
             luceneDocId,
             luceneSegmentDocId,
             luceneSegmentDocBase,
