@@ -42,6 +42,7 @@ object IndexDocuments extends App with LazyLogging {
   // fin
 
 
+  // Note that documentFiles may or may not be parallel, hence the GenIterable
   def indexDocuments(writer: OdinsonIndexWriter, documentFiles: GenIterable[File]): Unit = {
     // index documents
     for (f <- documentFiles) {
