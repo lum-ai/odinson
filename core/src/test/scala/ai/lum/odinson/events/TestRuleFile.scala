@@ -3,7 +3,7 @@ package ai.lum.odinson.events
 import org.scalatest._
 
 class TestRuleFile extends EventSpec{
-  def json = getJsonDocument("2")
+  def json = getJsonDocument("becky-gummy-bears-v2")
   // extractor engine persists across tests (hacky way)
   def doc = getDocumentFromJson(json)
   def ee = Utils.mkExtractorEngine(doc)

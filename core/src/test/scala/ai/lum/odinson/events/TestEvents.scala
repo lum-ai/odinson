@@ -6,7 +6,7 @@ import ai.lum.odinson.{EventMatch, OdinsonMatch}
 
 class TestEvents extends EventSpec {
   //  import TestEvents._
-  def json = getJsonDocument("5")
+  def json = getJsonDocument("becky-gummy-bears")
 
   // extractor engine persists across tests (hacky way)
   def doc = getDocumentFromJson(json)

@@ -5,7 +5,7 @@ import org.scalatest._
 import ai.lum.odinson.{Document}
 
 class TestArgQuantifiers extends EventSpec {
-  val json = getJsonDocument("1")
+  val json = getJsonDocument("gummy-bears-consumption")
 
   def doc = getDocumentFromJson(json)
   def ee = Utils.mkExtractorEngine(doc)

@@ -5,7 +5,7 @@ import org.scalatest._
 import ai.lum.odinson.{Document, EventMatch, OdinsonMatch}
 
 class TestMoreEvents extends EventSpec {
-  def json = getJsonDocument("3")
+  def json = getJsonDocument("chopsticks-spoon")
   
   def doc = getDocumentFromJson(json)
   def ee = Utils.mkExtractorEngine(doc)

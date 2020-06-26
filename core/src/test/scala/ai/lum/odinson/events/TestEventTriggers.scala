@@ -47,7 +47,7 @@ class TestEventTriggers extends EventSpec {
     }
 
   "Odinson" should "match events for all trigger mentions using a basic pattern" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
      
     val rules = applyRuleTemplate(
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})",
@@ -62,7 +62,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events for all trigger mentions using an event pattern" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
   
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -78,7 +78,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -94,7 +94,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger (variable right hand side)" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -113,7 +113,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events with quantifiers in the trigger (overlap with different start and end)" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -132,7 +132,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events with quantifiers in the trigger (greedy)" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -150,7 +150,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events with quantifiers in the trigger (greedy; allow trigger overlaps)" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -171,7 +171,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger (laziness)" in {
-    val ee = mkExtractorEngine("4")
+    val ee = mkExtractorEngine("hedgehogs-coypy")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -189,7 +189,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match arguments of correct length using a basic pattern (i)" in {
-    val ee = mkExtractorEngine("7")
+    val ee = mkExtractorEngine("pre-european-diet")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
@@ -203,7 +203,7 @@ class TestEventTriggers extends EventSpec {
   }
 
   it should "match arguments of correct length using an event pattern (i)" in {
-    val ee = mkExtractorEngine("7")
+    val ee = mkExtractorEngine("pre-european-diet")
     
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
