@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`
+  can be produced.  Include a `DefaultMentionFactory` to be used if one isn't provided.  Change `Mention` to be a
+  regular class instead of a case class to facilitate subclassing.
 - Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
 - Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
 - Code coverage report.
@@ -17,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be matched by the query. In other words, it skips the `MatchSelector`.
 - Added `buildinfo.json` file to the index to store versions and build info.
 - Added ability to express rule vars as lists, in addition to the current string representation.
+- Put indexing docs in a method to be used by external projects. [#90](https://github.com/lum-ai/odinson/pull/90)
 ### Changed
 - Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
 - Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
