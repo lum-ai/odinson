@@ -81,27 +81,30 @@ class ExtractorEngine(
 
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    // extract mentions
-    val mentions = for {
+    val minIterations = extractors.map(_.priority.minIterations).max
+
+    // Note that this does not yet keep on extracting until there are no more mentions.
+    def extract(i: Int): Seq[Mention] = for {
       e <- extractors
+      if e.priority matches i
       results = query(e.query, numSentences, disableMatchSelector)
       scoreDoc <- results.scoreDocs
       docFields = doc(scoreDoc.doc)
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-    // if needed, filter results to discard trigger overlaps
-    if (allowTriggerOverlaps) {
-      mentions
-    } else {
-      mentions.flatMap { m =>
-        m.odinsonMatch match {
-          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(mentionFactory = mentionFactory, odinsonMatch = e))
-          case _ => Some(m)
-        }
+      mention = mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+      // If needed, filter results to discard trigger overlaps.
+      mentionOpt = mention.odinsonMatch match {
+        case e: EventMatch if !allowTriggerOverlaps => e.removeTriggerOverlaps.map(e => mention.copy(mentionFactory = mentionFactory, odinsonMatch = e))
+        case _ => Some(mention)
       }
-    }
+      if (mentionOpt.isDefined)
+    } yield mentionOpt.get
+
+    // This does not make a lot of sense until there is some state.
+    val mentions = 1.to(minIterations).flatMap(extract)
+    mentions
   }
 
   /** executes query and returns all results */
