@@ -20,6 +20,7 @@ class TestRuleFile extends BaseSpec {
       |rules:
       |  - name: testrule
       |    type: event
+      |    priority: 2+
       |    pattern: |
       |      trigger = [lemma=eat]
       |      subject: ^NP = >nsubj ${chunk}
@@ -52,10 +53,12 @@ class TestRuleFile extends BaseSpec {
         |     - donatello
         |     - raphael
         |     - michelangelo
+        |  priority: 5
         |
         |rules:
         |  - name: "turtle-power-var"
         |    label: MutantTurtle
+        |    priority: ${priority}
         |    type: basic
         |    pattern: |
         |      [norm=/${turtle}/]
