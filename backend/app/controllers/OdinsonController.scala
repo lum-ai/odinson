@@ -144,7 +144,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val q = extractorEngine.compiler.mkQuery(odinsonQuery, filter)
         extractorEngine.query(q)
     }
-    extractorEngine.state.addMentions(OdinResultsIterator(results, label))
   }
 
   /**

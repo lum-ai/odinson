@@ -1,5 +1,9 @@
 package ai.lum.odinson
 
+import ai.lum.odinson.lucene.OdinResults
+import ai.lum.odinson.lucene.search.OdinsonQuery
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.OdinResultsIterator
 import org.scalatest._
 
@@ -147,23 +151,31 @@ class TestEvents extends FlatSpec with Matchers {
     val results = ee.query(query)
     results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
-    ee.state.addMentions(OdinResultsIterator(results, "NP"))
   }
 
   it should "find event with mentions from the state when the state is populated" in {
-    val q = ee.compiler.compileEventQuery(pattern)
-    val results = ee.query(q, 1)
-    results.totalHits should equal (1)
-    results.scoreDocs.head.matches should have size 1
-    val m = results.scoreDocs.head.matches.head
-    // test trigger
-    testEventTrigger(m, start = 1, end = 2)
-    // test arguments
-    val desiredArgs = Seq(
-      Argument("subject", 0, 1),
-      Argument("object", 2, 4),
-    )
-    testEventArguments(m, desiredArgs)
+    val q1 = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    val q2 = ee.compiler.compileEventQuery(pattern)
+
+    ee.stateFactory.usingState { state =>
+      val results1 = ee.query(q1, Some("NP"), 1, after = null, disableMatchSelector = false, state)
+      results1.totalHits should equal (1)
+      results1.scoreDocs.head.matches should have size 2
+
+      val results2 = ee.query(q2, None, 1, after = null, disableMatchSelector = false, state)
+      results2.totalHits should equal(1)
+      results2.scoreDocs.head.matches should have size 1
+
+      val m = results2.scoreDocs.head.matches.head
+      // test trigger
+      testEventTrigger(m, start = 1, end = 2)
+      // test arguments
+      val desiredArgs = Seq(
+        Argument("subject", 0, 1),
+        Argument("object", 2, 4),
+      )
+      testEventArguments(m, desiredArgs)
+    }
   }
 
 }

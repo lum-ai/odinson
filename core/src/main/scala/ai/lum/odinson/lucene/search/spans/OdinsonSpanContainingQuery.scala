@@ -1,12 +1,14 @@
 package ai.lum.odinson.lucene.search.spans
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
+
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
+import ai.lum.odinson.state.State
 
 class OdinsonSpanContainingQuery(
     val big: OdinsonQuery,   // the main query
@@ -14,6 +16,11 @@ class OdinsonSpanContainingQuery(
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (big, little).##
+
+  override def setState(stateOpt: Option[State]): Unit = {
+    big.setState(stateOpt)
+    little.setState(stateOpt)
+  }
 
   def getField(): String = big.getField()
 

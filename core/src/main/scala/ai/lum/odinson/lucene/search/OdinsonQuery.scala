@@ -1,6 +1,9 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, TreeMap, Collection }
+import java.util.{Collection, TreeMap, Map => JMap}
+
+import ai.lum.odinson.state.State
+
 import scala.collection.JavaConverters._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -24,6 +27,9 @@ abstract class OdinsonQuery extends Query {
 
   def getField(): String
 
+  // Override this if you're interested in the state, like if you are a StateQuery or if you
+  // encapsulate other queries that might be interested in the state.
+  def setState(stateOpt: Option[State]): Unit = ()
 }
 
 object OdinsonQuery {

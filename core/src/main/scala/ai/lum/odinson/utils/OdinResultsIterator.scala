@@ -5,7 +5,7 @@ import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
 import scala.annotation.tailrec
 
-class OdinResultsIterator(odinResults: OdinResults, label: String) extends Iterator[(Int, Int, String, Int, Int) ] {
+class OdinResultsIterator(odinResults: OdinResults, label: Option[String]) extends Iterator[(Int, Int, String, Int, Int) ] {
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
   val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
 
@@ -24,7 +24,7 @@ class OdinResultsIterator(odinResults: OdinResults, label: String) extends Itera
 
       matchesIndex += 1
       matchesRemaining -= 1
-      (scoreDoc.segmentDocBase, scoreDoc.segmentDocId, label, odinsonMatch.start, odinsonMatch.end)
+      (scoreDoc.segmentDocBase, scoreDoc.segmentDocId, label.getOrElse(""), odinsonMatch.start, odinsonMatch.end)
     }
     else {
       scoreDocsIndex += 1
@@ -35,5 +35,5 @@ class OdinResultsIterator(odinResults: OdinResults, label: String) extends Itera
 }
 
 object OdinResultsIterator {
-  def apply(odinResults: OdinResults, label: String): OdinResultsIterator = new OdinResultsIterator(odinResults, label)
+  def apply(odinResults: OdinResults, label: Option[String]): OdinResultsIterator = new OdinResultsIterator(odinResults, label)
 }

@@ -27,7 +27,7 @@ class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
-  val state: State,
+  val stateFactory: StateFactory,
   val parentDocIdField: String
 ) {
 
@@ -80,26 +80,29 @@ class ExtractorEngine(
 
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    // extract mentions
-    val mentions = for {
-      e <- extractors
-      results = query(e.query, numSentences, disableMatchSelector)
-      scoreDoc <- results.scoreDocs
-      docFields = doc(scoreDoc.doc)
-      docId = docFields.getField("docId").stringValue
-      sentId = docFields.getField("sentId").stringValue
-      odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-    // if needed, filter results to discard trigger overlaps
-    if (allowTriggerOverlaps) {
-      mentions
-    } else {
-      mentions.flatMap { m =>
-        m.odinsonMatch match {
-          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
-          case _ => Some(m)
+    stateFactory.usingState { state =>
+      val mentions = for {
+        e <- extractors
+        odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
+        scoreDoc <- odinResults.scoreDocs
+        docFields = doc(scoreDoc.doc)
+        docId = docFields.getField("docId").stringValue
+        sentId = docFields.getField("sentId").stringValue
+        odinsonMatch <- scoreDoc.matches
+      } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+      // if needed, filter results to discard trigger overlaps
+      val allowedMentions = if (allowTriggerOverlaps) {
+        mentions
+      } else {
+        mentions.flatMap { m =>
+          m.odinsonMatch match {
+            case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+            case _ => Some(m)
+          }
         }
       }
+
+      allowedMentions
     }
   }
 
@@ -124,22 +127,20 @@ class ExtractorEngine(
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, false)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(odinsonQuery, n, after, false)
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-    disableMatchSelector: Boolean,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+    stateFactory.usingState { state =>
+      query(odinsonQuery, None, n, after, disableMatchSelector, state)
+    }
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(odinsonQuery: OdinsonQuery, label: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+    indexSearcher.odinSearch(after, odinsonQuery, label, state, n, disableMatchSelector)
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {
@@ -192,14 +193,13 @@ object ExtractorEngine {
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val state = StateFactory.newState(config)
-    compiler.setState(state)
+    val stateFactory = StateFactory(config)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       displayField,
-      state,
+      stateFactory,
       parentDocIdField
     )
   }
