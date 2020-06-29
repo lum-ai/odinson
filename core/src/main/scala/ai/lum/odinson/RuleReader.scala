@@ -118,9 +118,23 @@ class RuleReader(val compiler: QueryCompiler) {
       case vars: JMap[_, _] =>
         vars
           .asScala
-          .map { case (k, v) => k.toString -> v.toString }
+          .map { case (k, v) => k.toString -> processVar(v) }
           .toMap
       case _ => sys.error("invalid variables data")
+    }
+  }
+
+  // Variables can be a string, or optionally a list of strings which are combined with OR.
+  // This is largely to support clean diffs when changes are made to variables, e.g., triggers.
+  private def processVar(varValue: Any): String = {
+    varValue match {
+      // If the variable is a string, clean the whitespace and return
+      case s: String => s
+      // Else, if it's a list:
+      case arr:java.util.ArrayList[_] => arr.asScala
+        .map(_.toString.trim)
+        .mkString("|")  // concatenate with OR
+      case _ => ???
     }
   }
 

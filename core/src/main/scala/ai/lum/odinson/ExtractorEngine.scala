@@ -147,6 +147,10 @@ class ExtractorEngine(
     getTokens(docID, m).mkString(" ")
   }
 
+  def getArgument(mention: Mention, name: String): String = {
+    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
+  }
+
   def getTokens(m: Mention): Array[String] = {
     getTokens(m.luceneDocId, m.odinsonMatch)
   }
@@ -170,6 +174,7 @@ class ExtractorEngine(
 }
 
 object ExtractorEngine {
+  lazy val defaultMentionFactory = new DefaultMentionFactory()
 
   def fromConfig(): ExtractorEngine = {
     fromConfig("odinson")
@@ -186,7 +191,7 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
+  def fromDirectory(config: Config, indexDir: Directory, mentionFactory: MentionFactory = defaultMentionFactory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val displayField = config[String]("displayField")
