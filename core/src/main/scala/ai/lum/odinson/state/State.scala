@@ -9,5 +9,5 @@ trait State {
   def getMatches(docBase: Int, docId: Int, label: String): Array[(Int, Int)] // TODO: Return iterator
 
   // This may eventually go away, but it is needed for testing just now.
-  def close(): Unit = ()
+//  def close(): Unit = ()
 }

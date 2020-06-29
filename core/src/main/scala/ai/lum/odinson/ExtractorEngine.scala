@@ -28,7 +28,8 @@ class ExtractorEngine(
   val compiler: QueryCompiler,
   val displayField: String,
   val stateFactory: StateFactory,
-  val parentDocIdField: String
+  val parentDocIdField: String,
+  val mentionFactory: MentionFactory
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -89,14 +90,14 @@ class ExtractorEngine(
         docId = docFields.getField("docId").stringValue
         sentId = docFields.getField("sentId").stringValue
         odinsonMatch <- scoreDoc.matches
-      } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+      } yield mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
       // if needed, filter results to discard trigger overlaps
       val allowedMentions = if (allowTriggerOverlaps) {
         mentions
       } else {
         mentions.flatMap { m =>
           m.odinsonMatch match {
-            case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+            case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(mentionFactory = mentionFactory, odinsonMatch = e))
             case _ => Some(m)
           }
         }
@@ -205,7 +206,8 @@ object ExtractorEngine {
       compiler,
       displayField,
       stateFactory,
-      parentDocIdField
+      parentDocIdField,
+      mentionFactory
     )
   }
 

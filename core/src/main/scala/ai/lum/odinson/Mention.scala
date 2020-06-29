@@ -9,7 +9,7 @@ class Mention(
   val docId: String,
   val sentenceId: String,
   val foundBy: String,
-  val arguments: Map[String, Array[Mention]],
+  val arguments: Map[String, Array[Mention]] = Map.empty
 ) {
 
   def copy(
