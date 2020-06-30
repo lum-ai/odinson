@@ -1,10 +1,11 @@
 package ai.lum.odinson
 
 import java.nio.file.Path
+
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
-import org.apache.lucene.store.{ Directory, FSDirectory }
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
+import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.Config
@@ -17,6 +18,8 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.StateFactory
+
 
 
 
@@ -25,7 +28,8 @@ class ExtractorEngine(
   val compiler: QueryCompiler,
   val displayField: String,
   val state: State,
-  val parentDocIdField: String
+  val parentDocIdField: String,
+  val mentionFactory: MentionFactory
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -86,14 +90,14 @@ class ExtractorEngine(
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+    } yield mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
     // if needed, filter results to discard trigger overlaps
     if (allowTriggerOverlaps) {
       mentions
     } else {
       mentions.flatMap { m =>
         m.odinsonMatch match {
-          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
+          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(mentionFactory = mentionFactory, odinsonMatch = e))
           case _ => Some(m)
         }
       }
@@ -143,6 +147,10 @@ class ExtractorEngine(
     getTokens(docID, m).mkString(" ")
   }
 
+  def getArgument(mention: Mention, name: String): String = {
+    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
+  }
+
   def getTokens(m: Mention): Array[String] = {
     getTokens(m.luceneDocId, m.odinsonMatch)
   }
@@ -166,6 +174,7 @@ class ExtractorEngine(
 }
 
 object ExtractorEngine {
+  lazy val defaultMentionFactory = new DefaultMentionFactory()
 
   def fromConfig(): ExtractorEngine = {
     fromConfig("odinson")
@@ -182,16 +191,14 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
+  def fromDirectory(config: Config, indexDir: Directory, mentionFactory: MentionFactory = defaultMentionFactory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val displayField = config[String]("displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val jdbcUrl = config[String]("state.jdbc.url")
-    val state = new State(jdbcUrl)
-    state.init()
+    val state = StateFactory.newState(config)
     compiler.setState(state)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
@@ -199,7 +206,8 @@ object ExtractorEngine {
       compiler,
       displayField,
       state,
-      parentDocIdField
+      parentDocIdField,
+      mentionFactory
     )
   }
 

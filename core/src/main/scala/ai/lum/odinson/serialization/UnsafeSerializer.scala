@@ -112,7 +112,7 @@ object UnsafeSerializer {
     size += sizeOfInt
     size += g.outgoingSlices.length * sizeOfInt
     size += sizeOfInt
-    size += g.roots.length
+    size += g.roots.length * sizeOfInt
     size
   }
 
