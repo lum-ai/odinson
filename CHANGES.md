@@ -21,7 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   be matched by the query. In other words, it skips the `MatchSelector`.
 - Added `buildinfo.json` file to the index to store versions and build info.
 - Added ability to express rule vars as lists, in addition to the current string representation.
-- Put indexing docs in a method to be used by external projects. [#90](https://github.com/lum-ai/odinson/pull/90)
+- Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
+- Started documention at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
 - Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
 - Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
