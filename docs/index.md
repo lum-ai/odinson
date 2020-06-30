@@ -29,7 +29,9 @@ If you use Odinson, please cite the following:
    Valenzuela-Escárcega, M. A., Hahn-Powell, G., & Bell, D. (2020, May).  Odinson: A fast rule-based information extraction framework. In Proceedings of The 12th Language Resources and Evaluation Conference (pp. 2183-2191).   [[pdf]](https://www.aclweb.org/anthology/2020.lrec-1.267.pdf)
        
 Bibtex:       
- ```$xslt
+
+{%  
+```
 @InProceedings{Valenzuela:2020,
   author    = {Valenzuela-Escárcega, Marco A. and  Hahn-Powell, Gus  and  Bell, Dane},
   title     = {{O}dinson: {A} fast rule-based information extraction framework},
@@ -43,3 +45,4 @@ Bibtex:
   url       = {https://www.aclweb.org/anthology/2020.lrec-1.267}
 }
 ```  
+%}
