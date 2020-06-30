@@ -30,7 +30,7 @@ If you use Odinson, please cite the following:
        
 Bibtex:       
 
-{%  
+{% raw %} 
 ```
 @InProceedings{Valenzuela:2020,
   author    = {Valenzuela-Escárcega, Marco A. and  Hahn-Powell, Gus  and  Bell, Dane},
@@ -45,4 +45,4 @@ Bibtex:
   url       = {https://www.aclweb.org/anthology/2020.lrec-1.267}
 }
 ```  
-%}
+{% endraw %}
