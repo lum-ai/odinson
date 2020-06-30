@@ -1,6 +1,6 @@
 ---
 title: Installation
-has_children: false
+has_children: true
 nav_order: 3
 ---
 
@@ -31,10 +31,6 @@ Or, if you're using Maven, add this to your `pom.xml` file:
 </dependency>
 ```
 
-
-- TODO: web/rest api
-
-- TODO: Docker
 
 ## How to compile
 
