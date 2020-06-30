@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Add priority as String to `Rule` and as `Priority` to `Extractor`
 - Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`
   can be produced.  Include a `DefaultMentionFactory` to be used if one isn't provided.  Change `Mention` to be a
   regular class instead of a case class to facilitate subclassing.
