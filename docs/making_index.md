@@ -1,7 +1,7 @@
 ---  
 title: Creating an Index  
 has_children: false  
-nav_order: 3  
+nav_order: 4  
 ---  
   
 # Annotating text  
@@ -20,7 +20,7 @@ The configurations are specified in `extra/src/main/resources/application.conf`.
   
 ### Memory Usage  
   
-Depending on the number and size of the documents you are annotating, this step  can be memory intensive.  We recommend you set aside at least 8g, but if you have more  it will run faster. You can specify this through this command:  
+Depending on the number and size of the documents you are annotating, this step can be memory intensive.  We recommend you set aside at least 8g, but if you have more it will run faster. You can specify this through this command:  
 
 	 export SBT_OPTS="-Xmx8g"  
  
@@ -45,4 +45,4 @@ Once again, you will specify the configurations in `extra/src/main/resources/app
   
 	sbt "extra/runMain ai.lum.odinson.extra.IndexDocuments"    
   
-While annotating can be time-consuming, the creation of the index should be relatively less so, though again it's depenedent on the number and size of the documents.
+While annotating can be time-consuming, the creation of the index should be relatively less so, though again it's dependent on the number and size of the documents.
