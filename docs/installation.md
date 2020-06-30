@@ -1,12 +1,12 @@
 ---
 title: Installation
 has_children: false
-nav_order: 2
+nav_order: 3
 ---
 
 # Setup
 
-This software requires Java 1.8 and Scala 2.XX (todo) or higher.
+This software has been tested with Java 1.8 and Scala 2.12.10. 
 
 This software is available through sbt and Maven central.
 
@@ -23,22 +23,28 @@ libraryDependencies ++= {
 }
 ```
 
-- TODO: using with Maven instructions
+The Maven dependency for Odinson is:
+
+```xml
+<dependency>
+   <groupId>ai.lum</groupId>
+   <artifactId>odinson-core_2.12</artifactId>
+   <version>x.x.x</version>
+</dependency>
+```
+
 
 - TODO: web/rest api
 
--- TODO: Docker
+- TODO: Docker
 
 ## How to compile
 
-As this is an abt project, you can compile the code with `sbt compile`, 
-then you can run any of the main files with either `sbt core/run` 
-or `sbt extra/run`, depending on the location of the desired runnable.  
+As this is a sbt project, you can compile the code with `sbt compile`, then you can run any of the main files with either `sbt core/run` or `sbt extra/run`, depending on the location of the desired runnable.  
 
 ## Example usage
 
-For an example usage, please see the complete working 
-example [here](https://github.com/lum-ai/odinson/blob/master/extra/src/main/scala/ai/lum/odinson/extra/Example.scala).
+For an example usage, please see the complete working example [here](https://github.com/lum-ai/odinson/blob/master/extra/src/main/scala/ai/lum/odinson/extra/Example.scala).
 
 To run it from the command line, use:
 
@@ -46,8 +52,6 @@ To run it from the command line, use:
      
 and choose `Example` off the list.
 
-The file of Odinson rules being used in this example is [here](https://github.com/lum-ai/odinson/blob/master/extra/src/main/resources/example/rules.yml).
+To use it, you will need to point it to an Odinson index by specifying the correct path in `application.conf`. If you need help making an index, or setting up your config file, there is info here: https://github.com/lum-ai/odinson/tree/master/extra
 
-and it will generate a json lines file. You need to point it at an index in application.conf, if you need help making an index, there is info here: https://github.com/lum-ai/odinson/tree/master/extra
-
-Please let me know if this helps!
+The file containing the Odinson rules being used in this example is [here](https://github.com/lum-ai/odinson/blob/master/extra/src/main/resources/example/rules.yml), and the output is a json lines file, with one line per extraction.  Please note that this example is meant to be illustrative only, and the output produced is not a true serialization of the extracted Mentions (i.e., only some attributes are included in the output). 
