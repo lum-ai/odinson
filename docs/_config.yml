@@ -1,4 +1,5 @@
 title: "odinson"
 remote_theme: pmarsceill/just-the-docs
+theme: "just-the-docs"
 color_scheme: "light"
 search_enabled: true
