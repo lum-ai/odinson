@@ -29,3 +29,7 @@ tags
 
 # bloop build server
 .bloop
+
+# docs
+docs/.jekyll-cache/
+docs/.sass-cache/
