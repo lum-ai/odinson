@@ -5,6 +5,8 @@ has_children: false
 nav_order: 1
 ---  
 
+# Token constraints
+
 The simplest possible Odinson patterns consist of a single token constraint. A token constraint specifies what must be true of a token in order for it to be a valid extraction.  These constraints are limited only by what you include in your index.  For example, we commonly include part of speech tag, named entity information (NER), and chunk.
 
 ## Example
@@ -29,3 +31,14 @@ This pattern will match any token in a document whose part of speech tag begins 
 You can combine and nest constraints for a token using operators: `&` (for AND), `|` (for OR) and parentheses. For example, the following would match a word whose tag starts with "N" and which is also tagged as an organization using NER or is a proper noun.
 
     [tag=/N.*/ & (entity=ORGANIZATION | tag=NNP)]
+    
+## Wildcards
+
+Odinson supports wildcards for token constraints.  Specifically, 
+ - `[]` : any token
+ 
+## Quantifiers 
+
+Like any other pattern component, token constraints (as well as these wildcards) can be combined with [quantifiers](quantifiers.html), e.g., 
+    
+    [chunk=B-NP] [chunk=I-NP]*     
