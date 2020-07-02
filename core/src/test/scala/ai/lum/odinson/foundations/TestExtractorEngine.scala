@@ -45,6 +45,7 @@ class TestExtractorEngine extends BaseSpec {
     results.totalHits should equal (2)
   }
 
+  // TODO: implement index fixture to test the features bellow
   // TODO: def getParentDoc(docId: String)
   // TODO: def compileRules(rules: String)
   // TODO: def extractMentions(extractors: Seq[Extractor], numSentences: Int)
@@ -55,5 +56,7 @@ class TestExtractorEngine extends BaseSpec {
   // TODO: getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String]
   // TODO: ExtractorEngine.fromConfig
   // TODO: ExtractorEngine.fromConfig(path: String)
+  // "Odinson ExtractorEngine" should "initialize correctly from config" in {
+  // }
   // TODO: ExtractorEngine.fromConfig(config: Config)
 }
