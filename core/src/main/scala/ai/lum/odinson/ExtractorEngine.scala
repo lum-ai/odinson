@@ -81,30 +81,33 @@ class ExtractorEngine(
 
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    stateFactory.usingState { state =>
-      val mentions = for {
-        e <- extractors
-        odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
-        scoreDoc <- odinResults.scoreDocs
-        docFields = doc(scoreDoc.doc)
-        docId = docFields.getField("docId").stringValue
-        sentId = docFields.getField("sentId").stringValue
-        odinsonMatch <- scoreDoc.matches
-      } yield mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-      // if needed, filter results to discard trigger overlaps
-      val allowedMentions = if (allowTriggerOverlaps) {
-        mentions
-      } else {
-        mentions.flatMap { m =>
-          m.odinsonMatch match {
-            case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(mentionFactory = mentionFactory, odinsonMatch = e))
-            case _ => Some(m)
-          }
-        }
-      }
+    val minIterations = extractors.map(_.priority.minIterations).max
 
-      allowedMentions
+    def extract(i: Int): Seq[Mention] = for {
+      e <- extractors
+      if e.priority matches i
+      odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
+      scoreDoc <- odinResults.scoreDocs
+      docFields = doc(scoreDoc.doc)
+      docId = docFields.getField("docId").stringValue
+      sentId = docFields.getField("sentId").stringValue
+      odinsonMatch <- scoreDoc.matches
+      mention = mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+      // If needed, filter results to discard trigger overlaps.
+      mentionOpt = mention.odinsonMatch match {
+        case e: EventMatch if !allowTriggerOverlaps => e.removeTriggerOverlaps.map(e => mention.copy(mentionFactory = mentionFactory, odinsonMatch = e))
+        case _ => Some(mention)
+      }
+      if (mentionOpt.isDefined)
+    } yield mentionOpt.get
+
+
+    // Note that this does not yet keep on extracting until there are no more mentions.
+    val mentions = stateFactory.usingState { state =>
+      1.to(minIterations).flatMap(extract)
     }
+
+    mentions
   }
 
   /** executes query and returns all results */

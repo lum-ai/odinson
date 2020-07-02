@@ -25,6 +25,7 @@ case class Rule(
   name: String,
   label: Option[String],
   ruletype: String,
+  priority: String,
   pattern: String,
 )
 
@@ -34,7 +35,7 @@ case class Rule(
 case class Extractor(
   name: String,
   label: Option[String],
-  // priority
+  priority: Priority,
   query: OdinsonQuery,
 )
 
@@ -98,6 +99,7 @@ class RuleReader(val compiler: QueryCompiler) {
     val name = varsub(rule.name)
     val label = rule.label.map(varsub.apply)
     val ruletype = varsub(rule.ruletype)
+    val priority = Priority(varsub(rule.priority))
     val pattern = varsub(rule.pattern)
     // compile query
     val query = ruletype match {
@@ -106,7 +108,7 @@ class RuleReader(val compiler: QueryCompiler) {
       case t => sys.error(s"invalid rule type '$t'")
     }
     // return an extractor
-    Extractor(name, label, query)
+    Extractor(name, label, priority, query)
   }
 
   private def mkVariables(data: Map[String, Any]): Map[String, String] = {
@@ -130,6 +132,8 @@ class RuleReader(val compiler: QueryCompiler) {
     varValue match {
       // If the variable is a string, clean the whitespace and return
       case s: String => s
+      // If the variable is a number, convert it into a string
+      case n: Integer => n.toString
       // Else, if it's a list:
       case arr:java.util.ArrayList[_] => arr.asScala
         .map(_.toString.trim)
@@ -160,9 +164,10 @@ class RuleReader(val compiler: QueryCompiler) {
         val name = getRequiredField("name")
         val label = getField("label")
         val ruletype = getRequiredField("type")
+        val priority = fields.getOrElse("priority", "1").toString
         val pattern = getRequiredField("pattern")
         // return rule
-        Rule(name, label, ruletype, pattern)
+        Rule(name, label, ruletype, priority, pattern)
       case _ => sys.error("invalid rule data")
     }
   }

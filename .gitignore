@@ -25,6 +25,11 @@ project/metals.sbt
 
 # ctags
 tags
+.tags
 
 # bloop build server
 .bloop
+
+# docs
+docs/.jekyll-cache/
+docs/.sass-cache/
