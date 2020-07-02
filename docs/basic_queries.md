@@ -41,7 +41,7 @@ This pattern will look for a sentence in which a token tagged as a PROTEIN (thou
 
 Note that in Odinson, patterns can hop between surface and syntax representations arbitrarily often, as is done in this query:
 
-    
+    TODO    
     
 which has a successful match in the sentence: TODO
 
