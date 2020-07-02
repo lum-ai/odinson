@@ -83,7 +83,7 @@ class ExtractorEngine(
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
     val minIterations = extractors.map(_.priority.minIterations).max
 
-    def extract(i: Int): Seq[Mention] = for {
+    def extract(i: Int, state: State): Seq[Mention] = for {
       e <- extractors
       if e.priority matches i
       odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
@@ -104,7 +104,7 @@ class ExtractorEngine(
 
     // Note that this does not yet keep on extracting until there are no more mentions.
     val mentions = stateFactory.usingState { state =>
-      1.to(minIterations).flatMap(extract)
+      1.to(minIterations).flatMap(i => extract(i, state))
     }
 
     mentions
