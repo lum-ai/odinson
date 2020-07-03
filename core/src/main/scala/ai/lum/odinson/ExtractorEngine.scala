@@ -36,6 +36,22 @@ class ExtractorEngine(
 
   val ruleReader = new RuleReader(compiler)
 
+  // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
+  // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
+  val filters: Map[Boolean, Mention => Option[Mention]] = Map(
+    false -> { mention: Mention =>
+      // If needed, filter results to discard trigger overlaps.
+      mention.odinsonMatch match {
+        case eventMatch: EventMatch =>
+          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
+        case _ => Some(mention)
+      }
+    },
+    true -> { mention: Mention =>
+      Some(mention)
+    }
+  )
+
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
   }
@@ -79,6 +95,8 @@ class ExtractorEngine(
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
     val minIterations = extractors.map(_.priority.minIterations).max
+    // This is here both to demonstrate how a filter might be passed into the method.
+    val filter = filters(allowTriggerOverlaps)
 
     def extract(i: Int, state: State): Seq[Mention] = for {
       e <- extractors
@@ -90,11 +108,7 @@ class ExtractorEngine(
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-      // If needed, filter results to discard trigger overlaps.
-      mentionOpt = mention.odinsonMatch match {
-        case e: EventMatch if !allowTriggerOverlaps => e.removeTriggerOverlaps.map(e => mention.copy(mentionFactory = mentionFactory, odinsonMatch = e))
-        case _ => Some(mention)
-      }
+      mentionOpt = filter(mention)
       if (mentionOpt.isDefined)
     } yield mentionOpt.get
 
@@ -103,7 +117,7 @@ class ExtractorEngine(
       val newMentions: Seq[Mention] = extract(i, state)
 
       if (0 < newMentions.length)
-        loop(i + 1, newMentions ++: mentions, state)
+        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
       else if (i < minIterations)
         loop(i + 1, mentions, state)
       else
