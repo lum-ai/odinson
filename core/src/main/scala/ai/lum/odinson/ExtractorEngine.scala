@@ -20,9 +20,6 @@ import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.StateFactory
 
-
-
-
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
@@ -101,13 +98,23 @@ class ExtractorEngine(
       if (mentionOpt.isDefined)
     } yield mentionOpt.get
 
+    @annotation.tailrec
+    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
+      val newMentions: Seq[Mention] = extract(i, state)
 
-    // Note that this does not yet keep on extracting until there are no more mentions.
-    val mentions = stateFactory.usingState { state =>
-      1.to(minIterations).flatMap(i => extract(i, state))
+      if (0 < newMentions.length)
+        loop(i + 1, newMentions ++: mentions, state)
+      else if (i < minIterations)
+        loop(i + 1, mentions, state)
+      else
+        mentions
     }
 
-    mentions
+    val mentions = stateFactory.usingState { state =>
+      loop(1, Seq.empty[Mention], state)
+    }
+
+    mentions.distinct
   }
 
   /** executes query and returns all results */
