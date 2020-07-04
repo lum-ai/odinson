@@ -19,6 +19,7 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.StateFactory
+import ai.lum.odinson.utils.OdinResultsIterator
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
@@ -165,7 +166,19 @@ class ExtractorEngine(
 
   /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, label: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, label, state, n, disableMatchSelector)
+    val odinResults = try {
+      odinsonQuery.setState(Some(state))
+      indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+    }
+    finally {
+      odinsonQuery.setState(None)
+    }
+    // All of the odinResults will be added to the state, even though not all of them will
+    // necessarily be used to create mentions.
+    val odinResultsIterator = OdinResultsIterator(odinResults, label)
+    state.addMentions(odinResultsIterator)
+
+    odinResults
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {

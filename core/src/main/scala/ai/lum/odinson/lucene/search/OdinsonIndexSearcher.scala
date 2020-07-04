@@ -8,9 +8,7 @@ import scala.concurrent.ExecutionContext
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.ExecutionContextExecutorServiceBridge
-import ai.lum.odinson.utils.OdinResultsIterator
 
 class OdinsonIndexSearcher(
     context: IndexReaderContext,
@@ -30,50 +28,40 @@ class OdinsonIndexSearcher(
     this(r.getContext(), null, computeTotalHits)
   }
 
-  def odinSearch(query: OdinsonQuery, state: State): OdinResults = {
+  def odinSearch(query: OdinsonQuery): OdinResults = {
     val n = readerContext.reader().maxDoc()
-    odinSearch(query, state, n)
+    odinSearch(query, n)
   }
 
-  def odinSearch(query: OdinsonQuery, state: State, n: Int): OdinResults = {
-    odinSearch(null, query, state, n)
+  def odinSearch(query: OdinsonQuery, n: Int): OdinResults = {
+    odinSearch(null, query, n)
   }
 
-  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, state: State, numHits: Int): OdinResults = {
-    odinSearch(after, query, None, state, numHits, false)
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int): OdinResults = {
+    odinSearch(after, query, numHits, false)
   }
 
-  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, label: Option[String], state: State, numHits: Int, disableMatchSelector: Boolean): OdinResults = {
+  class StandardCollectorManager(after: OdinsonScoreDoc, cappedNumHits: Int, disableMatchSelector: Boolean) extends CollectorManager[OdinsonCollector, OdinResults] {
 
-    def odinSearch() = {
-      val limit = math.max(1, readerContext.reader().maxDoc())
-      require(
-        after == null || after.doc < limit,
-        s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
-      )
-      val cappedNumHits = math.min(numHits, limit)
-      val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-        def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
+    def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
 
-        def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
-          val collectedResults = collectors.iterator.asScala.map(_.odinResults).toArray
-          val mergedResults = OdinResults.merge(0, cappedNumHits, collectedResults, true)
-          val odinResultsIterator = OdinResultsIterator(mergedResults, label)
+    def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
+      val collectedResults = collectors.iterator.asScala.map(_.odinResults).toArray
+      val mergedResults = OdinResults.merge(0, cappedNumHits, collectedResults, true)
 
-          state.addMentions(odinResultsIterator)
-          mergedResults
-        }
-      }
-
-      search(query, manager)
+      mergedResults
     }
+  }
 
-    try {
-      query.setState(Some(state))
-      odinSearch()
-    }
-    finally {
-      query.setState(None)
-    }
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, disableMatchSelector: Boolean): OdinResults = {
+    val limit = math.max(1, readerContext.reader().maxDoc())
+    require(
+      after == null || after.doc < limit,
+      s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
+    )
+    val cappedNumHits = math.min(numHits, limit)
+    val manager = new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
+
+    search(query, manager)
   }
 }
