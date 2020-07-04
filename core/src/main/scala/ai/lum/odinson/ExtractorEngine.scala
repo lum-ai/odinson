@@ -36,22 +36,6 @@ class ExtractorEngine(
 
   val ruleReader = new RuleReader(compiler)
 
-  // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
-  // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
-  val filters: Map[Boolean, Mention => Option[Mention]] = Map(
-    false -> { mention: Mention =>
-      // If needed, filter results to discard trigger overlaps.
-      mention.odinsonMatch match {
-        case eventMatch: EventMatch =>
-          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
-        case _ => Some(mention)
-      }
-    },
-    true -> { mention: Mention =>
-      Some(mention)
-    }
-  )
-
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
   }
@@ -96,7 +80,7 @@ class ExtractorEngine(
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
     val minIterations = extractors.map(_.priority.minIterations).max
     // This is here both to demonstrate how a filter might be passed into the method.
-    val filter = filters(allowTriggerOverlaps)
+    val filter = ExtractorEngine.filters(allowTriggerOverlaps)
 
     def extract(i: Int, state: State): Seq[Mention] = for {
       e <- extractors
@@ -200,6 +184,22 @@ class ExtractorEngine(
 
 object ExtractorEngine {
   lazy val defaultMentionFactory = new DefaultMentionFactory()
+
+  // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
+  // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
+  val filters: Map[Boolean, Mention => Option[Mention]] = Map(
+    false -> { mention: Mention =>
+      // If needed, filter results to discard trigger overlaps.
+      mention.odinsonMatch match {
+        case eventMatch: EventMatch =>
+          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
+        case _ => Some(mention)
+      }
+    },
+    true -> { mention: Mention =>
+      Some(mention)
+    }
+  )
 
   def fromConfig(): ExtractorEngine = {
     fromConfig("odinson")
