@@ -2,6 +2,7 @@ package ai.lum.odinson.lucene.search
 
 import java.util.Collection
 import java.util.concurrent.ExecutorService
+
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import org.apache.lucene.index._
@@ -19,7 +20,7 @@ class OdinsonIndexSearcher(
     this(r.getContext(), e, computeTotalHits)
   }
 
-  def this(r: IndexReader, e: ExecutionContext,  computeTotalHits: Boolean) = {
+  def this(r: IndexReader, e: ExecutionContext, computeTotalHits: Boolean) = {
     this(r.getContext(), ExecutionContextExecutorServiceBridge(e), computeTotalHits)
   }
 
@@ -40,6 +41,18 @@ class OdinsonIndexSearcher(
     odinSearch(after, query, numHits, false)
   }
 
+  class StandardCollectorManager(after: OdinsonScoreDoc, cappedNumHits: Int, disableMatchSelector: Boolean) extends CollectorManager[OdinsonCollector, OdinResults] {
+
+    def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
+
+    def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
+      val collectedResults = collectors.iterator.asScala.map(_.odinResults).toArray
+      val mergedResults = OdinResults.merge(0, cappedNumHits, collectedResults, true)
+
+      mergedResults
+    }
+  }
+
   def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, disableMatchSelector: Boolean): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
@@ -47,14 +60,8 @@ class OdinsonIndexSearcher(
       s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
     )
     val cappedNumHits = math.min(numHits, limit)
-    val manager = new CollectorManager[OdinsonCollector, OdinResults] {
-      def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
-      def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
-        val results = collectors.iterator.asScala.map(_.odinResults).toArray
-        OdinResults.merge(0, cappedNumHits, results, true)
-      }
-    }
+    val manager = new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
+
     search(query, manager)
   }
-
 }
