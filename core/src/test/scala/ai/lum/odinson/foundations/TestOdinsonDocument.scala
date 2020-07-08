@@ -56,13 +56,9 @@ class TestOdinsonDocument extends BaseSpec {
   
   // TODO: case class Sentence
   // TODO: test case class field
-  // TODO: test tokensField read
-  // TODO: test graphfield read
   // TODO: test stringfield read
   // TODO: datefield read
   // TODO: LocalDate parsing
-  // TODO: document toJson
-  // TODO: document toPrettyJson
   //
   //
 }
