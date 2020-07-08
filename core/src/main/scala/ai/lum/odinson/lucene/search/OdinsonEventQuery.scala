@@ -398,7 +398,7 @@ class OdinsonEventSpans(
         else Seq(matches)
     }
     for (pkg <- packages) yield {
-      pkg.map(m => NamedCapture(arg.name, m))
+      pkg.map(m => NamedCapture(arg.name, arg.label, m))
     }
   }
 
@@ -420,7 +420,7 @@ class OdinsonEventSpans(
   ): Array[EventMatch] = {
     val trigger = sketch._1
     val argumentPackages = packageArguments(sketch._2)
-    argumentPackages.map(args => new EventMatch(trigger, args))
+    argumentPackages.map(args => new EventMatch(trigger, args, args.map { it => ArgumentMetadata(it.name, it.capturedMatch.start, Some(it.capturedMatch.end)) }))
   }
 
   private def matchEvents(): Array[EventSketch] = {
