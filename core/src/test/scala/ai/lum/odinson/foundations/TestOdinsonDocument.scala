@@ -1,9 +1,12 @@
 package ai.lum.odinson.foundations
 
+import java.util.Date
+import java.text.SimpleDateFormat
+
 import org.scalatest._
 import ai.lum.odinson.{Document, BaseSpec}
 
-import ai.lum.odinson.{TokensField, GraphField, Sentence, Field, StringField}
+import ai.lum.odinson.{TokensField, GraphField, Sentence, Field, StringField, DateField}
 
 class TestOdinsonDocument extends BaseSpec {
   // Testing
@@ -86,7 +89,37 @@ class TestOdinsonDocument extends BaseSpec {
     stringField.string shouldBe ("smthString")
   }
 
-  // TODO: datefield read
+  "OdinsonDocument DateField" should "handle json String and local date correctly" in {
+    val field =
+      """{"$type":"ai.lum.odinson.DateField","name":"smth","date":"1993-03-28"}"""
+    // parse
+    var dateField = DateField.fromJson(field)
+    // test values
+    dateField.date shouldBe ("1993-03-28")
+    dateField.name shouldBe ("smth")
+    // test the parsed date
+    dateField.localDate.getYear shouldBe (1993)
+    dateField.localDate.getDayOfMonth shouldBe (28)
+    dateField.localDate.getMonthValue shouldBe (3)
+    
+    val localDate = dateField.localDate
+    dateField = DateField.fromLocalDate("smth", localDate, false)
+    dateField.date shouldBe ("1993-03-28")
+    dateField.name shouldBe ("smth")
+
+  }
+  
+  "OdinsonDocument DateField" should "handle java date correctly" in {
+    // testing java date
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+    val javaDate = formatter.parse("28/03/1993")
+    val dateField = DateField.fromDate("smth", javaDate, false)
+    dateField.date shouldBe ("1993-03-28")
+    dateField.localDate.getYear shouldBe (1993)
+    dateField.localDate.getDayOfMonth shouldBe (28)
+    dateField.localDate.getMonthValue shouldBe (3)
+  
+  }
   // TODO: LocalDate parsing
   //
   //
