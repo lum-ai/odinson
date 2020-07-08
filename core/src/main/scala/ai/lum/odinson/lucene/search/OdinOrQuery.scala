@@ -1,6 +1,7 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ List => JList, Map => JMap, Set => JSet }
+import java.util.{List => JList, Map => JMap, Set => JSet}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
@@ -11,6 +12,7 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
+import ai.lum.odinson.state.State
 
 class OdinOrQuery(
     val clauses: List[OdinsonQuery],
@@ -25,6 +27,8 @@ class OdinOrQuery(
   }
 
   def getField(): String = field
+
+  override def setState(stateOpt: Option[State]): Unit = clauses.foreach(_.setState(stateOpt))
 
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinsonQuery])

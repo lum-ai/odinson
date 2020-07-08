@@ -33,12 +33,6 @@ class QueryCompiler(
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
 
-  private var state: Option[State] = None
-
-  def setState(s: State): Unit = {
-    state = Some(s)
-  }
-
   // FIXME temporary entrypoint
   def compileEventQuery(pattern: String): OdinsonQuery = {
     val ast = parser.parseEventQuery(pattern)
@@ -199,10 +193,7 @@ class QueryCompiler(
     // mentions
 
     case Ast.MentionPattern(_, label) =>
-      state match {
-        case None => Some(new FailQuery(defaultTokenField))
-        case Some(state) => Some(new StateQuery(defaultTokenField, label, state))
-      }
+      Some(new StateQuery(defaultTokenField, label))
 
     // graph traversal
 

@@ -19,15 +19,13 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.StateFactory
-
-
-
+import ai.lum.odinson.utils.OdinResultsIterator
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
-  val state: State,
+  val stateFactory: StateFactory,
   val parentDocIdField: String,
   val mentionFactory: MentionFactory
 ) {
@@ -38,6 +36,22 @@ class ExtractorEngine(
   val indexReader = indexSearcher.getIndexReader()
 
   val ruleReader = new RuleReader(compiler)
+
+  // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
+  // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
+  val filters: Map[Boolean, Mention => Option[Mention]] = Map(
+    false -> { mention: Mention =>
+      // If needed, filter results to discard trigger overlaps.
+      mention.odinsonMatch match {
+        case eventMatch: EventMatch =>
+          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
+        case _ => Some(mention)
+      }
+    },
+    true -> { mention: Mention =>
+      Some(mention)
+    }
+  )
 
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
@@ -82,29 +96,40 @@ class ExtractorEngine(
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
     val minIterations = extractors.map(_.priority.minIterations).max
+    // This is here both to demonstrate how a filter might be passed into the method.
+    val filter = filters(allowTriggerOverlaps)
 
-    // Note that this does not yet keep on extracting until there are no more mentions.
-    def extract(i: Int): Seq[Mention] = for {
+    def extract(i: Int, state: State): Seq[Mention] = for {
       e <- extractors
       if e.priority matches i
-      results = query(e.query, numSentences, disableMatchSelector)
-      scoreDoc <- results.scoreDocs
+      odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
+      scoreDoc <- odinResults.scoreDocs
       docFields = doc(scoreDoc.doc)
       docId = docFields.getField("docId").stringValue
       sentId = docFields.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-      // If needed, filter results to discard trigger overlaps.
-      mentionOpt = mention.odinsonMatch match {
-        case e: EventMatch if !allowTriggerOverlaps => e.removeTriggerOverlaps.map(e => mention.copy(mentionFactory = mentionFactory, odinsonMatch = e))
-        case _ => Some(mention)
-      }
+      mentionOpt = filter(mention)
       if (mentionOpt.isDefined)
     } yield mentionOpt.get
 
-    // This does not make a lot of sense until there is some state.
-    val mentions = 1.to(minIterations).flatMap(extract)
-    mentions
+    @annotation.tailrec
+    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
+      val newMentions: Seq[Mention] = extract(i, state)
+
+      if (0 < newMentions.length)
+        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
+      else if (i < minIterations)
+        loop(i + 1, mentions, state)
+      else
+        mentions
+    }
+
+    val mentions = stateFactory.usingState { state =>
+      loop(1, Seq.empty[Mention], state)
+    }
+
+    mentions.distinct
   }
 
   /** executes query and returns all results */
@@ -128,22 +153,32 @@ class ExtractorEngine(
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, false)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(odinsonQuery, n, after, false)
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-    disableMatchSelector: Boolean,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+    stateFactory.usingState { state =>
+      query(odinsonQuery, None, n, after, disableMatchSelector, state)
+    }
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(odinsonQuery: OdinsonQuery, label: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+    val odinResults = try {
+      odinsonQuery.setState(Some(state))
+      indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+    }
+    finally {
+      odinsonQuery.setState(None)
+    }
+    // All of the odinResults will be added to the state, even though not all of them will
+    // necessarily be used to create mentions.
+    val odinResultsIterator = OdinResultsIterator(odinResults, label)
+    state.addMentions(odinResultsIterator)
+
+    odinResults
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {
@@ -201,14 +236,13 @@ object ExtractorEngine {
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val state = StateFactory.newState(config)
-    compiler.setState(state)
+    val stateFactory = StateFactory(config)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       displayField,
-      state,
+      stateFactory,
       parentDocIdField,
       mentionFactory
     )
