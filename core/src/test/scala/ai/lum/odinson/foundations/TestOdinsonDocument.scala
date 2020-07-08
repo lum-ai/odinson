@@ -6,9 +6,20 @@ import java.text.SimpleDateFormat
 import org.scalatest._
 import ai.lum.odinson.{Document, BaseSpec}
 
-import ai.lum.odinson.{TokensField, GraphField, Sentence, Field, StringField, DateField}
+import ai.lum.odinson.{
+  TokensField,
+  GraphField,
+  Sentence,
+  Field,
+  StringField,
+  DateField
+}
 
 class TestOdinsonDocument extends BaseSpec {
+  // TODO: Document.toJson
+  // TODO: Document.toPrettyJson
+  // TODO: Document.fromJson(File)
+
   // Testing
   "OdinsonDocument TokensField" should "handle a json String correctly" in {
     val field =
@@ -62,6 +73,7 @@ class TestOdinsonDocument extends BaseSpec {
   "OdinsonDocument Sentence" should "handle a json String correctly" in {
     val sentence =
       """{"numTokens":1,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"]],"roots":[1]}]}"""
+
     // parse json
     val sentenceObj = Sentence.fromJson(sentence)
     // check the namber of tokens
@@ -76,6 +88,36 @@ class TestOdinsonDocument extends BaseSpec {
     }
     lastFieldType shouldBe ("GraphField")
     // maybe test internals? ask
+    sentenceObj.toJson shouldEqual (sentence)
+    //
+    val prettySentence = """|{
+    |    "numTokens": 1,
+    |    "fields": [
+    |        {
+    |            "$type": "ai.lum.odinson.TokensField",
+    |            "name": "raw",
+    |            "tokens": [
+    |                "Becky"
+    |            ]
+    |        },
+    |        {
+    |            "$type": "ai.lum.odinson.GraphField",
+    |            "name": "dependencies",
+    |            "edges": [
+    |                [
+    |                    1,
+    |                    0,
+    |                    "nsubj"
+    |                ]
+    |            ],
+    |            "roots": [
+    |                1
+    |            ]
+    |        }
+    |    ]
+    |}""".stripMargin
+    // test pretty
+    sentenceObj.toPrettyJson shouldEqual (prettySentence)
   }
 
   "OdinsonDocument StringField" should "handle a json String correctly" in {
@@ -101,13 +143,13 @@ class TestOdinsonDocument extends BaseSpec {
     dateField.localDate.getYear shouldBe (1993)
     dateField.localDate.getDayOfMonth shouldBe (28)
     dateField.localDate.getMonthValue shouldBe (3)
-    
+
     val localDate = dateField.localDate
     dateField = DateField.fromLocalDate("smth", localDate, false)
     dateField.date shouldBe ("1993-03-28")
     dateField.name shouldBe ("smth")
   }
-  
+
   "OdinsonDocument DateField" should "handle java date correctly" in {
     // testing java date
     val formatter = new SimpleDateFormat("dd/MM/yyyy")
