@@ -106,7 +106,6 @@ class TestOdinsonDocument extends BaseSpec {
     dateField = DateField.fromLocalDate("smth", localDate, false)
     dateField.date shouldBe ("1993-03-28")
     dateField.name shouldBe ("smth")
-
   }
   
   "OdinsonDocument DateField" should "handle java date correctly" in {
@@ -118,9 +117,5 @@ class TestOdinsonDocument extends BaseSpec {
     dateField.localDate.getYear shouldBe (1993)
     dateField.localDate.getDayOfMonth shouldBe (28)
     dateField.localDate.getMonthValue shouldBe (3)
-  
   }
-  // TODO: LocalDate parsing
-  //
-  //
 }
