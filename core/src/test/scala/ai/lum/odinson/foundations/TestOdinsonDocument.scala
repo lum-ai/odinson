@@ -2,6 +2,8 @@ package ai.lum.odinson.foundations
 
 import java.util.Date
 import java.text.SimpleDateFormat
+import java.io.File
+import scala.io.Source
 
 import org.scalatest._
 import ai.lum.odinson.{Document, BaseSpec}
@@ -16,11 +18,28 @@ import ai.lum.odinson.{
 }
 
 class TestOdinsonDocument extends BaseSpec {
-  // TODO: Document.toJson
-  // TODO: Document.toPrettyJson
-  // TODO: Document.fromJson(File)
+  "OdinsonDocument Document" should "handle a json File correctly" in {
+    // Check my code to see how to open a file like this
+    val jsonFile =
+      new File(getClass.getResource("/odinsonDocTest.json").getPath)
+    // Open the one life file
+    val docObj = Document.fromJson(jsonFile)
+    // check if toJson is working
+    docObj.toJson shouldEqual (Source
+      .fromResource("odinsonDocTest.json")
+      .getLines
+      .mkString)
+    // check if toPrettyJson is working
+    docObj.toPrettyJson shouldEqual (Source
+      .fromResource("odinsonDocTestPretty.json")
+      .getLines
+      .mkString("\n"))
+    // check if the fields are being loaded correctly
+    docObj.id shouldBe ("foo")
+    docObj.sentences.head.numTokens should be(1)
+    docObj.sentences.head.fields.head.name should be("raw")
+  }
 
-  // Testing
   "OdinsonDocument TokensField" should "handle a json String correctly" in {
     val field =
       """{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]}"""
