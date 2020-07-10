@@ -1,0 +1,1 @@
+{"id":"foo","metadata":[],"sentences":[{"numTokens":1,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George"],"store":true}]}]}
