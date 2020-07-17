@@ -2,20 +2,20 @@ package ai.lum.odinson.lucene.search
 
 import java.util.{Map => JMap, Set => JSet}
 
-import scala.annotation.tailrec
-import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap, HashSet }
-import scala.collection.JavaConverters._
+import ai.lum.common.itertools.product
+import ai.lum.odinson._
+import ai.lum.odinson.digraph._
+import ai.lum.odinson.lucene.search.spans._
+import ai.lum.odinson.lucene.util._
+import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.state.State
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
-import ai.lum.odinson._
-import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.util._
-import ai.lum.odinson.lucene.search.spans._
-import ai.lum.odinson.digraph._
-import ai.lum.odinson.serialization.UnsafeSerializer
-import ai.lum.common.itertools.product
-import ai.lum.odinson.state.State
+
+import scala.annotation.tailrec
+import scala.collection.JavaConverters._
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, HashSet}
 
 case class ArgumentQuery(
   name: String,
@@ -313,9 +313,9 @@ class OdinsonEventSpans(
   ): Array[OdinsonMatch] = {
     val builder = new ArrayBuilder.ofRef[OdinsonMatch]
     val dstIndex = mkInvIndex(dstMatches, maxToken)
-    val seen = HashSet.empty[OdinsonMatch]
     for {
       src <- srcMatches
+      seen = HashSet.empty[OdinsonMatch]
       path <- traversal.traverseFrom(graph, src)
       dst <- dstIndex(path.end)
       if seen.add(dst)
