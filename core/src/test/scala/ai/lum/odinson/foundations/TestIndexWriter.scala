@@ -52,7 +52,7 @@ class TestOdinsonIndexWriter extends BaseSpec {
       """{"$type":"ai.lum.odinson.StringField","name":"smth","string":"foo"}"""
     // StringField
     val stringField = StringField.fromJson(field)
-    val luceneStringField = indexWriter.mkLuceneFields(dateField)
+    val luceneStringField = indexWriter.mkLuceneFields(stringField)
     luceneStringField.head.name shouldEqual ("smth")
     // TODO: should we test more stuff
   }
