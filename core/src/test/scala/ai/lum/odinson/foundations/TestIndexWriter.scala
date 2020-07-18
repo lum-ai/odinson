@@ -1,17 +1,15 @@
 package ai.lum.odinson.foundations
 
-
 // test imports
 import org.scalatest._
 // lum imports
-import ai.lum.odinson.{OdinsonIndexWriter, BaseSpec}
+import ai.lum.odinson.{OdinsonIndexWriter, BaseSpec, DateField, StringField}
 import ai.lum.common.ConfigFactory
 // file imports
 import scala.reflect.io.Directory
 import java.io.File
 
 class TestOdinsonIndexWriter extends BaseSpec {
-
   type Fixture = OdinsonIndexWriter
 
   def deleteIndexFile =  {
@@ -21,9 +19,9 @@ class TestOdinsonIndexWriter extends BaseSpec {
     val directory = new Directory(file)
     directory.deleteRecursively
   }
-
   //def getOdinsonIndexWriter()(test: Fixture => Unit): Unit = {
   def getOdinsonIndexWriter = {
+    // TODO: can this cause any trouble?
     deleteIndexFile
     OdinsonIndexWriter.fromConfig
   }
@@ -38,9 +36,24 @@ class TestOdinsonIndexWriter extends BaseSpec {
     indexWriter.close
   }
   
-
-// TODO: test mkMedatadaDoc(Document) lucenedoc.Document
-// TODO: test mkLucenefileds serialized dependencies too big for storage
-// TODO: test mkLuceneFields(Fields) Seq(Lucenedoc.Field)
-
+  it should "mkLucenefileds should convert Fields to lucene.Fields correctly" in {
+    val indexWriter = getOdinsonIndexWriter
+    // Initialize fild of type DateField
+    var field =
+      """{"$type":"ai.lum.odinson.DateField","name":"smth","date":"1993-03-28"}"""
+    //
+    val dateField = DateField.fromJson(field)
+    // DateField
+    val luceneDateField = indexWriter.mkLuceneFields(dateField)
+    // test
+    luceneDateField.head.name shouldEqual ("smth")
+    // Initialize field of type StringField
+    field =
+      """{"$type":"ai.lum.odinson.StringField","name":"smth","string":"foo"}"""
+    // StringField
+    val stringField = StringField.fromJson(field)
+    val luceneStringField = indexWriter.mkLuceneFields(dateField)
+    luceneStringField.head.name shouldEqual ("smth")
+    // TODO: should we test more stuff
+  }
 }
