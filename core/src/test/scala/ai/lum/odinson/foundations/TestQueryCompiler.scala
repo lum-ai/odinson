@@ -87,7 +87,7 @@ class TestQueryCompiler extends BaseSpec {
     qc.compile("a??").toString shouldEqual ("Optional(Wrapped(norm:a))")
     
     qc.compile("a{2,2}?").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
-    qc.compile("a{,2}?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a{,2}?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
     qc.compile("a{,}?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
   }
   
@@ -102,7 +102,7 @@ class TestQueryCompiler extends BaseSpec {
     qc.compile("a?").toString shouldEqual ("Optional(Wrapped(norm:a))")
     // same thing here 
     qc.compile("a{2,2}").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
-    qc.compile("a{,2}").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2)")
-    qc.compile("a{,}").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
+    qc.compile("a{,2}").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
+    qc.compile("a{,}").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
   }
 }
