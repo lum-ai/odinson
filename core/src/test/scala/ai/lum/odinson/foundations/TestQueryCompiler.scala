@@ -32,4 +32,14 @@ class TestQueryCompiler extends BaseSpec {
     // test end
     qc.mkQuery("</s>").toString shouldEqual ("DocEndQuery")
   }
+
+  it should "compile positive and negative lookahead correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // test start
+    qc.mkQuery("(?!i)").toString shouldEqual ("NotQuery(AllNGramsQuery(0),Lookahead(Wrapped(norm:i)))")
+    // test end
+    qc.mkQuery("(?=i)").toString shouldEqual ("Lookahead(Wrapped(norm:i))")
+  }
 }
