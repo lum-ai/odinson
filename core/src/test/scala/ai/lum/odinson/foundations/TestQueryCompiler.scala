@@ -75,6 +75,21 @@ class TestQueryCompiler extends BaseSpec {
       trigger = bar
       object: NP = >nsubj
       """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
+
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = >nsubj*
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((KleeneStar(Outgoing("nsubj")), StateQuery)))], [])""")
+
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = <nsubj*
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((KleeneStar(Incoming("nsubj")), StateQuery)))], [])""")
+
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = <nsubj+
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(incoming:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Concatenation(List(Incoming("nsubj"), KleeneStar(Incoming("nsubj")))), StateQuery)))], [])""")
   }
 
   it should "compile lazy repetitions correctly" in {
