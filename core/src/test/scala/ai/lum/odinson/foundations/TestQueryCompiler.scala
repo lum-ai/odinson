@@ -77,7 +77,7 @@ class TestQueryCompiler extends BaseSpec {
       """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
   }
   
-  it should "compile laze repetitions correctly" in {
+  it should "compile lazy repetitions correctly" in {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
@@ -85,5 +85,16 @@ class TestQueryCompiler extends BaseSpec {
     qc.compile("a+?").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
     qc.compile("a*?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
     qc.compile("a??").toString shouldEqual ("Optional(Wrapped(norm:a))")
+  }
+  
+  it should "compile greedy repetitions correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // test lazy quantifiers
+    // TODO is this right? lazy and greedy produce the same output
+    qc.compile("a+").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
+    qc.compile("a*").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a?").toString shouldEqual ("Optional(Wrapped(norm:a))")
   }
 }
