@@ -70,26 +70,62 @@ class TestQueryCompiler extends BaseSpec {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
-    // basic test
+    // outgoing
     qc.compileEventQuery("""
       trigger = bar
       object: NP = >nsubj
       """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
-
+    // 0 or more outgoings
     qc.compileEventQuery("""
       trigger = bar
       object: NP = >nsubj*
     """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((KleeneStar(Outgoing("nsubj")), StateQuery)))], [])""")
-
+    // 0 or more incomings
     qc.compileEventQuery("""
       trigger = bar
       object: NP = <nsubj*
     """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((KleeneStar(Incoming("nsubj")), StateQuery)))], [])""")
-
+    // two one or more incomings
     qc.compileEventQuery("""
       trigger = bar
       object: NP = <nsubj+
     """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(incoming:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Concatenation(List(Incoming("nsubj"), KleeneStar(Incoming("nsubj")))), StateQuery)))], [])""")
+    // two outgings
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = (>nsubj | >nsubj)
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Union(List(Outgoing("nsubj"), Outgoing("nsubj"))), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
+  }
+
+  it should "compile graph traversals wildcards correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    //
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = >>nsubj
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((OutgoingWildcard, StateQuery containing Wrapped(norm:nsubj))))], [])""")
+    // << 
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = <<nsubj
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((IncomingWildcard, StateQuery containing Wrapped(norm:nsubj))))], [])""")
+    // << and ? 
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = <<nsubj?
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((IncomingWildcard, StateQuery containing Optional(Wrapped(norm:nsubj)))))], [])""")
+    // << and +
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = <<nsubj+
+    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((IncomingWildcard, StateQuery containing Repeat(Wrapped(norm:nsubj), 1, 2147483647))))], [])""")
+  // << and *
+  qc.compileEventQuery("""
+    trigger = bar
+    object: NP = <<nsubj*
+  """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), ((IncomingWildcard, StateQuery containing Optional(Repeat(Wrapped(norm:nsubj), 1, 2147483647)))))], [])""")
   }
 
   it should "compile lazy repetitions correctly" in {
