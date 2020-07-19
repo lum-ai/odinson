@@ -76,33 +76,56 @@ class TestQueryCompiler extends BaseSpec {
       object: NP = >nsubj
       """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
   }
-  
+
   it should "compile lazy repetitions correctly" in {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
     // test lazy quantifiers
-    qc.compile("a+?").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
-    qc.compile("a*?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a+?")
+      .toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
+    qc.compile("a*?")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
     qc.compile("a??").toString shouldEqual ("Optional(Wrapped(norm:a))")
-    
+
     qc.compile("a{2,2}?").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
-    qc.compile("a{,2}?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
-    qc.compile("a{,}?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a{,2}?")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
+    qc.compile("a{,}?")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
   }
-  
+
   it should "compile greedy repetitions correctly" in {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
     // test lazy quantifiers
     // TODO is this right? lazy and greedy produce the same output
-    qc.compile("a+").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
-    qc.compile("a*").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a+")
+      .toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
+    qc.compile("a*")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
     qc.compile("a?").toString shouldEqual ("Optional(Wrapped(norm:a))")
-    // same thing here 
+    // same thing here
     qc.compile("a{2,2}").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
-    qc.compile("a{,2}").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
-    qc.compile("a{,}").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a{,2}")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
+    qc.compile("a{,}")
+      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+  }
+
+  it should "compile constraints correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // test constraints
+    qc.compile("[word=a~]")
+      .toString shouldEqual ("Wrapped(mask(SpanMultiTermQueryWrapper(word:a~2)) as norm)")
+    qc.compile("[word!=a]")
+      .toString shouldEqual ("NotQuery(AllNGramsQuery(1),Wrapped(mask(word:a) as norm))")
+    qc.compile("[word=a | word=b]")
+      .toString shouldEqual ("OrQuery([Wrapped(mask(word:a) as norm),Wrapped(mask(word:b) as norm)])")
+    qc.compile("[word=a | word=b]")
+      .toString shouldEqual ("OrQuery([Wrapped(mask(word:a) as norm),Wrapped(mask(word:b) as norm)])")
   }
 }
