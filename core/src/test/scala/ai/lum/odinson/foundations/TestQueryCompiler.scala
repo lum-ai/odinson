@@ -76,4 +76,14 @@ class TestQueryCompiler extends BaseSpec {
       object: NP = >nsubj
       """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
   }
+  
+  it should "compile laze repetitions correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // test lazy quantifiers
+    qc.compile("a+?").toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
+    qc.compile("a*?").toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    qc.compile("a??").toString shouldEqual ("Optional(Wrapped(norm:a))")
+  }
 }
