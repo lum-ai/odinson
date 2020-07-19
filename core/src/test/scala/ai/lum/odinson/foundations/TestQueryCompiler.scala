@@ -51,8 +51,14 @@ class TestQueryCompiler extends BaseSpec {
     // test or
     qc.mkQuery("foo|bar")
       .toString shouldEqual ("OrQuery([Wrapped(norm:foo),Wrapped(norm:bar)])")
+    // triple or
+    qc.mkQuery("a|b|c")
+      .toString shouldEqual ("OrQuery([Wrapped(norm:a),Wrapped(norm:b),Wrapped(norm:c)])")
     // test concatenation
     qc.mkQuery("(a)(b)")
       .toString shouldEqual ("Concat([Wrapped(norm:a),Wrapped(norm:b)])")
+    // test triple concatenation
+    qc.mkQuery("(a)(b)(c)")
+      .toString shouldEqual ("Concat([Wrapped(norm:a),Wrapped(norm:b),Wrapped(norm:c)])")
   }
 }
