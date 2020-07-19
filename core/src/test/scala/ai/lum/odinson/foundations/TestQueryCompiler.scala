@@ -1,10 +1,10 @@
 package ai.lum.odinson.foundations
 
 import org.scalatest._
-import ai.lum.odinson.{BaseSpec, TokensField, Sentence, Document, ExtractorEngine}
+import ai.lum.odinson.{TokensField, Sentence, Document, ExtractorEngine}
+import ai.lum.odinson.BaseSpec
 import ai.lum.common.{ConfigFactory}
 import com.typesafe.config.Config
-
 
 class TestQueryCompiler extends BaseSpec {
   def getExtractorEngine = {
@@ -21,5 +21,15 @@ class TestQueryCompiler extends BaseSpec {
     val ee = ExtractorEngine.inMemory(Seq(doc1, doc2))
     // return ExtractorEngine with 2 documents
     ee
+  }
+
+  "OdinsonQueryCompiler" should "compile beginning and end markers correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // test start
+    qc.mkQuery("<s>").toString shouldEqual ("DocStartQuery")
+    // test end
+    qc.mkQuery("</s>").toString shouldEqual ("DocEndQuery")
   }
 }
