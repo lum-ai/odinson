@@ -17,8 +17,12 @@ class TestQueryCompiler extends BaseSpec {
     val sentence = Sentence(tokens.tokens.length, Seq(tokens))
     val doc1 = Document("testdoc1", Nil, Seq(sentence))
     val doc2 = Document("testdoc2", Nil, Seq(sentence))
+    val doc3 = Document.fromJson(
+      """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
+    )
+
     // instantiate
-    val ee = ExtractorEngine.inMemory(Seq(doc1, doc2))
+    val ee = ExtractorEngine.inMemory(Seq(doc1, doc2, doc3))
     // return ExtractorEngine with 2 documents
     ee
   }
@@ -60,5 +64,16 @@ class TestQueryCompiler extends BaseSpec {
     // test triple concatenation
     qc.mkQuery("(a)(b)(c)")
       .toString shouldEqual ("Concat([Wrapped(norm:a),Wrapped(norm:b),Wrapped(norm:c)])")
+  }
+
+  it should "compile graph traversals correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    // basic test
+    qc.compileEventQuery("""
+      trigger = bar
+      object: NP = >nsubj
+      """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), ((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm))))], [])""")
   }
 }
