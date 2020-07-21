@@ -24,7 +24,7 @@ class TestDocumentationBasicQueries extends BaseSpec {
   }
 
   // (?<animal> [tag=/N.*/]) and [lemma=dog]
-  "Documentation-BasicQueries" should "work 'named captures'" in {
+  it should "work 'named captures'" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val q = ee.compiler.mkQuery("(?<animal> [tag=/N.*/]) and [lemma=dog]")

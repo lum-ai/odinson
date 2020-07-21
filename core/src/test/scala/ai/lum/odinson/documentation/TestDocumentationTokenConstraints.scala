@@ -22,7 +22,7 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     s1.totalHits shouldEqual (0)
   }
   
-  "Documentation-TokenConstraints" should "work for 'Using the token fields'" in {
+  it should "work for 'Using the token fields'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = this.Utils.mkExtractorEngine(doc)
     // [tag=/N.*/]
@@ -36,7 +36,7 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     s1.totalHits shouldEqual (1)
   }
   
-  "Documentation-TokenConstraints" should "work for 'Operators for token constraints'" in {
+  it should "work for 'Operators for token constraints'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = this.Utils.mkExtractorEngine(doc)
     // [tag=/N.*/ & (entity=ORGANIZATION | tag=NNP)]
@@ -49,10 +49,9 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     s1.totalHits shouldEqual (0)
   }
   
-  "Documentation-TokenConstraints" should "work for 'Wildcards'" in {
+  it should "work for 'Wildcards'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = this.Utils.mkExtractorEngine(doc)
-
     // testing wilcard
     val q = ee.compiler.mkQuery("[]")
     // make sure it compiles to the right thing
@@ -61,7 +60,7 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     s.totalHits shouldEqual (1)
   }
   
-  "Documentation-TokenConstraints" should "work for 'quantifiers'" in {
+  it should "work for 'quantifiers'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = this.Utils.mkExtractorEngine(doc)
     // testing wilcard

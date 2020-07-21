@@ -28,7 +28,7 @@ class TestDocumentationGraphTraversals extends EventSpec {
     this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
  
-  "Documentation-GraphTraversals" should "work for '<foo' example" in {
+  it should "work for '<foo' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
@@ -46,7 +46,7 @@ class TestDocumentationGraphTraversals extends EventSpec {
     this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
-  "Documentation-GraphTraversals" should "work for '<<' example" in {
+  it should "work for '<<' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
@@ -65,7 +65,7 @@ class TestDocumentationGraphTraversals extends EventSpec {
   }
 
   // make sure it matches the correct thing
-  "Documentation-GraphTraversals" should "work for '>>' example" in {
+  it should "work for '>>' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
@@ -83,7 +83,7 @@ class TestDocumentationGraphTraversals extends EventSpec {
     this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
-  "Documentation-GraphTraversals" should "work for '>>{2,3}' example" in {
+  it should "work for '>>{2,3}' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
