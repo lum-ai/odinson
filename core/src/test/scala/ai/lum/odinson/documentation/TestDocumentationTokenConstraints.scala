@@ -8,7 +8,7 @@ import ai.lum.odinson.Document
 
 class TestDocumentationTokenConstraints extends BaseSpec {
   def exampleSentence: String = 
-     """{"id":"dd","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["George","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["george","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["ORGANIZATION","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
+     """{"id":"dd","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["George","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["george","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["ORGANIZATION","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","I-NP","I-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
 
   "Documentation-TokenConstraints" should "work for 'Example'" in {
     val ee = this.Utils.mkExtractorEngine("The dog barks")
@@ -59,5 +59,17 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     q.toString shouldEqual ("AllNGramsQuery(1)")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)
+  }
+  
+  "Documentation-TokenConstraints" should "work for 'quantifiers'" in {
+    val doc = Document.fromJson(exampleSentence)
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // testing wilcard
+    val q = ee.compiler.mkQuery("[chunk=B-NP] [chunk=I-NP]*")
+    val s = ee.query(q)
+    s.totalHits shouldEqual (1)
+    // make sure it extracts all 4 tokens
+    s.scoreDocs.head.matches.head.start shouldEqual (0)
+    s.scoreDocs.head.matches.head.end shouldEqual (4)
   }
 }
