@@ -23,7 +23,7 @@ class TestDocumentationGraphTraversals extends EventSpec {
     s.totalHits shouldEqual (1)
     this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
     val desiredArgs = Seq(
-      createArgument("object", 3, 4)
+      this.createArgument("object", 3, 4)
     )
     this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
