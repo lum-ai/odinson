@@ -58,6 +58,39 @@ class TestDocumentationQuantifiers extends EventSpec {
     s.scoreDocs.head.matches.head.start shouldEqual (0)
     s.scoreDocs.head.matches.head.end shouldEqual (2)
   }
-  // TODO: (>amod [])+
-  // TODO: >>{2,3}
+  //  >>{2,3}
+  it should "work for '>>{2,3}'" in {
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // make quuery
+    val pattern = """
+      trigger = [lemma=phosphorilates]
+      object: ^NP = >>{2,3}
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val s = ee.query(q)
+    //
+    s.totalHits shouldEqual (1)
+    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
+    val desiredArgs = Seq(
+      this.createArgument("object", 3, 4)
+    )
+    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+  };
+  //
+  it should "work for '>amod []'" in {
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // what is there should match
+    val q = ee.compiler.mkQuery("(?<foo> [lemma=bar]) >amod []")
+    val s = ee.query(q)
+    s.totalHits shouldEqual (1)
+    val matchval: OdinsonMatch = s.scoreDocs.head.matches.head
+    matchval.namedCaptures.length shouldEqual 1
+    matchval.namedCaptures.head.name shouldEqual ("foo")
+    val nameCapturedVal = matchval.namedCaptures.head.capturedMatch
+    nameCapturedVal.start shouldEqual (2)
+    nameCapturedVal.end shouldEqual (3)
+    // check what 
+    s.scoreDocs.head.matches.head.start shouldEqual (3)
+    s.scoreDocs.head.matches.head.end shouldEqual (4)
+  }
 }

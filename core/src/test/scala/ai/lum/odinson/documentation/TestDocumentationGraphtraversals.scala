@@ -10,7 +10,7 @@ import ai.lum.odinson.Document
 class TestDocumentationGraphTraversals extends EventSpec {
   val json = getJsonDocument("becky-gummy-bears")
   val doc = Document.fromJson(json)
-  "Documentation-GraphTraversals" should "work for '>foo' example" in {
+  "Odinson TestDocumentationGraphTraversals" should "work for '>foo' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
