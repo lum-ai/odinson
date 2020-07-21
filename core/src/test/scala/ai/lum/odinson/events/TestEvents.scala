@@ -1,8 +1,6 @@
 package ai.lum.odinson.events
 
 import org.scalatest._
-import ai.lum.odinson.utils.OdinResultsIterator
-import ai.lum.odinson.{EventMatch, OdinsonMatch}
 
 class TestEvents extends EventSpec {
   //  import TestEvents._
@@ -153,11 +151,11 @@ class TestEvents extends EventSpec {
     val q2 = ee.compiler.compileEventQuery(pattern)
 
     ee.stateFactory.usingState { state =>
-      val results1 = ee.query(q1, Some("NP"), 1, after = null, disableMatchSelector = false, state)
+      val results1 = ee.query(q1, labelOpt = Some("NP"), nameOpt = None, 1, after = null, disableMatchSelector = false, state)
       results1.totalHits should equal (1)
       results1.scoreDocs.head.matches should have size 2
 
-      val results2 = ee.query(q2, None, 1, after = null, disableMatchSelector = false, state)
+      val results2 = ee.query(q2, labelOpt = None, nameOpt = None, 1, after = null, disableMatchSelector = false, state)
       results2.totalHits should equal(1)
       results2.scoreDocs.head.matches should have size 1
 

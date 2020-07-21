@@ -18,8 +18,8 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
-import ai.lum.odinson.utils.OdinResultsIterator
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
@@ -100,15 +100,15 @@ class ExtractorEngine(
     val filter = filters(allowTriggerOverlaps)
 
     def extract(i: Int, state: State): Seq[Mention] = for {
-      e <- extractors
-      if e.priority matches i
-      odinResults = query(e.query, e.label, numSentences, null, disableMatchSelector, state)
+      extractor <- extractors
+      if extractor.priority matches i
+      odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
       scoreDoc <- odinResults.scoreDocs
-      docFields = doc(scoreDoc.doc)
-      docId = docFields.getField("docId").stringValue
-      sentId = docFields.getField("sentId").stringValue
+      document = doc(scoreDoc.doc)
+      docId = document.getField("docId").stringValue
+      sentId = document.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-      mention = mentionFactory.newMention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
+      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
       mentionOpt = filter(mention)
       if (mentionOpt.isDefined)
     } yield mentionOpt.get
@@ -160,12 +160,12 @@ class ExtractorEngine(
   /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
     stateFactory.usingState { state =>
-      query(odinsonQuery, None, n, after, disableMatchSelector, state)
+      query(odinsonQuery, None, None, n, after, disableMatchSelector, state)
     }
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, label: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
     val odinResults = try {
       odinsonQuery.setState(Some(state))
       indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
@@ -175,7 +175,7 @@ class ExtractorEngine(
     }
     // All of the odinResults will be added to the state, even though not all of them will
     // necessarily be used to create mentions.
-    val odinResultsIterator = OdinResultsIterator(odinResults, label)
+    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
     state.addMentions(odinResultsIterator)
 
     odinResults
@@ -212,10 +212,13 @@ class ExtractorEngine(
 }
 
 object ExtractorEngine {
+  val defaultPath = "odinson"
+
   lazy val defaultMentionFactory = new DefaultMentionFactory()
+  lazy val defaultConfig = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
-    fromConfig("odinson")
+    fromConfig(defaultPath)
   }
 
   def fromConfig(path: String): ExtractorEngine = {

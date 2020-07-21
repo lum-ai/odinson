@@ -14,23 +14,21 @@ class MemoryState extends State {
   val baseIdLabelToTokenIntervals: mutable.Map[BaseIdLabel, mutable.SortedSet[TokenInterval]] = mutable.Map.empty
   val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
-  def addMention(docBase: Int, docId: Int, label: String, startToken: Int, endToken: Int): Unit = {
-    val baseIdLabel = BaseIdLabel(docBase, docId, label)
-    val tokenInterval = (startToken, endToken)
+  def addMention(stateItem: ResultItem): Unit = {
+    val baseIdLabel = BaseIdLabel(stateItem.segmentDocBase, stateItem.segmentDocId, stateItem.label)
+    val tokenInterval = (stateItem.odinsonMatch.start, stateItem.odinsonMatch.end)
     val tokenIntervals = baseIdLabelToTokenIntervals.getOrElseUpdate(baseIdLabel, mutable.SortedSet.empty[TokenInterval])
 
     tokenIntervals.add(tokenInterval)
 
-    val baseLabel = BaseLabel(docBase, label)
+    val baseLabel = BaseLabel(stateItem.segmentDocBase, stateItem.label)
     val ids = baseLabelToIds.getOrElseUpdate(baseLabel, mutable.SortedSet.empty[Int])
 
-    ids.add(docId)
+    ids.add(stateItem.segmentDocId)
   }
 
-  override def addMentions(mentions: Iterator[(Int, Int, String, Int, Int)]): Unit = {
-    mentions.foreach { mention =>
-      addMention(mention._1, mention._2, mention._3, mention._4, mention._5)
-    }
+  override def addMentions(mentions: Iterator[ResultItem]): Unit = {
+    mentions.foreach(addMention)
   }
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
@@ -45,16 +43,17 @@ class MemoryState extends State {
     ids
   }
 
-  override def getMatches(docBase: Int, docId: Int, label: String): Array[(Int, Int)] = {
-    val baseIdLabel = BaseIdLabel(docBase, docId, label)
-    val tokenIntervalsOpt = baseIdLabelToTokenIntervals.get(baseIdLabel)
-    val tokenIntervals: Array[TokenInterval] =
-      if (tokenIntervalsOpt.isDefined)
-        tokenIntervalsOpt.get.toArray
-      else
-        Array.empty
-
-    tokenIntervals
+  override def getMatches(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
+    Array.empty
+//    val baseIdLabel = BaseIdLabel(docBase, docId, label)
+//    val tokenIntervalsOpt = baseIdLabelToTokenIntervals.get(baseIdLabel)
+//    val tokenIntervals: Array[TokenInterval] =
+//      if (tokenIntervalsOpt.isDefined)
+//        tokenIntervalsOpt.get.toArray
+//      else
+//        Array.empty
+//
+//    tokenIntervals
   }
 }
 
