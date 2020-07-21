@@ -49,7 +49,15 @@ class TestDocumentationQuantifiers extends EventSpec {
     )
     this.testEventArguments(s1.scoreDocs.head.matches.head, desiredArgs1)
   }
-  // TODO: []*
+  // []*
+  it should "work for '[]*'" in {
+    val ee = this.Utils.mkExtractorEngine("foo bar")
+    val q = ee.compiler.mkQuery("[]*")
+    val s = ee.query(q)
+    s.totalHits shouldEqual (1)
+    s.scoreDocs.head.matches.head.start shouldEqual (0)
+    s.scoreDocs.head.matches.head.end shouldEqual (2)
+  }
   // TODO: (>amod [])+
   // TODO: >>{2,3}
 }
