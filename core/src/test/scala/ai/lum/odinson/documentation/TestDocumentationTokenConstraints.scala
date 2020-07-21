@@ -48,4 +48,16 @@ class TestDocumentationTokenConstraints extends BaseSpec {
     val s1 = ee.query(q1)
     s1.totalHits shouldEqual (0)
   }
+  
+  "Documentation-TokenConstraints" should "work for 'Wildcards'" in {
+    val doc = Document.fromJson(exampleSentence)
+    val ee = this.Utils.mkExtractorEngine(doc)
+
+    // testing wilcard
+    val q = ee.compiler.mkQuery("[]")
+    // make sure it compiles to the right thing
+    q.toString shouldEqual ("AllNGramsQuery(1)")
+    val s = ee.query(q)
+    s.totalHits shouldEqual (1)
+  }
 }
