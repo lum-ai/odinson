@@ -4,11 +4,11 @@ import com.typesafe.config.Config
 
 class FileState extends State {
 
-  override def addMentions(mentions: Iterator[(Int, Int, String, Int, Int)]): Unit = ???
+  override def addMentions(mentions: Iterator[ResultItem]): Unit = ???
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = ???
 
-  override def getMatches(docBase: Int, docId: Int, label: String): Array[(Int, Int)] = ???
+  override def getMatches(docBase: Int, docId: Int, label: String): Array[ResultItem] = ???
 }
 
 class FileStateFactory extends StateFactory {
