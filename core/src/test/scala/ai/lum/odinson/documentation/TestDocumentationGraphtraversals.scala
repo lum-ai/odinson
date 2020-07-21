@@ -8,9 +8,9 @@ import ai.lum.odinson.events.EventSpec
 import ai.lum.odinson.Document
 
 class TestDocumentationGraphTraversals extends EventSpec {
-  "Documentation-GraphTraversals" should "work for '<nsubj' example" in {
-    val json = getJsonDocument("becky-gummy-bears")
-    val doc = Document.fromJson(json)
+  val json = getJsonDocument("becky-gummy-bears")
+  val doc = Document.fromJson(json)
+  "Documentation-GraphTraversals" should "work for '>foo' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
@@ -27,8 +27,59 @@ class TestDocumentationGraphTraversals extends EventSpec {
     )
     this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
-
-
-
-
+  "Documentation-GraphTraversals" should "work for '<foo' example" in {
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // what is there should match
+    val pattern = """
+      trigger = [lemma=gummy]
+      object: ^NP = </amod|xcomp/
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val s = ee.query(q)
+    // something that is not there should not match
+    s.totalHits shouldEqual (1)
+    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
+    val desiredArgs = Seq(
+      createArgument("object", 3, 4)
+    )
+    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+  }
+  // TODO: test wildcards
+  "Documentation-GraphTraversals" should "work for '<<' example" in {
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // what is there should match
+    val pattern = """
+      trigger = [lemma=gummy]
+      object: ^NP = <<
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val s = ee.query(q)
+    // something that is not there should not match
+    s.totalHits shouldEqual (1)
+    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
+    val desiredArgs = Seq(
+      createArgument("object", 3, 4)
+    )
+    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+  }
+  // make sure it matches the correct thing
+  "Documentation-GraphTraversals" should "work for '>>' example" in {
+    val ee = this.Utils.mkExtractorEngine(doc)
+    // what is there should match
+    val pattern = """
+      trigger = [lemma=bear]
+      object: ^NP = >>
+    """
+    val q = ee.compiler.compileEventQuery(pattern)
+    val s = ee.query(q)
+    // something that is not there should not match
+    s.totalHits shouldEqual (1)
+    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 3, end = 4)
+    val desiredArgs = Seq(
+      createArgument("object", 2, 3)
+    )
+    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+  }
+  // TODO: test quantifiers
+  // TODO: test quantifiers
 } 
