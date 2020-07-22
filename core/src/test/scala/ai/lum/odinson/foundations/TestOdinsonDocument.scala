@@ -54,7 +54,7 @@ class TestOdinsonDocument extends BaseSpec {
         |        "I-NP",
         |        "O"
         |    ]
-        |}""".stripMargin
+        |}""".stripMargin.replace("\r", "")
     //
     val tokenField = TokensField.fromJson(field)
     // check if the name is being parsed correct
@@ -134,7 +134,7 @@ class TestOdinsonDocument extends BaseSpec {
     |            ]
     |        }
     |    ]
-    |}""".stripMargin
+    |}""".stripMargin.replace("\r", "")
     // test pretty
     sentenceObj.toPrettyJson shouldEqual (prettySentence)
   }
