@@ -176,7 +176,7 @@ class ExtractorEngine(
     // All of the odinResults will be added to the state, even though not all of them will
     // necessarily be used to create mentions.
     val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
-    state.addMentions(odinResultsIterator)
+    state.addResultItems(odinResultsIterator)
 
     odinResults
   }

@@ -27,8 +27,8 @@ class MemoryState extends State {
     ids.add(stateItem.segmentDocId)
   }
 
-  override def addMentions(mentions: Iterator[ResultItem]): Unit = {
-    mentions.foreach(addMention)
+  override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
+    resultItems.foreach(addMention)
   }
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
@@ -43,7 +43,7 @@ class MemoryState extends State {
     ids
   }
 
-  override def getMatches(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
+  override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
     Array.empty
 //    val baseIdLabel = BaseIdLabel(docBase, docId, label)
 //    val tokenIntervalsOpt = baseIdLabelToTokenIntervals.get(baseIdLabel)

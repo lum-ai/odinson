@@ -111,8 +111,8 @@ class TestSqlState extends BaseSpec {
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
     val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults1)
     val resultItems2 = stateFactory.usingState { state =>
-      state.addMentions(odinResultsIterator)
-      state.getMatches(docBase, docId, resultLabel)
+      state.addResultItems(odinResultsIterator)
+      state.getResultItems(docBase, docId, resultLabel)
     }
 
     resultItems2.length should be (1)
@@ -188,8 +188,8 @@ class TestSqlState extends BaseSpec {
           }
       val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults)
       val resultItems2 = stateFactory.usingState { state =>
-        state.addMentions(odinResultsIterator)
-        state.getMatches(docBase, docId, resultLabel)
+        state.addResultItems(odinResultsIterator)
+        state.getResultItems(docBase, docId, resultLabel)
       }
 
       resultItems1.length should be (resultItems2.length)
@@ -234,12 +234,12 @@ class TestSqlState extends BaseSpec {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
           val odinResultsIterator = OdinResultsIterator(Some(label), Some(resultName), odinResults)
 
-          state.addMentions(odinResultsIterator)
+          state.addResultItems(odinResultsIterator)
         }
 
         docBasesAndIdsAndLabels.flatMap { docBaseAndIdAndLabel: (Int, Int, String) =>
           val (docBase, docId, label) = docBaseAndIdAndLabel
-          val resultItems = state.getMatches(docBase, docId, label)
+          val resultItems = state.getResultItems(docBase, docId, label)
 
           resultItems
         }

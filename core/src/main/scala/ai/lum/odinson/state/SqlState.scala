@@ -158,7 +158,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   // Reuse the same connection and prepared statement.
   // TODO Group the mentions and insert multiple at a time.
   // TODO Also pass in the number of items, perhaps how many of each kind?
-  override def addMentions(resultItems: Iterator[ResultItem]): Unit = {
+  override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     val sql = s"""
       INSERT INTO mentions_${factoryIndex}_$stateIndex
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
@@ -224,7 +224,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     }
   }
 
-  override def getMatches(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
+  override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM mentions_${factoryIndex}_$stateIndex
