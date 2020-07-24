@@ -135,7 +135,7 @@ class QueryCompiler(
       }
       // add start-constraints of required args to trigger
       for (arg <- reqArgQueries) {
-        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.head._1))
+        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.firstGraphTraversal))
       }
       // return event query
       val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField, sentenceLengthField)
@@ -333,7 +333,7 @@ class QueryCompiler(
       allOdinsonQueries += query.get
     }
     // make argument query
-    val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
+    val fullTraversal = FullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
     Some(ArgumentQuery(arg.name, arg.label, arg.min, arg.max, fullTraversal))
   }
 
