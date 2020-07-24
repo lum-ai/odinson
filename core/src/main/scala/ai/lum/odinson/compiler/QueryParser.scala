@@ -12,8 +12,8 @@ class QueryParser(
   import QueryParser._
 
   // parser's entry point
-  def parseQuery(query: String) = parse(query.trim, odinsonPattern(_)).get.value
-  def parseQuery2(query: String) = parse(query.trim, odinsonPattern(_))
+  def parseQuery(query: String) = parse(query.trim, basicPattern(_)).get.value
+  def parseQuery2(query: String) = parse(query.trim, basicPattern(_))
 
   // FIXME temporary entrypoint
   def parseEventQuery(query: String) = parse(query.trim, eventPattern(_), verboseFailures = true).get.value
@@ -188,15 +188,14 @@ class QueryParser(
   }
 
   // grammar's top-level symbol
-  def odinsonPattern[_: P]: P[Ast.Pattern] = {
+  def basicPattern[_: P]: P[Ast.Pattern] = {
     P(Start ~ graphTraversalPattern ~ End)
   }
 
   def graphTraversalPattern[_: P]: P[Ast.Pattern] = {
-    P(surfacePattern ~ (disjunctiveTraversal ~ surfacePattern).rep).map {
-      case (src, rest) => rest.foldLeft(src) {
-        case (lhs, (tr, rhs)) => Ast.GraphTraversalPattern(lhs, tr, rhs)
-      }
+    P(surfacePattern ~ fullTraversalPattern.?).map {
+      case (src, None) => src
+      case (src, Some(traversal)) => Ast.GraphTraversalPattern(src, traversal)
     }
   }
 

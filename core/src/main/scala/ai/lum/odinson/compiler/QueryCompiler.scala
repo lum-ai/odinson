@@ -197,15 +197,11 @@ class QueryCompiler(
 
     // graph traversal
 
-    case Ast.GraphTraversalPattern(src, tr, dst) =>
-      mkGraphTraversal(tr) match {
-        case NoTraversal => mkOdinsonQuery(src)
-        case FailTraversal => None
-        case traversal =>
-          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(traversal)))
-          val dstQuery = mkOdinsonQuery(dst).map(q => addConstraint(q, mkEndConstraint(traversal)))
-          if (srcQuery.isDefined && dstQuery.isDefined) {
-            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, traversal, dstQuery.get)
+    case Ast.GraphTraversalPattern(src, tr) =>
+      mkFullTraversalQuery(tr).flatMap { fullTraversal =>
+          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(fullTraversal.firstGraphTraversal)))
+          if (srcQuery.isDefined) {
+            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
             Some(q)
           } else {
             None
@@ -310,12 +306,12 @@ class QueryCompiler(
 
   }
 
-  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = {
     // we will collect traversals and queries for the argument's full traversal
     val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
     val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
     // for each step in the traversal ...
-    for ((t, p) <- arg.fullTraversal.fullTraversal) {
+    for ((t, p) <- tr.fullTraversal) {
       // compile graph traversal
       val traversal = mkGraphTraversal(t)
       // compile query and add end-constraint
@@ -334,7 +330,13 @@ class QueryCompiler(
     }
     // make argument query
     val fullTraversal = FullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
-    Some(ArgumentQuery(arg.name, arg.label, arg.min, arg.max, fullTraversal))
+    Some(fullTraversal)
+  }
+
+  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+    mkFullTraversalQuery(arg.fullTraversal).map { tr =>
+      ArgumentQuery(arg.name, arg.label, arg.min, arg.max, tr)
+    }
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {

@@ -1,5 +1,6 @@
 package ai.lum.odinson.lucene.search
 
+import java.util.{ Map => JMap, Set => JSet }
 import scala.annotation.tailrec
 import scala.collection.mutable._
 import org.apache.lucene.index._
@@ -75,6 +76,14 @@ case class FullTraversalWeight(
 
   def subWeights: List[OdinsonWeight] = {
     fullTraversal.map(_._2)
+  }
+
+  def extractTerms(terms: JSet[Term]): Unit = {
+    subWeights.foreach(_.extractTerms(terms))
+  }
+
+  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = {
+    subWeights.foreach(_.extractTermContexts(contexts))
   }
 
 }

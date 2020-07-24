@@ -29,7 +29,7 @@ object Ast {
   case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
   case class NamedCapturePattern(name: String, label: Option[String], pattern: Pattern) extends Pattern
   case class MentionPattern(argName: Option[String], label: String) extends Pattern
-  case class GraphTraversalPattern(src: Pattern, tr: Traversal, dst: Pattern) extends Pattern
+  case class GraphTraversalPattern(src: Pattern, fullTraversal: FullTraversalPattern) extends Pattern
   case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class FilterPattern(mainPattern: Pattern, filterPattern: Pattern) extends Pattern
