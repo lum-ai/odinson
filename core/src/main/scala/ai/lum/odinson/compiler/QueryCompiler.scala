@@ -315,7 +315,7 @@ class QueryCompiler(
     val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
     val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
     // for each step in the traversal ...
-    for ((t, p) <- arg.fullTraversal) {
+    for ((t, p) <- arg.fullTraversal.fullTraversal) {
       // compile graph traversal
       val traversal = mkGraphTraversal(t)
       // compile query and add end-constraint

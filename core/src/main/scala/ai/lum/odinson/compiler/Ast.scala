@@ -39,11 +39,14 @@ object Ast {
   case class ArgumentPattern(
     name: String,
     label: Option[String],
-    fullTraversal: List[(Traversal, Pattern)],
+    fullTraversal: FullTraversalPattern,
     min: Int,
     max: Option[Int],
     promote: Boolean, // capture mention on-the-fly if not already captured
   ) extends Pattern
+  case class FullTraversalPattern(
+    fullTraversal: List[(Traversal, Pattern)]
+  )
 
   sealed trait Traversal
   case object NoTraversal extends Traversal

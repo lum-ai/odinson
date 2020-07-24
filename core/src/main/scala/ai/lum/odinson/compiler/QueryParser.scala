@@ -2,6 +2,7 @@ package ai.lum.odinson.compiler
 
 import fastparse._
 import ScriptWhitespace._
+import ai.lum.odinson.lucene.search.FullTraversalQuery
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields
@@ -29,81 +30,160 @@ class QueryParser(
 
   // the argument must be a mention that already exists in the state
   def existingArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
+    P(existingArgumentPatternWithFullTraversal | existingArgumentPatternWithoutFullTraversal)
+  }
+
+  // the argument must be a mention that already exists in the state
+  def existingArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~/
-      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
+      quantifier(includeLazy = false).? ~ "=" ~
+      fullTraversalPattern ~ disjunctiveTraversal.?
     ).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
         // if the end of the argument pattern is a surface pattern
         // then we want to use it to constrain the retrieved mention
-        val pattern = lastTraversal match {
-          case Some(t) => traversalsWithSurface :+ (t, mention)
+        val fullTraversal = lastTraversal match {
+          case Some(t) =>
+            val steps = traversalsWithSurface.fullTraversal :+ (t, mention)
+            Ast.FullTraversalPattern(steps)
           case None =>
-            val (lastHop, lastSurface) = traversalsWithSurface.last
-            traversalsWithSurface.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
+            val (lastHop, lastSurface) = traversalsWithSurface.fullTraversal.last
+            val steps = traversalsWithSurface.fullTraversal.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
+            Ast.FullTraversalPattern(steps)
         }
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = false)
+        Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = false)
+    }
+  }
+
+  // the argument must be a mention that already exists in the state
+  def existingArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal
+    ).map {
+      case (name, label, quant, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        // if the end of the argument pattern is a surface pattern
+        // then we want to use it to constrain the retrieved mention
+        val steps = List((lastTraversal, mention))
+        val fullTraversal = Ast.FullTraversalPattern(steps)
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = false)
     }
   }
 
   // the argument will be promoted to a mention if it isn't one already
   def promotedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.identifier.! ~ ":" ~ "^" ~/ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~/
-      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
+    P(promotedArgumentPatternWithFullTraversal | promotedArgumentPatternWithoutFullTraversal)
+  }
+
+  // the argument will be promoted to a mention if it isn't one already
+  def promotedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~
+      fullTraversalPattern ~ disjunctiveTraversal.?
     ).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
-        val pattern = lastTraversal match {
+        val fullTraversal = lastTraversal match {
           case Some(t) =>
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
             val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
-            traversalsWithSurface :+ (t, mentionOrWildcard)
+            val steps = traversalsWithSurface.fullTraversal :+ (t, mentionOrWildcard)
+            Ast.FullTraversalPattern(steps)
           case None =>
             // if there is a final token pattern then use it to filter an existing mention
             // or use it as the result if there is no matching mention
-            val (lastHop, lastSurface) = traversalsWithSurface.last
+            val (lastHop, lastSurface) = traversalsWithSurface.fullTraversal.last
             val conditionedMention = Ast.FilterPattern(mention, lastSurface)
             val mentionOrPattern = Ast.DisjunctivePattern(List(conditionedMention, lastSurface))
-            traversalsWithSurface.init :+ (lastHop, mentionOrPattern)
+            val steps = traversalsWithSurface.fullTraversal.init :+ (lastHop, mentionOrPattern)
+            Ast.FullTraversalPattern(steps)
         }
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, Some(label), pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = true)
+    }
+  }
+
+  // the argument will be promoted to a mention if it isn't one already
+  def promotedArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
+      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal
+    ).map {
+      case (name, label, quant, lastTraversal) =>
+        // the kind of mention we want
+        val mention = Ast.MentionPattern(None, label)
+        // if we don't have a final token pattern then assume a wildcard
+        val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
+        val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
+        val steps = List((lastTraversal, mentionOrWildcard))
+        val fullTraversal = Ast.FullTraversalPattern(steps)
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = true)
     }
   }
 
   // the argument has no declared type
   def untypedArgumentPattern[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~/
-      (disjunctiveTraversal ~ surfacePattern).rep ~ disjunctiveTraversal.?
-    ).map {
+    P(untypedArgumentPatternWithFullTraversal | untypedArgumentPatternWithoutFullTraversal)
+  }
+
+  // this production handles arguments without label, with full traversal, and with optional half step
+  def untypedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~ fullTraversalPattern ~ disjunctiveTraversal.?).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
-        val pattern = lastTraversal match {
+        val fullTraversal = lastTraversal match {
           case None => traversalsWithSurface
           case Some(t) =>
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
-            traversalsWithSurface :+ (t, wildcard)
+            val steps = traversalsWithSurface.fullTraversal :+ (t, wildcard)
+            Ast.FullTraversalPattern(steps)
         }
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
           case _ => (1, Some(1))
         }
-        Ast.ArgumentPattern(name, None, pattern.toList, min, max, promote = true)
+        Ast.ArgumentPattern(name, None, fullTraversal, min, max, promote = true)
+    }
+  }
+
+  // this production handles arguments without label and with a single half step
+  def untypedArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
+    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal).map {
+      case (name, quant, lastTraversal) =>
+        // if we don't have a final token pattern then assume a wildcard
+        val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
+        val steps = List((lastTraversal, wildcard))
+        val fullTraversal = Ast.FullTraversalPattern(steps)
+        // get quantifier parameters
+        val (min, max) = quant match {
+          case Some(GreedyQuantifier(min, max)) => (min, max)
+          case _ => (1, Some(1))
+        }
+        Ast.ArgumentPattern(name, None, fullTraversal, min, max, promote = true)
     }
   }
 
@@ -117,6 +197,12 @@ class QueryParser(
       case (src, rest) => rest.foldLeft(src) {
         case (lhs, (tr, rhs)) => Ast.GraphTraversalPattern(lhs, tr, rhs)
       }
+    }
+  }
+
+  def fullTraversalPattern[_: P]: P[Ast.FullTraversalPattern] = {
+    P((disjunctiveTraversal ~ surfacePattern).rep(1)).map {
+      case allTraversalSteps => Ast.FullTraversalPattern(allTraversalSteps.toList)
     }
   }
 
