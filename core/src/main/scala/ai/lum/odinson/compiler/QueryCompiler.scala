@@ -135,7 +135,10 @@ class QueryCompiler(
       }
       // add start-constraints of required args to trigger
       for (arg <- reqArgQueries) {
-        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.firstGraphTraversal))
+        triggerQuery = arg.fullTraversal.firstGraphTraversal match {
+          case None => triggerQuery
+          case Some(tr) => addConstraint(triggerQuery, mkStartConstraint(tr))
+        }
       }
       // return event query
       val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField, sentenceLengthField)
@@ -199,13 +202,18 @@ class QueryCompiler(
 
     case Ast.GraphTraversalPattern(src, tr) =>
       mkFullTraversalQuery(tr).flatMap { fullTraversal =>
-          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(fullTraversal.firstGraphTraversal)))
-          if (srcQuery.isDefined) {
-            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
-            Some(q)
-          } else {
-            None
+        val srcQuery = mkOdinsonQuery(src).map { q =>
+          fullTraversal.firstGraphTraversal match {
+            case None => q
+            case Some(t) => addConstraint(q, mkStartConstraint(t))
           }
+        }
+        if (srcQuery.isDefined) {
+          val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
+          Some(q)
+        } else {
+          None
+        }
       }
 
     case Ast.LazyRepetitionPattern(pattern@_, 0, Some(0)) =>

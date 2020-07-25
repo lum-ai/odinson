@@ -51,8 +51,8 @@ case class FullTraversalQuery(
     }
   }
 
-  def firstGraphTraversal: GraphTraversal = {
-      fullTraversal.head._1
+  def firstGraphTraversal: Option[GraphTraversal] = {
+      Some(fullTraversal.head._1)
   }
 
 }
