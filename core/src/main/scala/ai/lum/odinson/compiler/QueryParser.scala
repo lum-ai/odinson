@@ -12,8 +12,7 @@ class QueryParser(
   import QueryParser._
 
   // parser's entry point
-  def parseQuery(query: String) = parse(query.trim, basicPattern(_)).get.value
-  def parseQuery2(query: String) = parse(query.trim, basicPattern(_))
+  def parseBasicQuery(query: String) = parse(query.trim, basicPattern(_)).get.value
 
   // FIXME temporary entrypoint
   def parseEventQuery(query: String) = parse(query.trim, eventPattern(_), verboseFailures = true).get.value

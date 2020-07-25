@@ -41,7 +41,7 @@ class QueryCompiler(
   }
 
   def compile(pattern: String): OdinsonQuery = {
-    val ast = parser.parseQuery(pattern)
+    val ast = parser.parseBasicQuery(pattern)
     val query = mkOdinsonQuery(ast)
     query.getOrElse(new FailQuery(defaultTokenField))
   }
