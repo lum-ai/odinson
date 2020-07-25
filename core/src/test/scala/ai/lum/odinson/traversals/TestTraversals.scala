@@ -23,4 +23,16 @@ class TestTraversals extends BaseSpec {
     ee.getString(doc, m2) should equal ("cattle")
   }
 
+  it should "support parentheses surrounding graph traversals AND surface patterns" in {
+    val pattern = "[word=cats] (>conj_and [tag=/N.*/])"
+    val query = ee.compiler.mkQuery(pattern)
+    val results = ee.query(query, 1)
+    results.totalHits should equal (1)
+    results.scoreDocs.head.matches should have size 2
+    val doc = results.scoreDocs.head.doc
+    val Array(m1, m2) = results.scoreDocs.head.matches
+    ee.getString(doc, m1) should equal ("horses")
+    ee.getString(doc, m2) should equal ("cattle")
+  }
+
 }

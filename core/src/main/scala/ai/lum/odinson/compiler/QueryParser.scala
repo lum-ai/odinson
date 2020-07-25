@@ -36,7 +36,7 @@ class QueryParser(
   def existingArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
-      fullTraversalPattern ~ disjunctiveTraversal.?
+      fullTraversalSurface ~ disjunctiveTraversal.?
     ).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
@@ -91,7 +91,7 @@ class QueryParser(
   def promotedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
-      fullTraversalPattern ~ disjunctiveTraversal.?
+      fullTraversalSurface ~ disjunctiveTraversal.?
     ).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
@@ -150,7 +150,7 @@ class QueryParser(
 
   // this production handles arguments without label, with full traversal, and with optional half step
   def untypedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~ fullTraversalPattern ~ disjunctiveTraversal.?).map {
+    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
         val fullTraversal = lastTraversal match {
           case None => traversalsWithSurface
@@ -192,17 +192,40 @@ class QueryParser(
   }
 
   def graphTraversalPattern[_: P]: P[Ast.Pattern] = {
-    P(surfacePattern ~ fullTraversalPattern.?).map {
+    P(surfacePattern ~ fullTraversalSurface.?).map {
       case (src, None) => src
       case (src, Some(traversal)) => Ast.GraphTraversalPattern(src, traversal)
     }
   }
 
-  def fullTraversalPattern[_: P]: P[Ast.FullTraversalPattern] = {
-    P((disjunctiveTraversal ~ surfacePattern).rep(1)).map {
-      case allTraversalSteps => Ast.FullTraversalPattern(allTraversalSteps.toList)
+  //////////////////////////
+  //
+  // sequence of (GraphTraversal, SurfacePattern) pairs
+  //
+  //////////////////////////
+
+  def fullTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+    P(atomicTraversalSurface.rep(1)).map {
+      case Seq(t) => t
+      case ts => Ast.FullTraversalPattern(ts.flatMap(_.fullTraversal).toList)
     }
   }
+
+  def atomicTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+    P(singleTraversalSurface | "(" ~ fullTraversalSurface ~ ")")
+  }
+
+  def singleTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+    P(disjunctiveTraversal ~ surfacePattern).map {
+      case (tr, surf) => Ast.FullTraversalPattern(List((tr, surf)))
+    }
+  }
+
+  //////////////////////////
+  //
+  // surface patterns
+  //
+  //////////////////////////
 
   def surfacePattern[_: P]: P[Ast.Pattern] = {
     P(disjunctivePattern)
