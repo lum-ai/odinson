@@ -11,9 +11,30 @@ import ai.lum.odinson.state._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.lucene.search.spans._
 
-case class FullTraversalQuery(
+trait FullTraversalQuery {
+  def toString(field: String): String
+  def setState(stateOpt: Option[State]): Unit
+  def createWeight(searcher: IndexSearcher, needsScores: Boolean): FullTraversalWeight
+  def rewrite(reader: IndexReader): FullTraversalQuery
+  def firstGraphTraversal: Option[GraphTraversal]
+}
+
+trait FullTraversalWeight {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): FullTraversalSpans
+  def subWeights: List[OdinsonWeight]
+  def extractTerms(terms: JSet[Term]): Unit
+  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit
+}
+
+trait FullTraversalSpans {
+  def subSpans: List[OdinsonSpans]
+  def matchFullTraversal(graph: DirectedGraph, maxToken: Int, srcMatches: Array[OdinsonMatch]): Array[OdinsonMatch]
+  def advanceToDoc(doc: Int): Boolean
+}
+
+case class ConcatFullTraversalQuery(
   fullTraversal: List[(GraphTraversal, OdinsonQuery)]
-) {
+) extends FullTraversalQuery {
 
   def setState(stateOpt: Option[State]): Unit = {
     fullTraversal.foreach { case (_, odinsonQuery) =>
@@ -36,7 +57,7 @@ case class FullTraversalQuery(
       val w = q.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
       (g, w)
     }
-    FullTraversalWeight(allWeights)
+    ConcatFullTraversalWeight(allWeights)
   }
 
   def rewrite(reader: IndexReader): FullTraversalQuery = {
@@ -45,7 +66,7 @@ case class FullTraversalQuery(
       (g, r)
     }
     if (rewrittenTraversal != fullTraversal) {
-      FullTraversalQuery(rewrittenTraversal)
+      ConcatFullTraversalQuery(rewrittenTraversal)
     } else {
       this
     }
@@ -57,9 +78,9 @@ case class FullTraversalQuery(
 
 }
 
-case class FullTraversalWeight(
+case class ConcatFullTraversalWeight(
   fullTraversal: List[(GraphTraversal, OdinsonWeight)]
-) {
+) extends FullTraversalWeight {
 
   def getSpans(
     context: LeafReaderContext,
@@ -71,7 +92,7 @@ case class FullTraversalWeight(
       if (s == null) return null
       (g, s)
     }
-    FullTraversalSpans(allSpans)
+    ConcatFullTraversalSpans(allSpans)
   }
 
   def subWeights: List[OdinsonWeight] = {
@@ -88,9 +109,9 @@ case class FullTraversalWeight(
 
 }
 
-case class FullTraversalSpans(
+case class ConcatFullTraversalSpans(
   fullTraversal: List[(GraphTraversal, OdinsonSpans)]
-) {
+) extends FullTraversalSpans {
 
   def subSpans: List[OdinsonSpans] = {
     val ss = fullTraversal.map(_._2)

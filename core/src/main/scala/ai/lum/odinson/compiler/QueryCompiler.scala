@@ -337,7 +337,7 @@ class QueryCompiler(
       allOdinsonQueries += query.get
     }
     // make argument query
-    val fullTraversal = FullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
+    val fullTraversal = ConcatFullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
     Some(fullTraversal)
   }
 
