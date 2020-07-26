@@ -44,6 +44,10 @@ case class RepetitionFullTraversalQuery(
     if (min == 0) None else fullTraversal.firstGraphTraversal
   }
 
+  def lastGraphTraversalStep: Option[(GraphTraversal, OdinsonQuery)] = {
+    if (min == 0) None else fullTraversal.lastGraphTraversalStep
+  }
+
 }
 
 case class RepetitionFullTraversalWeight(
