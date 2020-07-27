@@ -200,8 +200,17 @@ class QueryParser(
     }
   }
 
+  def repeatedTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+    P("(" ~ fullTraversalSurface ~ ")" ~ quantifier(includeLazy = false).?).map {
+      case (t, None) => t
+      case (t, Some(GreedyQuantifier(min, maxOption))) =>
+        Ast.RepeatFullTraversalPattern(min, maxOption.getOrElse(Int.MaxValue), t)
+      case _ => ???
+    }
+  }
+
   def atomicTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
-    P(singleTraversalSurface | "(" ~ fullTraversalSurface ~ ")")
+    P(singleTraversalSurface | repeatedTraversalSurface)
   }
 
   def singleTraversalSurface[_: P]: P[Ast.SingleStepFullTraversalPattern] = {

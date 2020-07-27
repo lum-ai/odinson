@@ -68,7 +68,7 @@ object Ast {
   }
 
   case class ConcatFullTraversalPattern(
-    fullTraversal: List[FullTraversalPattern]
+    clauses: List[FullTraversalPattern]
   ) extends FullTraversalPattern {
     def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern = {
       // traverse the list backwards adding filters until we find something required
@@ -84,7 +84,7 @@ object Ast {
             applyFilter(tail, results :+ f)
         }
       }
-      val newTraversal = applyFilter(fullTraversal.reverse, Nil).reverse
+      val newTraversal = applyFilter(clauses.reverse, Nil).reverse
       ConcatFullTraversalPattern(newTraversal)
     }
   }
