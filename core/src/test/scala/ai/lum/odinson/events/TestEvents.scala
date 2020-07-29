@@ -2,6 +2,8 @@ package ai.lum.odinson.events
 
 import org.scalatest._
 
+import scala.io.Source
+
 class TestEvents extends EventSpec {
   //  import TestEvents._
   def json = getJsonDocument("becky-gummy-bears")
@@ -170,5 +172,20 @@ class TestEvents extends EventSpec {
       testEventArguments(m, desiredArgs)
     }
   }
-  
+
+  it should "work when called from engine" in {
+    val rr = ee.ruleReader
+    // load rule file from resources
+    val rulesResource = getClass.getResourceAsStream("/grammars/umbc.yml")
+    val rules = Source.fromInputStream(rulesResource).getLines.mkString("\n")
+    // compile query
+    val queries = rr.compileRuleFile(rules)
+    // extract mentions
+    val mentions = ee.extractMentions(queries)
+    for (m <- mentions) {
+      if (m.label.get != "Person") {
+        println(m)
+      }
+    }
+  }
 }

@@ -1,0 +1,16 @@
+rules:
+  # Find a component for the next rule
+  - name: person-ner
+    type: basic
+    label: Person
+    priority: 1
+    pattern: |
+      [entity=/PERSON/]
+
+  - name: action-test
+    type: event
+    label: X
+    priority: 2
+    pattern:
+      trigger = [tag=/V.*/]
+      agent:Person = >nsubj
