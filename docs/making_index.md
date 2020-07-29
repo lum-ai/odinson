@@ -32,7 +32,7 @@ Depending on the number and size of the documents you are annotating, this step 
 This step may take time, highly dependent on the length of your documents and the size of your corpus.  
   
 # Indexing annotated documents  
-Once you have annotated Documents, you can create an Odinson index, the datas tructure that Odinson uses for executing queries.  
+Once you have annotated Documents, you can create an Odinson index, the data structure that Odinson uses for executing queries.  
   
 ## Configuration  
 Once again, you will specify the configurations in `extra/src/main/resources/application.conf`.  
