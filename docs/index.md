@@ -6,13 +6,13 @@ nav_order: 1
   
 # Overview  
   
-This repository contains the code for Odinson, a powerful and highly optimized open-source framework for information extraction.  Odinson is a rule-based information extraction framework, which couples a   simple, yet powerful pattern language that can operate over multiple  representations of text, with a runtime system that operates in near real time.   
+This repository contains the code for Odinson, a powerful and highly optimized open-source framework for information extraction.  Odinson is a rule-based information extraction framework, which couples a simple, yet powerful pattern language that can operate over multiple representations of text, with a runtime system that operates in near real time.   
   
-In the Odinson query language, a single pattern may combine regular   expressions over surface tokens with regular expressions over graphs   such as (but not limited to) syntactic dependencies.   
+In the Odinson query language, a single pattern may combine regular expressions over surface tokens with regular expressions over graphs such as (but not limited to) syntactic dependencies.   
 
-To guarantee the rapid matching of these patterns, the framework   indexes most of the necessary information for matching patterns,   including directed graphs such as syntactic dependencies, into a custom Lucene index. Indexing minimizes the amount of expensive pattern matching that must take place at runtime.   
+To guarantee the rapid matching of these patterns, the framework indexes most of the necessary information for matching patterns, including directed graphs such as syntactic dependencies, into a custom Lucene index. Indexing minimizes the amount of expensive pattern matching that must take place at runtime.   
   
-Odinson is designed to facilitate real-time (or near real-time) queries over surface, syntax, or both.   The syntax is based on that of its predecessor language, Odin, but there are some key divergences, detailed here.  
+Odinson is designed to facilitate real-time (or near real-time) queries over surface, syntax, or both.  The syntax is based on that of its predecessor language, Odin, but there are some key divergences, detailed here.  
   
     
   
@@ -33,7 +33,7 @@ Bibtex:
 {% raw %} 
 ```
 @InProceedings{Valenzuela:2020,
-  author    = {Valenzuela-Escárcega, Marco A. and  Hahn-Powell, Gus  and  Bell, Dane},
+  author    = {Valenzuela-Escárcega, Marco A. and Hahn-Powell, Gus and Bell, Dane},
   title     = {{O}dinson: {A} fast rule-based information extraction framework},
   booktitle      = {{Proceedings of the 12th Language Resources and Evaluation Conference}},
   month          = {May},
