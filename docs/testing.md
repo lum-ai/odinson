@@ -24,8 +24,8 @@ Core tests are divided into 6 categories:
 
 1. events: for event rules
 2. foundations: for components the user interacts first
-3. patterns: tests different matching paterns
-4. serializaation
+3. patterns: tests different matching patterns
+4. serialization
 5. traversals: traversing graph fields
 5. util
 
@@ -37,12 +37,12 @@ try a category that best fits it.
 Test suites that test event rules should extend `ai.lum.odinson.events.EventSpec`.
 
 When testing some rules,
-you will find yourself wrinting a testing sentence
+you will find yourself writing a testing sentence
 to use with one of your tests.
 Inside `EventSpec` you will find a collection of sentences
 written for previous tests.
 You can reuse those sentences if you want.
-If you need a visualisation of an odinson sentence you can use
+If you need a visualization of an odinson sentence you can use
 [OdinsonDocEditor](https://odinson-doc-editor.herokuapp.com/).
 
 # How to add a unit test
@@ -53,7 +53,7 @@ make sure you follow the following rules:
 - Your test file should have a unique name and start with `Test` followed by the rest of the name camel cased.
 - Follow the scalatest documentation when writing tests: https://www.scalatest.org/.
 - Aim to test a single function for in each test.
-- Be mindiful when naming tests and only use `it` when necessary.
+- Be mindful when naming tests and only use `it` when necessary.
 - Every test suite should extend `ai.lum.odinson.BaseSpec`.
 
 # Code coverage
