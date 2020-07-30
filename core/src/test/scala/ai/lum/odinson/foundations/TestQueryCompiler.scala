@@ -6,6 +6,18 @@ import ai.lum.odinson.BaseSpec
 import ai.lum.common.{ConfigFactory}
 import com.typesafe.config.Config
 
+import ai.lum.odinson.lucene.search.{
+  OdinNotQuery,
+  AllNGramsQuery,
+  OdinQueryWrapper,
+  LookaheadQuery,
+  DocEndQuery,
+  DocStartQuery,
+  OdinsonQuery
+}
+import org.apache.lucene.search.spans.{SpanTermQuery}
+import org.apache.lucene.index.{Term}
+
 class TestQueryCompiler extends BaseSpec {
   def getExtractorEngine = {
     val config = ConfigFactory.load()
@@ -26,26 +38,49 @@ class TestQueryCompiler extends BaseSpec {
     // return ExtractorEngine with 2 documents
     ee
   }
+  
+  object QCHelper {
+    def termFoo = new Term("norm", "foo")
+    def termBar = new Term("norm", "bar")
+    def spanTermQuery(t: Term) = new SpanTermQuery(t)
+    def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
+    def lookaheadQuery(q: OdinsonQuery) = new LookaheadQuery(q)
+    def allNGRams0 = new AllNGramsQuery("norm", "numWords", 0)
+  }
+
+  // TODO: get the default token field
+  //val config = ConfigFactory.load()
+  //val rawTokenField = config.getString("odinson.index.rawTokenField")
 
   "OdinsonQueryCompiler" should "compile beginning and end markers correctly" in {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
     // test start
-    qc.mkQuery("<s>").toString shouldEqual ("DocStartQuery")
+    qc.mkQuery("<s>") shouldEqual (new DocStartQuery("norm")
+      .asInstanceOf[OdinsonQuery])
     // test end
-    qc.mkQuery("</s>").toString shouldEqual ("DocEndQuery")
+    qc.mkQuery("</s>") shouldEqual (new DocEndQuery("norm", "numWords")
+      .asInstanceOf[OdinsonQuery])
   }
+
 
   it should "compile positive and negative lookahead correctly" in {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
-    // test negative lookahead
-    qc.mkQuery("(?!i)")
-      .toString shouldEqual ("NotQuery(AllNGramsQuery(0),Lookahead(Wrapped(norm:i)))")
     // test positive lookahead
-    qc.mkQuery("(?=i)").toString shouldEqual ("Lookahead(Wrapped(norm:i))")
+    val result = QCHelper.lookaheadQuery(
+      QCHelper.wrapQuery(
+        QCHelper.spanTermQuery(
+          QCHelper.termFoo
+        )
+      )
+    )
+    qc.mkQuery("(?=foo)") shouldEqual (result) // test negative lookahead
+    // test negative lookahead
+    val result1 = new OdinNotQuery(QCHelper.allNGRams0 , result, "norm")
+    qc.mkQuery("(?!foo)") shouldEqual (result1)
   }
 
   it should "compile concatenation and disjunctives correctly" in {
@@ -106,12 +141,12 @@ class TestQueryCompiler extends BaseSpec {
       trigger = bar
       object: NP = >>nsubj
     """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((OutgoingWildcard, StateQuery containing Wrapped(norm:nsubj)))))], [])""")
-    // << 
+    // <<
     qc.compileEventQuery("""
       trigger = bar
       object: NP = <<nsubj
     """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Wrapped(norm:nsubj)))))], [])""")
-    // << and ? 
+    // << and ?
     qc.compileEventQuery("""
       trigger = bar
       object: NP = <<nsubj?
@@ -121,8 +156,8 @@ class TestQueryCompiler extends BaseSpec {
       trigger = bar
       object: NP = <<nsubj+
     """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Repeat(Wrapped(norm:nsubj), 1, 2147483647)))))], [])""")
-  // << and *
-  qc.compileEventQuery("""
+    // << and *
+    qc.compileEventQuery("""
     trigger = bar
     object: NP = <<nsubj*
   """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Optional(Repeat(Wrapped(norm:nsubj), 1, 2147483647))))))], [])""")
