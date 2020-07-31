@@ -8,6 +8,5 @@ trait State {
 
   def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] // TODO: Return iterator
 
-  // This may eventually go away, but it is needed for testing just now.
-//  def close(): Unit = ()
+  def close(): Unit = ()
 }
