@@ -101,7 +101,7 @@ object SqlResultItem {
 }
 
 class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
-  protected val lastId = 0; // Increment before use.
+  protected val idProvider = new IdProvider()
 
   init()
 
@@ -167,7 +167,6 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
       val dbSetter = DbSetter(preparedStatement)
-      val idProvider = new IdProvider()
 
       // TODO this should be altered to add several mentions in a single call
       resultItems.foreach { resultItem =>
