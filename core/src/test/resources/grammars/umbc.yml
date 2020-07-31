@@ -5,7 +5,7 @@ rules:
     label: Person
     priority: 1
     pattern: |
-      [entity=/PERSON/]
+      [word=Becky]
 
   - name: action-test
     type: event
