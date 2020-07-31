@@ -24,13 +24,11 @@ And there are many more on the way:
 
 We would also love to hear any questions, requests, or suggestions you may have.
 
-It consists of several subprojects:
+It consists of the following subprojects:
 
 - **core**: the core odinson library
-- **extra**: these are a few apps that we need but don't really belong in core,
-        for example, licensing issues
+- **extra**: these are a few apps that we need but don't really belong in `core`, due to things like licensing issues
 - **backend**: this is a REST API for odinson
-- **ui**: this is a webapp that we are building to interact with the system and visualize results to enable rapid development
 
 The three apps in extra are:
 
@@ -170,9 +168,3 @@ This example shows how we can match over different aspects of tokens, lemmas in 
 This is an example of a slightly more complex pattern. Odinson is able to apply it over our corpus and finds 228 matches in 0.04 seconds.
 
 ![example 5](https://github.com/lum-ai/odinson/raw/master/images/image5.png "example 5")
-
-## Web UI
-
-We are also working on a web interface that will simplify debugging by displaying more information than the shell. This interface will allow us to display syntactic information when needed. We would also like to be able to interact with it to correct extractions or bootstrap patterns.
-
-![example 6](https://github.com/lum-ai/odinson/raw/master/images/image6.png "example 6")
