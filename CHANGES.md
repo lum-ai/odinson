@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Add priority as String to `Rule` and as `Priority` to `Extractor`
+- Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`
+  can be produced.  Include a `DefaultMentionFactory` to be used if one isn't provided.  Change `Mention` to be a
+  regular class instead of a case class to facilitate subclassing.
+- Use added `State.addMentions` now instead of `State.addMention` with help of new `OdinResultsIterator` by [@kwalcock](https://github.com/kwalcock)
+- Add `State` and `StateFactory` integration into `reference.conf` and integrate extras into `application.conf`
+- Code coverage report.
 - REST API endpoints for retrieving metadata and parent document; OpenAPI data model for `OdinsonDocument`, etc.
 - Containerized Odinson
   - Docker images for [`extra`](https://hub.docker.com/r/lumai/odinson-extras) and the [REST API](https://hub.docker.com/r/lumai/odinson-rest-api) using the [`sbt-native-packager` plugin](https://github.com/sbt/sbt-native-packager).
@@ -13,7 +20,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `disableMatchSelector` to `ExtractorEngine.extractMentions()` to retrieve all spans of tokens that could
   be matched by the query. In other words, it skips the `MatchSelector`.
 - Added `buildinfo.json` file to the index to store versions and build info.
+- Added ability to express rule vars as lists, in addition to the current string representation.
+- Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
+- Started documention at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
+- Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
+- Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
 - REST API: `/api/parent` -> `/api/parent/by-document-id` & `/api/parent/by-sentence-id`
 - REST API: `sentId` param for `/api/sentence` -> `sentenceId`
 - REST API: `rules` param for `/api/execute/grammar` -> `grammar`

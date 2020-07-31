@@ -2,29 +2,30 @@ package controllers
 
 import java.io.File
 import java.nio.file.Path
+
 import javax.inject._
+
 import scala.util.control.NonFatal
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
 import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{ Document => LuceneDocument }
+import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.highlight.TokenSources
 import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{ Document => OdinsonDocument, BuildInfo, ExtractorEngine, OdinsonMatch, NamedCapture }
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
-import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{ OdinsonScoreDoc, OdinsonQuery }
+import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.Mention
 
 @Singleton
@@ -141,20 +142,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val q = extractorEngine.compiler.mkQuery(odinsonQuery, filter)
         extractorEngine.query(q)
     }
-    for {
-      scoreDoc <- results.scoreDocs
-      odinsonMatch <- scoreDoc.matches
-    } {
-      extractorEngine.state.addMention(
-        docBase    = scoreDoc.segmentDocBase,
-        docId      = scoreDoc.segmentDocId,
-        label      = label,
-        startToken = odinsonMatch.start,
-        endToken   = odinsonMatch.end
-      )
-    }
-    // index for efficient lookup in subsequent queries
-    extractorEngine.state.index()
   }
 
   /**

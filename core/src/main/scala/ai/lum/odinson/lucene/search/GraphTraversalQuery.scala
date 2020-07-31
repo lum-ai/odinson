@@ -20,27 +20,25 @@ class GraphTraversalQuery(
     val dependenciesField: String,
     val sentenceLengthField: String,
     val src: OdinsonQuery,
-    val traversal: GraphTraversal,
-    val dst: OdinsonQuery
+    val fullTraversal: FullTraversalQuery,
 ) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
-  override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, traversal, dst).##
+  override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, fullTraversal).##
 
   def toString(field: String): String = {
     val s = src.toString(field)
-    val d = dst.toString(field)
-    val t = traversal.toString() // TODO GraphTraversal.toString
-    s"GraphTraversal($s, $d, $t)"
+    val t = fullTraversal.toString(field)
+    s"GraphTraversal($s, $t)"
   }
 
   def getField(): String = defaultTokenField
 
   override def rewrite(reader: IndexReader): Query = {
     val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinsonQuery]
-    val rewrittenDst = dst.rewrite(reader).asInstanceOf[OdinsonQuery]
-    if (src != rewrittenSrc || dst != rewrittenDst) {
-      new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, rewrittenSrc, traversal, rewrittenDst)
+    val rewrittenTraversal = fullTraversal.rewrite(reader)
+    if (src != rewrittenSrc || fullTraversal != rewrittenTraversal) {
+      new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, rewrittenSrc, rewrittenTraversal)
     } else {
       super.rewrite(reader)
     }
@@ -48,37 +46,38 @@ class GraphTraversalQuery(
 
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     val srcWeight = src.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
-    val dstWeight = dst.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
-    val terms = if (needsScores) OdinsonQuery.getTermContexts(srcWeight, dstWeight) else null
-    new GraphTraversalWeight(srcWeight, dstWeight, traversal, searcher, terms)
+    val traversalWeight = fullTraversal.createWeight(searcher, needsScores)
+    val subWeights = srcWeight :: traversalWeight.subWeights
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights: _*) else null
+    new GraphTraversalWeight(srcWeight, traversalWeight, searcher, terms)
   }
 
   class GraphTraversalWeight(
       val srcWeight: OdinsonWeight,
-      val dstWeight: OdinsonWeight,
-      val traversal: GraphTraversal,
+      val fullTraversal: FullTraversalWeight,
       searcher: IndexSearcher,
       terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
       srcWeight.extractTerms(terms)
-      dstWeight.extractTerms(terms)
+      fullTraversal.extractTerms(terms)
     }
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = {
       srcWeight.extractTermContexts(contexts)
-      dstWeight.extractTermContexts(contexts)
+      fullTraversal.extractTermContexts(contexts)
     }
 
     def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val reader = context.reader
       val srcSpans = srcWeight.getSpans(context, requiredPostings)
-      val dstSpans = dstWeight.getSpans(context, requiredPostings)
-      if (srcSpans == null || dstSpans == null) return null
+      val traversalSpans = fullTraversal.getSpans(context, requiredPostings)
+      if (srcSpans == null || traversalSpans == null) return null
       val graphPerDoc = reader.getSortedDocValues(dependenciesField)
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
-      new GraphTraversalSpans(Array(srcSpans, dstSpans), traversal, graphPerDoc, numWordsPerDoc)
+      val subSpans = srcSpans :: traversalSpans.subSpans
+      new GraphTraversalSpans(subSpans.toArray, srcSpans, traversalSpans, graphPerDoc, numWordsPerDoc)
     }
 
   }
@@ -87,14 +86,13 @@ class GraphTraversalQuery(
 
 class GraphTraversalSpans(
     val subSpans: Array[OdinsonSpans],
-    val traversal: GraphTraversal,
+    val srcSpans: OdinsonSpans,
+    val fullTraversal: FullTraversalSpans,
     val graphPerDoc: SortedDocValues,
     val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 
   import Spans._
-
-  val Array(srcSpans, dstSpans) = subSpans
 
   // resulting spans sorted by position
   private var pq: QueueByPosition = null
@@ -112,7 +110,7 @@ class GraphTraversalSpans(
     oneExhaustedInCurrentDoc = false
     graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
     maxToken = numWordsPerDoc.get(docID())
-    pq = QueueByPosition.mkPositionQueue(matchPairs(graph, maxToken.toInt, traversal, srcSpans, dstSpans))
+    pq = QueueByPosition.mkPositionQueue(fullTraversal.matchFullTraversal(graph, maxToken.toInt, srcSpans.getAllMatches()))
     if (pq.size() > 0) {
       atFirstInCurrentDoc = true
       topPositionOdinsonMatch = null
@@ -134,55 +132,6 @@ class GraphTraversalSpans(
       topPositionOdinsonMatch = null
     }
     matchStart
-  }
-
-  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
-    val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
-    // empty buffer meant to stay empty and be reused
-    val empty = new ArrayBuffer[OdinsonMatch]
-    // add mentions at the corresponding token positions
-    var i = 0
-    while (i < spans.length) {
-      val s = spans(i)
-      i += 1
-      var j = s.start
-      while (j < s.end) {
-        if (index(j) == null) {
-          // make a new buffer at this position
-          index(j) = new ArrayBuffer[OdinsonMatch]
-        }
-        index(j) += s
-        j += 1
-      }
-    }
-    // add the empty buffer everywhere else
-    i = 0
-    while (i < index.length) {
-      if (index(i) == null) {
-        index(i) = empty
-      }
-      i += 1
-    }
-    index
-  }
-
-  private def matchPairs(
-      graph: DirectedGraph,
-      maxToken: Int,
-      traversal: GraphTraversal,
-      srcSpans: OdinsonSpans,
-      dstSpans: OdinsonSpans
-  ): Array[OdinsonMatch] = {
-    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    val dstIndex = mkInvIndex(dstSpans.getAllMatches(), maxToken)
-    for (src <- srcSpans.getAllMatches()) {
-      val dsts = traversal.traverseFrom(graph, src.tokenInterval)
-      builder ++= dsts
-        .flatMap(dstIndex)
-        .distinct
-        .map(dst => new GraphTraversalMatch(src, dst))
-    }
-    builder.result()
   }
 
 }

@@ -33,12 +33,6 @@ class QueryCompiler(
   /** query parser for parent doc queries */
   val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
 
-  private var state: Option[State] = None
-
-  def setState(s: State): Unit = {
-    state = Some(s)
-  }
-
   // FIXME temporary entrypoint
   def compileEventQuery(pattern: String): OdinsonQuery = {
     val ast = parser.parseEventQuery(pattern)
@@ -47,7 +41,7 @@ class QueryCompiler(
   }
 
   def compile(pattern: String): OdinsonQuery = {
-    val ast = parser.parseQuery(pattern)
+    val ast = parser.parseBasicQuery(pattern)
     val query = mkOdinsonQuery(ast)
     query.getOrElse(new FailQuery(defaultTokenField))
   }
@@ -141,7 +135,7 @@ class QueryCompiler(
       }
       // add start-constraints of required args to trigger
       for (arg <- reqArgQueries) {
-        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.head._1))
+        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.firstGraphTraversal))
       }
       // return event query
       val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField, sentenceLengthField)
@@ -199,22 +193,15 @@ class QueryCompiler(
     // mentions
 
     case Ast.MentionPattern(_, label) =>
-      state match {
-        case None => Some(new FailQuery(defaultTokenField))
-        case Some(state) => Some(new StateQuery(defaultTokenField, label, state))
-      }
+      Some(new StateQuery(defaultTokenField, label))
 
     // graph traversal
 
-    case Ast.GraphTraversalPattern(src, tr, dst) =>
-      mkGraphTraversal(tr) match {
-        case NoTraversal => mkOdinsonQuery(src)
-        case FailTraversal => None
-        case traversal =>
-          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(traversal)))
-          val dstQuery = mkOdinsonQuery(dst).map(q => addConstraint(q, mkEndConstraint(traversal)))
-          if (srcQuery.isDefined && dstQuery.isDefined) {
-            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, traversal, dstQuery.get)
+    case Ast.GraphTraversalPattern(src, tr) =>
+      mkFullTraversalQuery(tr).flatMap { fullTraversal =>
+          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(fullTraversal.firstGraphTraversal)))
+          if (srcQuery.isDefined) {
+            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
             Some(q)
           } else {
             None
@@ -319,12 +306,12 @@ class QueryCompiler(
 
   }
 
-  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = {
     // we will collect traversals and queries for the argument's full traversal
     val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
     val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
     // for each step in the traversal ...
-    for ((t, p) <- arg.fullTraversal) {
+    for ((t, p) <- tr.fullTraversal) {
       // compile graph traversal
       val traversal = mkGraphTraversal(t)
       // compile query and add end-constraint
@@ -342,8 +329,14 @@ class QueryCompiler(
       allOdinsonQueries += query.get
     }
     // make argument query
-    val fullTraversal = (allGraphTraversals zip allOdinsonQueries).toList
-    Some(ArgumentQuery(arg.name, arg.label, arg.min, arg.max, fullTraversal))
+    val fullTraversal = FullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
+    Some(fullTraversal)
+  }
+
+  def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
+    mkFullTraversalQuery(arg.fullTraversal).map { tr =>
+      ArgumentQuery(arg.name, arg.label, arg.min, arg.max, tr)
+    }
   }
 
   def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {

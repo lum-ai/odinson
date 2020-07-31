@@ -1,8 +1,9 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
+
 import scala.annotation.tailrec
-import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap }
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, HashMap}
 import scala.collection.JavaConverters._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -13,19 +14,22 @@ import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.state.State
 
 case class ArgumentQuery(
   name: String,
   label: Option[String],
   min: Int,
   max: Option[Int],
-  fullTraversal: List[(GraphTraversal, OdinsonQuery)]
+  fullTraversal: FullTraversalQuery,
 ) {
 
+  def setState(stateOpt: Option[State]): Unit = {
+    fullTraversal.setState(stateOpt)
+  }
+
   def toString(field: String): String = {
-    val traversal = fullTraversal
-      .map(h => s"(${h._1}, ${h._2.toString(field)})")
-      .mkString("(", ", ", ")")
+    val traversal = fullTraversal.toString(field)
     s"ArgumentQuery($name, $label, $min, $max, $traversal)"
   }
 
@@ -33,18 +37,12 @@ case class ArgumentQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): ArgumentWeight = {
-    val allWeights = fullTraversal.map { case (g, q) =>
-      val w = q.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
-      (g, w)
-    }
-    ArgumentWeight(name, label, min, max, allWeights)
+    val fullTraversalWeights = fullTraversal.createWeight(searcher, needsScores)
+    ArgumentWeight(name, label, min, max, fullTraversalWeights)
   }
 
   def rewrite(reader: IndexReader): ArgumentQuery = {
-    val rewrittenTraversal = fullTraversal.map { case (g, q) =>
-      val r = q.rewrite(reader).asInstanceOf[OdinsonQuery]
-      (g, r)
-    }
+    val rewrittenTraversal = fullTraversal.rewrite(reader)
     if (rewrittenTraversal != fullTraversal) {
       ArgumentQuery(name, label, min, max, rewrittenTraversal)
     } else {
@@ -59,24 +57,20 @@ case class ArgumentWeight(
   label: Option[String],
   min: Int,
   max: Option[Int],
-  fullTraversal: List[(GraphTraversal, OdinsonWeight)]
+  fullTraversal: FullTraversalWeight,
 ) {
 
   def getSpans(
     context: LeafReaderContext,
     requiredPostings: SpanWeight.Postings
   ): ArgumentSpans = {
-    val allSpans = fullTraversal.map { case (g, w) =>
-      val s = w.getSpans(context, requiredPostings)
-      // if any subspan is null, then the entire argument should fail
-      if (s == null) return null
-      (g, s)
-    }
-    ArgumentSpans(name, label, min, max, allSpans)
+    val fullTraversalSpans = fullTraversal.getSpans(context, requiredPostings)
+    if (fullTraversalSpans == null) return null
+    ArgumentSpans(name, label, min, max, fullTraversalSpans)
   }
 
   def subWeights: List[OdinsonWeight] = {
-    fullTraversal.map(_._2)
+    fullTraversal.subWeights
   }
 
 }
@@ -86,14 +80,11 @@ case class ArgumentSpans(
   label: Option[String],
   min: Int,
   max: Option[Int],
-  fullTraversal: List[(GraphTraversal, OdinsonSpans)]
+  fullTraversal: FullTraversalSpans,
 ) {
 
   def subSpans: List[OdinsonSpans] = {
-    val ss = fullTraversal.map(_._2)
-    // if any subspan is null then the whole argument should fail
-    if (ss.exists(s => s == null)) null
-    else ss
+    fullTraversal.subSpans
   }
 
 }
@@ -107,6 +98,12 @@ class OdinsonEventQuery(
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (trigger, requiredArguments, optionalArguments, dependenciesField).##
+
+  override def setState(stateOpt: Option[State]): Unit = {
+    trigger.setState(stateOpt)
+    requiredArguments.foreach(_.setState(stateOpt))
+    optionalArguments.foreach(_.setState(stateOpt))
+  }
 
   def toString(field: String): String = {
     val triggerStr = trigger.toString(field)
@@ -257,73 +254,6 @@ class OdinsonEventSpans(
     matchStart
   }
 
-  // returns a map from token index to all matches that contain that token
-  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
-    val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
-    // empty buffer meant to stay empty and be reused
-    val empty = new ArrayBuffer[OdinsonMatch]
-    // add mentions at the corresponding token positions
-    var i = 0
-    while (i < spans.length) {
-      val s = spans(i)
-      i += 1
-      var j = s.start
-      while (j < s.end) {
-        if (index(j) == null) {
-          // make a new buffer at this position
-          index(j) = new ArrayBuffer[OdinsonMatch]
-        }
-        index(j) += s
-        j += 1
-      }
-    }
-    // add the empty buffer everywhere else
-    i = 0
-    while (i < index.length) {
-      if (index(i) == null) {
-        index(i) = empty
-      }
-      i += 1
-    }
-    index
-  }
-
-  // performs one step in the full traversal
-  private def matchPairs(
-    graph: DirectedGraph,
-    maxToken: Int,
-    traversal: GraphTraversal,
-    srcMatches: Array[OdinsonMatch],
-    dstMatches: Array[OdinsonMatch]
-  ): Array[OdinsonMatch] = {
-    val builder = new ArrayBuilder.ofRef[OdinsonMatch]
-    val dstIndex = mkInvIndex(dstMatches, maxToken)
-    for (src <- srcMatches) {
-      val dsts = traversal.traverseFrom(graph, src.tokenInterval)
-      builder ++= dsts
-        .flatMap(dstIndex)
-        .distinct
-        .map(dst => new GraphTraversalMatch(src, dst))
-    }
-    builder.result()
-  }
-
-  // performs the full traversal from trigger to argument
-  private def matchFullTraversal(
-    graph: DirectedGraph,
-    maxToken: Int,
-    srcMatches: Array[OdinsonMatch],
-    fullTraversal: Seq[(GraphTraversal, OdinsonSpans)]
-  ): Array[OdinsonMatch] = {
-    var currentSpans = srcMatches
-    for ((traversal, spans) <- fullTraversal) {
-      val dstMatches = spans.getAllMatches()
-      currentSpans = matchPairs(graph, maxToken, traversal, currentSpans, dstMatches)
-      if (currentSpans.isEmpty) return Array.empty
-    }
-    currentSpans
-  }
-
   // returns the origin of the traversed path (the trigger)
   @tailrec
   private def getStartOfPath(m: OdinsonMatch): OdinsonMatch = {
@@ -341,7 +271,7 @@ class OdinsonEventSpans(
     argument: ArgumentSpans
   ): Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = {
     if (srcMatches.isEmpty) return Map.empty
-    val matches = matchFullTraversal(graph, maxToken, srcMatches, argument.fullTraversal)
+    val matches = argument.fullTraversal.matchFullTraversal(graph, maxToken, srcMatches)
     matches
       .groupBy(getStartOfPath) // the start should be the trigger
       .transform((k,v) => v.map(m => (argument, m)))
@@ -349,19 +279,7 @@ class OdinsonEventSpans(
 
   // advance all spans in arg to the specified doc
   private def advanceArgToDoc(arg: ArgumentSpans, doc: Int): Boolean = {
-    // try to advance all spans in fullTraversal to the current doc
-    for ((traversal, spans) <- arg.fullTraversal) {
-      // if the spans haven't advanced then try to catch up
-      if (spans.docID() < doc) {
-        spans.advance(doc)
-      }
-      // if spans are beyond current doc then this arg doesn't match current doc
-      if (spans.docID() > doc) { // FIXME no_more_docs?
-        return false
-      }
-    }
-    // every spans is at current doc
-    true
+    arg.fullTraversal.advanceToDoc(doc)
   }
 
   private def matchEvents(): Array[EventSketch] = {

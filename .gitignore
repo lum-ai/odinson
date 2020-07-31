@@ -15,3 +15,24 @@ project/plugins/project/
 .history
 .cache
 .lib/
+
+# this file is created by scala-metals (a scala language server) 
+.metals
+project/metals.sbt
+
+# vim swap files
+*.swp
+
+# ctags
+tags
+.tags
+
+# bloop build server
+.bloop
+
+# docs
+docs/.jekyll-cache/
+docs/.sass-cache/
+
+# scala formater
+.scalafmt.conf

@@ -1,10 +1,11 @@
 package ai.lum.odinson
 
 import java.nio.file.Path
+
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{ BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
-import org.apache.lucene.store.{ Directory, FSDirectory }
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
+import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.Config
@@ -17,15 +18,16 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
-
-
+import ai.lum.odinson.state.OdinResultsIterator
+import ai.lum.odinson.state.StateFactory
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
-  val state: State,
-  val parentDocIdField: String
+  val stateFactory: StateFactory,
+  val parentDocIdField: String,
+  val mentionFactory: MentionFactory
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -34,6 +36,22 @@ class ExtractorEngine(
   val indexReader = indexSearcher.getIndexReader()
 
   val ruleReader = new RuleReader(compiler)
+
+  // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
+  // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
+  val filters: Map[Boolean, Mention => Option[Mention]] = Map(
+    false -> { mention: Mention =>
+      // If needed, filter results to discard trigger overlaps.
+      mention.odinsonMatch match {
+        case eventMatch: EventMatch =>
+          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
+        case _ => Some(mention)
+      }
+    },
+    true -> { mention: Mention =>
+      Some(mention)
+    }
+  )
 
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
@@ -77,27 +95,41 @@ class ExtractorEngine(
 
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    // extract mentions
-    val mentions = for {
-      e <- extractors
-      results = query(e.query, numSentences, disableMatchSelector)
-      scoreDoc <- results.scoreDocs
-      docFields = doc(scoreDoc.doc)
-      docId = docFields.getField("docId").stringValue
-      sentId = docFields.getField("sentId").stringValue
+    val minIterations = extractors.map(_.priority.minIterations).max
+    // This is here both to demonstrate how a filter might be passed into the method.
+    val filter = filters(allowTriggerOverlaps)
+
+    def extract(i: Int, state: State): Seq[Mention] = for {
+      extractor <- extractors
+      if extractor.priority matches i
+      odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
+      scoreDoc <- odinResults.scoreDocs
+      document = doc(scoreDoc.doc)
+      docId = document.getField("docId").stringValue
+      sentId = document.getField("sentId").stringValue
       odinsonMatch <- scoreDoc.matches
-    } yield Mention(odinsonMatch, e.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, e.name)
-    // if needed, filter results to discard trigger overlaps
-    if (allowTriggerOverlaps) {
-      mentions
-    } else {
-      mentions.flatMap { m =>
-        m.odinsonMatch match {
-          case e: EventMatch => e.removeTriggerOverlaps.map(e => m.copy(odinsonMatch = e))
-          case _ => Some(m)
-        }
-      }
+      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
+      mentionOpt = filter(mention)
+      if (mentionOpt.isDefined)
+    } yield mentionOpt.get
+
+    @annotation.tailrec
+    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
+      val newMentions: Seq[Mention] = extract(i, state)
+
+      if (0 < newMentions.length)
+        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
+      else if (i < minIterations)
+        loop(i + 1, mentions, state)
+      else
+        mentions
     }
+
+    val mentions = stateFactory.usingState { state =>
+      loop(1, Seq.empty[Mention], state)
+    }
+
+    mentions.distinct
   }
 
   /** executes query and returns all results */
@@ -121,26 +153,40 @@ class ExtractorEngine(
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, false)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(odinsonQuery, n, after, false)
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc,
-    disableMatchSelector: Boolean,
-  ): OdinResults = {
-    indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+    stateFactory.usingState { state =>
+      query(odinsonQuery, None, None, n, after, disableMatchSelector, state)
+    }
+  }
+
+  /** executes query and returns next n results after the provided doc */
+  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+    val odinResults = try {
+      odinsonQuery.setState(Some(state))
+      indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+    }
+    finally {
+      odinsonQuery.setState(None)
+    }
+    // All of the odinResults will be added to the state, even though not all of them will
+    // necessarily be used to create mentions.
+    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
+    state.addResultItems(odinResultsIterator)
+
+    odinResults
   }
 
   def getString(docID: Int, m: OdinsonMatch): String = {
     getTokens(docID, m).mkString(" ")
+  }
+
+  def getArgument(mention: Mention, name: String): String = {
+    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
   def getTokens(m: Mention): Array[String] = {
@@ -166,9 +212,13 @@ class ExtractorEngine(
 }
 
 object ExtractorEngine {
+  val defaultPath = "odinson"
+
+  lazy val defaultMentionFactory = new DefaultMentionFactory()
+  lazy val defaultConfig = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
-    fromConfig("odinson")
+    fromConfig(defaultPath)
   }
 
   def fromConfig(path: String): ExtractorEngine = {
@@ -182,24 +232,22 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
+  def fromDirectory(config: Config, indexDir: Directory, mentionFactory: MentionFactory = defaultMentionFactory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val displayField = config[String]("displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val jdbcUrl = config[String]("state.jdbc.url")
-    val state = new State(jdbcUrl)
-    state.init()
-    compiler.setState(state)
+    val stateFactory = StateFactory(config)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       displayField,
-      state,
-      parentDocIdField
+      stateFactory,
+      parentDocIdField,
+      mentionFactory
     )
   }
 

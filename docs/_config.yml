@@ -1,0 +1,5 @@
+title: "odinson"
+remote_theme: pmarsceill/just-the-docs
+theme: "just-the-docs"
+color_scheme: odinson
+search_enabled: true
