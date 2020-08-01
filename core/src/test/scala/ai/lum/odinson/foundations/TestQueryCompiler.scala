@@ -7,6 +7,8 @@ import ai.lum.common.{ConfigFactory}
 import com.typesafe.config.Config
 
 import ai.lum.odinson.lucene.search.{
+  OdinConcatQuery,
+  OdinOrQuery,
   OdinNotQuery,
   AllNGramsQuery,
   OdinQueryWrapper,
@@ -38,14 +40,21 @@ class TestQueryCompiler extends BaseSpec {
     // return ExtractorEngine with 2 documents
     ee
   }
-  
+
   object QCHelper {
+    def defaultTokenField = "norm"
+    def sentenceLengthField = "numWords"
     def termFoo = new Term("norm", "foo")
     def termBar = new Term("norm", "bar")
+    def termFoobar = new Term("norm", "foobar")
     def spanTermQuery(t: Term) = new SpanTermQuery(t)
     def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
     def lookaheadQuery(q: OdinsonQuery) = new LookaheadQuery(q)
     def allNGRams0 = new AllNGramsQuery("norm", "numWords", 0)
+    // wraped queries
+    def wrapedFooQuery = wrapQuery(spanTermQuery(termFoo))
+    def wrapedBarQuery = wrapQuery(spanTermQuery(termBar))
+    def wrapedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
   }
 
   // TODO: get the default token field
@@ -64,7 +73,6 @@ class TestQueryCompiler extends BaseSpec {
       .asInstanceOf[OdinsonQuery])
   }
 
-
   it should "compile positive and negative lookahead correctly" in {
     // get fixture
     val ee = getExtractorEngine
@@ -79,7 +87,7 @@ class TestQueryCompiler extends BaseSpec {
     )
     qc.mkQuery("(?=foo)") shouldEqual (result) // test negative lookahead
     // test negative lookahead
-    val result1 = new OdinNotQuery(QCHelper.allNGRams0 , result, "norm")
+    val result1 = new OdinNotQuery(QCHelper.allNGRams0, result, "norm")
     qc.mkQuery("(?!foo)") shouldEqual (result1)
   }
 
@@ -88,17 +96,60 @@ class TestQueryCompiler extends BaseSpec {
     val ee = getExtractorEngine
     val qc = ee.compiler
     // test or
-    qc.mkQuery("foo|bar")
-      .toString shouldEqual ("OrQuery([Wrapped(norm:foo),Wrapped(norm:bar)])")
+    qc.mkQuery("foo|bar") shouldEqual (new OdinOrQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedBarQuery
+      ),
+      "norm"
+    ))
     // triple or
-    qc.mkQuery("a|b|c")
-      .toString shouldEqual ("OrQuery([Wrapped(norm:a),Wrapped(norm:b),Wrapped(norm:c)])")
+    qc.mkQuery("foo|bar|foobar") shouldEqual (new OdinOrQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedBarQuery, 
+        QCHelper.wrapedFoobarQuery,
+      ),
+      "norm"
+    ))
+    // test or with equal strings (should not return a OrQuery)
+    qc.mkQuery("foo|foo") shouldEqual (QCHelper.wrapedFooQuery)
+    // test or with equal strings (should ignore the repeated element)
+    qc.mkQuery("foo|foo|bar") shouldEqual (new OdinOrQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedBarQuery,
+      ),
+      "norm"
+    ))
     // test concatenation
-    qc.mkQuery("(a)(b)")
-      .toString shouldEqual ("Concat([Wrapped(norm:a),Wrapped(norm:b)])")
+    qc.mkQuery("(foo)(bar)") shouldEqual (new OdinConcatQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedBarQuery
+      ),
+      "norm",
+      "numWords"
+    ))
     // test triple concatenation
-    qc.mkQuery("(a)(b)(c)")
-      .toString shouldEqual ("Concat([Wrapped(norm:a),Wrapped(norm:b),Wrapped(norm:c)])")
+    qc.mkQuery("(foo)(bar)(foobar)") shouldEqual (new OdinConcatQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedBarQuery,
+        QCHelper.wrapedFoobarQuery,
+      ),
+      "norm",
+      "numWords"
+    ))
+    // test repeated double concatenation
+    qc.mkQuery("(foo)(foo)") shouldEqual (new OdinConcatQuery(
+      List(
+        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedFooQuery,
+      ),
+      "norm",
+      "numWords"
+    ))
   }
 
   it should "compile graph traversals correctly" in {
