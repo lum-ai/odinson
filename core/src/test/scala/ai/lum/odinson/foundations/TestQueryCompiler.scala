@@ -15,9 +15,14 @@ import ai.lum.odinson.lucene.search.{
   LookaheadQuery,
   DocEndQuery,
   DocStartQuery,
-  OdinsonQuery
+  OdinsonQuery,
+  ArgumentQuery,
+  FullTraversalQuery,
+  OdinsonEventQuery
 }
-import org.apache.lucene.search.spans.{SpanTermQuery}
+import ai.lum.odinson.digraph.{ExactLabelMatcher, Outgoing, Incoming}
+import ai.lum.odinson.lucene.search.spans.OdinsonSpanContainingQuery
+import org.apache.lucene.search.spans.{SpanTermQuery, FieldMaskingSpanQuery}
 import org.apache.lucene.index.{Term}
 
 class TestQueryCompiler extends BaseSpec {
@@ -41,25 +46,59 @@ class TestQueryCompiler extends BaseSpec {
     ee
   }
 
+  // Query Compiler Helper
+  // TODO: refactor (DRY)
   object QCHelper {
+    // defaults
+    // TODO: get these values from config
     def defaultTokenField = "norm"
     def sentenceLengthField = "numWords"
+    def dependenciesField = "dependencies"
+    // terms
     def termFoo = new Term("norm", "foo")
     def termBar = new Term("norm", "bar")
     def termFoobar = new Term("norm", "foobar")
+    def term(s: String) = new Term("norm", s)
+    def termIncomingNsubj = new Term("incoming", "nsubj")
+    def termOutgoingNsubj = new Term("outgoing", "nsubj")
+    // queries
     def spanTermQuery(t: Term) = new SpanTermQuery(t)
-    def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
     def lookaheadQuery(q: OdinsonQuery) = new LookaheadQuery(q)
     def allNGRams0 = new AllNGramsQuery("norm", "numWords", 0)
+    // matchers
+    def nsubjExact = new ExactLabelMatcher("nsubj", 0)
+    // query wraper
+    def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
+    def wrapQuery(q: FieldMaskingSpanQuery) = new OdinQueryWrapper(q)
     // wraped queries
     def wrapedFooQuery = wrapQuery(spanTermQuery(termFoo))
     def wrapedBarQuery = wrapQuery(spanTermQuery(termBar))
     def wrapedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
+    // wraped mask
+    def maskQuery(q: SpanTermQuery) = new FieldMaskingSpanQuery(q, "norm")
+    def wrapedMaskedIncomingNsubj =
+      wrapQuery(maskQuery(spanTermQuery(termIncomingNsubj)))
+    def wrapedMaskedOutgoingNsubj =
+      wrapQuery(maskQuery(spanTermQuery(termOutgoingNsubj)))
+    // graph traversal
+    def outgoingNsubj = new Outgoing(nsubjExact)
+    // full traversal
+    def fullTraversalOutgoingNsubj = FullTraversalQuery( List( (outgoingNsubj, wrapedMaskedIncomingNsubj) ).toList )
+    //def fullTraversalOutgoingNsubj = FullTraversalQuery( List(outgoingNsubj, wrapedMaskedIncomingNsubj).toList)
+    // argument query
+    def argumentObjectOutgoingNsubjQuery = new ArgumentQuery("object", None, 1, Some(1), fullTraversalOutgoingNsubj)
+    // event queries
+    def eventTestQuery = 
+      new OdinsonEventQuery(
+        triggerBarWithIncomingNsubj,  
+        List(argumentObjectOutgoingNsubjQuery), 
+        List(), 
+        "dependencies", 
+        "numWords"
+      )
+    // trigger query
+    def triggerBarWithIncomingNsubj = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
   }
-
-  // TODO: get the default token field
-  //val config = ConfigFactory.load()
-  //val rawTokenField = config.getString("odinson.index.rawTokenField")
 
   "OdinsonQueryCompiler" should "compile beginning and end markers correctly" in {
     // get fixture
@@ -107,8 +146,8 @@ class TestQueryCompiler extends BaseSpec {
     qc.mkQuery("foo|bar|foobar") shouldEqual (new OdinOrQuery(
       List(
         QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery, 
-        QCHelper.wrapedFoobarQuery,
+        QCHelper.wrapedBarQuery,
+        QCHelper.wrapedFoobarQuery
       ),
       "norm"
     ))
@@ -118,7 +157,7 @@ class TestQueryCompiler extends BaseSpec {
     qc.mkQuery("foo|foo|bar") shouldEqual (new OdinOrQuery(
       List(
         QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery,
+        QCHelper.wrapedBarQuery
       ),
       "norm"
     ))
@@ -136,7 +175,7 @@ class TestQueryCompiler extends BaseSpec {
       List(
         QCHelper.wrapedFooQuery,
         QCHelper.wrapedBarQuery,
-        QCHelper.wrapedFoobarQuery,
+        QCHelper.wrapedFoobarQuery
       ),
       "norm",
       "numWords"
@@ -145,7 +184,7 @@ class TestQueryCompiler extends BaseSpec {
     qc.mkQuery("(foo)(foo)") shouldEqual (new OdinConcatQuery(
       List(
         QCHelper.wrapedFooQuery,
-        QCHelper.wrapedFooQuery,
+        QCHelper.wrapedFooQuery
       ),
       "norm",
       "numWords"
@@ -156,11 +195,11 @@ class TestQueryCompiler extends BaseSpec {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
-    // outgoing
+    //
     qc.compileEventQuery("""
       trigger = bar
-      object: NP = >nsubj
-      """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((Outgoing("nsubj"), StateQuery containing Wrapped(mask(incoming:nsubj) as norm)))))], [])""")
+      object = >nsubj
+      """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, None, 1, Some(1), FullTraversalQuery(((Outgoing("nsubj"), Wrapped(mask(incoming:nsubj) as norm)))))], [])""")
     // 0 or more outgoings
     qc.compileEventQuery("""
       trigger = bar
