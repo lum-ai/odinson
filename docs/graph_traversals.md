@@ -17,7 +17,7 @@ The direction that the edge (e.g., dependency) is traversed is encoded by placin
 
 The edge/dependency labels, as strings, support regular expression notation (i.e., `/nmod_.*/`).  The full string rules are provided [here](strings.html).
 
-So, for example, to traverse an incoming `nsubj` egde, you'd use: 
+So, for example, to traverse an incoming `nsubj` edge, you'd use: 
 
     <nsubj 
     
