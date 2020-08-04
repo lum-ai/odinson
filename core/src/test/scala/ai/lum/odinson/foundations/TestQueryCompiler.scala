@@ -20,7 +20,7 @@ import ai.lum.odinson.lucene.search.{
   FullTraversalQuery,
   OdinsonEventQuery
 }
-import ai.lum.odinson.digraph.{ExactLabelMatcher, Outgoing, Incoming}
+import ai.lum.odinson.digraph.{ExactLabelMatcher, Outgoing, Incoming, GraphTraversal}
 import ai.lum.odinson.lucene.search.spans.OdinsonSpanContainingQuery
 import org.apache.lucene.search.spans.{SpanTermQuery, FieldMaskingSpanQuery}
 import org.apache.lucene.index.{Term}
@@ -55,16 +55,16 @@ class TestQueryCompiler extends BaseSpec {
     def sentenceLengthField = "numWords"
     def dependenciesField = "dependencies"
     // terms
-    def termFoo = new Term("norm", "foo")
-    def termBar = new Term("norm", "bar")
-    def termFoobar = new Term("norm", "foobar")
-    def term(s: String) = new Term("norm", s)
+    def termFoo = new Term(defaultTokenField, "foo")
+    def termBar = new Term(defaultTokenField, "bar")
+    def termFoobar = new Term(defaultTokenField, "foobar")
+    def term(s: String) = new Term(defaultTokenField, s)
     def termIncomingNsubj = new Term("incoming", "nsubj")
     def termOutgoingNsubj = new Term("outgoing", "nsubj")
     // queries
     def spanTermQuery(t: Term) = new SpanTermQuery(t)
     def lookaheadQuery(q: OdinsonQuery) = new LookaheadQuery(q)
-    def allNGRams0 = new AllNGramsQuery("norm", "numWords", 0)
+    def allNGRams0 = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
     // matchers
     def nsubjExact = new ExactLabelMatcher("nsubj", 0)
     // query wraper
@@ -75,29 +75,37 @@ class TestQueryCompiler extends BaseSpec {
     def wrapedBarQuery = wrapQuery(spanTermQuery(termBar))
     def wrapedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
     // wraped mask
-    def maskQuery(q: SpanTermQuery) = new FieldMaskingSpanQuery(q, "norm")
-    def wrapedMaskedIncomingNsubj =
+    def maskQuery(q: SpanTermQuery) = new FieldMaskingSpanQuery(q, defaultTokenField)
+    def wrapedMaskedIncomingNsubj: OdinsonQuery =
       wrapQuery(maskQuery(spanTermQuery(termIncomingNsubj)))
-    def wrapedMaskedOutgoingNsubj =
+    def wrapedMaskedOutgoingNsubj: OdinsonQuery =
       wrapQuery(maskQuery(spanTermQuery(termOutgoingNsubj)))
     // graph traversal
-    def outgoingNsubj = new Outgoing(nsubjExact)
+    def outgoingNsubj: GraphTraversal = new Outgoing(nsubjExact)
     // full traversal
-    def fullTraversalOutgoingNsubj = FullTraversalQuery( List( (outgoingNsubj, wrapedMaskedIncomingNsubj) ).toList )
+    def fullTraversalOutgoingNsubj = new FullTraversalQuery( List( (outgoingNsubj, wrapedMaskedIncomingNsubj) ) )
     //def fullTraversalOutgoingNsubj = FullTraversalQuery( List(outgoingNsubj, wrapedMaskedIncomingNsubj).toList)
     // argument query
     def argumentObjectOutgoingNsubjQuery = new ArgumentQuery("object", None, 1, Some(1), fullTraversalOutgoingNsubj)
     // event queries
-    def eventTestQuery = 
+    def eventTestQuery: OdinsonQuery = 
       new OdinsonEventQuery(
-        triggerBarWithIncomingNsubj,  
+        triggerBarWithOutgoingNsubj,  
         List(argumentObjectOutgoingNsubjQuery), 
         List(), 
-        "dependencies", 
-        "numWords"
+        dependenciesField, 
+        defaultTokenField
       )
     // trigger query
-    def triggerBarWithIncomingNsubj = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
+    def triggerBarWithOutgoingNsubj = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
+  }
+  "OdinsonQueryCompiler" should "mkLabelMatcher should work correctly" in {
+    // get fixture
+    val ee = getExtractorEngine
+    val qc = ee.compiler
+    //
+    //qc.mkLabelMatcher(QCHelper.outgoingNsubj)
+
   }
 
   "OdinsonQueryCompiler" should "compile beginning and end markers correctly" in {
@@ -195,7 +203,21 @@ class TestQueryCompiler extends BaseSpec {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
-    //
+    // testing .toString
+    val pattern = """
+      trigger = bar
+      object = >nsubj
+      """
+    // test toString 
+    qc.compileEventQuery(pattern).toString shouldEqual (QCHelper.eventTestQuery.toString)
+    // test toString 
+    qc.compileEventQuery(pattern) shouldEqual (QCHelper.eventTestQuery)
+    
+    // TODO why is this failing?
+    qc.compileEventQuery("""
+      trigger = bar
+      object = >nsubj
+      """).toString shouldEqual (QCHelper.eventTestQuery.toString)
     qc.compileEventQuery("""
       trigger = bar
       object = >nsubj
