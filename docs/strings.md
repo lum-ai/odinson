@@ -13,7 +13,7 @@ There are four places where Odinson needs to match a string:
 3. when matching the label of a graph edge (e.g., syntactic dependency label)
 4. when patching a plain surface pattern (e.g., `dog` when not wrapped in square brackets, as this is a special case of 2, above)
 
-In all those cases, you need to use single or double quotes (they are equivalent in Odinson).  Inside the quotes, the rules for string escaping are applied (i.e., `\n` will be a newline, though you wouldn't  encounter a newline in a token under normal circumstances).  
+In all those cases, you need to use single or double quotes (they are equivalent in Odinson).  Inside the quotes, the rules for string escaping are applied (i.e., `\n` will be a newline, though you wouldn't encounter a newline in a token under normal circumstances).  
 
 **However, if the string is a valid java identifier, then you don't need to quote it.**  A valid java identifier begins with a letter or underscore and is followed by zero or more letters, digits, or underscores.  If your string is of this format, it does **not** need to be quoted.
 

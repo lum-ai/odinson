@@ -44,7 +44,7 @@ object Ast {
     max: Option[Int],
     promote: Boolean, // capture mention on-the-fly if not already captured
   ) extends Pattern
-
+  
   sealed trait FullTraversalPattern {
     def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern
     def isRequired: Boolean = true
