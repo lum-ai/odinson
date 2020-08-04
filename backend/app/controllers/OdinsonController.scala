@@ -14,21 +14,19 @@ import play.api.mvc._
 import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{ Document => LuceneDocument }
+import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.highlight.TokenSources
 import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{ Document => OdinsonDocument, BuildInfo, ExtractorEngine, OdinsonMatch, NamedCapture }
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
-import ai.lum.odinson.extra.DocUtils
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.Mention
-import ai.lum.odinson.utils.OdinResultsIterator
 
 @Singleton
 class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents)

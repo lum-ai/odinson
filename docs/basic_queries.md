@@ -7,7 +7,7 @@ nav_order: 3
 
 # Basic queries
 
-Odinson basic queries allow for specifying a condition for the start of a "path", a valid end of the path,  and the traversals that are licensed for the path itself. These conditions can be specified in terms of _token constraints_ (surface patterns),  _path constraints_ (graph traversals), or both.
+Odinson basic queries allow for specifying a condition for the start of a "path", a valid end of the path, and the traversals that are licensed for the path itself. These conditions can be specified in terms of _token constraints_ (surface patterns), _path constraints_ (graph traversals), or both.
 
 ## Surface pattens
 
@@ -35,7 +35,7 @@ Here is an example of a pattern that captures a subject-verb-object relation inv
 
     (?<controller> [entity=PROTEIN]) <nsubj phosphorylates >dobj (?<theme> [entity=PROTEIN])
     
-This pattern will look for a sentence in which a token tagged as a PROTEIN (though a hypothetical NER component) is the subject of the verb "phosphorylates", and in which that same verb has a direct object which is also tagged as a PROTEIN.  To put it another way, reading the pattern from left-to-right, Odinson will look for a token tagged as a PROTEIN, try to traverse backwards against an incoming `nsubj` dependency arc, land on "phosphorylates", and then traverse an outgoing `dobj` dependency arc to land on a token also tagged as a PROTEIN.   If it finds such a sentence, the first PROTEIN will be extracted with the label `controller`, and the second will have the label `theme` (because of the named captures). 
+This pattern will look for a sentence in which a token tagged as a PROTEIN (though a hypothetical NER component) is the subject of the verb "phosphorylates", and in which that same verb has a direct object which is also tagged as a PROTEIN.  To put it another way, reading the pattern from left-to-right, Odinson will look for a token tagged as a PROTEIN, try to traverse backwards against an incoming `nsubj` dependency arc, land on "phosphorylates", and then traverse an outgoing `dobj` dependency arc to land on a token also tagged as a PROTEIN.  If it finds such a sentence, the first PROTEIN will be extracted with the label `controller`, and the second will have the label `theme` (because of the named captures). 
 
 ## Combining representations
 

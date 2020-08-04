@@ -20,7 +20,18 @@ sealed trait OdinsonMatch {
 }
 
 object OdinsonMatch {
-  val emptyNamedCaptures = new Array[NamedCapture](0)
+  val emptyNamedCaptures: Array[NamedCapture] = Array.empty
+}
+
+case class StateMatch(start: Int, end: Int, namedCaptures: Array[NamedCapture]) extends OdinsonMatch {
+
+  override def toString: String = {
+    val namedCapturesString = namedCaptures.map { namedCapture =>
+      s"NamedCapture(${namedCapture.name},${namedCapture.label},${namedCapture.capturedMatch}"
+    }.mkString("NamedCaptures(", ",", ")")
+
+    (s"StateMatch($start,$end,$namedCapturesString")
+  }
 }
 
 /** helper class to store the metadata related to an EventMention's argument,
