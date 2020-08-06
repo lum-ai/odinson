@@ -29,7 +29,7 @@ import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.Mention
 
 @Singleton
-class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents)
+class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)
   extends AbstractController(cc) {
 
   val config             = ConfigFactory.load()
@@ -39,7 +39,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
 
-  val extractorEngine = ExtractorEngine.fromConfig("odinson")
   val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
   /** convenience methods for formatting Play 2 Json */
