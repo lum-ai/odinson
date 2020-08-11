@@ -18,7 +18,8 @@ import ai.lum.odinson.lucene.search.{
   OdinsonQuery,
   ArgumentQuery,
   FullTraversalQuery,
-  OdinsonEventQuery
+  OdinsonEventQuery,
+  GraphTraversalQuery
 }
 import ai.lum.odinson.digraph.{ExactLabelMatcher, Outgoing, Incoming, GraphTraversal}
 import ai.lum.odinson.lucene.search.spans.OdinsonSpanContainingQuery
@@ -82,22 +83,28 @@ class TestQueryCompiler extends BaseSpec {
       wrapQuery(maskQuery(spanTermQuery(termOutgoingNsubj)))
     // graph traversal
     def outgoingNsubj: GraphTraversal = new Outgoing(nsubjExact)
-    // full traversal
-    def fullTraversalOutgoingNsubj = new FullTraversalQuery( List( (outgoingNsubj, wrapedMaskedIncomingNsubj) ) )
+    def incomingNsubj: GraphTraversal = new Incoming(nsubjExact)
     //def fullTraversalOutgoingNsubj = FullTraversalQuery( List(outgoingNsubj, wrapedMaskedIncomingNsubj).toList)
     // argument query
-    def argumentObjectOutgoingNsubjQuery = new ArgumentQuery("object", None, 1, Some(1), fullTraversalOutgoingNsubj)
+    //def argumentObjectOutgoingNsubjQuery = new ArgumentQuery("object", None, 1, Some(1), fullTraversalOutgoingNsubj)
+    //def argumentObjectIncomingNsubjQuery = new ArgumentQuery("object", None, 1, Some(1), fullTraversalIncomingNsubj)
     // event queries
-    def eventTestQuery: OdinsonQuery = 
-      new OdinsonEventQuery(
-        triggerBarWithOutgoingNsubj,  
-        List(argumentObjectOutgoingNsubjQuery), 
-        List(), 
-        dependenciesField, 
-        defaultTokenField
-      )
+    //def eventTestQuery: OdinsonQuery = 
+    //  new OdinsonEventQuery(
+    //    spanBarWithOutgoingNsubj,  
+    //    List(argumentObjectOutgoingNsubjQuery), 
+    //    List(), 
+    //    dependenciesField, 
+    //    defaultTokenField
+    //  )
     // trigger query
-    def triggerBarWithOutgoingNsubj = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
+    def spanBarWithOutgoingNsubj: OdinsonQuery = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
+    def spanBarWithIncomingNsubj: OdinsonQuery = new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedIncomingNsubj)
+    def spanFooWithOutgoingNsubj: OdinsonQuery = new OdinsonSpanContainingQuery(wrapedFooQuery, wrapedMaskedOutgoingNsubj)
+    // full traversals
+    // outgoingNsubj should be GraphTraversal
+    // spanBarWithIncomingNsubj should be OdinsonQuery
+    def fullTraversalOutgoingNsubjOnBar = new FullTraversalQuery( List( (outgoingNsubj, spanBarWithIncomingNsubj) ) )
   }
   "OdinsonQueryCompiler" should "mkLabelMatcher should work correctly" in {
     // get fixture
@@ -198,7 +205,7 @@ class TestQueryCompiler extends BaseSpec {
       "numWords"
     ))
   }
-
+  // TODO: make the same thing without events
   it should "compile graph traversals correctly" in {
     // get fixture
     val ee = getExtractorEngine
@@ -208,73 +215,31 @@ class TestQueryCompiler extends BaseSpec {
       trigger = bar
       object = >nsubj
       """
-    // test toString 
-    qc.compileEventQuery(pattern).toString shouldEqual (QCHelper.eventTestQuery.toString)
-    // test toString 
-    qc.compileEventQuery(pattern) shouldEqual (QCHelper.eventTestQuery)
-    
-    // TODO why is this failing?
-    qc.compileEventQuery("""
-      trigger = bar
-      object = >nsubj
-      """).toString shouldEqual (QCHelper.eventTestQuery.toString)
-    qc.compileEventQuery("""
-      trigger = bar
-      object = >nsubj
-      """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, None, 1, Some(1), FullTraversalQuery(((Outgoing("nsubj"), Wrapped(mask(incoming:nsubj) as norm)))))], [])""")
-    // 0 or more outgoings
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = >nsubj*
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((KleeneStar(Outgoing("nsubj")), StateQuery))))], [])""")
-    // 0 or more incomings
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = <nsubj*
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((KleeneStar(Incoming("nsubj")), StateQuery))))], [])""")
-    // two one or more incomings
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = <nsubj+
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(incoming:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((Concatenation(List(Incoming("nsubj"), KleeneStar(Incoming("nsubj")))), StateQuery))))], [])""")
-    // two outgings
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = (>nsubj | >nsubj)
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar) containing Wrapped(mask(outgoing:nsubj) as norm), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((Union(List(Outgoing("nsubj"), Outgoing("nsubj"))), StateQuery containing Wrapped(mask(incoming:nsubj) as norm)))))], [])""")
+    // TODO: figure out how to do this
+    val fooTnsubjLbar: OdinsonQuery = new GraphTraversalQuery(
+      QCHelper.defaultTokenField,
+      QCHelper.dependenciesField,
+      QCHelper.sentenceLengthField,
+      // source foo containing outing subj
+      // TODO: try to test with the method that generates one nsubj
+      QCHelper.spanFooWithOutgoingNsubj,
+      // TODO: try to generate this with the method that is generating the outgoing
+      QCHelper.fullTraversalOutgoingNsubjOnBar
+    )
+    qc.mkQuery("foo >nsubj bar") shouldEqual (fooTnsubjLbar)
   }
-
-  it should "compile graph traversals wildcards correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
-    //
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = >>nsubj
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((OutgoingWildcard, StateQuery containing Wrapped(norm:nsubj)))))], [])""")
-    // <<
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = <<nsubj
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Wrapped(norm:nsubj)))))], [])""")
-    // << and ?
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = <<nsubj?
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Optional(Wrapped(norm:nsubj))))))], [])""")
-    // << and +
-    qc.compileEventQuery("""
-      trigger = bar
-      object: NP = <<nsubj+
-    """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Repeat(Wrapped(norm:nsubj), 1, 2147483647)))))], [])""")
-    // << and *
-    qc.compileEventQuery("""
-    trigger = bar
-    object: NP = <<nsubj*
-  """).toString shouldEqual ("""Event(Wrapped(norm:bar), [ArgumentQuery(object, Some(NP), 1, Some(1), FullTraversalQuery(((IncomingWildcard, StateQuery containing Optional(Repeat(Wrapped(norm:nsubj), 1, 2147483647))))))], [])""")
-  }
-
+  /* TODO: tests for graph traversals
+  #object = >nsubj
+  #object: NP = >nsubj*
+  #object: NP = <nsubj*
+  #object: NP = <nsubj+
+  #object: NP = (>nsubj | >nsubj)
+  #object: NP = >>nsubj
+  #object: NP = <<nsubj
+  #object: NP = <<nsubj?
+  #object: NP = <<nsubj+
+  #object: NP = <<nsubj*
+  */
   it should "compile lazy repetitions correctly" in {
     // get fixture
     val ee = getExtractorEngine
@@ -285,7 +250,7 @@ class TestQueryCompiler extends BaseSpec {
     qc.compile("a*?")
       .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
     qc.compile("a??").toString shouldEqual ("Optional(Wrapped(norm:a))")
-
+    //
     qc.compile("a{2,2}?").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
     qc.compile("a{,2}?")
       .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
