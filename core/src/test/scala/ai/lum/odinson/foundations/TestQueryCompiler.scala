@@ -71,19 +71,26 @@ class TestQueryCompiler extends BaseSpec {
     def termBar = new Term(defaultTokenField, "bar")
     def termFoobar = new Term(defaultTokenField, "foobar")
     def term(s: String) = new Term(defaultTokenField, s)
+    // terms for graph traversals
     def termIncomingNsubj = new Term("incoming", "nsubj")
     def termOutgoingNsubj = new Term("outgoing", "nsubj")
+    // terms for words
+    def termWordFoo = new Term("word", "foo")
+    def termWordBar = new Term("word", "bar")
     // queries
     def spanTermQuery(t: Term) = new SpanTermQuery(t)
     def lookaheadQuery(q: OdinsonQuery) = new LookaheadQuery(q)
     def allNGRams0 =
       new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+    def allNGrams1 =
+      new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
     // matchers
     def nsubjExact = new ExactLabelMatcher("nsubj", 0)
-    // query wraper
+    // query wrapper
     def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
     def wrapQuery(q: FieldMaskingSpanQuery) = new OdinQueryWrapper(q)
     // wraped queries
+    // TODO: fix typo <wraped> to <wrapped>
     def wrapedFooQuery = wrapQuery(spanTermQuery(termFoo))
     def wrapedBarQuery = wrapQuery(spanTermQuery(termBar))
     def wrapedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
@@ -94,6 +101,9 @@ class TestQueryCompiler extends BaseSpec {
       wrapQuery(maskQuery(spanTermQuery(termIncomingNsubj)))
     def wrapedMaskedOutgoingNsubj: OdinsonQuery =
       wrapQuery(maskQuery(spanTermQuery(termOutgoingNsubj)))
+    //
+    def wrapedMaskedWordFooQuery = wrapQuery(maskQuery(spanTermQuery(termWordFoo)))
+    def wrapedMaskedWordBarQuery = wrapQuery(maskQuery(spanTermQuery(termWordBar)))
     // graph traversal
     def outgoingNsubj: GraphTraversal = new Outgoing(nsubjExact)
     def incomingNsubj: GraphTraversal = new Incoming(nsubjExact)
@@ -119,7 +129,6 @@ class TestQueryCompiler extends BaseSpec {
       new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, true)
     def repeatFooOneTwoGreedy: OdinsonQuery =
       new OdinRepetitionQuery(wrapedFooQuery, 1, 2, true)
-
     // optional
   }
   //
@@ -339,13 +348,15 @@ class TestQueryCompiler extends BaseSpec {
     val ee = getExtractorEngine
     val qc = ee.compiler
     // test constraints
-    qc.compile("[word=a~]")
-      .toString shouldEqual ("Wrapped(mask(SpanMultiTermQueryWrapper(word:a~2)) as norm)")
-    qc.compile("[word!=a]")
-      .toString shouldEqual ("NotQuery(AllNGramsQuery(1),Wrapped(mask(word:a) as norm))")
-    qc.compile("[word=a | word=b]")
-      .toString shouldEqual ("OrQuery([Wrapped(mask(word:a) as norm),Wrapped(mask(word:b) as norm)])")
-    qc.compile("[word=a | word=b]")
-      .toString shouldEqual ("OrQuery([Wrapped(mask(word:a) as norm),Wrapped(mask(word:b) as norm)])")
+    qc.mkQuery("[word!=foo]") shouldEqual
+      (new OdinNotQuery(QCHelper.allNGrams1, QCHelper.wrapedMaskedWordFooQuery, QCHelper.defaultTokenField))
+    //
+    qc.mkQuery("[word=foo | word=bar]") shouldEqual (new OdinOrQuery(
+      List(
+        QCHelper.wrapedMaskedWordFooQuery,
+        QCHelper.wrapedMaskedWordBarQuery
+      ),
+      "norm"
+    ))
   }
 }
