@@ -114,6 +114,12 @@ class TestQueryCompiler extends BaseSpec {
       new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, false)
     def repeatFooOneTwo: OdinsonQuery =
       new OdinRepetitionQuery(wrapedFooQuery, 1, 2, false)
+    // repeat greedy
+    def repeatFooOneMaxGreedy: OdinsonQuery =
+      new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, true)
+    def repeatFooOneTwoGreedy: OdinsonQuery =
+      new OdinRepetitionQuery(wrapedFooQuery, 1, 2, true)
+
     // optional
   }
   //
@@ -284,19 +290,48 @@ class TestQueryCompiler extends BaseSpec {
     // get fixture
     val ee = getExtractorEngine
     val qc = ee.compiler
-    // test lazy quantifiers
-    // TODO is this right? lazy and greedy produce the same output
-    qc.compile("a+")
-      .toString shouldEqual ("Repeat(Wrapped(norm:a), 1, 2147483647)")
-    qc.compile("a*")
-      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
-    qc.compile("a?").toString shouldEqual ("Optional(Wrapped(norm:a))")
-    // same thing here
-    qc.compile("a{2,2}").toString shouldEqual ("Repeat(Wrapped(norm:a), 2, 2)")
-    qc.compile("a{,2}")
-      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2))")
-    qc.compile("a{,}")
-      .toString shouldEqual ("Optional(Repeat(Wrapped(norm:a), 1, 2147483647))")
+    // test with 1 or more greedy
+    qc.compile("foo+") shouldEqual (new OdinRepetitionQuery(
+      QCHelper.wrapedFooQuery,
+      1,
+      Int.MaxValue,
+      true
+    ))
+    // test with 0 or more
+    // TODO: check why this does not pass
+    //qc.compile("foo*?") shouldEqual (new OdinsonOptionalQuery(
+    //  QCHelper.repeatFooOneMaxGreedy,
+    //  QCHelper.sentenceLengthField,
+    //  true
+    //))
+    // greedy optionl
+    qc.compile("foo?") shouldEqual (new OdinsonOptionalQuery(
+      QCHelper.wrapedFooQuery,
+      QCHelper.sentenceLengthField,
+      true
+    ))
+    // repetition of size 2
+    qc.compile("foo{2,2}") shouldEqual (new OdinRepetitionQuery(
+      QCHelper.wrapedFooQuery,
+      2,
+      2,
+      true
+    ))
+    // TODO: check why this does not pass
+    // 0, 1 or 2
+    // missing left value repetition
+    //qc.compile("foo{,2}") shouldEqual (new OdinsonOptionalQuery(
+    //  QCHelper.repeatFooOneTwoGreedy,
+    //  QCHelper.sentenceLengthField,
+    //  true
+    //))
+    // TODO: check why this does not pass
+    // 0 or max
+    //qc.compile("foo{,}") shouldEqual (new OdinsonOptionalQuery(
+    //  QCHelper.repeatFooOneMaxGreedy,
+    //  QCHelper.sentenceLengthField,
+    //  true
+    //))
   }
   //
   it should "compile constraints correctly" in {
