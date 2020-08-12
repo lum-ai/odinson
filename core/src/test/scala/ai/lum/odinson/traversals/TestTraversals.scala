@@ -1,6 +1,5 @@
 package ai.lum.odinson.traversals
 
-import org.scalatest._
 import ai.lum.odinson.BaseSpec
 
 class TestTraversals extends BaseSpec {
