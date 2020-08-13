@@ -45,12 +45,10 @@ class QueryParser(
         // then we want to use it to constrain the retrieved mention
         val fullTraversal = lastTraversal match {
           case Some(t) =>
-            val steps = traversalsWithSurface.fullTraversal :+ (t, mention)
-            Ast.FullTraversalPattern(steps)
+            val lastStep = Ast.SingleStepFullTraversalPattern(t, mention)
+            Ast.ConcatFullTraversalPattern(List(traversalsWithSurface, lastStep))
           case None =>
-            val (lastHop, lastSurface) = traversalsWithSurface.fullTraversal.last
-            val steps = traversalsWithSurface.fullTraversal.init :+ (lastHop, Ast.FilterPattern(mention, lastSurface))
-            Ast.FullTraversalPattern(steps)
+            traversalsWithSurface.addMentionFilterToTerminals(mention, allowPromotion = false)
         }
         // get quantifier parameters
         val (min, max) = quant match {
@@ -71,8 +69,7 @@ class QueryParser(
         val mention = Ast.MentionPattern(None, label)
         // if the end of the argument pattern is a surface pattern
         // then we want to use it to constrain the retrieved mention
-        val steps = List((lastTraversal, mention))
-        val fullTraversal = Ast.FullTraversalPattern(steps)
+        val fullTraversal = Ast.SingleStepFullTraversalPattern(lastTraversal, mention)
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
@@ -101,16 +98,10 @@ class QueryParser(
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
             val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
-            val steps = traversalsWithSurface.fullTraversal :+ (t, mentionOrWildcard)
-            Ast.FullTraversalPattern(steps)
+            val lastStep = Ast.SingleStepFullTraversalPattern(t, mentionOrWildcard)
+            Ast.ConcatFullTraversalPattern(List(traversalsWithSurface, lastStep))
           case None =>
-            // if there is a final token pattern then use it to filter an existing mention
-            // or use it as the result if there is no matching mention
-            val (lastHop, lastSurface) = traversalsWithSurface.fullTraversal.last
-            val conditionedMention = Ast.FilterPattern(mention, lastSurface)
-            val mentionOrPattern = Ast.DisjunctivePattern(List(conditionedMention, lastSurface))
-            val steps = traversalsWithSurface.fullTraversal.init :+ (lastHop, mentionOrPattern)
-            Ast.FullTraversalPattern(steps)
+            traversalsWithSurface.addMentionFilterToTerminals(mention, allowPromotion = true)
         }
         // get quantifier parameters
         val (min, max) = quant match {
@@ -132,8 +123,7 @@ class QueryParser(
         // if we don't have a final token pattern then assume a wildcard
         val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
         val mentionOrWildcard = Ast.DisjunctivePattern(List(mention, wildcard))
-        val steps = List((lastTraversal, mentionOrWildcard))
-        val fullTraversal = Ast.FullTraversalPattern(steps)
+        val fullTraversal = Ast.SingleStepFullTraversalPattern(lastTraversal, mentionOrWildcard)
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
@@ -157,8 +147,8 @@ class QueryParser(
           case Some(t) =>
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
-            val steps = traversalsWithSurface.fullTraversal :+ (t, wildcard)
-            Ast.FullTraversalPattern(steps)
+            val lastStep = Ast.SingleStepFullTraversalPattern(t, wildcard)
+            Ast.ConcatFullTraversalPattern(List(traversalsWithSurface, lastStep))
         }
         // get quantifier parameters
         val (min, max) = quant match {
@@ -175,8 +165,7 @@ class QueryParser(
       case (name, quant, lastTraversal) =>
         // if we don't have a final token pattern then assume a wildcard
         val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
-        val steps = List((lastTraversal, wildcard))
-        val fullTraversal = Ast.FullTraversalPattern(steps)
+        val fullTraversal = Ast.SingleStepFullTraversalPattern(lastTraversal, wildcard)
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
@@ -207,17 +196,26 @@ class QueryParser(
   def fullTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
     P(atomicTraversalSurface.rep(1)).map {
       case Seq(t) => t
-      case ts => Ast.FullTraversalPattern(ts.flatMap(_.fullTraversal).toList)
+      case ts => Ast.ConcatFullTraversalPattern(ts.toList)
+    }
+  }
+
+  def repeatedTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+    P("(" ~ fullTraversalSurface ~ ")" ~ quantifier(includeLazy = false).?).map {
+      case (t, None) => t
+      case (t, Some(GreedyQuantifier(min, maxOption))) =>
+        Ast.RepeatFullTraversalPattern(min, maxOption.getOrElse(Int.MaxValue), t)
+      case _ => ???
     }
   }
 
   def atomicTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
-    P(singleTraversalSurface | "(" ~ fullTraversalSurface ~ ")")
+    P(singleTraversalSurface | repeatedTraversalSurface)
   }
 
-  def singleTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
+  def singleTraversalSurface[_: P]: P[Ast.SingleStepFullTraversalPattern] = {
     P(disjunctiveTraversal ~ surfacePattern).map {
-      case (tr, surf) => Ast.FullTraversalPattern(List((tr, surf)))
+      case (tr, surf) => Ast.SingleStepFullTraversalPattern(tr, surf)
     }
   }
 

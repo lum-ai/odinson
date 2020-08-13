@@ -1,15 +1,9 @@
 package ai.lum.odison.documentation
 
-import org.scalatest._
-
-import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.BaseSpec
 import ai.lum.odinson.events.EventSpec
-import ai.lum.odinson.Document
 
 class TestDocumentationGraphTraversals extends EventSpec {
-  val json = getJsonDocument("becky-gummy-bears")
-  val doc = Document.fromJson(json)
+  val doc = getDocument("becky-gummy-bears")
   "Odinson TestDocumentationGraphTraversals" should "work for '>foo' example" in {
     val ee = this.Utils.mkExtractorEngine(doc)
     // what is there should match
