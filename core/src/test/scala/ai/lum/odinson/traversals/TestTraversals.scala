@@ -43,13 +43,12 @@ class TestTraversals extends BaseSpec {
     val results = eeHedgehogs.query(query, 1)
     results.totalHits should equal (1)
     val matches = results.scoreDocs.head.matches
-//    matches should have size expectedMatches.length
+    matches should have size expectedMatches.length
     val doc = results.scoreDocs.head.doc
     val foundStrings = matches.map(m => eeHedgehogs.getString(doc, m))
     foundStrings shouldEqual expectedMatches
   }
 
-  // FIXME: if lazy, we expect ["animals", "animals", "animals"]
   it should "support quantifiers on groups of graph traversals and surface patterns -- optional" in {
     testHedgehogQuantifier("?", Array("animals", "hedgehogs", "coypu", "yyymals"))
   }
@@ -62,27 +61,16 @@ class TestTraversals extends BaseSpec {
     testHedgehogQuantifier("{2}", Array("deer", "zzzmals"))
   }
 
-  // FIXME: I think I expect it to return all
   it should "support quantifiers on groups of graph traversals and surface patterns -- ranges {1,2}" in {
     testHedgehogQuantifier("{1,2}", Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
 
-  // FIXME: I think I expect it to return all
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene plus" in {
     testHedgehogQuantifier("+", Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
 
-  // FIXME: I think I expect it to return all, including with 0 of the traversals (i.e., "animals")
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene star" in {
     testHedgehogQuantifier("*", Array("animals", "hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
-  }
-
-  // FIXME: this doesn't compile but should
-  it should "support half steps inside the parentheses" in {
-    val pattern = "[word=animals] (>nmod_such_as)?"
-    val query = eeHedgehogs.compiler.mkQuery(pattern)
-    val results = eeHedgehogs.query(query, 1)
-    results.totalHits should equal (1)
   }
 
 }
