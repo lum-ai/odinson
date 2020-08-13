@@ -12,6 +12,10 @@ class TestTraversals extends BaseSpec {
   val docHedgehogs = getDocument("hedgehogs-coypy-2")
   val eeHedgehogs = Utils.mkExtractorEngine(docHedgehogs)
 
+  // John ate ramen with chopsticks and a spoon.
+  val docSpoon = getDocument("chopsticks-spoon")
+  val eeSpoon = Utils.mkExtractorEngine(docSpoon)
+
   "Odinson" should "find all matches across conj_and" in {
     val pattern = "[word=cats] >conj_and [tag=/N.*/]"
     val query = eeAlien.compiler.mkQuery(pattern)
@@ -72,5 +76,35 @@ class TestTraversals extends BaseSpec {
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene star" in {
     testHedgehogQuantifier("*", Array("animals", "hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
+
+  def testSpoonExpanding(pattern: String, expectedMatches: Array[String]) = {
+    val query = eeSpoon.compiler.mkQuery(pattern)
+    val results = eeSpoon.query(query, 1)
+    results.totalHits should equal (1)
+    val matches = results.scoreDocs.head.matches
+    val doc = results.scoreDocs.head.doc
+    val foundStrings = matches.map(m => eeSpoon.getString(doc, m))
+    foundStrings shouldEqual expectedMatches
+  }
+
+  it should "support expanding the match to a larger context -- base query, no expansion" in {
+    val pattern = "John <nsubj >nmod_with []"
+    val expected = Array("chopsticks")
+    testSpoonExpanding(pattern, expected)
+  }
+
+  it should "support expanding the match to a larger context -- base, with trivial case no expansion pattern" in {
+    val pattern = "John <nsubj >nmod_with (?^ [])"
+    val expected = Array("chopsticks")
+    testSpoonExpanding(pattern, expected)
+  }
+
+  // TODO: discuss semantics -- should we expect both? or only the expanded?
+  it should "support expanding the match to a larger context -- with expansion" in {
+    val pattern = "John <nsubj >nmod_with (?^ [] (>conj [])?)"
+    val expected = Array("chopsticks", "chopsticks and a spoon")
+    testSpoonExpanding(pattern, expected)
+  }
+
 
 }
