@@ -291,6 +291,8 @@ class OdinsonEventSpans(
     val triggerMatches = triggerSpans.getAllMatches()
     var eventSketches: Map[OdinsonMatch, Array[(ArgumentSpans, OdinsonMatch)]] = Map.empty
     if (requiredSpans.nonEmpty) {
+      // we need to advance manually because FullTraversal does some bookkeeping
+      requiredSpans.foreach(arg => advanceArgToDoc(arg, docID()))
       // use dependency graph to confirm connection between trigger and required arg
       eventSketches = matchArgument(graph, maxToken, triggerMatches, requiredSpans(0))
       var i = 1
