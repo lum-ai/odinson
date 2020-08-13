@@ -108,6 +108,7 @@ class GraphTraversalSpans(
 
   def twoPhaseCurrentDocMatches(): Boolean = {
     oneExhaustedInCurrentDoc = false
+    fullTraversal.advanceToDoc(docID())
     graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
     maxToken = numWordsPerDoc.get(docID())
     pq = QueueByPosition.mkPositionQueue(fullTraversal.matchFullTraversal(graph, maxToken.toInt, srcSpans.getAllMatches()))
@@ -132,6 +133,12 @@ class GraphTraversalSpans(
       topPositionOdinsonMatch = null
     }
     matchStart
+  }
+
+  override def toMatchDoc(): Int = {
+    val doc = super.toMatchDoc()
+    fullTraversal.advanceToDoc(doc)
+    doc
   }
 
 }

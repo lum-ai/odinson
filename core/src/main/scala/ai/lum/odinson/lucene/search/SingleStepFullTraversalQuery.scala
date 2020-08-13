@@ -10,6 +10,7 @@ import ai.lum.odinson._
 import ai.lum.odinson.state._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.lucene.search.spans._
+import scala.concurrent.duration.span
 
 case class SingleStepFullTraversalQuery(
   traversal: GraphTraversal,
@@ -75,10 +76,12 @@ case class SingleStepFullTraversalSpans(
   spans: OdinsonSpans,
 ) extends FullTraversalSpans {
 
+  private var dstMatches: Array[OdinsonMatch] = null
+
   def subSpans: List[OdinsonSpans] = List(spans)
 
   def matchFullTraversal(graph: DirectedGraph, maxToken: Int, srcMatches: Array[OdinsonMatch]): Array[OdinsonMatch] = {
-    matchPairs(graph, maxToken, traversal, srcMatches, spans.getAllMatches())
+    matchPairs(graph, maxToken, traversal, srcMatches, dstMatches)
   }
   
   // advance all spans in arg to the specified doc
@@ -88,7 +91,11 @@ case class SingleStepFullTraversalSpans(
       spans.advance(doc)
     }
     // if spans.docID doesn't match doc then it must have advanced beyond it
-    spans.docID() == doc
+    val success = spans.docID() == doc
+    if (success) {
+      dstMatches = spans.getAllMatches()
+    }
+    success
   }
 
   // returns a map from token index to all matches that contain that token

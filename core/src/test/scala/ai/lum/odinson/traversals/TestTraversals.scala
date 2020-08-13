@@ -51,7 +51,7 @@ class TestTraversals extends BaseSpec {
 
   // FIXME: if lazy, we expect ["animals", "animals", "animals"]
   it should "support quantifiers on groups of graph traversals and surface patterns -- optional" in {
-    testHedgehogQuantifier("?", Array("hedgehogs", "coypu", "yyymals"))
+    testHedgehogQuantifier("?", Array("animals", "hedgehogs", "coypu", "yyymals"))
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- ranges {1}" in {
