@@ -12,7 +12,7 @@ import ai.lum.odinson.lucene.util.QueueByPosition
 class ExpandQuery(val query: OdinsonQuery) extends OdinsonQuery {
 
   override def hashCode(): Int = {
-    (this, query).##
+    (query).##
   }
 
   def getField(): String = {
