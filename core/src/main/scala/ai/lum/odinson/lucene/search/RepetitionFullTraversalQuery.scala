@@ -112,11 +112,11 @@ case class RepetitionFullTraversalSpans(
     // optional repetitions
     val results = new ArrayBuilder.ofRef[OdinsonMatch]
     results ++= currentMatches
-    var nextMatches = currentMatches
+
     while (i < max && !currentMatches.isEmpty) {
       i += 1
-      nextMatches = fullTraversal.matchFullTraversal(graph, maxToken, nextMatches)
-      results ++= nextMatches
+      currentMatches = fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
+      results ++= currentMatches
     }
 
     // return results
