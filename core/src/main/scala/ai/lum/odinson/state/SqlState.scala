@@ -103,6 +103,7 @@ object SqlResultItem {
 class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
+  protected var closed = false
 
   create()
 
@@ -263,7 +264,11 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   }
 
   override def close(): Unit = {
-    drop()
+    if (!closed) {
+      // Set this first so that failed drops are not attempted multiple times.
+      closed = true
+      drop()
+    }
   }
 
   // See https://examples.javacodegeeks.com/core-java/sql/delete-all-table-rows-example/.

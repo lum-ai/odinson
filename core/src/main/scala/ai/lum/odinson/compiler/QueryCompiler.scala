@@ -135,7 +135,10 @@ class QueryCompiler(
       }
       // add start-constraints of required args to trigger
       for (arg <- reqArgQueries) {
-        triggerQuery = addConstraint(triggerQuery, mkStartConstraint(arg.fullTraversal.firstGraphTraversal))
+        triggerQuery = arg.fullTraversal.firstGraphTraversal match {
+          case None => triggerQuery
+          case Some(tr) => addConstraint(triggerQuery, mkStartConstraint(tr))
+        }
       }
       // return event query
       val q = new OdinsonEventQuery(triggerQuery, reqArgQueries, optArgQueries, dependenciesField, sentenceLengthField)
@@ -204,13 +207,18 @@ class QueryCompiler(
 
     case Ast.GraphTraversalPattern(src, tr) =>
       mkFullTraversalQuery(tr).flatMap { fullTraversal =>
-          val srcQuery = mkOdinsonQuery(src).map(q => addConstraint(q, mkStartConstraint(fullTraversal.firstGraphTraversal)))
-          if (srcQuery.isDefined) {
-            val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
-            Some(q)
-          } else {
-            None
+        val srcQuery = mkOdinsonQuery(src).map { q =>
+          fullTraversal.firstGraphTraversal match {
+            case None => q
+            case Some(t) => addConstraint(q, mkStartConstraint(t))
           }
+        }
+        if (srcQuery.isDefined) {
+          val q = new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, srcQuery.get, fullTraversal)
+          Some(q)
+        } else {
+          None
+        }
       }
 
     case Ast.LazyRepetitionPattern(pattern@_, 0, Some(0)) =>
@@ -311,31 +319,54 @@ class QueryCompiler(
 
   }
 
-  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = {
-    // we will collect traversals and queries for the argument's full traversal
-    val allGraphTraversals = ArrayBuffer.empty[GraphTraversal]
-    val allOdinsonQueries = ArrayBuffer.empty[OdinsonQuery]
-    // for each step in the traversal ...
-    for ((t, p) <- tr.fullTraversal) {
-      // compile graph traversal
-      val traversal = mkGraphTraversal(t)
-      // compile query and add end-constraint
-      val query = mkOdinsonQuery(p).map(q => addConstraint(q, mkEndConstraint(traversal)))
-      // if query is none then we failed
-      if (query.isEmpty) return None
-      // if we already have a query then add a start-constraint
-      if (allOdinsonQueries.nonEmpty) {
-        val i = allOdinsonQueries.length - 1
-        val q = allOdinsonQueries(i)
-        allOdinsonQueries(i) = addConstraint(q, mkStartConstraint(traversal))
+  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = tr match {
+
+    case t: Ast.SingleStepFullTraversalPattern =>
+      mkOdinsonQuery(t.surface).map { q =>
+        val traversal = mkGraphTraversal(t.traversal)
+        val surface = addConstraint(q, mkEndConstraint(traversal))
+        SingleStepFullTraversalQuery(traversal, surface)
       }
-      // collect traversal and query
-      allGraphTraversals += traversal
-      allOdinsonQueries += query.get
-    }
-    // make argument query
-    val fullTraversal = FullTraversalQuery((allGraphTraversals zip allOdinsonQueries).toList)
-    Some(fullTraversal)
+
+    case t: Ast.RepeatFullTraversalPattern =>
+      mkFullTraversalQuery(t.fullTraversal).map { fullTraversal =>
+        RepetitionFullTraversalQuery(t.min, t.max, fullTraversal)
+      }
+
+    case t: Ast.ConcatFullTraversalPattern =>
+      val optClauses = t.clauses.map(mkFullTraversalQuery).toArray
+      val clauses = new Array[FullTraversalQuery](optClauses.length)
+      var i = 0
+      while (i < optClauses.length) {
+        val clause = optClauses(i)
+        if (clause.isEmpty) return None
+        clauses(i) = clause.get
+        if (i > 0) {
+          for {
+            c <- clause
+            t <- c.firstGraphTraversal
+            const = mkStartConstraint(t)
+          } clauses(i - 1) = addConstraintToFullTraversal(clauses(i - 1), const)
+        }
+        i += 1
+      }
+      Some(ConcatFullTraversalQuery(clauses.toList))
+
+  }
+
+  def addConstraintToFullTraversal(ftq: FullTraversalQuery, c: Option[OdinsonQuery]): FullTraversalQuery = ftq match {
+
+    case t: SingleStepFullTraversalQuery =>
+      SingleStepFullTraversalQuery(t.traversal, addConstraint(t.surface, c))
+
+    case t: RepetitionFullTraversalQuery =>
+      ftq
+
+    case t: ConcatFullTraversalQuery =>
+      val lastStep = addConstraintToFullTraversal(t.fullTraversal.last, c)
+      val steps = t.fullTraversal.init :+ lastStep
+      ConcatFullTraversalQuery(steps)
+
   }
 
   def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {

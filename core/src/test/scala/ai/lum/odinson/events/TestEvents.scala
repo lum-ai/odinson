@@ -1,13 +1,10 @@
 package ai.lum.odinson.events
 
-import org.scalatest._
 
 class TestEvents extends EventSpec {
-  //  import TestEvents._
-  def json = getJsonDocument("becky-gummy-bears")
 
   // extractor engine persists across tests (hacky way)
-  def doc = getDocumentFromJson(json)
+  def doc = getDocument("becky-gummy-bears")
   def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with promoted entities" in {

@@ -1,11 +1,8 @@
 package ai.lum.odinson.events
 
-import org.scalatest._
-
-class TestRuleFile extends EventSpec{
-  def json = getJsonDocument("becky-gummy-bears-v2")
+class TestRuleFile extends EventSpec {
   // extractor engine persists across tests (hacky way)
-  def doc = getDocumentFromJson(json)
+  def doc = getDocument("becky-gummy-bears-v2")
   def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "match event with rules defined in a rule file" in {
@@ -37,8 +34,7 @@ class TestRuleFile extends EventSpec{
 
   it should "correctly handle list vars" in {
     // Leonardo leads, Donatello does machines (That's a fact, jack!)
-    def json = getJsonDocument("ninja-turtles")
-    val doc = getDocumentFromJson(json)
+    val doc = getDocument("ninja-turtles")
     val ee = Utils.mkExtractorEngine(doc)
     val rules =
       """

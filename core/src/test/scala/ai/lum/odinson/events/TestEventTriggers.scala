@@ -1,9 +1,7 @@
 package ai.lum.odinson.events
 
-import org.scalatest._
 
-import ai.lum.odinson.{Document, EventMatch, OdinsonMatch}
-import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.EventMatch
 
 class TestEventTriggers extends EventSpec {
   /** Returns a rule with a template
@@ -25,7 +23,7 @@ class TestEventTriggers extends EventSpec {
    *
    *  @param varsResult what to put in vars -> result -> <?>
    *  @param rulesPatternTrigger what to put in rules -> pattern -> trigger <?>
-   *  @param rulesPatternTrigger what to put in rules -> pattern -> result <?>
+   *  @param rulesPatternResult what to put in rules -> pattern -> result <?>
    */
    def applyRuleTemplate(varsResult: String, rulesPatternTrigger: String, rulesPatternResult: String) = s"""
       |vars:
@@ -40,8 +38,7 @@ class TestEventTriggers extends EventSpec {
   
     /** Returns extractor engine */
     def mkExtractorEngine(docNum: String) = {
-      val jsonDocument = getJsonDocument(docNum)
-      val odinsonDocument = getDocumentFromJson(jsonDocument)
+      val odinsonDocument = getDocument(docNum)
       val extractorEngine = Utils.mkExtractorEngine(odinsonDocument)
       extractorEngine
     }
