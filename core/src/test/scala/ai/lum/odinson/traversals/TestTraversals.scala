@@ -99,8 +99,13 @@ class TestTraversals extends BaseSpec {
     testSpoonExpanding(pattern, expected)
   }
 
-  // TODO: discuss semantics -- should we expect both? or only the expanded?
   it should "support expanding the match to a larger context -- with expansion" in {
+    val pattern = "John <nsubj >nmod_with (?^ [] >conj [])"
+    val expected = Array("chopsticks and a spoon")
+    testSpoonExpanding(pattern, expected)
+  }
+
+  it should "support expanding the match to a larger context -- with optional expansion" in {
     val pattern = "John <nsubj >nmod_with (?^ [] (>conj [])?)"
     val expected = Array("chopsticks", "chopsticks and a spoon")
     testSpoonExpanding(pattern, expected)
