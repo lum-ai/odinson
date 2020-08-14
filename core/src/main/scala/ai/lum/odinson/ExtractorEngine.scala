@@ -1,6 +1,6 @@
 package ai.lum.odinson
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
@@ -221,6 +221,7 @@ object ExtractorEngine {
     fromConfig(defaultPath)
   }
 
+  // This is a path in the config
   def fromConfig(path: String): ExtractorEngine = {
     val config = ConfigFactory.load()
     fromConfig(config[Config](path))
@@ -229,6 +230,12 @@ object ExtractorEngine {
   def fromConfig(config: Config): ExtractorEngine = {
     val indexPath = config[Path]("indexDir")
     val indexDir = FSDirectory.open(indexPath)
+    fromDirectory(config, indexDir)
+  }
+
+  def fromDirectory(indexPath: String): ExtractorEngine = {
+    val config = ConfigFactory.load()
+    val indexDir = FSDirectory.open(Paths.get(indexPath))
     fromDirectory(config, indexDir)
   }
 
