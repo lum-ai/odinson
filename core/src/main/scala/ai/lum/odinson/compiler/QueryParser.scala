@@ -252,7 +252,7 @@ class QueryParser(
   }
 
   def atomicPattern[_: P]: P[Ast.Pattern] = {
-    P(constraintPattern | mentionPattern | "(" ~ disjunctivePattern ~ ")" | namedCapturePattern | assertionPattern)
+    P(constraintPattern | mentionPattern | "(" ~ disjunctivePattern ~ ")" | expandPattern | namedCapturePattern | assertionPattern)
   }
 
   def mentionPattern[_: P]: P[Ast.Pattern] = {
@@ -263,6 +263,12 @@ class QueryParser(
     P("(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")").map {
       case (name, maybeLabel, pattern) =>
         Ast.NamedCapturePattern(name, maybeLabel, pattern)
+    }
+  }
+
+  def expandPattern[_: P]: P[Ast.Pattern] = {
+    P("(?^" ~ graphTraversalPattern ~ ")").map {
+      case pattern => Ast.ExpandPattern(pattern)
     }
   }
 

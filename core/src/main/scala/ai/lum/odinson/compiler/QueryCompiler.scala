@@ -198,6 +198,11 @@ class QueryCompiler(
     case Ast.MentionPattern(_, label) =>
       Some(new StateQuery(defaultTokenField, label))
 
+    // query expansion (or flattening?)
+
+    case Ast.ExpandPattern(pattern) =>
+      mkOdinsonQuery(pattern).map(q => new ExpandQuery(q))
+
     // graph traversal
 
     case Ast.GraphTraversalPattern(src, tr) =>
