@@ -28,6 +28,8 @@ class OdinResultsIterator(labelOpt: Option[String], nameOpt: Option[String], odi
   var scoreDocsIndex: Int = 0
   var matchesIndex: Int = 0
 
+  override def size(): Int = matchesTotal
+
   override def hasNext: Boolean = 0 < matchesRemaining
 
   @tailrec
