@@ -13,9 +13,10 @@ object StateFactory {
   def apply(config: Config): StateFactory = {
     val provider = config[String]("state.provider")
     val stateFactory = provider match {
-      case "sql" => SqlStateFactory(config)
+      case "fastsql" => FastSqlStateFactory(config)
       case "file" => FileStateFactory(config)
       case "memory" => MemoryStateFactory(config)
+      case "sql" => SqlStateFactory(config)
       case _ => throw new Exception(s"Unknown state provider: $provider")
     }
 
