@@ -167,5 +167,57 @@ class TestEvents extends EventSpec {
       testEventArguments(m, desiredArgs)
     }
   }
-  
+
+  it should "retrieve events properly from the state" in {
+
+    val rules = """
+      |rules:
+      |  - name: bears-rule
+      |    label: Bear
+      |    type: event
+      |    priority: 1
+      |    pattern: |
+      |      trigger = bears
+      |      bearType = >amod []
+      |
+      |  - name: eating-rule
+      |    label: Consumption
+      |    type: event
+      |    priority: 2
+      |    pattern: |
+      |      trigger = [lemma=eat]
+      |      subject: ^NP = >nsubj []
+      |      object: Bear = >dobj
+       """.stripMargin
+
+    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val mentions = ee.extractMentions(extractors)
+
+    mentions should have size 2
+
+    // Bear event
+    val bears = mentions.filter(_.label.get == "Bear")
+    bears should have size 1
+    val bear = bears.head
+    bear.arguments.keySet should have size 1
+    val bearType = bear.arguments("bearType")
+    bearType should have size(1)
+    val desiredBearArg = Seq(createArgument("bearType", 2, 3))
+    testEventArguments(bear.odinsonMatch, desiredBearArg)
+
+    // Consumption Event, which should include the Bear event above as an arg, from the State
+    val eats = mentions.filter(_.label.get == "Consumption")
+    eats should have size 1
+    val eat = eats.head
+    eat.arguments.keySet should have size 2
+    val objs = eat.arguments("object")
+    objs should have size 1
+    // Make sure the obj has all the things that the bear had above
+    val obj = objs.head
+    obj.arguments.keySet should have size 1
+    val objType = obj.arguments("bearType")
+    objType should have size(1)
+    testEventArguments(obj.odinsonMatch, desiredBearArg)
+  }
+
 }
