@@ -17,7 +17,6 @@ import ai.lum.odinson.lucene.search.{
   DocStartQuery,
   OdinsonQuery,
   ArgumentQuery,
-  FullTraversalQuery,
   OdinsonEventQuery,
   GraphTraversalQuery,
   OdinRepetitionQuery,
@@ -34,7 +33,8 @@ import org.apache.lucene.search.spans.{SpanTermQuery, FieldMaskingSpanQuery}
 import org.apache.lucene.index.{Term}
 
 class TestQueryCompiler extends BaseSpec {
-  def getExtractorEngine = {
+  // get extractor engine
+  def ee: ExtractorEngine = {
     val config = ConfigFactory.load()
     val odinsonConfig = config.getConfig("odinson")
     val rawTokenField = config.getString("odinson.index.rawTokenField")
@@ -44,16 +44,15 @@ class TestQueryCompiler extends BaseSpec {
     val sentence = Sentence(tokens.tokens.length, Seq(tokens))
     val doc1 = Document("testdoc1", Nil, Seq(sentence))
     val doc2 = Document("testdoc2", Nil, Seq(sentence))
+    // todo get this document from it's origin
     val doc3 = Document.fromJson(
       """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
     )
-
-    // instantiate
-    val ee = ExtractorEngine.inMemory(Seq(doc1, doc2, doc3))
-    // return ExtractorEngine with 2 documents
-    ee
+    // return ExtractorEngine
+    ExtractorEngine.inMemory(Seq(doc1, doc2, doc3))
   }
-
+  // get query compiler
+  def qc = ee.compiler
   // Query Compiler Helper
   // TODO: refactor (DRY)
   object QCHelper {
@@ -89,52 +88,45 @@ class TestQueryCompiler extends BaseSpec {
     // query wrapper
     def wrapQuery(q: SpanTermQuery) = new OdinQueryWrapper(q)
     def wrapQuery(q: FieldMaskingSpanQuery) = new OdinQueryWrapper(q)
-    // wraped queries
-    // TODO: fix typo <wraped> to <wrapped>
-    def wrapedFooQuery = wrapQuery(spanTermQuery(termFoo))
-    def wrapedBarQuery = wrapQuery(spanTermQuery(termBar))
-    def wrapedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
-    // wraped mask
+    // wrapped queries
+    def wrappedFooQuery = wrapQuery(spanTermQuery(termFoo))
+    def wrappedBarQuery = wrapQuery(spanTermQuery(termBar))
+    def wrappedFoobarQuery = wrapQuery(spanTermQuery(termFoobar))
+    // wrapped mask
     def maskQuery(q: SpanTermQuery) =
       new FieldMaskingSpanQuery(q, defaultTokenField)
-    def wrapedMaskedIncomingNsubj: OdinsonQuery =
+    def wrappedMaskedIncomingNsubj: OdinsonQuery =
       wrapQuery(maskQuery(spanTermQuery(termIncomingNsubj)))
-    def wrapedMaskedOutgoingNsubj: OdinsonQuery =
+    def wrappedMaskedOutgoingNsubj: OdinsonQuery =
       wrapQuery(maskQuery(spanTermQuery(termOutgoingNsubj)))
     //
-    def wrapedMaskedWordFooQuery = wrapQuery(maskQuery(spanTermQuery(termWordFoo)))
-    def wrapedMaskedWordBarQuery = wrapQuery(maskQuery(spanTermQuery(termWordBar)))
+    def wrappedMaskedWordFooQuery =
+      wrapQuery(maskQuery(spanTermQuery(termWordFoo)))
+    def wrappedMaskedWordBarQuery =
+      wrapQuery(maskQuery(spanTermQuery(termWordBar)))
     // graph traversal
     def outgoingNsubj: GraphTraversal = new Outgoing(nsubjExact)
     def incomingNsubj: GraphTraversal = new Incoming(nsubjExact)
     // trigger query
     def spanBarWithOutgoingNsubj: OdinsonQuery =
-      new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedOutgoingNsubj)
+      new OdinsonSpanContainingQuery(wrappedBarQuery, wrappedMaskedOutgoingNsubj)
     def spanBarWithIncomingNsubj: OdinsonQuery =
-      new OdinsonSpanContainingQuery(wrapedBarQuery, wrapedMaskedIncomingNsubj)
+      new OdinsonSpanContainingQuery(wrappedBarQuery, wrappedMaskedIncomingNsubj)
     def spanFooWithOutgoingNsubj: OdinsonQuery =
-      new OdinsonSpanContainingQuery(wrapedFooQuery, wrapedMaskedOutgoingNsubj)
-    // full traversals
-    // outgoingNsubj should be GraphTraversal
-    // spanBarWithIncomingNsubj should be OdinsonQuery
-    def fullTraversalOutgoingNsubjOnBar =
-      new FullTraversalQuery(List((outgoingNsubj, spanBarWithIncomingNsubj)))
+      new OdinsonSpanContainingQuery(wrappedFooQuery, wrappedMaskedOutgoingNsubj)
     // repeat
     def repeatFooOneMax: OdinsonQuery =
-      new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, false)
+      new OdinRepetitionQuery(wrappedFooQuery, 1, Int.MaxValue, false)
     def repeatFooOneTwo: OdinsonQuery =
+      new OdinRepetitionQuery(wrappedFooQuery, 1, 2, false)
     // repeat greedy
     def repeatFooOneMaxGreedy: OdinsonQuery =
-      new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, true)
+      new OdinRepetitionQuery(wrappedFooQuery, 1, Int.MaxValue, true)
     def repeatFooOneTwoGreedy: OdinsonQuery =
-      new OdinRepetitionQuery(wrapedFooQuery, 1, 2, true)
-    // optional
+      new OdinRepetitionQuery(wrappedFooQuery, 1, 2, true)
   }
   //
   "OdinsonQueryCompiler" should "compile beginning and end markers correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
     // test start
     qc.mkQuery("<s>") shouldEqual (QCHelper.getDocStartQuery)
     // test end
@@ -142,9 +134,6 @@ class TestQueryCompiler extends BaseSpec {
   }
 
   it should "compile positive and negative lookahead correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
     // test positive lookahead
     val result = QCHelper.lookaheadQuery(
       QCHelper.wrapQuery(
@@ -155,108 +144,73 @@ class TestQueryCompiler extends BaseSpec {
     )
     qc.mkQuery("(?=foo)") shouldEqual (result) // test negative lookahead
     // test negative lookahead
-    val result1 = new OdinNotQuery(QCHelper.allNGRams0, result, "norm")
+    val result1 =
+      new OdinNotQuery(QCHelper.allNGRams0, result, QCHelper.defaultTokenField)
     qc.mkQuery("(?!foo)") shouldEqual (result1)
   }
 
   it should "compile concatenation and disjunctives correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
     // test or
     qc.mkQuery("foo|bar") shouldEqual (new OdinOrQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedBarQuery
       ),
-      "norm"
+      QCHelper.defaultTokenField
     ))
     // triple or
     qc.mkQuery("foo|bar|foobar") shouldEqual (new OdinOrQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery,
-        QCHelper.wrapedFoobarQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedBarQuery,
+        QCHelper.wrappedFoobarQuery
       ),
-      "norm"
+      QCHelper.defaultTokenField
     ))
     // test or with equal strings (should not return a OrQuery)
-    qc.mkQuery("foo|foo") shouldEqual (QCHelper.wrapedFooQuery)
+    qc.mkQuery("foo|foo") shouldEqual (QCHelper.wrappedFooQuery)
     // test or with equal strings (should ignore the repeated element)
     qc.mkQuery("foo|foo|bar") shouldEqual (new OdinOrQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedBarQuery
       ),
-      "norm"
+      QCHelper.defaultTokenField
     ))
     // test concatenation
     qc.mkQuery("(foo)(bar)") shouldEqual (new OdinConcatQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedBarQuery
       ),
-      "norm",
-      "numWords"
+      QCHelper.defaultTokenField,
+      QCHelper.sentenceLengthField
     ))
     // test triple concatenation
     qc.mkQuery("(foo)(bar)(foobar)") shouldEqual (new OdinConcatQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedBarQuery,
-        QCHelper.wrapedFoobarQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedBarQuery,
+        QCHelper.wrappedFoobarQuery
       ),
-      "norm",
-      "numWords"
+      QCHelper.defaultTokenField,
+      QCHelper.sentenceLengthField
     ))
     // test repeated double concatenation
     qc.mkQuery("(foo)(foo)") shouldEqual (new OdinConcatQuery(
       List(
-        QCHelper.wrapedFooQuery,
-        QCHelper.wrapedFooQuery
+        QCHelper.wrappedFooQuery,
+        QCHelper.wrappedFooQuery
       ),
-      "norm",
-      "numWords"
+      QCHelper.defaultTokenField,
+      QCHelper.sentenceLengthField
     ))
   }
-  it should "compile graph traversals correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
-    val fooTnsubjLbar: OdinsonQuery = new GraphTraversalQuery(
-      QCHelper.defaultTokenField,
-      QCHelper.dependenciesField,
-      QCHelper.sentenceLengthField,
-      // source foo containing outing subj
-      // TODO: try to test with the method that generates one nsubj
-      // this requires the abstract syntax tree
-      QCHelper.spanFooWithOutgoingNsubj,
-      // TODO: try to generate this with the method that is generating the outgoing
-      QCHelper.fullTraversalOutgoingNsubjOnBar
-    )
-    // TODO: figure out why this fails
-    //qc.mkQuery("foo >nsubj bar") shouldEqual (fooTnsubjLbar)
-  }
-  /* TODO: tests for graph traversals
-  #object = >nsubj
-  #object: NP = >nsubj*
-  #object: NP = <nsubj*
-  #object: NP = <nsubj+
-  #object: NP = (>nsubj | >nsubj)
-  #object: NP = >>nsubj
-  #object: NP = <<nsubj
-  #object: NP = <<nsubj?
-  #object: NP = <<nsubj+
-  #object: NP = <<nsubj*
-   */
+
   it should "compile lazy repetitions correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
-    // test lazy quantifiers
     // test repetition
     qc.compile("foo+?") shouldEqual (new OdinRepetitionQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       1,
       Int.MaxValue,
       false
@@ -269,13 +223,13 @@ class TestQueryCompiler extends BaseSpec {
     ))
     // should work for greedy optional
     qc.compile("foo??") shouldEqual (new OdinsonOptionalQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       QCHelper.sentenceLengthField,
       false
     ))
     // limited repetitions
     qc.compile("foo{2,2}?") shouldEqual (new OdinRepetitionQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       2,
       2,
       false
@@ -295,12 +249,9 @@ class TestQueryCompiler extends BaseSpec {
   }
   //
   it should "compile greedy repetitions correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
     // test with 1 or more greedy
     qc.compile("foo+") shouldEqual (new OdinRepetitionQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       1,
       Int.MaxValue,
       true
@@ -314,48 +265,59 @@ class TestQueryCompiler extends BaseSpec {
     //))
     // greedy optionl
     qc.compile("foo?") shouldEqual (new OdinsonOptionalQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       QCHelper.sentenceLengthField,
       true
     ))
     // repetition of size 2
     qc.compile("foo{2,2}") shouldEqual (new OdinRepetitionQuery(
-      QCHelper.wrapedFooQuery,
+      QCHelper.wrappedFooQuery,
       2,
       2,
       true
     ))
-    // TODO: check why this does not pass
     // 0, 1 or 2
     // missing left value repetition
-    //qc.compile("foo{,2}") shouldEqual (new OdinsonOptionalQuery(
-    //  QCHelper.repeatFooOneTwoGreedy,
-    //  QCHelper.sentenceLengthField,
-    //  true
-    //))
-    // TODO: check why this does not pass
+    qc.compile("foo{,2}") shouldEqual (new OdinsonOptionalQuery(
+      QCHelper.repeatFooOneTwoGreedy,
+      QCHelper.sentenceLengthField,
+      true
+    ))
     // 0 or max
-    //qc.compile("foo{,}") shouldEqual (new OdinsonOptionalQuery(
-    //  QCHelper.repeatFooOneMaxGreedy,
-    //  QCHelper.sentenceLengthField,
-    //  true
-    //))
+    qc.compile("foo{,}") shouldEqual (new OdinsonOptionalQuery(
+      QCHelper.repeatFooOneMaxGreedy,
+      QCHelper.sentenceLengthField,
+      true
+    ))
   }
   //
   it should "compile constraints correctly" in {
-    // get fixture
-    val ee = getExtractorEngine
-    val qc = ee.compiler
     // test constraints
     qc.mkQuery("[word!=foo]") shouldEqual
-      (new OdinNotQuery(QCHelper.allNGrams1, QCHelper.wrapedMaskedWordFooQuery, QCHelper.defaultTokenField))
+      (new OdinNotQuery(
+        QCHelper.allNGrams1,
+        QCHelper.wrappedMaskedWordFooQuery,
+        QCHelper.defaultTokenField
+      ))
     //
     qc.mkQuery("[word=foo | word=bar]") shouldEqual (new OdinOrQuery(
       List(
-        QCHelper.wrapedMaskedWordFooQuery,
-        QCHelper.wrapedMaskedWordBarQuery
+        QCHelper.wrappedMaskedWordFooQuery,
+        QCHelper.wrappedMaskedWordBarQuery
       ),
-      "norm"
+      QCHelper.defaultTokenField
     ))
   }
+  /* TODO: tests for graph traversals
+    #object: NP = >nsubj
+    #object: NP = >nsubj*
+    #object: NP = <nsubj*
+    #object: NP = <nsubj+
+    #object: NP = (>nsubj | >nsubj)
+    #object: NP = >>nsubj
+    #object: NP = <<nsubj
+    #object: NP = <<nsubj?
+    #object: NP = <<nsubj+
+    #object: NP = <<nsubj*
+ */
 }
