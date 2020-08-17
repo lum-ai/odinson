@@ -1,13 +1,8 @@
 package ai.lum.odinson.events
 
-import org.scalatest._
-
-import ai.lum.odinson.{Document, EventMatch, OdinsonMatch}
-
 class TestMoreEvents extends EventSpec {
-  def json = getJsonDocument("chopsticks-spoon")
-  
-  def doc = getDocumentFromJson(json)
+
+  def doc = getDocument("chopsticks-spoon")
   def ee = Utils.mkExtractorEngine(doc)
 
   "Odinson" should "find two events with one tool each" in {

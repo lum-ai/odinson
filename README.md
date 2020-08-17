@@ -26,13 +26,11 @@ And there are many more on the way:
 
 We would also love to hear any questions, requests, or suggestions you may have.
 
-It consists of several subprojects:
+It consists of the following subprojects:
 
 - **core**: the core odinson library
-- **extra**: these are a few apps that we need but don't really belong in core,
-        for example, licensing issues
+- **extra**: these are a few apps that we need but don't really belong in `core`, due to things like licensing issues
 - **backend**: this is a REST API for odinson
-- **ui**: this is a webapp that we are building to interact with the system and visualize results to enable rapid development
 
 The three apps in extra are:
 

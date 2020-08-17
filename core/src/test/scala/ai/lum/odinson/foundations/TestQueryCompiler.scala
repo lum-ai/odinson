@@ -123,7 +123,6 @@ class TestQueryCompiler extends BaseSpec {
     def repeatFooOneMax: OdinsonQuery =
       new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, false)
     def repeatFooOneTwo: OdinsonQuery =
-      new OdinRepetitionQuery(wrapedFooQuery, 1, 2, false)
     // repeat greedy
     def repeatFooOneMaxGreedy: OdinsonQuery =
       new OdinRepetitionQuery(wrapedFooQuery, 1, Int.MaxValue, true)

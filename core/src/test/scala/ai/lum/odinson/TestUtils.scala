@@ -1,19 +1,15 @@
 package ai.lum.odinson
 
-import org.apache.lucene.index.DirectoryReader
-import org.apache.lucene.document.{ Document => LuceneDocument, _ }
-import org.apache.lucene.document.Field.Store
 import com.typesafe.config.Config
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.compiler.QueryCompiler
-import ai.lum.odinson.state.State
+import ai.lum.odinson.documentation.ExampleSentences
 
 trait BaseFixtures {
 
   def getDocumentFromJson(json: String): Document = Document.fromJson(json)
+  def getDocument(id: String): Document = getDocumentFromJson(ExampleSentences.json(id))
   
   object Utils {
     val config = ConfigFactory.load()

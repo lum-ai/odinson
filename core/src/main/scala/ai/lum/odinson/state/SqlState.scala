@@ -12,7 +12,6 @@ import ai.lum.odinson.StateMatch
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
-// See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
 class IdProvider(protected var id: Int = 0) {
 
   def next: Int = {
@@ -100,19 +99,22 @@ object SqlResultItem {
   }
 }
 
+// See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
 class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
-  protected val lastId = 0; // Increment before use.
+  protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
+  protected val idProvider = new IdProvider()
+  protected var closed = false
 
-  init()
+  create()
 
-  def init(): Unit = {
+  def create(): Unit = {
     createTable()
     createIndexes()
   }
 
   def createTable(): Unit = {
     val sql = s"""
-      CREATE TABLE IF NOT EXISTS mentions_${factoryIndex}_$stateIndex (
+      CREATE TABLE IF NOT EXISTS $mentionsTable (
         doc_base INT NOT NULL,            -- offset corresponding to lucene segment
         doc_id INT NOT NULL,              -- relative to lucene segment (not global)
         doc_index INT NOT NULL,           -- document index
@@ -135,8 +137,8 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     {
       val sql =
         s"""
-          CREATE INDEX IF NOT EXISTS mentions_${factoryIndex}_${stateIndex}_index
-          ON mentions_${factoryIndex}_$stateIndex(doc_base, doc_id, label);
+          CREATE INDEX IF NOT EXISTS ${mentionsTable}_index_main
+          ON $mentionsTable(doc_base, doc_id, label);
         """
       using(connection.createStatement()) { statement =>
         statement.executeUpdate(sql)
@@ -146,8 +148,8 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     {
       val sql =
         s"""
-          CREATE INDEX IF NOT EXISTS docIds_${factoryIndex}_${stateIndex}_index
-          ON mentions_${factoryIndex}_$stateIndex(doc_base, label);
+          CREATE INDEX IF NOT EXISTS ${mentionsTable}_index_doc_id
+          ON $mentionsTable(doc_base, label);
         """
       using(connection.createStatement()) { statement =>
         statement.executeUpdate(sql)
@@ -160,14 +162,13 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   // TODO Also pass in the number of items, perhaps how many of each kind?
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     val sql = s"""
-      INSERT INTO mentions_${factoryIndex}_$stateIndex
+      INSERT INTO $mentionsTable
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ;
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
       val dbSetter = DbSetter(preparedStatement)
-      val idProvider = new IdProvider()
 
       // TODO this should be altered to add several mentions in a single call
       resultItems.foreach { resultItem =>
@@ -206,7 +207,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
     val sql = s"""
       SELECT DISTINCT doc_id
-      FROM mentions_${factoryIndex}_$stateIndex
+      FROM $mentionsTable
       WHERE doc_base=? AND label=?
       ORDER BY doc_id
       ;
@@ -227,7 +228,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
-      FROM mentions_${factoryIndex}_$stateIndex
+      FROM $mentionsTable
       WHERE doc_base=? AND doc_id=? AND label=?
       ORDER BY id
       ;
@@ -262,16 +263,23 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     }
   }
 
-  def clear(): Unit = {
-    delete()
+  override def close(): Unit = {
+    if (!closed) {
+      // Set this first so that failed drops are not attempted multiple times.
+      closed = true
+      drop()
+    }
   }
 
-  /** delete all mentions from the state */
   // See https://examples.javacodegeeks.com/core-java/sql/delete-all-table-rows-example/.
   // "TRUNCATE is faster than DELETE since it does not generate rollback information and does not
-  // fire any delete triggers."
-  protected def delete(): Unit = {
-    val sql = s"""DELETE FROM mentions_${factoryIndex}_$stateIndex;""" // TODO test TRUNCATE
+  // fire any delete triggers."  There's also no need to update indexes.
+  // However, DROP is what we want.  The tables and indexes should completely disappear.
+  protected def drop(): Unit = {
+    val sql = s"""
+      DROP TABLE $mentionsTable
+      ;
+    """
     using(connection.createStatement()) { statement =>
       statement.executeUpdate(sql)
     }
@@ -283,9 +291,9 @@ class SqlStateFactory(dataSource: HikariDataSource, index: Long) extends StateFa
 
   override def usingState[T](function: State => T): T = {
     using(dataSource.getConnection) { connection =>
-      // Does the state have to close itself?
-      val state = new SqlState(connection, index, count.getAndIncrement)
-      function(state)
+      using(new SqlState(connection, index, count.getAndIncrement)) { state =>
+        function(state)
+      }
     }
   }
 }
