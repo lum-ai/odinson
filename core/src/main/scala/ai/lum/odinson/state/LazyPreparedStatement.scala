@@ -16,7 +16,7 @@ class LazyPreparedStatement(connection: Connection, sql: String) {
   }
 
   def close(): Unit = {
-    preparedStatementOpt.map { preparedStatement =>
+    preparedStatementOpt.foreach { preparedStatement =>
       preparedStatementOpt = None
       preparedStatement.close
     }

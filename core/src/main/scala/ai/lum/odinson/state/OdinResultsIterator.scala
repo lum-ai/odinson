@@ -23,6 +23,9 @@ import scala.annotation.tailrec
 class OdinResultsIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults) extends Iterator[ResultItem] {
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
   val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
+  val totalHits = odinResults.totalHits
+
+  assert(matchesTotal == totalHits) // Double check temporarily
 
   var matchesRemaining: Int = matchesTotal
   var scoreDocsIndex: Int = 0
