@@ -85,8 +85,8 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
       val dbSetter = DbSetter(addResultItemsStatement.get)
-      val size = resultItems.size
-      println(s"There are this many being added: $size")
+//      val size = resultItems.size
+//      println(s"There are this many being added: $size")
 
       // TODO this should be altered to add several mentions in a single call
       resultItems.foreach { resultItem =>
