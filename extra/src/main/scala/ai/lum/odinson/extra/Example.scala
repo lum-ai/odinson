@@ -63,7 +63,7 @@ object Example extends App with LazyLogging{
     args = mkArgs(luceneDocID, namedCaptures)
   } yield {
     // Combine the info into a wrapper class and convert to json
-    MentionInfo(luceneDocID, mention.docId, mention.sentenceId, sentence, foundBy, args).toJson
+    MentionInfo(luceneDocID, mention.idGetter.getDocId, mention.idGetter.getSentId, sentence, foundBy, args).toJson
   }
 
   // Export as json lines format (i.e., one json per mention, one per line)

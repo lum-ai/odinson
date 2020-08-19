@@ -6,8 +6,7 @@ class Mention(
   val luceneDocId: Int,
   val luceneSegmentDocId: Int,
   val luceneSegmentDocBase: Int,
-  val docId: String,
-  val sentenceId: String,
+  val idGetter: IdGetter,
   val foundBy: String,
   val arguments: Map[String, Array[Mention]] = Map.empty
 ) {
@@ -19,11 +18,10 @@ class Mention(
     luceneDocId: Int = this.luceneDocId,
     luceneSegmentDocId: Int = this.luceneSegmentDocId,
     luceneSegmentDocBase: Int = this.luceneSegmentDocBase,
-    docId: String = this.docId,
-    sentenceId: String = this.sentenceId,
+    idGetter: IdGetter = this.idGetter,
     foundBy: String = this.foundBy,
     arguments: Map[String, Array[Mention]] = this.arguments
   ): Mention = {
-      mentionFactory.newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, docId, sentenceId, foundBy, arguments)
+      mentionFactory.newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
   }
 }
