@@ -20,6 +20,7 @@ import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
+import ai.lum.odinson.utils.MostRecentlyUsed
 
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
@@ -113,13 +114,14 @@ class ExtractorEngine(
     val minIterations = extractors.map(_.priority.minIterations).max
     // This is here both to demonstrate how a filter might be passed into the method.
     val filter = filters(allowTriggerOverlaps)
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
     def extract(i: Int, state: State): Seq[Mention] = for {
       extractor <- extractors
       if extractor.priority matches i
       odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
       scoreDoc <- odinResults.scoreDocs
-      idGetter = LazyIdGetter(indexSearcher, scoreDoc.doc)
+      idGetter = mruIdGetter.getOrNew(scoreDoc.doc)
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
       mentionOpt = filter(mention)
