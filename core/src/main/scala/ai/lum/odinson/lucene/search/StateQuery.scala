@@ -1,6 +1,10 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
+
+import ai.lum.odinson.NamedCapture
+import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson.StateMatch
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -60,17 +64,26 @@ class StateQuery(
     import DocIdSetIterator._
     import Spans._
 
+    override def odinsonMatch: OdinsonMatch = {
+      require(matchNamedCapturesOpt.isDefined)
+      StateMatch(startPosition(), endPosition(), matchNamedCapturesOpt.get)
+    }
+
     // retrieve all segment-specific doc-ids corresponding to
     // the documents that contain a mention with the specified label
     private val docIds: Array[Int] = stateOpt.map(_.getDocIds(docBase, label)).getOrElse(Array.empty)
     private var currentDocIndex: Int = -1
     private var currentDoc: Int = -1
 
+    // TODO Avoid null
     private var startMatches: Array[Int] = null
     private var endMatches: Array[Int] = null
+    private var namedCapturesesOpt: Option[Array[Array[NamedCapture]]] = None
+
     private var currentMatchIndex: Int = -1
     private var matchStart: Int = -1
     private var matchEnd: Int = -1
+    private var matchNamedCapturesOpt: Option[Array[NamedCapture]] = None
 
     def cost(): Long = docIds.length.toLong
 
@@ -92,6 +105,7 @@ class StateQuery(
         val resultItems = stateOpt.get.getResultItems(docBase, currentDoc, label)
         startMatches = resultItems.map(_.odinsonMatch.start)
         endMatches = resultItems.map(_.odinsonMatch.end)
+        namedCapturesesOpt = Some(resultItems.map(_.odinsonMatch.namedCaptures))
         currentMatchIndex = -1
         matchStart = -1
         matchEnd = -1
@@ -104,9 +118,11 @@ class StateQuery(
         currentMatchIndex += 1
         matchStart = startMatches(currentMatchIndex)
         matchEnd = endMatches(currentMatchIndex)
+        matchNamedCapturesOpt = Some(namedCapturesesOpt.get(currentMatchIndex))
       } else {
         matchStart = NO_MORE_POSITIONS
         matchEnd = NO_MORE_POSITIONS
+        matchNamedCapturesOpt = None
       }
       matchStart
     }
