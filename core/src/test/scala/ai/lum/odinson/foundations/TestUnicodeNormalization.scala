@@ -1,5 +1,6 @@
-package ai.lum.common
+package ai.lum.odinson.foundations
 
+import ai.lum.common._
 import org.scalatest._
 import ai.lum.common.StringUtils._
 
