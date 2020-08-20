@@ -8,12 +8,11 @@ class DefaultMentionFactory extends MentionFactory {
     luceneDocId: Int,
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
-    docId: String,
-    sentenceId: String,
+    idGetter: IdGetter,
     foundBy: String,
     arguments: Map[String, Array[Mention]],
   ): Mention = {
-    new Mention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, docId, sentenceId, foundBy, arguments)
+    new Mention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
   }
 
 }

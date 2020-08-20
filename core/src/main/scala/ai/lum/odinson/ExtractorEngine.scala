@@ -21,6 +21,21 @@ import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
 
+
+class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
+  protected lazy val document = indexSearcher.doc(documentId)
+  protected lazy val docId: String = document.getField("docId").stringValue
+  protected lazy val sentId: String = document.getField("sentId").stringValue
+
+  def getDocId: String = docId
+
+  def getSentId: String = sentId
+}
+
+object LazyIdGetter {
+  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
+}
+
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
@@ -104,11 +119,9 @@ class ExtractorEngine(
       if extractor.priority matches i
       odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
       scoreDoc <- odinResults.scoreDocs
-      document = doc(scoreDoc.doc)
-      docId = document.getField("docId").stringValue
-      sentId = document.getField("sentId").stringValue
+      idGetter = LazyIdGetter(indexSearcher, scoreDoc.doc)
       odinsonMatch <- scoreDoc.matches
-      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
+      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
       mentionOpt = filter(mention)
       if (mentionOpt.isDefined)
     } yield mentionOpt.get

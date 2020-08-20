@@ -1,5 +1,10 @@
 package ai.lum.odinson
 
+trait IdGetter {
+  def getDocId: String
+  def getSentId: String
+}
+
 trait MentionFactory {
 
   // If you are implementing a custom MentionFactory, this is the primary method
@@ -10,8 +15,7 @@ trait MentionFactory {
     luceneDocId: Int,
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
-    docId: String,
-    sentenceId: String,
+    idGetter: IdGetter,
     foundBy: String,
     arguments: Map[String, Array[Mention]],
   ): Mention
@@ -22,12 +26,11 @@ trait MentionFactory {
     luceneDocId: Int,
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
-    docId: String,
-    sentenceId: String,
+    idGetter: IdGetter,
     foundBy: String
   ): Mention = {
-    val arguments = mkArguments(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, docId, sentenceId, foundBy)
-    newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, docId, sentenceId, foundBy, arguments)
+    val arguments = mkArguments(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy)
+    newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
   }
 
   /** A map from argument name to a sequence of matches.
@@ -42,8 +45,7 @@ trait MentionFactory {
     luceneDocId: Int,
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
-    docId: String,
-    sentenceId: String,
+    idGetter: IdGetter,
     foundBy: String,
   ): Map[String, Array[Mention]] = {
     odinsonMatch
@@ -59,8 +61,7 @@ trait MentionFactory {
             luceneDocId,
             luceneSegmentDocId,
             luceneSegmentDocBase,
-            docId,
-            sentenceId,
+            idGetter,
             // we mark the captures as matched by the same rule as the whole match
             // todo: FoundBy handler
             // todo: add foundBy info to state somehow
