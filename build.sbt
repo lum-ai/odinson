@@ -6,6 +6,8 @@ organization in ThisBuild := "ai.lum"
 
 scalaVersion in ThisBuild := "2.12.10"
 
+fork in ThisBuild := true
+
 lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
