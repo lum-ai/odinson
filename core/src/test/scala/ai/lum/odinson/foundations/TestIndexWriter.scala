@@ -36,7 +36,7 @@ class TestOdinsonIndexWriter extends BaseSpec {
     indexWriter.close
   }
   
-  it should "mkLucenefileds should convert Fields to lucene.Fields correctly" in {
+  it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
     val indexWriter = getOdinsonIndexWriter
     // Initialize fild of type DateField
     var field =
