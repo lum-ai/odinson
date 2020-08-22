@@ -2,7 +2,7 @@ name := "odinson-extra"
 
 libraryDependencies ++= {
 
-  val procVersion = "7.4.4"
+  val procVersion = "8.1.3"
 
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
