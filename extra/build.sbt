@@ -1,5 +1,8 @@
 name := "odinson-extra"
 
+
+resolvers += "Artifactory" at "http://artifactory.cs.arizona.edu:8081/artifactory/sbt-release"
+
 libraryDependencies ++= {
 
   val procVersion = "8.1.3"
@@ -7,10 +10,9 @@ libraryDependencies ++= {
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
     "ai.lum"     %% "nxmlreader"            % "0.1.2",
-    "org.clulab" %% "processors-main"       % procVersion,
-    "org.clulab" %% "processors-modelsmain" % procVersion,
-    "org.clulab" %% "processors-corenlp"       % procVersion,
-    "org.clulab" %% "processors-modelscorenlp" % procVersion,
+    "org.clulab" %% "processors-main" % procVersion,
+    "org.clulab" %% "processors-corenlp" % procVersion,
+    "org.clulab" %% "processors-odin" % procVersion
   )
 
 }

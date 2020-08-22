@@ -41,6 +41,8 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     // get an ee
     val ee = ExtractorEngine.fromConfig(config.getConfig("odinson"))
     // make sure the files are there
-    ee.numDocs shouldEqual (2199)
+    // There are two files, one with 150 sentences + 1 parent doc, and one
+    // with 100 sentences + 1 parent doc = 252 docs
+    ee.numDocs shouldEqual (252)
   }
 }
