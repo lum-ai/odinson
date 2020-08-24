@@ -5,7 +5,7 @@ import java.io.File
 import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import org.clulab.processors.Processor
-import org.clulab.processors.clu.{ BioCluProcessor, CluProcessor }
+import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
 import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
@@ -23,7 +23,6 @@ object AnnotateText extends App with LazyLogging {
   val processor: Processor = processorType match {
     case "FastNLPProcessor" => new FastNLPProcessor
     case "CluProcessor" => new CluProcessor
-    case "BioCluProcessor" => new BioCluProcessor
   }
 
   // create output directory if it does not exist

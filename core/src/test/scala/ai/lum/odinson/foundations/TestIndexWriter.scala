@@ -36,7 +36,7 @@ class TestOdinsonIndexWriter extends BaseSpec {
     indexWriter.close
   }
   
-  it should "mkLucenefileds should convert Fields to lucene.Fields correctly" in {
+  it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
     val indexWriter = getOdinsonIndexWriter
     // Initialize fild of type DateField
     var field =
@@ -55,5 +55,23 @@ class TestOdinsonIndexWriter extends BaseSpec {
     val luceneStringField = indexWriter.mkLuceneFields(stringField)
     luceneStringField.head.name shouldEqual ("smth")
     // TODO: should we test more stuff
+  }
+
+  it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
+    val doc = getDocument("bad-character")
+    def ee = Utils.mkExtractorEngine(doc)
+
+    val pattern = "complex <nsubj phosphorylate >dobj []"
+    val expectedMatches = Array("AKT1")
+
+    val query = ee.compiler.mkQuery(pattern)
+    val results = ee.query(query, 1)
+    results.totalHits should equal (1)
+
+    val matches = results.scoreDocs.head.matches
+    val docId = results.scoreDocs.head.doc
+    val foundStrings = matches.map(m => ee.getString(docId, m))
+
+    foundStrings shouldEqual expectedMatches
   }
 }

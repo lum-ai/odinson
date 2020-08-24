@@ -1,6 +1,5 @@
 package ai.lum.odinson
 
-import java.io.File
 import java.nio.file.Paths
 import java.util.Collection
 import scala.collection.mutable.ArrayBuffer
@@ -35,6 +34,7 @@ class OdinsonIndexWriter(
   val outgoingTokenField: String,
   val sortedDocValuesFieldMaxSize: Int,
   val maxNumberOfTokensPerSentence: Int,
+  val invalidCharacterReplacement: String,
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
@@ -106,6 +106,9 @@ class OdinsonIndexWriter(
       .collect { case f: TokensField => f }
       .filter(f => addToNormalizedField.contains(f.name))
       .map(f => f.tokens)
+      // Validate each of the strings in the internal sequence
+      .map(validate)
+
     val tokenStream = new NormalizedTokenStream(normFields, aggressive = true)
     sent.add(new lucenedoc.TextField(normalizedTokenField, tokenStream))
     // return sentence
@@ -151,11 +154,14 @@ class OdinsonIndexWriter(
       val stringField = new lucenedoc.StringField(f.name, string, store)
       Seq(stringField)
     case f: TokensField if f.store =>
-      val text = f.tokens.mkString(" ").normalizeUnicode
+      val validatedTokens = validate(f.tokens)
+      val text = validatedTokens.mkString(" ").normalizeUnicode
       val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
       Seq(tokensField)
     case f: TokensField =>
-      val tokenStream = new NormalizedTokenStream(Seq(f.tokens))
+      // Make sure there are no invalid tokens
+      val validated = validate(f.tokens)
+      val tokenStream = new NormalizedTokenStream(Seq(validated))
       val tokensField = new lucenedoc.TextField(f.name, tokenStream)
       Seq(tokensField)
   }
@@ -173,6 +179,29 @@ class OdinsonIndexWriter(
     val incoming = incomingEdges.map(toLabelIds)
     val outgoing = outgoingEdges.map(toLabelIds)
     DirectedGraph.mkGraph(incoming, outgoing, roots)
+  }
+
+  // ---------------------------------
+  //         Helper Methods
+  // ---------------------------------
+
+  /**
+    * Validate a string, replacing it if invalid.
+     * @param s: String to be validated
+    * @return valid String (original or replaced)
+    */
+  private def validate(s: String): String = {
+    // One day we may want more things here, for now, we're just replacing
+    // characters that are problematic for Lucene
+    replaceControlCharacterString(s)
+  }
+  // Helper method to apply the validation to each String in a sequence
+  private def validate(ss: Seq[String]): Seq[String] = ss.map(validate)
+
+  private def replaceControlCharacterString(s: String): String = {
+    // If a token consists entirely of whitespace (e.g., record separator), replace it
+    if (s.isWhitespace) invalidCharacterReplacement
+    else s
   }
 
 }
@@ -203,6 +232,7 @@ object OdinsonIndexWriter {
     val outgoingTokenField   = config[String]("index.outgoingTokenField")
     val sortedDocValuesFieldMaxSize  = config[Int]("index.sortedDocValuesFieldMaxSize")
     val maxNumberOfTokensPerSentence = config[Int]("index.maxNumberOfTokensPerSentence")
+    val invalidCharacterReplacement  = config[String]("index.invalidCharacterReplacement")
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
@@ -225,6 +255,7 @@ object OdinsonIndexWriter {
       outgoingTokenField,
       sortedDocValuesFieldMaxSize,
       maxNumberOfTokensPerSentence,
+      invalidCharacterReplacement,
     )
   }
 
