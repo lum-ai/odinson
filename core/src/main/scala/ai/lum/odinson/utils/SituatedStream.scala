@@ -24,7 +24,11 @@ case class SituatedStream(stream: InputStream, canonicalPath: String, from: Rule
     from match {
       case RuleSources.resource =>
         var prevPath = canonicalPath
-        if (!prevPath.endsWith("/")) prevPath += "/"
+        if (!prevPath.endsWith("/")) {
+          val lastSep = prevPath.lastIndexOf("/")
+          prevPath = prevPath.slice(0, lastSep)
+          prevPath += "/"
+        }
         prevPath + path
       case RuleSources.file => new File(canonicalPath, path).getCanonicalPath
       case RuleSources.string => throw new RuntimeException("Strings don't support imports and relative paths")

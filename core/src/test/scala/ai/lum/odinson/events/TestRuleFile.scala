@@ -63,7 +63,7 @@ class TestRuleFile extends EventSpec {
     val mentions = ee.extractMentions(extractors)
     mentions should have size 1
     // Tests that the variables from the master file propagate
-    mentions.head.foundBy should be("testRuleImported-TEST_LABEL")
+    mentions.head.foundBy should be("testRuleImported-IMPORT_LABEL")
   }
 
   // todo:

@@ -56,7 +56,7 @@ class RuleReader(val compiler: QueryCompiler) {
     *  The variables passed as an argument will override the variables declared in the file.
     */
   def compileRuleStream(input: SituatedStream, variables: Map[String, String]): Seq[Extractor] = {
-    val ruleFiles = parseRuleFile(input)
+    val ruleFiles = parseRuleFile(input, variables)
     mkExtractorsFromRuleFiles(ruleFiles, variables)
   }
 
@@ -126,13 +126,14 @@ class RuleReader(val compiler: QueryCompiler) {
    *  that contains the parsed rules and the variables declared in the file.
    *  Note that variable replacement hasn't happened yet.
    */
-  def parseRuleFile(input: SituatedStream): Seq[RuleFile] = {
+  def parseRuleFile(input: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
     val master = using(input.stream) { stream =>
+      println(input.canonicalPath)
       yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
     }
-    val variables = mkVariables(master)
-    mkRules(master, input, variables)
+    val localVariables = mkVariables(master) ++ parentVars
+    mkRules(master, input, localVariables)
   }
 
   def mkExtractorsFromRuleFiles(rfs: Seq[RuleFile], variables: Map[String, String]): Seq[Extractor] = {
@@ -242,14 +243,14 @@ class RuleReader(val compiler: QueryCompiler) {
   private def importRules(
     data: Map[String, Any],
     source: SituatedStream,
-    vars: Map[String, String],
+    importVars: Map[String, String],
   ): Seq[RuleFile] = {
     // get the current working directory, with ending separator
     val relativePath = data("import").toString
     // handle substitutions in path name
-    val resolved = new VariableSubstitutor(vars).apply(relativePath)
+    val resolved = new VariableSubstitutor(importVars).apply(relativePath)
     val importStream = source.relativePathStream(resolved)
-    parseRuleFile(importStream)
+    parseRuleFile(importStream, importVars)
   }
 
   private def mkRule(data: Any): Rule = {
