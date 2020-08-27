@@ -70,7 +70,7 @@ class TestOdinsonIndexWriter extends BaseSpec {
 
     val matches = results.scoreDocs.head.matches
     val docId = results.scoreDocs.head.doc
-    val foundStrings = matches.map(m => ee.getString(docId, m))
+    val foundStrings = matches.map(m => ee.getStringForSpan(docId, m))
 
     foundStrings shouldEqual expectedMatches
   }
