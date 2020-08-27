@@ -18,7 +18,7 @@ class TestRuleFile extends EventSpec {
       |      subject: ^NP = >nsubj ${chunk}
       |      object: ^NP = >dobj ${chunk}
     """.stripMargin
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     mentions should have size 1
     val m = mentions.head.odinsonMatch
@@ -52,9 +52,25 @@ class TestRuleFile extends EventSpec {
         |    pattern: |
         |      [norm=/${turtle}/]
        """.stripMargin
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     mentions should have size 2
   }
+
+  it should "allow rules to be imported in a master rule file" in {
+    val masterPath = "/testGrammar/testMaster.yml"
+    val extractors = ee.compileRuleResource(masterPath)
+    val mentions = ee.extractMentions(extractors)
+    mentions should have size 1
+    // Tests that the variables from the master file propagate
+    mentions.head.foundBy should be("testRuleImported-TEST_LABEL")
+  }
+
+  // todo:
+  //  1: import in a string should throw an exception
+  //  2: a string w/o import should not throw an exception
+  //  3: test resources with absolute and relative paths (with .. notation)
+  //  4: test filesystem resources -- write temp directory with files, put a grammar there, delete when done (if possible)
+  //  5: test that the hard-coded > import > parent > local
 
 }

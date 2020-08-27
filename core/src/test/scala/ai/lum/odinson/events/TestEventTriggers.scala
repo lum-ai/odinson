@@ -51,7 +51,7 @@ class TestEventTriggers extends EventSpec {
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
     )
     
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
@@ -67,7 +67,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
     
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
@@ -83,7 +83,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
     
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
@@ -99,7 +99,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
 
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
@@ -118,7 +118,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternResult = "<amod [lemma=animal]",
     )
     
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
@@ -136,7 +136,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternTrigger = "some []* animals",
       rulesPatternResult = "(<nmod_such_as | >nmod_including) >/conj.*/? ${result}",
     )
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
@@ -154,7 +154,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternTrigger = "some []* animals",
       rulesPatternResult = "(>nmod_such_as | >nmod_including) >/conj.*/? ${result}",
     )
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors, allowTriggerOverlaps = true)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
@@ -175,7 +175,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternTrigger = "some []*? animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val triggers = mentions.map(m => ee.getString(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
@@ -192,7 +192,7 @@ class TestEventTriggers extends EventSpec {
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})",
     )
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
@@ -208,7 +208,7 @@ class TestEventTriggers extends EventSpec {
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
     
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
     val animals = mentions.map(m => ee.getString(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")

@@ -1,5 +1,6 @@
 package ai.lum.odinson
 
+import java.io.File
 import java.nio.file.Path
 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
@@ -90,12 +91,37 @@ class ExtractorEngine(
     docs.head
   }
 
-  def compileRules(rules: String): Seq[Extractor] = {
-    compileRules(rules, Map.empty)
+  // Access methods
+  def compileRuleString(rules: String): Seq[Extractor] = {
+    compileRuleString(rules, Map.empty[String, String])
   }
 
-  def compileRules(rules: String, variables: Map[String, String]): Seq[Extractor] = {
-    ruleReader.compileRuleFile(rules, variables)
+  def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleString(rules, variables)
+  }
+
+  def compileRuleFile(ruleFile: File): Seq[Extractor] = {
+    compileRuleFile(ruleFile, Map.empty[String, String])
+  }
+
+  def compileRuleFile(ruleFile: File, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(ruleFile, variables)
+  }
+
+  def compileRuleFile(rulePath: String): Seq[Extractor] = {
+    compileRuleFile(rulePath, Map.empty[String, String])
+  }
+
+  def compileRuleFile(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rulePath, variables)
+  }
+
+  def compileRuleResource(rulePath: String): Seq[Extractor] = {
+    compileRuleResource(rulePath, Map.empty[String, String])
+  }
+
+  def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleResource(rulePath, variables)
   }
 
   /** Apply the extractors and return all results */

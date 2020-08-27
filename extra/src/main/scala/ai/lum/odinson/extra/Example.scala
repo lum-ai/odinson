@@ -38,12 +38,10 @@ object Example extends App with LazyLogging{
   val config = ConfigFactory.load()
   val outputFile: File = config[File]("odinson.extra.outputFile")
   val rulesFile: File = config[File]("odinson.extra.rulesFile")
-  // Read the contents
-  val rules = rulesFile.readString()
 
   // Initialize the extractor engine, using the index specified in the config
   val extractorEngine = ExtractorEngine.fromConfig()
-  val extractors = extractorEngine.ruleReader.compileRuleFile(rules)
+  val extractors = extractorEngine.ruleReader.compileRuleFile(rulesFile)
 
   // Extract Mentions
   val mentions = extractorEngine.extractMentions(extractors)

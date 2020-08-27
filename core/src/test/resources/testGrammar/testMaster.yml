@@ -1,0 +1,7 @@
+vars:
+  chunk: "[chunk=B-NP][chunk=I-NP]*"
+  label: "TEST_LABEL"
+
+rules:
+  - import: testRules.yml
+
