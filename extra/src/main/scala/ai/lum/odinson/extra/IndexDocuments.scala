@@ -9,7 +9,7 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{Document, Field, OdinsonIndexWriter, StringField}
+import ai.lum.odinson.{Document, OdinsonIndexWriter}
 
 import scala.collection.GenIterable
 
@@ -68,17 +68,7 @@ object IndexDocuments extends App with LazyLogging {
     // index documents
     for (f <- documentFiles) {
       Try {
-        val origDoc = Document.fromJson(f)
-        // keep track of file name to retrieve sentence JSON,
-        // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
-        // NOTE: this assumes all files are located immediately under `odinson.docsDir`
-        // With large document collections, it may be necessary to split documents across many subdirectories
-        // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
-        val fileField: Field =
-          StringField(name = "fileName", string = f.getName, store = true)
-        val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
-        val block = writer.mkDocumentBlock(doc)
-        writer.addDocuments(block)
+        writer.addFile(f, storeName = true)
       } match {
         case Success(_) =>
           logger.info(s"Indexed ${f.getName}")
