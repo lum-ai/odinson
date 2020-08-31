@@ -1,0 +1,10 @@
+vars:
+  name: "C"
+  local: "LOCAL"
+  otherName: "OTHER_LOCAL"
+
+rules:
+  - name: C-${name}-${local}-${otherName}
+    type: basic
+    pattern: |
+      fact

@@ -1,9 +1,13 @@
 vars:
   chunk: "[chunk=B-NP][chunk=I-NP]*"
   label: "PARENT_LABEL"
+  name: "MASTER_TOP"
 
 rules:
   - import: testRules.yml
     vars:
       label: "IMPORT_LABEL"
 
+  - import: imported/a.yml
+    vars:
+      name: "IMPORT_FROM_MASTER"

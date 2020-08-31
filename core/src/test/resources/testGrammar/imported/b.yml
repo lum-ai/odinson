@@ -1,8 +1,8 @@
 vars:
-  name: "A"
+  name: "B"
 
 rules:
-  - name: A-${name}
+  - name: B-${name}
     type: basic
     pattern: |
-      ramen
+      leads
