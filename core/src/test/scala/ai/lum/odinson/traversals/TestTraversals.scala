@@ -24,8 +24,8 @@ class TestTraversals extends BaseSpec {
     results.scoreDocs.head.matches should have size 2
     val doc = results.scoreDocs.head.doc
     val Array(m1, m2) = results.scoreDocs.head.matches
-    eeAlien.getString(doc, m1) should equal ("horses")
-    eeAlien.getString(doc, m2) should equal ("cattle")
+    eeAlien.getStringForSpan(doc, m1) should equal ("horses")
+    eeAlien.getStringForSpan(doc, m2) should equal ("cattle")
   }
 
   it should "support parentheses surrounding graph traversals AND surface patterns" in {
@@ -36,8 +36,8 @@ class TestTraversals extends BaseSpec {
     results.scoreDocs.head.matches should have size 2
     val doc = results.scoreDocs.head.doc
     val Array(m1, m2) = results.scoreDocs.head.matches
-    eeAlien.getString(doc, m1) should equal ("horses")
-    eeAlien.getString(doc, m2) should equal ("cattle")
+    eeAlien.getStringForSpan(doc, m1) should equal ("horses")
+    eeAlien.getStringForSpan(doc, m2) should equal ("cattle")
   }
 
   // A little helper method to reduce code duplication for the following tests
@@ -49,7 +49,7 @@ class TestTraversals extends BaseSpec {
     val matches = results.scoreDocs.head.matches
     matches should have size expectedMatches.length
     val doc = results.scoreDocs.head.doc
-    val foundStrings = matches.map(m => eeHedgehogs.getString(doc, m))
+    val foundStrings = matches.map(m => eeHedgehogs.getStringForSpan(doc, m))
     foundStrings shouldEqual expectedMatches
   }
 
@@ -83,7 +83,7 @@ class TestTraversals extends BaseSpec {
     results.totalHits should equal (1)
     val matches = results.scoreDocs.head.matches
     val doc = results.scoreDocs.head.doc
-    val foundStrings = matches.map(m => eeSpoon.getString(doc, m))
+    val foundStrings = matches.map(m => eeSpoon.getStringForSpan(doc, m))
     foundStrings shouldEqual expectedMatches
   }
 

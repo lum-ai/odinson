@@ -1,12 +1,16 @@
 package ai.lum.odinson
 
-import java.util.{ Collection, Map => JMap }
+import java.io.File
+import java.util.{Collection, Map => JMap}
+
+import ai.lum.common.TryWithResources.using
+
 import scala.collection.JavaConverters._
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene.search.OdinsonQuery
-import ai.lum.odinson.utils.VariableSubstitutor
+import ai.lum.odinson.utils.{RuleSources, SituatedStream, VariableSubstitutor}
 
 /** A RuleFile is the result of parsing a yaml file.
  *  At this point variables haven't been replaced
@@ -39,31 +43,100 @@ case class Extractor(
   query: OdinsonQuery,
 )
 
+
 class RuleReader(val compiler: QueryCompiler) {
 
-  /** gets the contents of a rule file and returns a sequence of extractors ready to be used */
-  def compileRuleFile(input: String): Seq[Extractor] = {
-    compileRuleFile(input, Map.empty)
+  /** gets a rule stream and returns a sequence of extractors ready to be used */
+  def compileRuleStream(input: SituatedStream): Seq[Extractor] = {
+    compileRuleStream(input, Map.empty[String, String])
   }
 
-  /** Gets the contents of a rule file as well as a map of variables.
+  /** Gets a rule stream as well as a map of variables.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleStream(input: SituatedStream, variables: Map[String, String]): Seq[Extractor] = {
+    val ruleFiles = parseRuleFile(input, variables)
+    mkExtractorsFromRuleFiles(ruleFiles, variables)
+  }
+
+  /**
+    * gets the path to a rule file and returns a sequence of extractors ready to be used
+    * @param input String path to the rule file
+    * @return extractors
+    */
+  def compileRuleFile(input: String): Seq[Extractor] = {
+    compileRuleFile(input, Map.empty[String, String])
+  }
+
+  /** Gets the path to a rule file as well as a map of variables.
    *  Returns a sequence of extractors ready to be used.
    *  The variables passed as an argument will override the variables declared in the file.
    */
   def compileRuleFile(input: String, variables: Map[String, String]): Seq[Extractor] = {
-    mkExtractors(parseRuleFile(input), variables)
+    compileRuleFile(new File(input), variables)
+  }
+
+  /** gets a rule File object and returns a sequence of extractors ready to be used */
+  def compileRuleFile(input: File): Seq[Extractor] = {
+    compileRuleFile(input, Map.empty[String, String])
+  }
+
+  /** Gets a rule File object as well as a map of variables.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleFile(input: File, variables: Map[String, String]): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromFile(input.getCanonicalPath), variables)
+  }
+
+  /**
+    * Gets the path to a rule file in the jar resources as well as a map of variables.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleResource(rulePath: String): Seq[Extractor] = {
+    compileRuleResource(rulePath, Map.empty[String, String])
+  }
+
+  /**
+    * Gets the path to a rule file in the jar resources as well as a map of variables.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromResource(rulePath), variables)
+  }
+
+  /**
+    * Gets the actual rules content as a string.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleString(rules: String): Seq[Extractor] = {
+    compileRuleString(rules, Map.empty[String, String])
+  }
+
+  /**
+    * Gets the actual rules content as a string.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromString(rules), variables)
   }
 
   /** Parses the content of the rule file and returns a RuleFile object
    *  that contains the parsed rules and the variables declared in the file.
    *  Note that variable replacement hasn't happened yet.
    */
-  def parseRuleFile(input: String): RuleFile = {
+  def parseRuleFile(input: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
-    val master = yaml.load(input).asInstanceOf[JMap[String, Any]].asScala.toMap
-    val variables = mkVariables(master)
-    val rules = mkRules(master)
-    RuleFile(rules, variables)
+    val master = using(input.stream) { stream =>
+      yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
+    }
+    val localVariables = mkVariables(master) ++ parentVars
+    mkRules(master, input, localVariables)
+  }
+
+  def mkExtractorsFromRuleFiles(rfs: Seq[RuleFile], variables: Map[String, String]): Seq[Extractor] = {
+    rfs.flatMap(r => mkExtractors(r, variables))
   }
 
   /** gets a RuleFile and returns a sequence of extractors */
@@ -98,11 +171,11 @@ class RuleReader(val compiler: QueryCompiler) {
     // so we need to pass them through the variable substitutor
     val name = varsub(rule.name)
     val label = rule.label.map(varsub.apply)
-    val ruletype = varsub(rule.ruletype)
+    val ruleType = varsub(rule.ruletype)
     val priority = Priority(varsub(rule.priority))
     val pattern = varsub(rule.pattern)
     // compile query
-    val query = ruletype match {
+    val query = ruleType match {
       case "basic" => compiler.compile(pattern)
       case "event" => compiler.compileEventQuery(pattern)
       case t => sys.error(s"invalid rule type '$t'")
@@ -122,7 +195,7 @@ class RuleReader(val compiler: QueryCompiler) {
           .asScala
           .map { case (k, v) => k.toString -> processVar(v) }
           .toMap
-      case _ => sys.error("invalid variables data")
+      case _ => sys.error(s"invalid variables data: ${data}")
     }
   }
 
@@ -142,12 +215,43 @@ class RuleReader(val compiler: QueryCompiler) {
     }
   }
 
-  private def mkRules(data: Map[String, Any]): Seq[Rule] = {
+  private def mkRules(data: Map[String, Any], source: SituatedStream, vars: Map[String, String]): Seq[RuleFile] = {
     data.get("rules") match {
       case None => Seq.empty
-      case Some(rules: Collection[_]) => rules.asScala.map(mkRule).toSeq
+      case Some(rules: Collection[_]) =>
+        rules.asScala.toSeq.flatMap { r =>
+          makeOrImportRules(r, source, vars)
+        }
       case _ => sys.error("invalid rules data")
     }
+  }
+
+
+  def makeOrImportRules(data: Any, source: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
+    data match {
+      case imported: JMap[String, Any] if imported.asScala.contains("import") =>
+        if (source.from == RuleSources.string) {
+          throw new RuntimeException("Imports are not supported for string-only rules")
+        }
+        // import rules from a file and return them
+        val importVars = mkVariables(imported.asScala.toMap)
+        importRules(imported.asScala.toMap, source, parentVars ++ importVars)
+        // RuleFile (seq[Rule], vars)
+      case _ => Seq(RuleFile(Seq(mkRule(data)), parentVars))
+    }
+  }
+
+  private def importRules(
+    data: Map[String, Any],
+    source: SituatedStream,
+    importVars: Map[String, String],
+  ): Seq[RuleFile] = {
+    // get the current working directory, with ending separator
+    val relativePath = data("import").toString
+    // handle substitutions in path name
+    val resolved = new VariableSubstitutor(importVars).apply(relativePath)
+    val importStream = source.relativePathStream(resolved)
+    parseRuleFile(importStream, importVars)
   }
 
   private def mkRule(data: Any): Rule = {
@@ -163,11 +267,11 @@ class RuleReader(val compiler: QueryCompiler) {
         // read fields
         val name = getRequiredField("name")
         val label = getField("label")
-        val ruletype = getRequiredField("type")
+        val ruleType = getRequiredField("type")
         val priority = fields.getOrElse("priority", "1").toString
         val pattern = getRequiredField("pattern")
         // return rule
-        Rule(name, label, ruletype, priority, pattern)
+        Rule(name, label, ruleType, priority, pattern)
       case _ => sys.error("invalid rule data")
     }
   }

@@ -1,5 +1,6 @@
 package ai.lum.odinson
 
+import java.io.File
 import java.nio.file.Path
 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
@@ -20,6 +21,21 @@ import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
+
+
+class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
+  protected lazy val document = indexSearcher.doc(documentId)
+  protected lazy val docId: String = document.getField("docId").stringValue
+  protected lazy val sentId: String = document.getField("sentId").stringValue
+
+  def getDocId: String = docId
+
+  def getSentId: String = sentId
+}
+
+object LazyIdGetter {
+  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
+}
 
 class ExtractorEngine(
   val indexSearcher: OdinsonIndexSearcher,
@@ -75,12 +91,37 @@ class ExtractorEngine(
     docs.head
   }
 
-  def compileRules(rules: String): Seq[Extractor] = {
-    compileRules(rules, Map.empty)
+  // Access methods
+  def compileRuleString(rules: String): Seq[Extractor] = {
+    compileRuleString(rules, Map.empty[String, String])
   }
 
-  def compileRules(rules: String, variables: Map[String, String]): Seq[Extractor] = {
-    ruleReader.compileRuleFile(rules, variables)
+  def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleString(rules, variables)
+  }
+
+  def compileRuleFile(ruleFile: File): Seq[Extractor] = {
+    compileRuleFile(ruleFile, Map.empty[String, String])
+  }
+
+  def compileRuleFile(ruleFile: File, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(ruleFile, variables)
+  }
+
+  def compileRuleFile(rulePath: String): Seq[Extractor] = {
+    compileRuleFile(rulePath, Map.empty[String, String])
+  }
+
+  def compileRuleFile(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rulePath, variables)
+  }
+
+  def compileRuleResource(rulePath: String): Seq[Extractor] = {
+    compileRuleResource(rulePath, Map.empty[String, String])
+  }
+
+  def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
+    ruleReader.compileRuleResource(rulePath, variables)
   }
 
   /** Apply the extractors and return all results */
@@ -104,11 +145,9 @@ class ExtractorEngine(
       if extractor.priority matches i
       odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
       scoreDoc <- odinResults.scoreDocs
-      document = doc(scoreDoc.doc)
-      docId = document.getField("docId").stringValue
-      sentId = document.getField("sentId").stringValue
+      idGetter = LazyIdGetter(indexSearcher, scoreDoc.doc)
       odinsonMatch <- scoreDoc.matches
-      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
+      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
       mentionOpt = filter(mention)
       if (mentionOpt.isDefined)
     } yield mentionOpt.get
@@ -181,19 +220,19 @@ class ExtractorEngine(
     odinResults
   }
 
-  def getString(docID: Int, m: OdinsonMatch): String = {
-    getTokens(docID, m).mkString(" ")
+  def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
+    getTokensForSpan(docID, m).mkString(" ")
   }
 
   def getArgument(mention: Mention, name: String): String = {
-    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
+    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
-  def getTokens(m: Mention): Array[String] = {
-    getTokens(m.luceneDocId, m.odinsonMatch)
+  def getTokensForSpan(m: Mention): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch)
   }
 
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
     getTokens(docID, displayField).slice(m.start, m.end)
   }
 

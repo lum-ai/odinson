@@ -38,12 +38,10 @@ object Example extends App with LazyLogging{
   val config = ConfigFactory.load()
   val outputFile: File = config[File]("odinson.extra.outputFile")
   val rulesFile: File = config[File]("odinson.extra.rulesFile")
-  // Read the contents
-  val rules = rulesFile.readString()
 
   // Initialize the extractor engine, using the index specified in the config
   val extractorEngine = ExtractorEngine.fromConfig()
-  val extractors = extractorEngine.ruleReader.compileRuleFile(rules)
+  val extractors = extractorEngine.ruleReader.compileRuleFile(rulesFile)
 
   // Extract Mentions
   val mentions = extractorEngine.extractMentions(extractors)
@@ -63,7 +61,7 @@ object Example extends App with LazyLogging{
     args = mkArgs(luceneDocID, namedCaptures)
   } yield {
     // Combine the info into a wrapper class and convert to json
-    MentionInfo(luceneDocID, mention.docId, mention.sentenceId, sentence, foundBy, args).toJson
+    MentionInfo(luceneDocID, mention.idGetter.getDocId, mention.idGetter.getSentId, sentence, foundBy, args).toJson
   }
 
   // Export as json lines format (i.e., one json per mention, one per line)
@@ -82,7 +80,7 @@ object Example extends App with LazyLogging{
       nc <- namedCaptures
       argName = nc.name
       capturedMatch = nc.capturedMatch
-      tokens = extractorEngine.getTokens(luceneDocID, capturedMatch).toSeq
+      tokens = extractorEngine.getTokensForSpan(luceneDocID, capturedMatch).toSeq
     } yield ArgInfo(argName, tokens)
   }
 

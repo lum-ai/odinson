@@ -1,0 +1,12 @@
+vars:
+  name: "A"
+
+rules:
+  - name: A-${name}
+    type: basic
+    pattern: |
+      machines
+
+  - import: ../imported/b.yml
+    vars:
+      name: "IMPORT_FROM_A"

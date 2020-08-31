@@ -1,0 +1,10 @@
+vars:
+  chunk: "[chunk=B-NP][chunk=I-NP]*"
+  local: "PARENT"
+
+rules:
+  - import: /testGrammar/imported/a.yml
+    vars:
+      name: "IMPORT_NAME"
+
+  - import: imported/c.yml
