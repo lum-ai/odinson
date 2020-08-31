@@ -103,17 +103,17 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleResource(masterPath, Map("otherName" -> "HARD_CODED"))
     val mentions = eeNinja.extractMentions(extractors)
     mentions should have size 3
-    val leadsMentions = mentions.filter(m => eeNinja.getString(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     // because import beats both parent (in a.yml) and local (in b.yml)
     leadsMentions.head.foundBy should be("B-IMPORT_FROM_A")
 
-    val machinesMentions = mentions.filter(m => eeNinja.getString(m.luceneDocId, m.odinsonMatch) == "machines")
+    val machinesMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "machines")
     assert(machinesMentions.length == 1)
     // because import beats both parent and local
     machinesMentions.head.foundBy should be("A-IMPORT_NAME")
 
-    val factMentions = mentions.filter(m => eeNinja.getString(m.luceneDocId, m.odinsonMatch) == "fact")
+    val factMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "fact")
     assert(factMentions.length == 1)
     // no import, but parent beats local, and hard-coded trumps all
     factMentions.head.foundBy should be("C-C-PARENT-HARD_CODED")
@@ -174,10 +174,10 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleFile(masterFile)
     val mentions = eeNinja.extractMentions(extractors)
     mentions should have size 2
-    val leadsMentions = mentions.filter(m => eeNinja.getString(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
 
-    val machinesMentions = mentions.filter(m => eeNinja.getString(m.luceneDocId, m.odinsonMatch) == "machines")
+    val machinesMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "machines")
     assert(machinesMentions.length == 1)
   }
 
