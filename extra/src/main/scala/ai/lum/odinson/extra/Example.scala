@@ -80,7 +80,7 @@ object Example extends App with LazyLogging{
       nc <- namedCaptures
       argName = nc.name
       capturedMatch = nc.capturedMatch
-      tokens = extractorEngine.getTokens(luceneDocID, capturedMatch).toSeq
+      tokens = extractorEngine.getTokensForSpan(luceneDocID, capturedMatch).toSeq
     } yield ArgInfo(argName, tokens)
   }
 

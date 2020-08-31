@@ -81,7 +81,6 @@ lazy val generalDockerSettings = {
 lazy val backend = project
   .aggregate(core)
   .dependsOn(core % "test->test;compile->compile")
-  .dependsOn(extra)
   .settings(commonSettings)
   .enablePlugins(PlayScala)
   .settings(

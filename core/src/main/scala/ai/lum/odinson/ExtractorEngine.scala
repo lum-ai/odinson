@@ -220,19 +220,19 @@ class ExtractorEngine(
     odinResults
   }
 
-  def getString(docID: Int, m: OdinsonMatch): String = {
-    getTokens(docID, m).mkString(" ")
+  def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
+    getTokensForSpan(docID, m).mkString(" ")
   }
 
   def getArgument(mention: Mention, name: String): String = {
-    getString(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
+    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
-  def getTokens(m: Mention): Array[String] = {
-    getTokens(m.luceneDocId, m.odinsonMatch)
+  def getTokensForSpan(m: Mention): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch)
   }
 
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
     getTokens(docID, displayField).slice(m.start, m.end)
   }
 

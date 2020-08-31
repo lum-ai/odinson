@@ -400,13 +400,10 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   }
   
   def mkJson(mention: Mention): Json.JsValueWrapper = {
-    val doc = extractorEngine.indexSearcher.doc(mention.luceneDocId)
-    val tvs = extractorEngine.indexReader.getTermVectors(mention.luceneDocId)
-    val sentenceText = doc.getField(WORD_TOKEN_FIELD).stringValue
-    val ts = TokenSources.getTokenStream(WORD_TOKEN_FIELD, tvs, sentenceText, new WhitespaceAnalyzer, -1)
-    val tokens = TokenStreamUtils.getTokens(ts)
-
-      // odinsonMatch: OdinsonMatch,
+    //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
+    // We want **all** tokens for the sentence
+    val tokens = extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
+    // odinsonMatch: OdinsonMatch,
     Json.obj(
       "sentenceId"    -> mention.luceneDocId,
       // "score"         -> odinsonScoreDoc.score,
@@ -420,11 +417,9 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   }
 
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
-    val tvs = extractorEngine.indexReader.getTermVectors(odinsonScoreDoc.doc)
-    val sentenceText = doc.getField(WORD_TOKEN_FIELD).stringValue
-    val ts = TokenSources.getTokenStream(WORD_TOKEN_FIELD, tvs, sentenceText, new WhitespaceAnalyzer, -1)
-    val tokens = TokenStreamUtils.getTokens(ts)
+    //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
+    // we want **all** tokens for the sentence
+    val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
     Json.obj(
       "sentenceId"    -> odinsonScoreDoc.doc,
       "score"         -> odinsonScoreDoc.score,
