@@ -41,8 +41,8 @@ This pattern will look for a sentence in which a token tagged as a PROTEIN (thou
 
 Note that in Odinson, patterns can hop between surface and syntax representations arbitrarily often, as is done in this query:
 
-    TODO    
+    Jack and Jill <nsubj went >nmod_up [] to fetch >dobj >nmod_of water 
     
-which has a successful match in the sentence: TODO
+which has a successful match in the sentence "Jack and Jill went up the hill to fetch a pail of water."
 
 
