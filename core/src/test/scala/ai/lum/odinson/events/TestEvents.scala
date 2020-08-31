@@ -190,7 +190,7 @@ class TestEvents extends EventSpec {
       |      object: Bear = >dobj
        """.stripMargin
 
-    val extractors = ee.ruleReader.compileRuleFile(rules)
+    val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
 
     mentions should have size 2

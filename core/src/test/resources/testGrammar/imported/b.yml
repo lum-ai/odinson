@@ -1,0 +1,8 @@
+vars:
+  name: "B"
+
+rules:
+  - name: B-${name}
+    type: basic
+    pattern: |
+      leads

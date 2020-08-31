@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Grammar files now support imports, from both respurces and filesystem; absolute and relative paths ([#175](https://github.com/lum-ai/odinson/pull/175)).
 - Validation of tokens to ensure they are compatible with Lucene ([#170](https://github.com/lum-ai/odinson/pull/170))
 - Add priority as String to `Rule` and as `Priority` to `Extractor`
 - Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`
@@ -23,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `buildinfo.json` file to the index to store versions and build info.
 - Added ability to express rule vars as lists, in addition to the current string representation.
 - Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
-- Started documention at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
+- Started documentation at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
 - Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
 - Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
