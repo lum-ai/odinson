@@ -230,7 +230,9 @@ class RuleReader(val compiler: QueryCompiler) {
   def makeOrImportRules(data: Any, source: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     data match {
       case imported: JMap[String, Any] if imported.asScala.contains("import") =>
-        assert(source.from != RuleSources.string, "Imports are not supported for string-only rules")
+        if (source.from == RuleSources.string) {
+          throw new RuntimeException("Imports are not supported for string-only rules")
+        }
         // import rules from a file and return them
         val importVars = mkVariables(imported.asScala.toMap)
         importRules(imported.asScala.toMap, source, parentVars ++ importVars)
