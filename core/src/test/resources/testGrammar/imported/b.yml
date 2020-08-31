@@ -1,0 +1,8 @@
+vars:
+  name: "A"
+
+rules:
+  - name: A-${name}
+    type: basic
+    pattern: |
+      ramen

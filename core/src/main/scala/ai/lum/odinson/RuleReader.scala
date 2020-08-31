@@ -129,7 +129,6 @@ class RuleReader(val compiler: QueryCompiler) {
   def parseRuleFile(input: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
     val master = using(input.stream) { stream =>
-      println(input.canonicalPath)
       yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
     }
     val localVariables = mkVariables(master) ++ parentVars

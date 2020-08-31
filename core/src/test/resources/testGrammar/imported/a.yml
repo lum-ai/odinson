@@ -1,0 +1,7 @@
+rules:
+  - name: testRuleImported-${label}
+    type: event
+    pattern: |
+      trigger = [lemma=eat]
+      subject: ^NP = >nsubj ${chunk}
+      object: ^NP = >dobj ${chunk}

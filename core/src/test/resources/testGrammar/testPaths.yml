@@ -1,0 +1,7 @@
+vars:
+  chunk: "[chunk=B-NP][chunk=I-NP]*"
+
+rules:
+  - import: /testGrammar/imported/b.yml
+    vars:
+      name: "IMPORT_NAME"
