@@ -11,6 +11,10 @@ class Mention(
   val arguments: Map[String, Array[Mention]] = Map.empty
 ) {
 
+  def docId = idGetter.getDocId
+
+  def sentenceId = idGetter.getSentId
+
   def copy(
     mentionFactory: MentionFactory /*= new DefaultMentionFactory*/,
     odinsonMatch: OdinsonMatch = this.odinsonMatch,
