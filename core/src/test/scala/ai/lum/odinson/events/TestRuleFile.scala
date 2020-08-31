@@ -90,7 +90,7 @@ class TestRuleFile extends EventSpec {
         |  - import: /testGrammar/testRules.yml
         |
        """.stripMargin
-    assertThrows[AssertionError]{
+    assertThrows[RuntimeException]{
       ee.compileRuleString(rules)
     }
   }
@@ -121,13 +121,13 @@ class TestRuleFile extends EventSpec {
 
   //  4: test filesystem resources -- write temp directory with files, put a grammar there, delete when done (if possible)
   it should "allow for absolute and relative paths in filesystem" in {
-    val tempDir = Files.createDirectory(new File("tmp-grammar").toPath).toFile
+    val tempDir = Files.createTempDirectory("tmp-grammar").toFile
     tempDir.deleteOnExit()
 
     val masterFile = new File(tempDir, "tmpMaster.yml")
     masterFile.deleteOnExit()
 
-    val importDir = Files.createDirectory(new File("tmp-grammar", "imported").toPath).toFile
+    val importDir = Files.createDirectory(new File(tempDir, "imported").toPath).toFile
     importDir.deleteOnExit()
 
     val aFile = new File(importDir, "a.yml")
