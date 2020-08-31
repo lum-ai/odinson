@@ -30,7 +30,9 @@ case class SituatedStream(stream: InputStream, canonicalPath: String, from: Rule
           prevPath += "/"
         }
         prevPath + path
-      case RuleSources.file => new File(canonicalPath, path).getCanonicalPath
+      case RuleSources.file =>
+        val parent = new File(canonicalPath).getParentFile.getCanonicalPath
+        new File(parent, path).getCanonicalPath
       case RuleSources.string => throw new RuntimeException("Strings don't support imports and relative paths")
     }
   }
