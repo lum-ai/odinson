@@ -33,6 +33,7 @@ tags
 # docs
 docs/.jekyll-cache/
 docs/.sass-cache/
+docs/_site/
 
 # scala formater
 .scalafmt.conf
