@@ -1,5 +1,5 @@
 ---  
-title: Basic Patterns
+title: Basic Queries
 parent: Queries
 has_children: false 
 nav_order: 3  

@@ -1,5 +1,5 @@
 ---  
-title: Web API
+title: REST API
 has_children: false 
 nav_order: 6
 ---  

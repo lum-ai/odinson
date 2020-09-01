@@ -8,8 +8,9 @@ nav_order: 2
 
 [Marco Valenzuela-Escárcega](https://github.com/marcovzla),   
 [Gustave Hahn-Powell](https://github.com/myedibleenso),  
-Dane Bell,  
+[Dane Bell](http://danebell.info),  
 [Keith Alcock](http://www.keithalcock.com),  
-Becky Sharp,  
-George Barbosa, and   
+[Becky Sharp](https://github.com/BeckySharp),  
+[George Barbosa](http://gcgbarbosa.com), 
+[Robert Vacareanu](https://github.com/robertvacareanu), and   
 [Mihai Surdeanu](http://surdeanu.info/mihai/)  

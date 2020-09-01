@@ -1,5 +1,5 @@
 ---  
-title: Event Patterns
+title: Event Queries
 parent: Queries
 has_children: false 
 nav_order: 4

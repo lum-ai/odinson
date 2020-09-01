@@ -2,7 +2,7 @@
 title: Strings
 parent: Queries
 has_children: false 
-nav_order: 5
+nav_order: 6
 ---  
 
 # String rules and special characters
