@@ -1,7 +1,7 @@
 ---  
 title: Testing
 has_children: false
-nav_order: 7
+nav_order: 11
 ---  
 
 # How does odinson testing works?
