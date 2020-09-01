@@ -14,6 +14,13 @@ To guarantee the rapid matching of these patterns, the framework indexes most of
   
 Odinson is designed to facilitate real-time (or near real-time) queries over surface, syntax, or both.  The syntax is based on that of its predecessor language, Odin, but there are some key divergences, detailed here.  
   
+## Project Structure
+
+Odinson consists of the following subprojects:
+
+- **core**: the core odinson library
+- **extra**: these are a few apps that we need but don't really belong in `core`, due to things like licensing issues
+- **backend**: this is a REST API for odinson
     
   
 ## License  

@@ -4,14 +4,14 @@ vars:
 rules:
   - name: example-basic-rule
     type: basic
+    priority: 1
     pattern: |
        (?<hypernym> ${chunk}) >nmod_such_as (?<hyponym> ${chunk})
 
   - name: example-event-rule
     type: event
+    priority: 1
     pattern: |
       trigger = cause|increase|decrease|affect
       cause = >nsubj ${chunk}
       effect = >dobj ${chunk}
-
-    

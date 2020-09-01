@@ -1,7 +1,8 @@
 ---  
 title: Creating an Index  
+parent: Getting Started
 has_children: false  
-nav_order: 4  
+nav_order: 2 
 ---  
   
 # Annotating text  
@@ -37,7 +38,7 @@ Once you have annotated Documents, you can create an Odinson index, the data str
 ## Configuration  
 Once again, you will specify the configurations in `extra/src/main/resources/application.conf`.  
   
-- Ensure  `odinson.docDir` directory contains annotated `ai.lum.odinson.Document`s (`.json` or `.json.gz`).  
+- Ensure `odinson.docDir` directory contains annotated `ai.lum.odinson.Document`s (`.json` or `.json.gz`).  
 - Ensure `odinson.indexDir` is pointing to where you want to create the index.  
 - Note again, if you are using the typical directory structure (see above), you can simply ensure that `odinson.dataDir = path/to/your/dataDir` and the other paths will be correct.  
   

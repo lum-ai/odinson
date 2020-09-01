@@ -1,25 +1,27 @@
 package ai.lum.odinson
 
+import java.io.File
 import java.nio.file.Paths
 import java.util.Collection
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
-import org.apache.lucene.{ document => lucenedoc }
+import org.apache.lucene.{document => lucenedoc}
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
+import org.apache.lucene.index.{IndexWriter, IndexWriterConfig}
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
+import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
 import com.typesafe.scalalogging.LazyLogging
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.common.DisplayUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
-import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
+import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 import ai.lum.odinson.serialization.UnsafeSerializer
 
 class OdinsonIndexWriter(
@@ -50,6 +52,30 @@ class OdinsonIndexWriter(
 
   def addDocuments(block: Collection[lucenedoc.Document]): Unit = {
     writer.addDocuments(block)
+  }
+
+  /**
+    * Add an Odinson Document to the index, where the Document is stored in a File.
+    * @param f File with the Document
+    * @param storeName whether to store the name of the file for retrieving later
+    */
+  def addFile(f: File, storeName: Boolean = true): Unit = {
+    val origDoc = Document.fromJson(f)
+    val block = if (storeName) {
+      // keep track of file name to retrieve sentence JSON,
+      // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
+      // NOTE: this assumes all files are located immediately under `odinson.docsDir`
+      // With large document collections, it may be necessary to split documents across many subdirectories
+      // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
+      val fileField: Field =
+      StringField(name = "fileName", string = f.getName, store = true)
+      val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
+      mkDocumentBlock(doc)
+    } else {
+      mkDocumentBlock(origDoc)
+    }
+    // Add the document block
+    addDocuments(block)
   }
 
   def commit(): Unit = writer.commit()
