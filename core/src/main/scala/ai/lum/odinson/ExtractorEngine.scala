@@ -222,6 +222,11 @@ class ExtractorEngine(
     odinResults
   }
 
+  @deprecated(message = "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
+  def getString(docID: Int, m: OdinsonMatch): String = {
+    getTokens(docID, m).mkString(" ")
+  }
+
   def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
     getTokensForSpan(docID, m).mkString(" ")
   }
@@ -230,8 +235,18 @@ class ExtractorEngine(
     getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
+  @deprecated(message = "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
+  def getTokens(m: Mention): Array[String] = {
+    getTokens(m.luceneDocId, m.odinsonMatch)
+  }
+
   def getTokensForSpan(m: Mention): Array[String] = {
     getTokensForSpan(m.luceneDocId, m.odinsonMatch)
+  }
+
+  @deprecated(message = "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
+  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
+    getTokens(docID, displayField).slice(m.start, m.end)
   }
 
   def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
