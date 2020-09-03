@@ -1,0 +1,7 @@
+vars: vars.yml
+
+rules:
+  - name: leads-${name}
+    type: basic
+    pattern: |
+      leads

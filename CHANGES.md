@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
-- Grammar files now support imports, from both respurces and filesystem; absolute and relative paths ([#175](https://github.com/lum-ai/odinson/pull/175)).
+- Grammar files now support imports of rules and variables, from both resources and filesystem; absolute and relative paths ([#175](https://github.com/lum-ai/odinson/pull/175), [#180](https://github.com/lum-ai/odinson/pull/180)).
 - Validation of tokens to ensure they are compatible with Lucene ([#170](https://github.com/lum-ai/odinson/pull/170))
 - Add priority as String to `Rule` and as `Priority` to `Extractor`
 - Add `MentionFactory` to be optionally passed during construction of the `ExtractorEngine` so that custom `Mentions`

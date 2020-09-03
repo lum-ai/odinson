@@ -181,4 +181,52 @@ class TestRuleFile extends EventSpec {
     assert(machinesMentions.length == 1)
   }
 
+  it should "allow for importing vars from a resource" in {
+    val masterPath = "/testGrammar/varImports/rules.yml"
+    val extractors = eeNinja.compileRuleResource(masterPath)
+    val mentions = eeNinja.extractMentions(extractors)
+    mentions should have size 1
+    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    assert(leadsMentions.length == 1)
+    leadsMentions.head.foundBy should be("leads-IMPORTED_FROM_VARS")
+  }
+
+  it should "allow for importing vars from filesystem" in {
+    val tempDir = Files.createTempDirectory("tmp-grammar").toFile
+    tempDir.deleteOnExit()
+
+    val rulesFile = new File(tempDir, "rules.yml")
+    rulesFile.deleteOnExit()
+
+    val varsFile = new File(tempDir, "vars.yml")
+    varsFile.deleteOnExit()
+
+    val rulesContents =
+      """
+         |vars: vars.yml
+         |
+         |rules:
+         |  - name: B-${name}
+         |    type: basic
+         |    pattern: |
+         |      leads
+        """.stripMargin
+
+    val varsContents =
+      """
+        |name: IMPORTED_NAME
+        """.stripMargin
+
+    rulesFile.writeString(rulesContents)
+    varsFile.writeString(varsContents)
+
+    val extractors = eeNinja.compileRuleFile(rulesFile)
+    val mentions = eeNinja.extractMentions(extractors)
+    mentions should have size 1
+    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    assert(leadsMentions.length == 1)
+    leadsMentions.head.foundBy should be("B-IMPORTED_NAME")
+
+
+  }
 }
