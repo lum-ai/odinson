@@ -127,11 +127,9 @@ class RuleReader(val compiler: QueryCompiler) {
    *  Note that variable replacement hasn't happened yet.
    */
   def parseRuleFile(input: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
-    val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
-    val master = using(input.stream) { stream =>
-      yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
-    }
-    val localVariables = mkVariables(master) ++ parentVars
+    val master = yamlContents(input)
+    // Parent vars passed in case we need to resolve variables in import paths
+    val localVariables = mkVariables(master, input, parentVars) ++ parentVars
     mkRules(master, input, localVariables)
   }
 
@@ -184,12 +182,24 @@ class RuleReader(val compiler: QueryCompiler) {
     Extractor(name, label, priority, query)
   }
 
-  private def mkVariables(data: Map[String, Any]): Map[String, String] = {
-    data.get("vars").map(parseVariables).getOrElse(Map.empty)
+  // parentVars passed in case we need to resolve variables in import paths
+  private def mkVariables(data: Map[String, Any], source: SituatedStream, parentVars: Map[String, String]): Map[String, String] = {
+    data.get("vars").map(parseVariables(_, source, parentVars)).getOrElse(Map.empty)
   }
 
-  private def parseVariables(data: Any): Map[String, String] = {
+  // Parent vars passed in case we need to resolve variables in import paths
+  private def parseVariables(data: Any, source: SituatedStream, parentVars: Map[String, String]): Map[String, String] = {
     data match {
+      // if the vars are given as an import from a file
+      case relativePath: String =>
+        if (source.from == RuleSources.string) {
+          throw new RuntimeException("Imports are not supported for string-only rules")
+        }
+        // handle substitutions in path name
+        val resolved = new VariableSubstitutor(parentVars).apply(relativePath)
+        val importStream = source.relativePathStream(resolved)
+        importVars(importStream)
+      // if the vars are given directly in the current yaml
       case vars: JMap[_, _] =>
         vars
           .asScala
@@ -215,6 +225,13 @@ class RuleReader(val compiler: QueryCompiler) {
     }
   }
 
+  private def importVars(input: SituatedStream): Map[String, String] = {
+    val contents = yamlContents(input)
+    contents
+      .map { case (k, v) => k.toString -> processVar(v) }
+      .toMap
+  }
+
   private def mkRules(data: Map[String, Any], source: SituatedStream, vars: Map[String, String]): Seq[RuleFile] = {
     data.get("rules") match {
       case None => Seq.empty
@@ -234,7 +251,8 @@ class RuleReader(val compiler: QueryCompiler) {
           throw new RuntimeException("Imports are not supported for string-only rules")
         }
         // import rules from a file and return them
-        val importVars = mkVariables(imported.asScala.toMap)
+        // Parent vars passed in case we need to resolve variables in import paths
+        val importVars = mkVariables(imported.asScala.toMap, source, parentVars)
         importRules(imported.asScala.toMap, source, parentVars ++ importVars)
         // RuleFile (seq[Rule], vars)
       case _ => Seq(RuleFile(Seq(mkRule(data)), parentVars))
@@ -273,6 +291,17 @@ class RuleReader(val compiler: QueryCompiler) {
         // return rule
         Rule(name, label, ruleType, priority, pattern)
       case _ => sys.error("invalid rule data")
+    }
+  }
+
+  // -------------------------------------------------
+  //                    HELPERS
+  // -------------------------------------------------
+
+  private def yamlContents(input: SituatedStream): Map[String, Any] = {
+    val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
+    using(input.stream) { stream =>
+      yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
     }
   }
 
