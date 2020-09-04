@@ -1,8 +1,9 @@
 package ai.lum.odinson.state
 
 import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.events.EventSpec
 
-class TestState extends BaseSpec{
+class TestState extends EventSpec {
 
   // Becky ate gummy bears
   val docGummy = getDocument("becky-gummy-bears-v2")
@@ -60,5 +61,60 @@ class TestState extends BaseSpec{
     mentions should have size(4)
 
   }
+
+  it should "retrieve promoted arguments" in {
+    val rules =
+      """
+        |rules:
+        |  - name: first
+        |    label: First
+        |    type: event
+        |    priority: 1
+        |    pattern: |
+        |      trigger = ate
+        |      person:^Person = >nsubj []
+        |
+        |  - name: second
+        |    label: Second
+        |    type: event
+        |    priority: 2
+        |    pattern: |
+        |      trigger = @Person
+        |      whatDid = <nsubj []
+        |""".stripMargin
+
+    val extractors = eeGummy.compileRuleString(rules)
+    val mentions = eeGummy.extractMentions(extractors)
+
+
+
+    // First event -- make sure it's there
+    val first = mentions.filter(_.label.get == "First")
+    first should have size(1)
+    val firstMention = first.head
+    // There should be one argument, for the person
+    firstMention.arguments.keySet should have size(1)
+    val personMentions = firstMention.arguments("person")
+    personMentions should have size(1)
+    // And that argument should be a Mention with label `Person`
+    val person = personMentions.head
+    person.label.getOrElse("NONE") should be("Person")
+
+    // Second event, which relies on the promoted argument should be found
+    val second = mentions.filter(_.label.get == "Second")
+    second should have size(1)
+    val secondMention = second.head
+    // There should be one argument, for the whatDid
+    secondMention.arguments.keySet should have size(1)
+    val didMentions = firstMention.arguments("whatDid")
+    didMentions should have size(1)
+    // And that argument should consist of "ate"
+    val did = didMentions.head
+    eeGummy.getStringForSpan(did.luceneDocId, did.odinsonMatch) should be("ate")
+
+    // Overall, there should be two mentions found
+    mentions should have size(2)
+  }
+
 
 }
