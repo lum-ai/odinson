@@ -30,6 +30,7 @@ class GraphTraversalQuery(
 
   override def setState(stateOpt: Option[State]): Unit = {
     src.setState(stateOpt)
+    fullTraversal.setState(stateOpt)
   }
 
   def toString(field: String): String = {
