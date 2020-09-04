@@ -32,7 +32,7 @@ tags:
     description: |
       Information about the app.
 
-paths: 
+paths:
   /api/execute/pattern:
     get:
       tags:
@@ -53,7 +53,7 @@ paths:
           example: "[lemma=phosphorylate] []"
         - name: parentQuery
           in: query
-          required: true
+          required: false
           type: string
           schema:
             type: string
@@ -495,7 +495,7 @@ components:
           type: string
         match:
           $ref: '#/components/schemas/OdinsonMatch'
-    
+
     OdinsonMention:
       type: object
       required:
@@ -522,7 +522,7 @@ components:
           pattern: |
             trigger = [lemma=die]
             date: ^Date  = >nmod_on
-  
+
     OdinsonPattern:
       name: odinsonQuery
       type: string
@@ -676,7 +676,7 @@ components:
       type: integer
       format: int32
       description: The index of this sentence in the parent document (0-based).
-      
+
     words:
       type: array
       description: Tokens for the document (sentence).
@@ -689,7 +689,7 @@ components:
       items:
         $ref: '#/components/schemas/OdinsonMatch'
       description: The list of matching spans for this document.
-    
+
     DocHit:
       type: object
       required:
@@ -791,7 +791,7 @@ components:
         - string
         - store
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.StringField
@@ -820,7 +820,7 @@ components:
         - string
         - store
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.DateField
@@ -838,13 +838,13 @@ components:
           type: boolean
           description: |
             Whether or not this Field should be stored in the Odinson index.
-          
+
     OdinsonTokensField:
       type: object
       description: |
         A type of token attribute.
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.TokensField
@@ -867,7 +867,7 @@ components:
       description: |
         A type of directed graph.
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.GraphField
@@ -892,7 +892,7 @@ components:
 
     Edge:
       type: array
-      items: 
+      items:
         oneOf:
           - type: string
           - type: integer
