@@ -1,7 +1,8 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
-import scala.collection.mutable.{ ArrayBuilder, ArrayBuffer, HashMap }
+import java.util.{Map => JMap, Set => JSet}
+
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, HashMap}
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -11,6 +12,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.state.State
 
 /** Traverses the graph from `src` to `dst` following the traversal pattern.
  *  Returns `dst` if there is a match.
@@ -25,6 +27,10 @@ class GraphTraversalQuery(
 
   // TODO GraphTraversal.hashCode
   override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, fullTraversal).##
+
+  override def setState(stateOpt: Option[State]): Unit = {
+    src.setState(stateOpt)
+  }
 
   def toString(field: String): String = {
     val s = src.toString(field)
