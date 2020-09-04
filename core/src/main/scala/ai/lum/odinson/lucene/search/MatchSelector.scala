@@ -110,7 +110,13 @@ object MatchSelector {
         case m: ConcatMatch     => m.subMatches.toList ::: tail
         case m: RepetitionMatch => m.subMatches.toList ::: tail
         case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
-        case m: StateMatch => ??? // TODO
+        // what is a StateMatch? it may be a TextBound Mention or an Event Mention
+        // if it's a TBMention, it should have same behavior as NGram
+        case m: StateMatch if m.namedCaptures.isEmpty => tail
+        // else, if an EventMention should have same behavior as EventSketch
+        // the EventSketch returns it's trigger, here since it's an Event Mention,
+        // we know that the start and end correspond to the trigger start and end
+        case m: StateMatch => new NGramMatch(m.start, m.end) :: tail
       }
     }
   }
