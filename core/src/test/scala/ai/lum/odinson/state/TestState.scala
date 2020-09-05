@@ -62,7 +62,7 @@ class TestState extends EventSpec {
 
   }
 
-  it should "retrieve promoted arguments" in {
+  it should "add promoted arguments to the state to be able to retrieve them" in {
     val rules =
       """
         |rules:
