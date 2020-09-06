@@ -162,6 +162,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   // Reuse the same connection and prepared statement.
   // TODO Group the mentions and insert multiple at a time.
   // TODO Also pass in the number of items, perhaps how many of each kind?
+  // TODO Make this a single transaction.
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     val sql = s"""
       INSERT INTO $mentionsTable
