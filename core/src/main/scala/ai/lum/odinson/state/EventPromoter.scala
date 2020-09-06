@@ -8,7 +8,7 @@ import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
 class EventPromoter {
 
-  def newLabeledNamedOdinResults(namedCapture: NamedCapture, odinsonScoreDoc: OdinsonScoreDoc): LabeledNamedOdinResults = {
+  protected def newLabeledNamedOdinResults(namedCapture: NamedCapture, odinsonScoreDoc: OdinsonScoreDoc): LabeledNamedOdinResults = {
     LabeledNamedOdinResults(
       namedCapture.label,
       Some(namedCapture.name),
@@ -28,42 +28,47 @@ class EventPromoter {
     )
   }
 
-  def newFromScoreDocMatch(odinsonScoreDoc: OdinsonScoreDoc, odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
-    if (odinsonMatch.isInstanceOf[EventMatch]) {
-      val eventMatch = odinsonMatch.asInstanceOf[EventMatch]
-      val captures = eventMatch.namedCaptures
-      val metadata = eventMatch.argumentMetadata
+  protected def promoteOdinsonMatch(odinsonMatch: OdinsonMatch, odinsonScoreDoc: OdinsonScoreDoc): Array[LabeledNamedOdinResults] = {
 
-      assert(captures.length == metadata.length)
-      captures.zip(metadata).flatMap { case (capture, metadata) =>
-        val heads: Array[LabeledNamedOdinResults] =
-          if (metadata.promote)
-            Array(newLabeledNamedOdinResults(capture, odinsonScoreDoc))
-          else
-            Array.empty
-        val tails: Array[LabeledNamedOdinResults] = newFromScoreDocMatch(odinsonScoreDoc, capture.capturedMatch)
+    def promoteOdinsonMatch(odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
+      odinsonMatch match {
+        case eventMatch: EventMatch =>
+          val captures = eventMatch.namedCaptures
+          val metadata = eventMatch.argumentMetadata
 
-        heads ++ tails
+          assert(captures.length == metadata.length)
+          captures.zip(metadata).flatMap { case (capture, metadata) =>
+            val heads: Array[LabeledNamedOdinResults] =
+              if (metadata.promote)
+                Array(newLabeledNamedOdinResults(capture, odinsonScoreDoc))
+              else
+                Array.empty
+            val tails: Array[LabeledNamedOdinResults] = promoteOdinsonMatch(capture.capturedMatch)
+
+            heads ++ tails
+          }
+        case _ =>
+          odinsonMatch.namedCaptures.flatMap { capture =>
+            promoteOdinsonMatch(capture.capturedMatch)
+          }
       }
     }
-    else {
-      odinsonMatch.namedCaptures.flatMap { capture =>
-        newFromScoreDocMatch(odinsonScoreDoc, capture.capturedMatch)
-      }
-    }
+
+    promoteOdinsonMatch(odinsonMatch)
   }
 
-  def newFromOdinResults(odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
+  protected def promoteOdinResults(odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
     odinResults.scoreDocs.flatMap { odinsonScoreDoc =>
       odinsonScoreDoc.matches.flatMap { odinsonMatch =>
-        newFromScoreDocMatch(odinsonScoreDoc, odinsonMatch)
+        promoteOdinsonMatch(odinsonMatch, odinsonScoreDoc)
       }
     }
   }
 
   def promoteEvents(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
+    // TODO Make this a list and convert at end to array.
     val labeledNamedOdinResultsSeq = LabeledNamedOdinResults(labelOpt, nameOpt, odinResults) +:
-        newFromOdinResults(odinResults)
+        promoteOdinResults(odinResults)
 
     labeledNamedOdinResultsSeq
   }
