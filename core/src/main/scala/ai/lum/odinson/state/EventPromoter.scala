@@ -6,8 +6,6 @@ import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
-import scala.annotation.tailrec
-
 class EventPromoter {
 
   protected def countChildren(odinsonMatch: OdinsonMatch): Int = {
