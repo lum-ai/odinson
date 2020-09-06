@@ -6,14 +6,27 @@ import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
+import scala.annotation.tailrec
+
 class EventPromoter {
 
+  protected def countChildren(odinsonMatch: OdinsonMatch): Int = {
+    val count = odinsonMatch.namedCaptures.foldLeft(0) { case (total, namedCapture) =>
+      total + 1 + countChildren(namedCapture.capturedMatch)
+    }
+
+    count
+  }
+
   protected def newLabeledNamedOdinResults(namedCapture: NamedCapture, odinsonScoreDoc: OdinsonScoreDoc): LabeledNamedOdinResults = {
+    val odinsonMatch = namedCapture.capturedMatch
+    val childCount = countChildren(odinsonMatch)
+
     LabeledNamedOdinResults(
       namedCapture.label,
       Some(namedCapture.name),
       new OdinResults(
-        1,
+        1 + childCount,
         Array(
           new OdinsonScoreDoc(
             doc = odinsonScoreDoc.doc,
@@ -31,7 +44,7 @@ class EventPromoter {
   protected def promoteOdinsonMatch(odinsonMatch: OdinsonMatch, odinsonScoreDoc: OdinsonScoreDoc): Array[LabeledNamedOdinResults] = {
 
     def promoteOdinsonMatch(odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
-      odinsonMatch match {
+      val result = odinsonMatch match {
         case eventMatch: EventMatch =>
           val captures = eventMatch.namedCaptures
           val metadata = eventMatch.argumentMetadata
@@ -52,9 +65,12 @@ class EventPromoter {
             promoteOdinsonMatch(capture.capturedMatch)
           }
       }
-    }
 
-    promoteOdinsonMatch(odinsonMatch)
+      result
+    }
+    val result = promoteOdinsonMatch(odinsonMatch)
+
+    result
   }
 
   protected def promoteOdinResults(odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
@@ -65,10 +81,10 @@ class EventPromoter {
     }
   }
 
-  def promoteEvents(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
+  def promoteEvents(labeledNamedOdinResults: LabeledNamedOdinResults): Array[LabeledNamedOdinResults] = {
     // TODO Make this a list and convert at end to array.
-    val labeledNamedOdinResultsSeq = LabeledNamedOdinResults(labelOpt, nameOpt, odinResults) +:
-        promoteOdinResults(odinResults)
+    val labeledNamedOdinResultsSeq = labeledNamedOdinResults +:
+        promoteOdinResults(labeledNamedOdinResults.odinResults)
 
     labeledNamedOdinResultsSeq
   }

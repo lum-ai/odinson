@@ -11,6 +11,8 @@ case class ResultItem(
 
   def size: Int = ResultItem.sizeOf(odinsonMatch)
 
+  override def toString: String = s"""segmentDocBase = $segmentDocBase, segmentDocId = $segmentDocId, docIndex = $docIndex, label = "$label", name = "$name", odinsonMatch = $odinsonMatch"""
+
 // Optionally store the docId and sentId now so that they don't have to be looked up later.
 //  val document: Document = entractorEngine.doc(docIndex)
 //  val docId = document.getField("docId").stringValue

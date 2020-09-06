@@ -9,8 +9,9 @@ class TestState extends EventSpec {
   val docGummy = getDocument("becky-gummy-bears-v2")
   val eeGummy = Utils.mkExtractorEngine(docGummy)
 
-  "State" should "support StateQueries in basic patterns" in {
+  behavior of "State"
 
+  it should "support StateQueries in basic patterns" in {
     val rules = """
                   |rules:
                   |  - name: first
@@ -59,7 +60,6 @@ class TestState extends EventSpec {
     fourth should have size(1)
 
     mentions should have size(4)
-
   }
 
   it should "add promoted arguments to the state to be able to retrieve them" in {
@@ -106,7 +106,7 @@ class TestState extends EventSpec {
     val secondMention = second.head
     // There should be one argument, for the whatDid
     secondMention.arguments should have size(1)
-    val didMentions = firstMention.arguments("whatDid")
+    val didMentions = secondMention.arguments("whatDid")
     didMentions should have size(1)
     // And that argument should consist of "ate"
     val did = didMentions.head

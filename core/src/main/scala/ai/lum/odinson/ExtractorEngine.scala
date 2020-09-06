@@ -219,20 +219,11 @@ class ExtractorEngine(
     finally {
       odinsonQuery.setState(None)
     }
-    // All of the odinResults will be added to the state, even though not all of them will
-    // necessarily be used to create mentions.
-    // TODO: somewhere in here, we need to check the matches that we found, and see if any of them are EventMatches,
-    //  and if they, if they have arguments
-    //  that need to be promoted (i.e., that the arguments weren't already in the state, but we want to add them)
-    //  Each EventMatch has an Array of ArgumentMetadata (that we suspect is parallel to the Array of named captures
-    //  (though we should prob check...), and inside this is an attribute `promote`.  If true, then that argument needs
-    //  to be added to the state as a separate mention, available for later epochs.
-
-    val labeledNamedOdinResultsSeq = eventPromoter.promoteEvents(labelOpt, nameOpt, odinResults)
-    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsSeq)
-
-//    val labeledNamedOdinResults = new LabeledNamedOdinResults(labelOpt, nameOpt, odinResults)
-//    val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
+    val labeledNamedOdinResults = LabeledNamedOdinResults(labelOpt, nameOpt, odinResults)
+    val labeledNamedOdinResultsArr = eventPromoter.promoteEvents(labeledNamedOdinResults)
+    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsArr)
+    // If event promotion was not needed, this line could be used instead.
+    // val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
 
     state.addResultItems(odinResultsIterator)
     odinResults

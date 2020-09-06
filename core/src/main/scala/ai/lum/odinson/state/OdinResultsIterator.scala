@@ -23,9 +23,9 @@ import scala.annotation.tailrec
 
 case class LabeledNamedOdinResults(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults)
 
-class SuperOdinResultsIterator(labeledNamedOdinsResultsSeq: Array[LabeledNamedOdinResults]) extends Iterator[ResultItem] {
-  val head: LabeledNamedOdinResults = labeledNamedOdinsResultsSeq.head
-  val iterator = new OdinResultsIterator(head)
+class SuperOdinResultsIterator(labeledNamedOdinResultsSeq: Array[LabeledNamedOdinResults]) extends Iterator[ResultItem] {
+  protected val iterator: Iterator[ResultItem] =
+      labeledNamedOdinResultsSeq.foldLeft(Iterator[ResultItem]())(_ ++ new OdinResultsIterator(_))
 
   override def hasNext: Boolean = iterator.hasNext
 
