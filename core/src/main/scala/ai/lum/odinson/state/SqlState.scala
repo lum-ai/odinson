@@ -45,7 +45,7 @@ abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider)
 
   def end: Int = odinsonMatch.end
 
-  override def toString(): String = s"""${this.getClass.getName}(name = "$name", id = $id, parentId = $parentId, length = ${childNodes.length}, label = "$label", start = $start, end = $end)"""
+  override def toString(): String = s"""${getClass.getSimpleName}(name = "$name", id = $id, parentId = $parentId, length = ${childNodes.length}, label = "$label", start = $start, end = $end)"""
 }
 
 class ResultItemWriteNode(val resultItem: ResultItem, idProvider: IdProvider) extends WriteNode(resultItem.odinsonMatch, idProvider) {
