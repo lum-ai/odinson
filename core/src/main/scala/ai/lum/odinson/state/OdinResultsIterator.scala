@@ -20,7 +20,23 @@ import scala.annotation.tailrec
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
  */
+
+case class LabeledNamedOdinResults(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults)
+
+class SuperOdinResultsIterator(labeledNamedOdinsResultsSeq: Array[LabeledNamedOdinResults]) extends Iterator[ResultItem] {
+  val head: LabeledNamedOdinResults = labeledNamedOdinsResultsSeq.head
+  val iterator = new OdinResultsIterator(head)
+
+  override def hasNext: Boolean = iterator.hasNext
+
+  override def next(): ResultItem = iterator.next()
+}
+
 class OdinResultsIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults) extends Iterator[ResultItem] {
+
+  def this(labeledNamedOdinResults: LabeledNamedOdinResults) =
+      this(labeledNamedOdinResults.labelOpt, labeledNamedOdinResults.nameOpt, labeledNamedOdinResults.odinResults)
+
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
   val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
 

@@ -19,8 +19,11 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.EventPromoter
+import ai.lum.odinson.state.LabeledNamedOdinResults
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
+import ai.lum.odinson.state.SuperOdinResultsIterator
 import ai.lum.odinson.utils.MostRecentlyUsed
 
 
@@ -53,6 +56,8 @@ class ExtractorEngine(
   val indexReader = indexSearcher.getIndexReader()
 
   val ruleReader = new RuleReader(compiler)
+
+  val eventPromoter = new EventPromoter()
 
   // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
   // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
@@ -207,7 +212,7 @@ class ExtractorEngine(
 
   /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
-    val odinResults = try {
+    val odinResults: OdinResults = try {
       odinsonQuery.setState(Some(state))
       indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
     }
@@ -222,9 +227,14 @@ class ExtractorEngine(
     //  Each EventMatch has an Array of ArgumentMetadata (that we suspect is parallel to the Array of named captures
     //  (though we should prob check...), and inside this is an attribute `promote`.  If true, then that argument needs
     //  to be added to the state as a separate mention, available for later epochs.
-    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
-    state.addResultItems(odinResultsIterator)
 
+    val labeledNamedOdinResultsSeq = eventPromoter.promoteEvents(labelOpt, nameOpt, odinResults)
+    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsSeq)
+
+//    val labeledNamedOdinResults = new LabeledNamedOdinResults(labelOpt, nameOpt, odinResults)
+//    val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
+
+    state.addResultItems(odinResultsIterator)
     odinResults
   }
 

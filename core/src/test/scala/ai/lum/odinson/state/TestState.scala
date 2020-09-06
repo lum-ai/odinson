@@ -93,7 +93,7 @@ class TestState extends EventSpec {
     first should have size(1)
     val firstMention = first.head
     // There should be one argument, for the person
-    firstMention.arguments.keySet should have size(1)
+    firstMention.arguments should have size(1)
     val personMentions = firstMention.arguments("person")
     personMentions should have size(1)
     // And that argument should be a Mention with label `Person`
@@ -105,7 +105,7 @@ class TestState extends EventSpec {
     second should have size(1)
     val secondMention = second.head
     // There should be one argument, for the whatDid
-    secondMention.arguments.keySet should have size(1)
+    secondMention.arguments should have size(1)
     val didMentions = firstMention.arguments("whatDid")
     didMentions should have size(1)
     // And that argument should consist of "ate"
