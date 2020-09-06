@@ -220,10 +220,10 @@ class ExtractorEngine(
       odinsonQuery.setState(None)
     }
     val labeledNamedOdinResults = LabeledNamedOdinResults(labelOpt, nameOpt, odinResults)
-    val labeledNamedOdinResultsArr = eventPromoter.promoteEvents(labeledNamedOdinResults)
-    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsArr)
+//    val labeledNamedOdinResultsArr = eventPromoter.promoteEvents(labeledNamedOdinResults)
+//    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsArr)
     // If event promotion was not needed, this line could be used instead.
-    // val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
+     val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
 
     state.addResultItems(odinResultsIterator)
     odinResults

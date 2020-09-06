@@ -47,6 +47,9 @@ class EventPromoter {
           val captures = eventMatch.namedCaptures
           val metadata = eventMatch.argumentMetadata
 
+          if (captures.length != metadata.length)
+            println("What is wrong?")
+
           assert(captures.length == metadata.length)
           captures.zip(metadata).flatMap { case (capture, metadata) =>
             val heads: Array[LabeledNamedOdinResults] =
