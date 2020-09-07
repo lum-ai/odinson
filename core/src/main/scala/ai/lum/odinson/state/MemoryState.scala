@@ -11,8 +11,20 @@ class MemoryState extends State {
   case class BaseIdLabel(docBase: Int, docId: Int, label: String)
   case class BaseLabel(docBase: Int, label: String)
 
-  implicit val ordering: Ordering[ResultItem] = Ordering.by[ResultItem, (Int, Int)] { resultItem =>
-    (resultItem.odinsonMatch.start, resultItem.odinsonMatch.end)
+  // This original implementation is thought to create too many objects.
+  // implicit val ordering: Ordering[ResultItem] = Ordering.by[ResultItem, (Int, Int)] { resultItem =>
+  //   (resultItem.odinsonMatch.start, resultItem.odinsonMatch.end)
+  // }
+
+  implicit object ResultItemOrdering extends Ordering[ResultItem] {
+    def compare(left: ResultItem, right: ResultItem): Int = {
+      val startSign = left.odinsonMatch.start - right.odinsonMatch.start
+      if (startSign != 0) startSign
+      else {
+        val endSign = left.odinsonMatch.end - right.odinsonMatch.end
+        endSign // and if these are tied...
+      }
+    }
   }
 
   protected val baseIdLabelToResultItems: mutable.Map[BaseIdLabel, mutable.SortedSet[ResultItem]] = mutable.Map.empty
