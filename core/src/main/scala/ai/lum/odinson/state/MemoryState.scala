@@ -4,56 +4,50 @@ import com.typesafe.config.Config
 
 import scala.collection.mutable
 
+// This version of MemoryState differs from most versions of State in that it does not need to
+// serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
+// the matches just as they are.  This might cause behavior changes in clients.  Beware!
 class MemoryState extends State {
-
-  type TokenInterval = (Int, Int)
-
   case class BaseIdLabel(docBase: Int, docId: Int, label: String)
   case class BaseLabel(docBase: Int, label: String)
 
-  val baseIdLabelToTokenIntervals: mutable.Map[BaseIdLabel, mutable.SortedSet[TokenInterval]] = mutable.Map.empty
-  val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
+  implicit val ordering: Ordering[ResultItem] = Ordering.by[ResultItem, (Int, Int)] { resultItem =>
+    (resultItem.odinsonMatch.start, resultItem.odinsonMatch.end)
+  }
 
-  def addMention(stateItem: ResultItem): Unit = {
-    val baseIdLabel = BaseIdLabel(stateItem.segmentDocBase, stateItem.segmentDocId, stateItem.label)
-    val tokenInterval = (stateItem.odinsonMatch.start, stateItem.odinsonMatch.end)
-    val tokenIntervals = baseIdLabelToTokenIntervals.getOrElseUpdate(baseIdLabel, mutable.SortedSet.empty[TokenInterval])
+  protected val baseIdLabelToResultItems: mutable.Map[BaseIdLabel, mutable.SortedSet[ResultItem]] = mutable.Map.empty
+  protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
-    tokenIntervals.add(tokenInterval)
+  protected def addResultItem(resultItem: ResultItem): Unit = {
+    val baseIdLabel = BaseIdLabel(resultItem.segmentDocBase, resultItem.segmentDocId, resultItem.label)
+    val resultItems = baseIdLabelToResultItems.getOrElseUpdate(baseIdLabel, mutable.SortedSet.empty[ResultItem])
 
-    val baseLabel = BaseLabel(stateItem.segmentDocBase, stateItem.label)
+    resultItems.add(resultItem)
+
+    val baseLabel = BaseLabel(resultItem.segmentDocBase, resultItem.label)
     val ids = baseLabelToIds.getOrElseUpdate(baseLabel, mutable.SortedSet.empty[Int])
 
-    ids.add(stateItem.segmentDocId)
+    ids.add(resultItem.segmentDocId)
   }
 
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
-    resultItems.foreach(addMention)
+    resultItems.foreach(addResultItem)
   }
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
     val baseLabel = BaseLabel(docBase, label)
-    val idsOpt = baseLabelToIds.get(baseLabel)
-    val ids: Array[Int] =
-      if (idsOpt.isDefined)
-        idsOpt.get.toArray
-      else
-        Array.empty
+    val idsOpt: Option[mutable.SortedSet[Int]] = baseLabelToIds.get(baseLabel)
+    val ids: Array[Int] = idsOpt.map(_.toArray).getOrElse(Array.empty)
 
     ids
   }
 
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
-    Array.empty
-//    val baseIdLabel = BaseIdLabel(docBase, docId, label)
-//    val tokenIntervalsOpt = baseIdLabelToTokenIntervals.get(baseIdLabel)
-//    val tokenIntervals: Array[TokenInterval] =
-//      if (tokenIntervalsOpt.isDefined)
-//        tokenIntervalsOpt.get.toArray
-//      else
-//        Array.empty
-//
-//    tokenIntervals
+    val baseIdLabel = BaseIdLabel(docBase, docId, label)
+    val resultItemsOpt = baseIdLabelToResultItems.get(baseIdLabel)
+    val resultItems = resultItemsOpt.map(_.toArray).getOrElse(Array.empty)
+
+    resultItems
   }
 }
 
