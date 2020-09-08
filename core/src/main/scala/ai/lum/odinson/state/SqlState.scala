@@ -110,6 +110,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   def create(): Unit = {
     createTable()
     createIndexes()
+    connection.commit()
   }
 
   def createTable(): Unit = {
@@ -168,14 +169,14 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       ;
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
-      val dbSetter = DbSetter(preparedStatement)
 
       // TODO this should be altered to add several mentions in a single call
       resultItems.foreach { resultItem =>
+        val dbSetter = DbSetter(preparedStatement)
         val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
-
+println(stateNodes.length)
 //        println(resultItem) // debugging
-
+        // The number of stateNodes is relatively small
         stateNodes.foreach { stateNode =>
           dbSetter
               .setNext(resultItem.segmentDocBase)
@@ -192,7 +193,13 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
               .get
               .executeUpdate()
         }
+//        if (dbSetter.batched)
+//          dbSetter.get.executeBatch()
+//        else
+//          dbSetter.get.executeUpdate()
+        dbSetter.reset()
       }
+      connection.commit()
     }
   }
 
@@ -282,6 +289,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     """
     using(connection.createStatement()) { statement =>
       statement.executeUpdate(sql)
+      connection.commit()
     }
   }
 }
@@ -311,6 +319,7 @@ object SqlStateFactory {
       config.setPassword("")
       config.setMaximumPoolSize(10) // Don't do this?
       config.setMinimumIdle(2)
+      config.setAutoCommit(false) // Try for faster
       config.addDataSourceProperty("cachePrepStmts", "true")
       config.addDataSourceProperty("prepStmtCacheSize", "256")
       config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
