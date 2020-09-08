@@ -56,7 +56,7 @@ object MemoryState {
   //   (resultItem.odinsonMatch.start, resultItem.odinsonMatch.end)
   // }
 
-  // The compilare can't handle an implicit here.
+  // The compiler can't handle an implicit here.
   object ResultItemOrdering extends Ordering[ResultItem] {
     def compare(left: ResultItem, right: ResultItem): Int = {
       val startSign = left.odinsonMatch.start - right.odinsonMatch.start
