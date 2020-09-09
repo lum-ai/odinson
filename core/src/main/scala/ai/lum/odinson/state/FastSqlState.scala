@@ -1,7 +1,6 @@
 package ai.lum.odinson.state
 
 import java.sql.Connection
-import java.sql.DriverManager
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
@@ -81,15 +80,20 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     """
   )
 
+  protected def executeBatch(dbSetter: DbSetter): Unit = {
+    dbSetter.get.executeBatch()
+    dbSetter.reset()
+  }
+
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
-      val dbSetter = DbSetter(addResultItemsStatement.get, batch = true) // add batchCount limit?
+      val dbSetter = DbSetter(addResultItemsStatement.get, batch = true)
 
       resultItems.foreach { resultItem =>
         val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
         stateNodes.foreach { stateNode =>
-          dbSetter
+          val batchCount = dbSetter
               .setNext(resultItem.segmentDocBase)
               .setNext(resultItem.segmentDocId)
               .setNext(resultItem.docIndex)
@@ -101,11 +105,13 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
               .setNext(stateNode.label)
               .setNext(stateNode.start)
               .setNext(stateNode.end)
+              .getBatchCount
+          if (batchCount >= FastSqlState.batchCountLimit)
+            executeBatch(dbSetter)
         }
-        dbSetter.get.executeBatch()
-        dbSetter.reset()
       }
-      // Check for batchCount > 0 and executeBatch then
+      if (dbSetter.getBatchCount > 0)
+        executeBatch(dbSetter)
       connection.commit()
     }
   }
@@ -203,12 +209,15 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   }
 }
 
-class FastSqlStateFactory(dataSource: HikariDataSource, index: Long, connectionString: String) extends StateFactory {
+object FastSqlState {
+  val batchCountLimit = 500
+}
+
+class FastSqlStateFactory(dataSource: HikariDataSource, index: Long) extends StateFactory {
   protected var count: AtomicLong = new AtomicLong
 
   override def usingState[T](function: State => T): T = {
-//    using(dataSource.getConnection) { connection =>
-    using(DriverManager.getConnection(connectionString)) { connection =>
+    using(dataSource.getConnection) { connection =>
       using(new FastSqlState(connection, index, count.getAndIncrement)) { state =>
         function(state)
       }
@@ -236,6 +245,6 @@ object FastSqlStateFactory {
       new HikariDataSource(config)
     }
 
-    new FastSqlStateFactory(dataSource, count.getAndIncrement, jdbcUrl)
+    new FastSqlStateFactory(dataSource, count.getAndIncrement)
   }
 }
