@@ -44,8 +44,13 @@ class EventPromoter {
 
     def promoteOdinsonMatch(odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
       val result = odinsonMatch match {
+        // This is only ever considered in the case of an EventMatch.
         case eventMatch: EventMatch =>
-          // This is only ever considered in the case of an EventMatch.
+          val names = eventMatch.namedCaptures.map(_.name)
+          // It is required that there are no duplicate names in the namedCaptures.
+          // This is not true!
+          // require(names.distinct.size == eventMatch.namedCaptures.length)
+          // Because of this, the namedCapture can be stored more than once in the state.
           val nameToPromote = eventMatch.argumentMetadata
               .groupBy(_.name)
               .map { case (name, argumentMetadatums) =>
@@ -55,7 +60,7 @@ class EventPromoter {
               }
 
           eventMatch.namedCaptures.flatMap { capture =>
-            // Is it possible that not all namedArguments have argumentMetadata?
+            // Is it possible that not all namedArguments have ArgumentMetadata?
             val promote = nameToPromote.get(capture.name).getOrElse(false)
             val heads: Array[LabeledNamedOdinResults] =
               if (promote)
