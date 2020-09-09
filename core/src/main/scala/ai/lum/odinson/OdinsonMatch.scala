@@ -45,9 +45,6 @@ class EventMatch(
   val argumentMetadata: Array[ArgumentMetadata],
 ) extends OdinsonMatch {
 
-  if (namedCaptures.length != argumentMetadata.length)
-    println("This is wrong!")
-
   val start: Int = trigger.start
   val end: Int = trigger.end
 

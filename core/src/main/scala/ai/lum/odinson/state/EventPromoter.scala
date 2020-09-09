@@ -3,6 +3,7 @@ package ai.lum.odinson.state
 import ai.lum.odinson.EventMatch
 import ai.lum.odinson.NamedCapture
 import ai.lum.odinson.OdinsonMatch
+import ai.lum.odinson.StateMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
@@ -44,16 +45,20 @@ class EventPromoter {
     def promoteOdinsonMatch(odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
       val result = odinsonMatch match {
         case eventMatch: EventMatch =>
-          val captures = eventMatch.namedCaptures
-          val metadata = eventMatch.argumentMetadata
+          // This is only ever considered in the case of an EventMatch.
+          val nameToPromote = eventMatch.argumentMetadata
+              .groupBy(_.name)
+              .map { case (name, argumentMetadatums) =>
+                // If one doesn't need to be promoted, must it be in the state already?
+                val promote = argumentMetadatums.forall(_.promote)
+                name -> promote
+              }
 
-          if (captures.length != metadata.length)
-            println("What is wrong?")
-
-          assert(captures.length == metadata.length)
-          captures.zip(metadata).flatMap { case (capture, metadata) =>
+          eventMatch.namedCaptures.flatMap { capture =>
+            // Is it possible that not all namedArguments have argumentMetadata?
+            val promote = nameToPromote.get(capture.name).getOrElse(false)
             val heads: Array[LabeledNamedOdinResults] =
-              if (metadata.promote)
+              if (promote)
                 Array(newLabeledNamedOdinResults(capture, odinsonScoreDoc))
               else
                 Array.empty
