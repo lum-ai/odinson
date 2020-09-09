@@ -30,28 +30,33 @@ object LazyDbSetter {
   def apply(preparedStatement: LazyPreparedStatement): LazyDbSetter = new LazyDbSetter(preparedStatement)
 }
 
-class DbSetter(preparedStatement: PreparedStatement) {
+class DbSetter(preparedStatement: PreparedStatement, batch: Boolean = false) {
   val parameterCount = preparedStatement.getParameterMetaData.getParameterCount()
   protected var parameterIndex = 0
   var batched = false
 
   protected def incParameterIndex(): Unit = {
-    if (parameterCount == parameterIndex) {
+    parameterIndex = parameterIndex % parameterCount + 1
+  }
+
+  protected def batch(): Unit = {
+    if (batch && parameterCount == parameterIndex) {
       preparedStatement.addBatch()
       batched = true
     }
-    parameterIndex = parameterIndex % parameterCount + 1
   }
 
   def setNext(value: Int): DbSetter = {
     incParameterIndex()
     preparedStatement.setInt(parameterIndex, value)
+    batch()
     this
   }
 
   def setNext(value: String): DbSetter = {
     incParameterIndex()
     preparedStatement.setString(parameterIndex, value)
+    batch()
     this
   }
 
@@ -67,5 +72,5 @@ class DbSetter(preparedStatement: PreparedStatement) {
 
 object DbSetter {
 
-  def apply(preparedStatement: PreparedStatement): DbSetter = new DbSetter(preparedStatement)
+  def apply(preparedStatement: PreparedStatement, batch: Boolean = false): DbSetter = new DbSetter(preparedStatement, batch)
 }

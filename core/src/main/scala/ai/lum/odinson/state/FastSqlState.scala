@@ -21,6 +21,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   def create(): Unit = {
     createTable()
     createIndexes()
+    connection.commit()
   }
 
   def createTable(): Unit = {
@@ -71,49 +72,23 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     }
   }
 
-  // This is the one that should be broken up.
-  val addResultItemsStatement1: LazyPreparedStatement = LazyPreparedStatement(connection,
+  val addResultItemsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
     s"""
       INSERT INTO $mentionsTable
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ;
-    """
-  )
-  val addResultItemsStatement2: LazyPreparedStatement = LazyPreparedStatement(connection,
-    s"""
-      INSERT INTO $mentionsTable
-        (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ;
-    """
-  )
-  val addResultItemsStatement3: LazyPreparedStatement = LazyPreparedStatement(connection,
-    s"""
-      INSERT INTO $mentionsTable
-        (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ;
     """
   )
 
-  val dbSetter1 = LazyDbSetter(addResultItemsStatement1)
-  val dbSetter2 = LazyDbSetter(addResultItemsStatement2)
-  val dbSetter3 = LazyDbSetter(addResultItemsStatement3)
-
-  // TODO Group the mentions and insert multiple at a time.
-  // TODO Also pass in the number of items, perhaps how many of each kind?
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
-//      val size = resultItems.size
-//      println(s"There are this many being added: $size")
+      val dbSetter = DbSetter(addResultItemsStatement.get, batch = true) // add batchCount limit?
 
-      // TODO this should be altered to add several mentions in a single call
       resultItems.foreach { resultItem =>
-        def add(dbSetter: LazyDbSetter, stateNode: WriteNode): LazyDbSetter = {
+        val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
+
+        stateNodes.foreach { stateNode =>
           dbSetter
               .setNext(resultItem.segmentDocBase)
               .setNext(resultItem.segmentDocId)
@@ -127,33 +102,11 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
               .setNext(stateNode.start)
               .setNext(stateNode.end)
         }
-
-        val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
-        println(stateNodes.length)
-
-        var index = 0
-        while (stateNodes.length - index >= 3) {
-          add(dbSetter3, stateNodes(index))
-          add(dbSetter3, stateNodes(index))
-          add(dbSetter3, stateNodes(index))
-              .get
-              .executeUpdate()
-          index += 3
-        }
-        while (stateNodes.length - index >= 2) {
-          add(dbSetter2, stateNodes(index))
-          add(dbSetter2, stateNodes(index))
-              .get
-              .executeUpdate()
-          index += 2
-        }
-        while (stateNodes.length - index >= 1) {
-          add(dbSetter1, stateNodes(index))
-              .get
-              .executeUpdate()
-          index += 1
-        }
+        dbSetter.get.executeBatch()
+        dbSetter.reset()
       }
+      // Check for batchCount > 0 and executeBatch then
+      connection.commit()
     }
   }
 
@@ -227,9 +180,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   }
 
   override def close(): Unit = {
-    addResultItemsStatement1.close()
-    addResultItemsStatement2.close()
-    addResultItemsStatement3.close()
+    addResultItemsStatement.close()
     getDocIdsStatement.close()
     getResultItemsStatement.close()
     drop()
@@ -247,6 +198,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     """
     using(connection.createStatement()) { statement =>
       statement.executeUpdate(sql)
+      connection.commit()
     }
   }
 }
@@ -277,6 +229,7 @@ object FastSqlStateFactory {
       config.setPassword("")
       config.setMaximumPoolSize(10) // Don't do this?
       config.setMinimumIdle(2)
+      config.setAutoCommit(false) // Try for faster.
       config.addDataSourceProperty("cachePrepStmts", "true")
       config.addDataSourceProperty("prepStmtCacheSize", "256")
       config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")

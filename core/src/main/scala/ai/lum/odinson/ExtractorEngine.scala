@@ -283,7 +283,7 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[Path]("indexDir")
+    val indexPath = config[File]("indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }

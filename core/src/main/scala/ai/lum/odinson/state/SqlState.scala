@@ -174,8 +174,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       resultItems.foreach { resultItem =>
         val dbSetter = DbSetter(preparedStatement)
         val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
-println(stateNodes.length)
-//        println(resultItem) // debugging
+        // println(resultItem) // debugging
         // The number of stateNodes is relatively small
         stateNodes.foreach { stateNode =>
           dbSetter
