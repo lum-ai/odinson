@@ -2,8 +2,6 @@ package ai.lum.odinson.state.memory
 
 import ai.lum.odinson.state.ResultItem
 import ai.lum.odinson.state.State
-import ai.lum.odinson.state.StateFactory
-import com.typesafe.config.Config
 
 import scala.collection.mutable
 
@@ -13,7 +11,7 @@ import scala.collection.mutable
 class MemoryState extends State {
   import MemoryState._
 
-  implicit val resultItemOrdering = MemoryState.ResultItemOrdering
+  implicit val resultItemOrdering: MemoryState.ResultItemOrdering.type = MemoryState.ResultItemOrdering
   protected val baseIdLabelToResultItems: mutable.Map[BaseIdLabel, mutable.SortedSet[ResultItem]] = mutable.Map.empty
   protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
@@ -72,16 +70,6 @@ object MemoryState {
   }
 }
 
-class MemoryStateFactory extends StateFactory {
 
-  override def usingState[T](function: State => T): T = {
-    function(new MemoryState())
-  }
-}
 
-object MemoryStateFactory {
 
-  def apply(config: Config): MemoryStateFactory = {
-    new MemoryStateFactory()
-  }
-}
