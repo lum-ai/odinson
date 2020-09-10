@@ -12,14 +12,16 @@ import scala.collection.mutable.ArrayBuffer
 class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
+  protected val transactor = new Transactor(connection)
   protected var closed = false
 
   create()
 
   def create(): Unit = {
-    createTable()
-    createIndexes()
-    connection.commit()
+    transactor.transact {
+      createTable()
+      createIndexes()
+    }
   }
 
   def createTable(): Unit = {
@@ -67,9 +69,6 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     }
   }
 
-  // Reuse the same connection and prepared statement.
-  // TODO Group the mentions and insert multiple at a time.
-  // TODO Also pass in the number of items, perhaps how many of each kind?
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     val sql = s"""
       INSERT INTO $mentionsTable
@@ -78,37 +77,33 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       ;
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
+      val dbSetter = DbSetter(preparedStatement)
 
-      // TODO this should be altered to add several mentions in a single call
-      resultItems.foreach { resultItem =>
-        val dbSetter = DbSetter(preparedStatement)
-        val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
-        // println(resultItem) // debugging
-        // The number of stateNodes is relatively small
-        stateNodes.foreach { stateNode =>
-          dbSetter
-              .setNext(resultItem.segmentDocBase)
-              .setNext(resultItem.segmentDocId)
-              .setNext(resultItem.docIndex)
-              .setNext(resultItem.label)
-              .setNext(stateNode.name)
-              .setNext(stateNode.id)
-              .setNext(stateNode.parentId)
-              .setNext(stateNode.childNodes.length)
-              .setNext(stateNode.label)
-              .setNext(stateNode.start)
-              .setNext(stateNode.end)
-              .get
-              .executeUpdate()
+      transactor.transact {
+        resultItems.foreach { resultItem =>
+          val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
+          // println(resultItem) // debugging
+          // The number of stateNodes is relatively small
+          stateNodes.foreach { stateNode =>
+            dbSetter
+                .setNext(resultItem.segmentDocBase)
+                .setNext(resultItem.segmentDocId)
+                .setNext(resultItem.docIndex)
+                .setNext(resultItem.label)
+                .setNext(stateNode.name)
+                .setNext(stateNode.id)
+                .setNext(stateNode.parentId)
+                .setNext(stateNode.childNodes.length)
+                .setNext(stateNode.label)
+                .setNext(stateNode.start)
+                .setNext(stateNode.end)
+                .get
+                .executeUpdate()
+          }
         }
       }
-      connection.commit()
     }
   }
-
-  // TODO: This should be in a separate, smaller table so that
-  // looking through it is faster and no DISTINCT is necessary.
-  // See MemoryState for guidance.
 
   /** Returns the segment-specific doc-ids that correspond
    *  to lucene documents that contain a mention with the
@@ -191,8 +186,9 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       ;
     """
     using(connection.createStatement()) { statement =>
-      statement.executeUpdate(sql)
-      connection.commit()
+      transactor.transact {
+        statement.executeUpdate(sql)
+      }
     }
   }
 }

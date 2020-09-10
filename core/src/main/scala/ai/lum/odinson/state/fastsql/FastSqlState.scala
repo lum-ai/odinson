@@ -9,21 +9,25 @@ import ai.lum.odinson.state.sql.DbGetter
 import ai.lum.odinson.state.sql.IdProvider
 import ai.lum.odinson.state.sql.ReadNode
 import ai.lum.odinson.state.sql.SqlResultItem
+import ai.lum.odinson.state.sql.Transactor
 
 import scala.collection.mutable.ArrayBuffer
 
 class FastSqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
+  protected val transactor = new Transactor(connection)
+  protected var closed = false
 
   // TODO: If nothing ever gets written to the tables, then they don't need to exist
   // and they certainly don't need to be indexed.  Keep track of how many times this happens.
   create()
 
   def create(): Unit = {
-    createTable()
-    createIndexes()
-    connection.commit()
+    transactor.transact {
+      createTable()
+      createIndexes()
+    }
   }
 
   def createTable(): Unit = {
@@ -92,30 +96,31 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     if (resultItems.nonEmpty) {
       val dbSetter = BatchDbSetter(addResultItemsStatement.get, batch = true)
 
-      resultItems.foreach { resultItem =>
-        val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
+      transactor.transact {
+        resultItems.foreach { resultItem =>
+          val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
-        stateNodes.foreach { stateNode =>
-          val batchCount = dbSetter
-              .setNext(resultItem.segmentDocBase)
-              .setNext(resultItem.segmentDocId)
-              .setNext(resultItem.docIndex)
-              .setNext(resultItem.label)
-              .setNext(stateNode.name)
-              .setNext(stateNode.id)
-              .setNext(stateNode.parentId)
-              .setNext(stateNode.childNodes.length)
-              .setNext(stateNode.label)
-              .setNext(stateNode.start)
-              .setNext(stateNode.end)
-              .getBatchCount
-          if (batchCount >= FastSqlState.batchCountLimit)
-            executeBatch(dbSetter)
+          stateNodes.foreach { stateNode =>
+            val batchCount = dbSetter
+                .setNext(resultItem.segmentDocBase)
+                .setNext(resultItem.segmentDocId)
+                .setNext(resultItem.docIndex)
+                .setNext(resultItem.label)
+                .setNext(stateNode.name)
+                .setNext(stateNode.id)
+                .setNext(stateNode.parentId)
+                .setNext(stateNode.childNodes.length)
+                .setNext(stateNode.label)
+                .setNext(stateNode.start)
+                .setNext(stateNode.end)
+                .getBatchCount
+            if (batchCount >= FastSqlState.batchCountLimit)
+              executeBatch(dbSetter)
+          }
         }
+        if (dbSetter.getBatchCount > 0)
+          executeBatch(dbSetter)
       }
-      if (dbSetter.getBatchCount > 0)
-        executeBatch(dbSetter)
-      connection.commit()
     }
   }
 
@@ -189,10 +194,13 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   }
 
   override def close(): Unit = {
-    addResultItemsStatement.close()
-    getDocIdsStatement.close()
-    getResultItemsStatement.close()
-    drop()
+    if (!closed) {
+      addResultItemsStatement.close()
+      getDocIdsStatement.close()
+      getResultItemsStatement.close()
+      closed = true
+      drop()
+    }
   }
 
   // See https://examples.javacodegeeks.com/core-java/sql/delete-all-table-rows-example/.
@@ -206,8 +214,9 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
       ;
     """
     using(connection.createStatement()) { statement =>
-      statement.executeUpdate(sql)
-      connection.commit()
+      transactor.transact {
+        statement.executeUpdate(sql)
+      }
     }
   }
 }
