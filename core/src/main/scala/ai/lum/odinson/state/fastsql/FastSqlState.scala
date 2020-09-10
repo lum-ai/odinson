@@ -215,7 +215,3 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 object FastSqlState {
   val batchCountLimit = 500
 }
-
-
-
-
