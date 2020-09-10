@@ -1,108 +1,12 @@
 package ai.lum.odinson.state.sql
 
 import java.sql.Connection
-import java.util.concurrent.atomic.AtomicLong
 
-import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.NamedCapture
-import ai.lum.odinson.OdinsonMatch
-import ai.lum.odinson.StateMatch
 import ai.lum.odinson.state.ResultItem
 import ai.lum.odinson.state.State
-import ai.lum.odinson.state.StateFactory
-import com.typesafe.config.Config
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 
 import scala.collection.mutable.ArrayBuffer
-
-class IdProvider(protected var id: Int = 0) {
-
-  def next: Int = {
-    val result = id
-
-    id += 1
-    result
-  }
-}
-
-abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider) {
-  val childNodes: Array[WriteNode] = {
-    odinsonMatch.namedCaptures.map { namedCapture =>
-      new OdinsonMatchWriteNode(namedCapture.capturedMatch, this, namedCapture, idProvider)
-    }
-  }
-  val id: Int = idProvider.next
-
-  def label: String
-  def name: String
-  def parentNodeOpt: Option[WriteNode]
-
-  def flatten(writeNodes: ArrayBuffer[WriteNode]): Unit = {
-    childNodes.foreach(_.flatten(writeNodes))
-    writeNodes += this
-  }
-
-  def parentId: Int = parentNodeOpt.map(_.id).getOrElse(-1)
-
-  def start: Int = odinsonMatch.start
-
-  def end: Int = odinsonMatch.end
-}
-
-class ResultItemWriteNode(val resultItem: ResultItem, idProvider: IdProvider) extends WriteNode(resultItem.odinsonMatch, idProvider) {
-
-  def label: String = resultItem.label
-
-  def name: String = resultItem.name
-
-  def parentNodeOpt: Option[WriteNode] = None
-}
-
-class OdinsonMatchWriteNode(odinsonMatch: OdinsonMatch, parentNode: WriteNode, val namedCapture: NamedCapture, idProvider: IdProvider) extends WriteNode(odinsonMatch, idProvider) {
-
-  def label: String = namedCapture.label.getOrElse("")
-
-  def name: String = namedCapture.name
-
-  val parentNodeOpt: Option[WriteNode] = Some(parentNode)
-}
-
-case class ReadNode(docIndex: Int, name: String, id: Int, parentId: Int, childCount: Int, childLabel: String, start: Int, end: Int)
-
-object SqlResultItem {
-
-  def toWriteNodes(resultItem: ResultItem, idProvider: IdProvider): IndexedSeq[WriteNode] = {
-    val arrayBuffer = new ArrayBuffer[WriteNode]()
-
-    new ResultItemWriteNode(resultItem, idProvider).flatten(arrayBuffer)
-    arrayBuffer.toIndexedSeq
-  }
-
-  def fromReadNodes(docBase: Int, docId: Int, label: String, readItems: ArrayBuffer[ReadNode]): ResultItem = {
-    val iterator = readItems.reverseIterator
-    val first = iterator.next
-
-    def findNamedCaptures(childCount: Int): Array[NamedCapture] = {
-      val namedCaptures = if (childCount == 0) Array.empty[NamedCapture] else new Array[NamedCapture](childCount)
-      var count = 0
-
-      while (count < childCount) {
-        val readNode = iterator.next
-
-        count += 1
-        // These go in backwards because of reverse.
-        namedCaptures(childCount - count) = NamedCapture(readNode.name, if (readNode.childLabel.nonEmpty) Some(readNode.childLabel) else None,
-          StateMatch(readNode.start, readNode.end, findNamedCaptures(readNode.childCount)))
-      }
-      namedCaptures
-    }
-
-    ResultItem(docBase, docId, first.docIndex, label, first.name,
-      StateMatch(first.start, first.end, findNamedCaptures(first.childCount)))
-  }
-}
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
 class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
@@ -290,41 +194,5 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       statement.executeUpdate(sql)
       connection.commit()
     }
-  }
-}
-
-class SqlStateFactory(dataSource: HikariDataSource, index: Long) extends StateFactory {
-  protected var count: AtomicLong = new AtomicLong
-
-  override def usingState[T](function: State => T): T = {
-    using(dataSource.getConnection) { connection =>
-      using(new SqlState(connection, index, count.getAndIncrement)) { state =>
-        function(state)
-      }
-    }
-  }
-}
-
-object SqlStateFactory {
-  protected var count: AtomicLong = new AtomicLong
-
-  def apply(config: Config): SqlStateFactory = {
-    val jdbcUrl = config[String]("state.sql.url")
-    val dataSource: HikariDataSource = {
-      val config = new HikariConfig
-      config.setJdbcUrl(jdbcUrl)
-      config.setPoolName("odinson")
-      config.setUsername("")
-      config.setPassword("")
-      config.setMaximumPoolSize(10) // Don't do this?
-      config.setMinimumIdle(2)
-      config.setAutoCommit(false) // Try for faster
-      config.addDataSourceProperty("cachePrepStmts", "true")
-      config.addDataSourceProperty("prepStmtCacheSize", "256")
-      config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
-      new HikariDataSource(config)
-    }
-
-    new SqlStateFactory(dataSource, count.getAndIncrement)
   }
 }
