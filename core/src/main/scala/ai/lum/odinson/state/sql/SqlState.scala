@@ -25,8 +25,11 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   }
 
   def createTable(): Unit = {
+    // It may be that the table still exists because it was persisted or
+    // there was some application crash that left it there.
     val sql = s"""
-      CREATE TABLE IF NOT EXISTS $mentionsTable (
+      DROP TABLE IF EXISTS $mentionsTable;
+      CREATE TABLE $mentionsTable (
         doc_base INT NOT NULL,            -- offset corresponding to lucene segment
         doc_id INT NOT NULL,              -- relative to lucene segment (not global)
         doc_index INT NOT NULL,           -- document index

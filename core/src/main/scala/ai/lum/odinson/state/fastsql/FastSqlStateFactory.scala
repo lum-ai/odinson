@@ -10,12 +10,12 @@ import com.typesafe.config.Config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 
-class FastSqlStateFactory(dataSource: HikariDataSource, index: Long) extends StateFactory {
+class FastSqlStateFactory(dataSource: HikariDataSource, index: Long, persist: Boolean) extends StateFactory {
   protected var count: AtomicLong = new AtomicLong
 
   override def usingState[T](function: State => T): T = {
     using(dataSource.getConnection) { connection =>
-      using(new FastSqlState(connection, index, count.getAndIncrement)) { state =>
+      using(new FastSqlState(connection, index, count.getAndIncrement, persist)) { state =>
         function(state)
       }
     }
@@ -27,6 +27,7 @@ object FastSqlStateFactory {
 
   def apply(config: Config): FastSqlStateFactory = {
     val jdbcUrl = config[String]("state.fastsql.url")
+    val persist = config[Boolean]("state.fastsql.persist")
     val dataSource: HikariDataSource = {
       val config = new HikariConfig
       config.setJdbcUrl(jdbcUrl)
@@ -42,6 +43,6 @@ object FastSqlStateFactory {
       new HikariDataSource(config)
     }
 
-    new FastSqlStateFactory(dataSource, count.getAndIncrement)
+    new FastSqlStateFactory(dataSource, count.getAndIncrement, persist)
   }
 }

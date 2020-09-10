@@ -13,7 +13,7 @@ import ai.lum.odinson.state.sql.Transactor
 
 import scala.collection.mutable.ArrayBuffer
 
-class FastSqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
+class FastSqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persist: Boolean) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected val transactor = new Transactor(connection)
@@ -32,8 +32,11 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 
   def createTable(): Unit = {
     // This query is used only once, so it won't do any good to cache it.
+    // It may be that the table still exists because it was persisted or
+    // there was some application crash that left it there.
     val sql = s"""
-      CREATE TABLE IF NOT EXISTS $mentionsTable (
+      DROP TABLE IF EXISTS $mentionsTable;
+      CREATE TABLE $mentionsTable (
         doc_base INT NOT NULL,            -- offset corresponding to lucene segment
         doc_id INT NOT NULL,              -- relative to lucene segment (not global)
         doc_index INT NOT NULL,           -- document index
@@ -199,7 +202,8 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
       getDocIdsStatement.close()
       getResultItemsStatement.close()
       closed = true
-      drop()
+      if (!persist)
+        drop()
     }
   }
 
