@@ -20,13 +20,12 @@ import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{BuildInfo, ExtractorEngine, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
-import ai.lum.odinson.Mention
 
 @Singleton
 class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)
@@ -183,15 +182,15 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   /**
   * Executes the provided Odinson grammar.
   * 
-  * @param rules An Odinson grammar
+  * @param grammar An Odinson grammar
   * @param parentQuery A Lucene query to filter documents (optional).
   * @param pageSize The maximum number of sentences to execute the rules against.
   * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger. 
   * @return JSON of matches
   */
   def executeGrammar() = Action { request => 
-    //println(s"body: ${request.body}")
-    //val json: JsValue = request.body.asJson.get
+//    println(s"body: ${request.body}")
+    val json: JsValue = request.body.asJson.get
     // FIXME: replace .get with validation check
     val gr = request.body.asJson.get.as[GrammarRequest]
     //println(s"GrammarRequest: ${gr}")
@@ -202,7 +201,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
     val pretty = gr.pretty
     try {
       // rules -> OdinsonQuery
-      val baseExtractors = extractorEngine.ruleReader.compileRuleFile(grammar)
+      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
       val composedExtractors = parentQuery match {
         case Some(pq) => 
           val cpq = extractorEngine.compiler.mkParentQuery(pq)

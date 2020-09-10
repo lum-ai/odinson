@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.2
 info:
   version: "1.0.0"
   title: odinson
@@ -119,45 +119,18 @@ paths:
       description: |
         Executes an Odinson grammar against a corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the grammar should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
       operationId: execute-grammar
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: grammar
-          required: true
-          schema:
-            type: string
-          description: |
-            An Odinson grammar.
-          example: |
-            # an example grammar
-            rules:
-              - name: "example"
-                label: Death
-                type: event
-                pattern: |
-                  trigger = [lemma=die]
-                  date: ^Date  = >nmod_on
-        - in: body
-          name: parentQuery
-          type: string
-          description: |
-            A Lucene query to filter Documents before applying an Odinson pattern.
-          example: "year: 1973"
-        - in: body
-          name: pageSize
-          description: |
-            The maximum number of sentences to execute the rules against.
-          schema:
-            type: integer
-            format: int32
-        - in: body
-          name: allowTriggerOverlaps
-          required: false
-          description: |
-            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
-          schema:
-            type: boolean
+
+      requestBody:
+        description: |
+          An Odinson grammar.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OdinsonGrammarRequest'
+#      consumes:
+#        - application/json
+
 
       responses:
         '200':
@@ -467,6 +440,51 @@ paths:
 components:
   schemas:
 
+    OdinsonGrammarRequest:
+      type: object
+      required:
+        - rules
+      properties:
+        grammar:
+          type: string
+          example: |
+             # an example grammar
+             rules:
+              - name: "example"
+                label: Owner
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  person  = >nsubj []
+#        parentQuery:
+#          type: string
+#          description: |
+#            A Lucene query to filter Documents before applying an Odinson pattern.
+#          example: "year: 1973"
+#        pageSize:
+#          type:
+#        allowTriggerOverlaps:
+##
+##          - in: body
+#            name: parentQuery
+#            type: string
+#            description: |
+#              A Lucene query to filter Documents before applying an Odinson pattern.
+#            example: "year: 1973"
+#          - in: body
+#            name: pageSize
+#            description: |
+#              The maximum number of sentences to execute the rules against.
+#            schema:
+#              type: integer
+#              format: int32
+#          - in: body
+#            name: allowTriggerOverlaps
+#            required: false
+#            description: |
+#              Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
+#            schema:
+#              type: boolean
     OdinsonGrammarResults:
       type: object
       required:
