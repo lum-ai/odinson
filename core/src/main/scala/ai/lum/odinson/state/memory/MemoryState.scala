@@ -1,5 +1,8 @@
-package ai.lum.odinson.state
+package ai.lum.odinson.state.memory
 
+import ai.lum.odinson.state.ResultItem
+import ai.lum.odinson.state.State
+import ai.lum.odinson.state.StateFactory
 import com.typesafe.config.Config
 
 import scala.collection.mutable

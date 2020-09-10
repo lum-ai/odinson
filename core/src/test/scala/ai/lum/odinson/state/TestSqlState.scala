@@ -7,6 +7,9 @@ import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.StateMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.state.sql.IdProvider
+import ai.lum.odinson.state.sql.SqlResultItem
+import ai.lum.odinson.state.sql.SqlStateFactory
 
 import scala.util.Random
 

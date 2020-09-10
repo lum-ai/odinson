@@ -1,4 +1,4 @@
-package ai.lum.odinson.state
+package ai.lum.odinson.state.fastsql
 
 import java.sql.Connection
 import java.sql.PreparedStatement

@@ -3,6 +3,10 @@ package ai.lum.odinson.state
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
+import ai.lum.odinson.state.fastsql.FastSqlStateFactory
+import ai.lum.odinson.state.file.FileStateFactory
+import ai.lum.odinson.state.memory.MemoryStateFactory
+import ai.lum.odinson.state.sql.SqlStateFactory
 
 trait StateFactory {
   def usingState[T](function: State => T): T

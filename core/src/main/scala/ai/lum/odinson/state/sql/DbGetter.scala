@@ -1,4 +1,4 @@
-package ai.lum.odinson.state
+package ai.lum.odinson.state.sql
 
 import java.sql.ResultSet
 

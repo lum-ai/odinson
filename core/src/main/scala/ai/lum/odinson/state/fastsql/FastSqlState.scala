@@ -1,13 +1,22 @@
-package ai.lum.odinson.state
+package ai.lum.odinson.state.fastsql
 
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
+import ai.lum.odinson.state.ResultItem
+import ai.lum.odinson.state.State
+import ai.lum.odinson.state.StateFactory
+import ai.lum.odinson.state.sql.DbGetter
+import ai.lum.odinson.state.sql.IdProvider
+import ai.lum.odinson.state.sql.ReadNode
+import ai.lum.odinson.state.sql.SqlResultItem
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+
+import scala.collection.mutable.ArrayBuffer
 
 class FastSqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
@@ -80,14 +89,14 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     """
   )
 
-  protected def executeBatch(dbSetter: DbSetter): Unit = {
+  protected def executeBatch(dbSetter: BatchDbSetter): Unit = {
     dbSetter.get.executeBatch()
     dbSetter.reset()
   }
 
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
-      val dbSetter = DbSetter(addResultItemsStatement.get, batch = true)
+      val dbSetter = BatchDbSetter(addResultItemsStatement.get, batch = true)
 
       resultItems.foreach { resultItem =>
         val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
@@ -135,7 +144,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
    *  specified label
    */
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
-    val resultSet = DbSetter(getDocIdsStatement.get)
+    val resultSet = BatchDbSetter(getDocIdsStatement.get)
         .setNext(docBase)
         .setNext(label)
         .get
@@ -157,7 +166,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   )
 
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
-    val resultSet = new DbSetter(getResultItemsStatement.get)
+    val resultSet = new BatchDbSetter(getResultItemsStatement.get)
         .setNext(docBase)
         .setNext(docId)
         .setNext(label)

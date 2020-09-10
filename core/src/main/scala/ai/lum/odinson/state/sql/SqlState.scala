@@ -1,16 +1,21 @@
-package ai.lum.odinson.state
+package ai.lum.odinson.state.sql
 
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.NamedCapture
 import ai.lum.odinson.OdinsonMatch
 import ai.lum.odinson.StateMatch
+import ai.lum.odinson.state.ResultItem
+import ai.lum.odinson.state.State
+import ai.lum.odinson.state.StateFactory
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+
+import scala.collection.mutable.ArrayBuffer
 
 class IdProvider(protected var id: Int = 0) {
 
@@ -192,11 +197,6 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
               .get
               .executeUpdate()
         }
-//        if (dbSetter.batched)
-//          dbSetter.get.executeBatch()
-//        else
-//          dbSetter.get.executeUpdate()
-        dbSetter.reset()
       }
       connection.commit()
     }
