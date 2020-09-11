@@ -461,9 +461,13 @@ components:
 #          description: |
 #            A Lucene query to filter Documents before applying an Odinson pattern.
 #          example: "year: 1973"
-#        pageSize:
-#          type:
-#        allowTriggerOverlaps:
+        pageSize:
+          type: integer
+          format: int32
+          example: 10
+        allowTriggerOverlaps:
+          type: boolean
+          example: false
 ##
 ##          - in: body
 #            name: parentQuery
