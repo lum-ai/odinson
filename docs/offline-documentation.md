@@ -53,7 +53,7 @@ For working on the documentation locally, run the following:
 ```bash
 docker run --rm \
   -p 4000:4000 \
-  -v "$PWD/docs:/srv/jekyll" \
+  -v "$PWD:/srv/jekyll" \
   -it lumai/jekyll \
   jekyll serve --port 4000
 ```

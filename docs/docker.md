@@ -30,7 +30,7 @@ See [our repository](https://hub.docker.com/r/lumai/odinson-extras) for other ta
 docker pull lumai/odinson-rest-api:latest
 ```
 
-See [our repository](https://hub.docker.com/r/lumai/odinson-rest-api) for other tags.
+See [our repository](https://hub.docker.com/r/lumai/odinson-rest-api) for other tags. See [here](restapi.md) for details on using REST API using the docker image.
 
 
 ### Annotating text using the docker image
