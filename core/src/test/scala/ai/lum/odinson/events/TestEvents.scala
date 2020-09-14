@@ -193,11 +193,11 @@ class TestEvents extends EventSpec {
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors)
 
-    mentions should have size 2
+    mentions should have size(2)
 
     // Bear event
     val bears = mentions.filter(_.label.get == "Bear")
-    bears should have size 1
+    bears should have size(1)
     val bear = bears.head
     bear.arguments.keySet should have size 1
     val bearType = bear.arguments("bearType")

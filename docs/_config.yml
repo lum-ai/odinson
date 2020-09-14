@@ -2,4 +2,6 @@ title: "odinson"
 remote_theme: pmarsceill/just-the-docs
 color_scheme: odinson
 search_enabled: true
-repository:         'lum-ai/odinson.git'
+logo: "images/odinson_with_logo.png"
+repository: 'lum-ai/odinson.git'
+
