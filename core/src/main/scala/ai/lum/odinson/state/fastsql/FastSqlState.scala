@@ -19,11 +19,14 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   protected val idProvider = new IdProvider()
   protected val transactor = new Transactor(connection)
   protected var closed = false
+  protected var created = false
 
-  // TODO: If nothing ever gets written to the tables, then they don't need to exist
-  // and they certainly don't need to be indexed.  Keep track of how many times this happens.
-  // That is, how many empty tables do I ever have?  Add requireTables which checks to see if created.
-  create()
+  protected def requireCreated(): Unit = {
+    if (!created) {
+      create()
+      created = true
+    }
+  }
 
   def create(): Unit = {
     transactor.transact {
@@ -66,7 +69,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
           doc_base INT NOT NULL,            -- offset corresponding to lucene segment
           label VARCHAR(50) NOT NULL,       -- mention label if parent or label of NamedCapture if child
           doc_id INT NOT NULL,              -- relative to lucene segment (not global)
-          UNIQUE KEY mentionIds_key (doc_base, label, doc_id) -- Use this to prevent duplicates
+          UNIQUE KEY ${mentionIdsTable}_key_main (doc_base, label, doc_id) -- Use this to prevent duplicates
         );
       """
       using(connection.createStatement()) { statement =>
@@ -112,7 +115,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 
   val addResultItemIdsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
     s"""
-      INSERT INTO $mentionIdsTable -- Do not throw exceptions on duplicate keys.
+      INSERT IGNORE INTO $mentionIdsTable -- Do not throw exceptions on duplicate keys.
         (doc_base, label, doc_id)
       VALUES (?, ?, ?)
       ;
@@ -126,6 +129,8 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
+      requireCreated()
+
       val dbSetter = BatchDbSetter(addResultItemsStatement.get, batch = true)
       val dbIdsSetter = BatchDbSetter(addResultItemIdsStatement.get, batch = true)
 
@@ -183,15 +188,18 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
    *  specified label
    */
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
-    val resultSet = BatchDbSetter(getDocIdsStatement.get)
-        .setNext(docBase)
-        .setNext(label)
-        .get
-        .executeQuery()
+    if (created) {
+      val resultSet = BatchDbSetter(getDocIdsStatement.get)
+          .setNext(docBase)
+          .setNext(label)
+          .get
+          .executeQuery()
 
-    DbGetter(resultSet).map { dbGetter =>
-      dbGetter.getInt
-    }.toArray
+      DbGetter(resultSet).map { dbGetter =>
+        dbGetter.getInt
+      }.toArray
+    }
+    else Array.empty
   }
 
   val getResultItemsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
@@ -205,32 +213,35 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   )
 
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
-    val resultSet = new BatchDbSetter(getResultItemsStatement.get)
-        .setNext(docBase)
-        .setNext(docId)
-        .setNext(label)
-        .get
-        .executeQuery()
-    val readNodes = ArrayBuffer.empty[ReadNode]
-    val resultItems = ArrayBuffer.empty[ResultItem]
+    if (created) {
+      val resultSet = new BatchDbSetter(getResultItemsStatement.get)
+          .setNext(docBase)
+          .setNext(docId)
+          .setNext(label)
+          .get
+          .executeQuery()
+      val readNodes = ArrayBuffer.empty[ReadNode]
+      val resultItems = ArrayBuffer.empty[ResultItem]
 
-    DbGetter(resultSet).foreach { dbGetter =>
-      val docIndex = dbGetter.getInt
-      val name = dbGetter.getStr
-      val id = dbGetter.getInt
-      val parentId = dbGetter.getInt
-      val childCount = dbGetter.getInt
-      val childLabel = dbGetter.getStr
-      val start = dbGetter.getInt
-      val end = dbGetter.getInt
+      DbGetter(resultSet).foreach { dbGetter =>
+        val docIndex = dbGetter.getInt
+        val name = dbGetter.getStr
+        val id = dbGetter.getInt
+        val parentId = dbGetter.getInt
+        val childCount = dbGetter.getInt
+        val childLabel = dbGetter.getStr
+        val start = dbGetter.getInt
+        val end = dbGetter.getInt
 
-      readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
-      if (parentId == -1) {
-        resultItems += SqlResultItem.fromReadNodes(docBase, docId, label, readNodes)
-        readNodes.clear()
+        readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
+        if (parentId == -1) {
+          resultItems += SqlResultItem.fromReadNodes(docBase, docId, label, readNodes)
+          readNodes.clear()
+        }
       }
+      resultItems.toArray
     }
-    resultItems.toArray
+    else Array.empty
   }
 
   override def close(): Unit = {
@@ -240,7 +251,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
       getDocIdsStatement.close()
       getResultItemsStatement.close()
       closed = true
-      if (!persist)
+      if (!persist && created)
         drop()
     }
   }
