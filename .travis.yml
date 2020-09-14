@@ -4,7 +4,7 @@ language: scala
 services:
   - docker
 
-#jdk: openjdk11
+jdk: openjdk11
 
 env:
   global:
@@ -14,8 +14,6 @@ env:
     - secure: "YEt3GJrGwvLmMBoGVwnyFQ6BS6if4zu+zvqn5kot1JK3yscwuOSWM/oL49biD7+GcwIClfv2riq+vuLMLZ9wKWRWagULfghOoRTYBnxrIMe2sWZTzOosg3SOsG1h2zLw9Y0P4bTHj34Ts+UvAZmcEyNRF6NKqi1A08joPA3zmN2oJE6ZtyC0y1bzbl7LxN62B2Xy+hWxW6zc3MY1qQOGXjQe/fwwT7rN0fCf4sDgGrgnsQXbcRw8MnZscg7xyOfFkxa327uSuVRS96uYJMgrmvJDtVwqJbfX6QjM6sLqpWKwqTfigzz58KZOWjQ4yQxf3uFCt5hxaCd9qCCOskxXhivQrzeA3NfG0Aaf5BWtPNChVUD6Xdn0VA2Pa/KL9AHbaJ9UsdT0fPknmY7Z/qfNaG5EFSSaiVkG4Xo26Bp0RvBv6gfKYjDG1xuaEFpD5pngYuMgTQPb0PYdaO9zLBhfWZfmkGvZ1ibGH5XN+ZDJyIqFxzNrOSUD3e94aV05nwuiGsS29dSzUh06tpncxq8Qjn6w8JQT3V0KM/DPM+vyM4QlRLhS5soTxfQ2L3KiCwfgx+mwHIJmaw0BB4Uj6odJOV8uXZfPR63dFdmRVPE3itLj2SLdmZ25YJ/WyHdTZL986GWa12pmNDvLV30sNKmM7px8WqO/VNxHMkFtfi31OaM="
 
 before_install:
-  # use OpenJDK 11
-  - $TRAVIS_BUILD_DIR/install-jdk.sh --install openjdk11 --target $JAVA_HOME
   # install docker-compose
   - sudo rm /usr/local/bin/docker-compose
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
