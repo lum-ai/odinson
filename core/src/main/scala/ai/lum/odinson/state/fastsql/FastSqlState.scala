@@ -14,6 +14,7 @@ import ai.lum.odinson.state.sql.Transactor
 import scala.collection.mutable.ArrayBuffer
 
 class FastSqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persist: Boolean) extends State {
+  protected val mentionIdsTable = s"mentionIds_${factoryIndex}_$stateIndex"
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected val transactor = new Transactor(connection)
@@ -21,37 +22,56 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 
   // TODO: If nothing ever gets written to the tables, then they don't need to exist
   // and they certainly don't need to be indexed.  Keep track of how many times this happens.
+  // That is, how many empty tables do I ever have?  Add requireTables which checks to see if created.
   create()
 
   def create(): Unit = {
     transactor.transact {
-      createTable()
+      createTables()
       createIndexes()
     }
   }
 
-  def createTable(): Unit = {
+  def createTables(): Unit = {
     // This query is used only once, so it won't do any good to cache it.
     // It may be that the table still exists because it was persisted or
     // there was some application crash that left it there.
-    val sql = s"""
-      DROP TABLE IF EXISTS $mentionsTable;
-      CREATE TABLE $mentionsTable (
-        doc_base INT NOT NULL,            -- offset corresponding to lucene segment
-        doc_id INT NOT NULL,              -- relative to lucene segment (not global)
-        doc_index INT NOT NULL,           -- document index
-        label VARCHAR(50) NOT NULL,       -- mention label if parent or label of NamedCapture if child
-        name VARCHAR(50) NOT NULL,        -- name of extractor if parent or name of NamedCapture if child
-        id INT NOT NULL,                  -- id for row, issued by State
-        parent_id INT NOT NULL,           -- id of parent, -1 if root node
-        child_count INT NOT NULL,         -- number of children
-        child_label VARCHAR(50) NOT NULL, -- label of child, because label is for parent
-        start_token INT NOT NULL,         -- index of mention first token (inclusive)
-        end_token INT NOT NULL,           -- index of mention last token (exclusive)
-      );
-    """
-    using(connection.createStatement()) { statement =>
-      statement.executeUpdate(sql)
+    {
+      val sql =
+        s"""
+        DROP TABLE IF EXISTS $mentionsTable;
+        CREATE TABLE $mentionsTable (
+          doc_base INT NOT NULL,            -- offset corresponding to lucene segment
+          doc_id INT NOT NULL,              -- relative to lucene segment (not global)
+          doc_index INT NOT NULL,           -- document index
+          label VARCHAR(50) NOT NULL,       -- mention label if parent or label of NamedCapture if child
+          name VARCHAR(50) NOT NULL,        -- name of extractor if parent or name of NamedCapture if child
+          id INT NOT NULL,                  -- id for row, issued by State
+          parent_id INT NOT NULL,           -- id of parent, -1 if root node
+          child_count INT NOT NULL,         -- number of children
+          child_label VARCHAR(50) NOT NULL, -- label of child, because label is for parent
+          start_token INT NOT NULL,         -- index of mention first token (inclusive)
+          end_token INT NOT NULL,           -- index of mention last token (exclusive)
+        );
+      """
+      using(connection.createStatement()) { statement =>
+        statement.executeUpdate(sql)
+      }
+    }
+    {
+      val sql =
+        s"""
+        DROP TABLE IF EXISTS $mentionIdsTable;
+        CREATE TABLE $mentionIdsTable (
+          doc_base INT NOT NULL,            -- offset corresponding to lucene segment
+          label VARCHAR(50) NOT NULL,       -- mention label if parent or label of NamedCapture if child
+          doc_id INT NOT NULL,              -- relative to lucene segment (not global)
+          UNIQUE KEY mentionIds_key (doc_base, label, doc_id) -- Use this to prevent duplicates
+        );
+      """
+      using(connection.createStatement()) { statement =>
+        statement.executeUpdate(sql)
+      }
     }
   }
 
@@ -72,8 +92,8 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
       // This query is used only once, so it won't do any good to cache it.
       val sql =
         s"""
-          CREATE INDEX IF NOT EXISTS ${mentionsTable}_index_doc_id
-          ON $mentionsTable(doc_base, label);
+          CREATE INDEX IF NOT EXISTS ${mentionIdsTable}_index_doc_id
+          ON $mentionIdsTable(doc_base, label);
         """
       using(connection.createStatement()) { statement =>
         statement.executeUpdate(sql)
@@ -90,6 +110,15 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     """
   )
 
+  val addResultItemIdsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
+    s"""
+      INSERT INTO $mentionIdsTable -- Do not throw exceptions on duplicate keys.
+        (doc_base, label, doc_id)
+      VALUES (?, ?, ?)
+      ;
+    """
+  )
+
   protected def executeBatch(dbSetter: BatchDbSetter): Unit = {
     dbSetter.get.executeBatch()
     dbSetter.reset()
@@ -98,9 +127,11 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     if (resultItems.nonEmpty) {
       val dbSetter = BatchDbSetter(addResultItemsStatement.get, batch = true)
+      val dbIdsSetter = BatchDbSetter(addResultItemIdsStatement.get, batch = true)
 
       transactor.transact {
         resultItems.foreach { resultItem =>
+
           val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
           stateNodes.foreach { stateNode =>
@@ -120,26 +151,32 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
             if (batchCount >= FastSqlState.batchCountLimit)
               executeBatch(dbSetter)
           }
+
+          val batchCount = dbIdsSetter
+              .setNext(resultItem.segmentDocBase)
+              .setNext(resultItem.label)
+              .setNext(resultItem.segmentDocId)
+              .getBatchCount
+          if (batchCount >= FastSqlState.batchCountLimit)
+            executeBatch(dbIdsSetter)
         }
         if (dbSetter.getBatchCount > 0)
           executeBatch(dbSetter)
+        if (dbIdsSetter.getBatchCount > 0)
+          executeBatch(dbIdsSetter)
       }
     }
   }
 
   val getDocIdsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
     s"""
-      SELECT DISTINCT doc_id
-      FROM $mentionsTable
+      SELECT doc_id -- DISTINCT is not necessary because the three form a unique key.
+      FROM $mentionIdsTable
       WHERE doc_base=? AND label=?
       ORDER BY doc_id
       ;
     """
   )
-
-  // TODO: This should be in a separate, smaller table so that
-  // looking through it is faster and no DISTINCT is necessary.
-  // See MemoryState for guidance.
 
   /** Returns the segment-specific doc-ids that correspond
    *  to lucene documents that contain a mention with the
@@ -199,6 +236,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
   override def close(): Unit = {
     if (!closed) {
       addResultItemsStatement.close()
+      addResultItemIdsStatement.close()
       getDocIdsStatement.close()
       getResultItemsStatement.close()
       closed = true
