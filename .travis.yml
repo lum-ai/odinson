@@ -1,5 +1,46 @@
-dist: trusty
+dist: precise
 language: scala
+
+services:
+  - docker
+
+#jdk: openjdk11
+
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.4.2
+    # see https://docs.travis-ci.com/user/encryption-keys#usage
+    - secure: "Xle0FbRq0RbkvvyqZOUF/ay7KZoH9rddSk9lE4t5br180L5MOgMGoHyis62adqplrVjK0Dn3TzuZAwIm3Z3Y3OCJPFItvxtGqyQiyOjaKw6n/ftRe1VyaTiUAjhZf1KxAW6TH+rXpzIA0fAIQYoxd50sP5Xdfjim85unVTbDkU4BulX3W7ETIvyHndi3FIokHS1qoRrjF3UMuq+AIlVu+02bzU41YJwV9IHgnoCC36tAj+g3dSFVxlTEu3sOofBpBPeWfnnhEsISbyRpRdKQRcGbNtdUrCaMLPGv/z5CsXwo/x4tuRz3z2/cwxfcbvaG/oFUTX5KrR0qdi90/ROxPb6poJrEqctJOYgqOc38fjkK8urBiNL+tTd4yh7ilexje9NzuJHshIl5c5Jpcf0RS7NB9CWeDMAGYvD+JxQBJYc/58r3YD0AjzZ3+PMX9gbKbJRHJSghtAuRtJ8yO9rsm2R5XR89BumW7hfwERLXzFZT/INOD7253bLTLYzuD7ZLnEVm2cSGXzV3P5pgLtx2msWpdwacko+vnA4REJJTl+J0CjUfBiTxMElhb51VzVnpdhDmEgLj7rHkWYAnTBG7x5lM2WDSK2fiY4bON+u/pEh2hk1qeU7c3HHt/fpUBerwln9zPxjOYPNgb3gscsstEKhMw2cECPE1wdU7bNqPp4o="
+    - secure: "YEt3GJrGwvLmMBoGVwnyFQ6BS6if4zu+zvqn5kot1JK3yscwuOSWM/oL49biD7+GcwIClfv2riq+vuLMLZ9wKWRWagULfghOoRTYBnxrIMe2sWZTzOosg3SOsG1h2zLw9Y0P4bTHj34Ts+UvAZmcEyNRF6NKqi1A08joPA3zmN2oJE6ZtyC0y1bzbl7LxN62B2Xy+hWxW6zc3MY1qQOGXjQe/fwwT7rN0fCf4sDgGrgnsQXbcRw8MnZscg7xyOfFkxa327uSuVRS96uYJMgrmvJDtVwqJbfX6QjM6sLqpWKwqTfigzz58KZOWjQ4yQxf3uFCt5hxaCd9qCCOskxXhivQrzeA3NfG0Aaf5BWtPNChVUD6Xdn0VA2Pa/KL9AHbaJ9UsdT0fPknmY7Z/qfNaG5EFSSaiVkG4Xo26Bp0RvBv6gfKYjDG1xuaEFpD5pngYuMgTQPb0PYdaO9zLBhfWZfmkGvZ1ibGH5XN+ZDJyIqFxzNrOSUD3e94aV05nwuiGsS29dSzUh06tpncxq8Qjn6w8JQT3V0KM/DPM+vyM4QlRLhS5soTxfQ2L3KiCwfgx+mwHIJmaw0BB4Uj6odJOV8uXZfPR63dFdmRVPE3itLj2SLdmZ25YJ/WyHdTZL986GWa12pmNDvLV30sNKmM7px8WqO/VNxHMkFtfi31OaM="
+
+before_install:
+  # use OpenJDK 11
+  - $TRAVIS_BUILD_DIR/install-jdk.sh --install openjdk11 --target $JAVA_HOME
+  # install docker-compose
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+jobs:
+  include:
+    # test & create docker image(s)
+    - stage: bundle
+      script:
+        - sbt dockerize
+    # run tests via docker
+    # - stage: docker-test
+    #   script: 
+    #     - docker run -it --rm --entrypoint java -version "lumai/odinson-extras:latest"
+    #     - docker run -it --rm --entrypoint java -version "lumai/odinson-rest-api:latest"
+    # push images to dockerhub
+    - stage: deploy
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - docker push lumai/odinson-extras
+        - docker push lumai/odinson-rest-api
+    
 branches:
   only:
     - master
+    - travis
