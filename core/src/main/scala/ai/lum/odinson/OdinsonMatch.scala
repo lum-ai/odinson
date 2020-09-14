@@ -78,7 +78,9 @@ class EventSketch(
   val start: Int = trigger.start
   val end: Int = trigger.end
   val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
-  val argumentMetadata: Array[ArgumentMetadata] = argSketches.map(a => ArgumentMetadata(a._1.name, a._1.min, a._1.max))
+  val argumentMetadata: Array[ArgumentMetadata] = argSketches
+    .map(a => ArgumentMetadata(a._1.name, a._1.min, a._1.max))
+    .distinct
 }
 
 class NGramMatch(
