@@ -447,15 +447,17 @@ components:
       properties:
         grammar:
           type: string
+          description: |
+            An Odinson grammar.
           example: |
              # an example grammar
              rules:
               - name: "example"
-                label: Owner
+                label: GrammaticalSubject
                 type: event
                 pattern: |
                   trigger = [lemma=have]
-                  person  = >nsubj []
+                  subject  = >nsubj []
 #        parentQuery:
 #          type: string
 #          description: |
@@ -464,31 +466,15 @@ components:
         pageSize:
           type: integer
           format: int32
+          description: |
+            The maximum number of sentences to execute the rules against.
           example: 10
         allowTriggerOverlaps:
           type: boolean
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
           example: false
-##
-##          - in: body
-#            name: parentQuery
-#            type: string
-#            description: |
-#              A Lucene query to filter Documents before applying an Odinson pattern.
-#            example: "year: 1973"
-#          - in: body
-#            name: pageSize
-#            description: |
-#              The maximum number of sentences to execute the rules against.
-#            schema:
-#              type: integer
-#              format: int32
-#          - in: body
-#            name: allowTriggerOverlaps
-#            required: false
-#            description: |
-#              Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
-#            schema:
-#              type: boolean
+
     OdinsonGrammarResults:
       type: object
       required:

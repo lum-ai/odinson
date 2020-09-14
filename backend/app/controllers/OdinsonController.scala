@@ -189,8 +189,8 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   * @return JSON of matches
   */
   def executeGrammar() = Action { request => 
-//    println(s"body: ${request.body}")
-    val json: JsValue = request.body.asJson.get
+    //println(s"body: ${request.body}")
+    //val json: JsValue = request.body.asJson.get
     // FIXME: replace .get with validation check
     val gr = request.body.asJson.get.as[GrammarRequest]
     //println(s"GrammarRequest: ${gr}")
