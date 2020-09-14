@@ -177,6 +177,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     s"""
       SELECT doc_id -- DISTINCT is not necessary because the three form a unique key.
       FROM $mentionIdsTable
+      USE INDEX (${mentionIdsTable}_index_doc_id)
       WHERE doc_base=? AND label=?
       ORDER BY doc_id
       ;
@@ -206,6 +207,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
     s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
+      USE INDEX (${mentionsTable}_index_main)
       WHERE doc_base=? AND doc_id=? AND label=?
       ORDER BY id
       ;
