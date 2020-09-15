@@ -1,5 +1,8 @@
 package ai.lum.odinson.events
 
+import ai.lum.odinson.EventMatch
+import ai.lum.odinson.utils.exceptions.OdinsonException
+
 
 class TestEvents extends EventSpec {
 
@@ -49,6 +52,30 @@ class TestEvents extends EventSpec {
       createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
+  }
+
+  it should "have only one argument metadata with any given name" in {
+    val rule = """
+      |rules:
+      |  - name: testrule
+      |    type: event
+      |    pattern: |
+      |      trigger = [lemma=eat]
+      |      subject: ^NP = >nsubj [chunk=B-NP][chunk=I-NP]*
+      |      object: ^NP = >dobj gummy? bears
+    """.stripMargin
+    // the above rule should match {bears} and {gummy bears}
+    // and then keep only {gummy bears} because the quantifier `?` is greedy
+    val extractors = ee.compileRuleString(rule)
+    val mentions = ee.extractMentions(extractors)
+    mentions.length should equal (1)
+    mentions.head.odinsonMatch shouldBe a [EventMatch]
+    val em = mentions.head.odinsonMatch.asInstanceOf[EventMatch]
+    val argMetadataNames = em.argumentMetadata.toSeq.map(_.name)
+    // the length of this list should not change if it goes to a set
+    argMetadataNames.length should be(argMetadataNames.toSet.size)
+
+
   }
 
   it should "promote a token when no surface pattern is provided" in {
@@ -219,5 +246,26 @@ class TestEvents extends EventSpec {
     objType should have size(1)
     testEventArguments(obj.odinsonMatch, desiredBearArg)
   }
+
+  // We can revisit the semantics here if desired
+  it should "not allow two arguments with the same name" in {
+
+    val rules =
+      """
+        |rules:
+        |  - name: bears-rule
+        |    label: Bear
+        |    type: event
+        |    priority: 1
+        |    pattern: |
+        |      trigger = bears
+        |      ARG = >amod []
+        |      ARG = <dobj []
+       """.stripMargin
+
+    a [OdinsonException] should be thrownBy ee.ruleReader.compileRuleString(rules)
+
+  }
+
 
 }

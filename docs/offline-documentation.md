@@ -1,9 +1,9 @@
 ---  
 title: Offline Documentation
 has_children: false  
-nav_order: 10 
+nav_order: 10
 ---  
-  
+
 # Requirements
 
 In order to deploy the documentation offline you
@@ -27,5 +27,35 @@ run Jekyll server:
 bundle exec jekyll serve
 ```
 
-Access `localhost:4000` on your web browser 
+Access `localhost:4000` on your web browser
 and the docs should be rendered nice and smooth.
+
+
+# Running via docker
+
+To build the docker, run the following command from the `docs` folder:
+
+```shell
+docker build -f Dockerfile -t lumai/jekyll .
+```
+
+Generate the site using the following command:
+
+```bash
+docker run --rm \
+  -v "$PWD:/srv/jekyll" \
+  -it lumai/jekyll \
+   jekyll build
+```
+
+For working on the documentation locally, run the following:
+
+```bash
+docker run --rm \
+  -p 4000:4000 \
+  -v "$PWD:/srv/jekyll" \
+  -it lumai/jekyll \
+  jekyll serve --port 4000
+```
+
+Access `localhost:4000` on your web browser.
