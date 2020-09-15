@@ -16,6 +16,7 @@ object StateFactory {
       case "sql" => SqlStateFactory(config)
       case "file" => FileStateFactory(config)
       case "memory" => MemoryStateFactory(config)
+      case "mock" => MockStateFactory(config)
       case _ => throw new Exception(s"Unknown state provider: $provider")
     }
 
