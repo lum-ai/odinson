@@ -1,5 +1,6 @@
 package ai.lum.odinson.state
 
+import ai.lum.odinson.StateMatch
 import com.typesafe.config.Config
 
 import scala.collection.mutable
@@ -42,8 +43,11 @@ class MemoryState extends State {
     val baseIdLabel = BaseIdLabel(docBase, docId, label)
     val resultItemsOpt = baseIdLabelToResultItems.get(baseIdLabel)
     val resultItems = resultItemsOpt.map(_.toArray).getOrElse(Array.empty)
+    val stateResultItems = resultItems.map { resultItem =>
+      resultItem.copy(odinsonMatch = StateMatch.fromOdinsonMatch(resultItem.odinsonMatch))
+    }
 
-    resultItems
+    stateResultItems
   }
 }
 
