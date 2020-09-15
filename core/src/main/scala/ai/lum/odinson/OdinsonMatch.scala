@@ -82,8 +82,7 @@ class EventSketch(
     // If we need to promote, and it was already in the State
     val promote = a._1.promote && !a._2.isInstanceOf[StateMatch]
     ArgumentMetadata(a._1.name, a._1.min, a._1.max, promote)
-  }
-}
+  }.distinct
 
 class NGramMatch(
   val start: Int,
