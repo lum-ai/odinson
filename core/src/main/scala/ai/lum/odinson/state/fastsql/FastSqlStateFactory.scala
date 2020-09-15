@@ -32,6 +32,7 @@ class IndirectFastSqlStateFactory(dataSource: HikariDataSource, index: Long, per
   override def usingState[T](function: State => T): T = {
     using(dataSource.getConnection) { connection: Connection =>
       using(new FastSqlState(connection, index, count.getAndIncrement, persist)) { state =>
+        connection.setAutoCommit(false)
         function(state)
       }
     }
