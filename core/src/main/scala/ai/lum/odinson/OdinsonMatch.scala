@@ -78,11 +78,15 @@ class EventSketch(
   val start: Int = trigger.start
   val end: Int = trigger.end
   val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
-  val argumentMetadata: Array[ArgumentMetadata] = argSketches.map{ a =>
-    // If we need to promote, and it was already in the State
-    val promote = a._1.promote && !a._2.isInstanceOf[StateMatch]
-    ArgumentMetadata(a._1.name, a._1.min, a._1.max, promote)
-  }.distinct
+  val argumentMetadata: Array[ArgumentMetadata] = {
+    val metadata = argSketches.map { a =>
+      // If we need to promote, and it was already in the State
+      val promote = a._1.promote && !a._2.isInstanceOf[StateMatch]
+      ArgumentMetadata(a._1.name, a._1.min, a._1.max, promote)
+    }
+    metadata.distinct
+  }
+}
 
 class NGramMatch(
   val start: Int,
