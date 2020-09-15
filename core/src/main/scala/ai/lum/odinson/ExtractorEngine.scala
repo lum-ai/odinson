@@ -135,50 +135,61 @@ class ExtractorEngine(
 
   /** Apply the extractors and return results for at most `numSentences` */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    val minIterations = extractors.map(_.priority.minIterations).max
-    // This is here both to demonstrate how a filter might be passed into the method.
-    val filter = filters(allowTriggerOverlaps)
-    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
-
-    def localQueryAndAddToState(extractor: Extractor, state: State): OdinResults = {
-      val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
-      val odinResultsIterator = OdinResultsIterator(extractor.label, Some(extractor.name), odinResults)
-
-      // All of the odinResults will be added to the state, even though not all of them will
-      // necessarily be used to create mentions.
-      state.addResultItems(odinResultsIterator)
-      odinResults
+    needsState(extractors) match {
+      case true => extractWithState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
+      case false => extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
     }
+  }
 
-    def extract(i: Int, state: State): Seq[Mention] = for {
+  private def extract(i: Int, state: State, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Seq[Mention] = {
+    for {
       extractor <- extractors
       if extractor.priority matches i
-      odinResults = localQueryAndAddToState(extractor, state)
+      odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
       scoreDoc <- odinResults.scoreDocs
       idGetter = mruIdGetter.getOrNew(scoreDoc.doc)
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
-      mentionOpt = filter(mention)
-      if (mentionOpt.isDefined)
-    } yield mentionOpt.get
+//      mentionOpt = filter(mention)
+//      if (mentionOpt.isDefined)
+    } yield mention
+  }
 
-    @annotation.tailrec
-    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
-      val newMentions: Seq[Mention] = extract(i, state)
+  private def extractWithState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
+    val minIterations = extractors.map(_.priority.minIterations).max
+    // This is here both to demonstrate how a filter might be passed into the method.
+    val filter1 = filters(allowTriggerOverlaps)
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
-      if (0 < newMentions.length)
-        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
-      else if (i < minIterations)
-        loop(i + 1, mentions, state)
-      else
-        mentions
+    var finished = false
+    var epoch = 1
+
+    val results = stateFactory.usingState { state =>
+      while (!finished) {
+        // extract the mentions from all extractors of this priority
+        val mentions = extract(epoch, state, extractors, numSentences, disableMatchSelector, mruIdGetter)
+        val filtered = mentions.filter(m => filter1(m).isDefined)
+        // add to the state
+        state.addResultItems(filtered)
+        epoch += 1
+
+        // todo: make an iterator
+        if (filtered.isEmpty && epoch > minIterations) {
+          finished = true
+        }
+      }
+      state.getAllResults()
     }
 
-    val mentions = stateFactory.usingState { state =>
-      loop(1, Seq.empty[Mention], state)
-    }
+    results
+  }
 
-    mentions.distinct
+  private def extractNoState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
+    ???
+  }
+
+  private def needsState(extractors: Seq[Extractor]): Boolean = {
+    ???
   }
 
   /** executes query and returns all results */
