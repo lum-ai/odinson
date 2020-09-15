@@ -17,10 +17,8 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.State
+import ai.lum.odinson.state.{MockState, OdinResultsIterator, State, StateFactory}
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.state.OdinResultsIterator
-import ai.lum.odinson.state.StateFactory
 import ai.lum.odinson.utils.MostRecentlyUsed
 
 
@@ -206,7 +204,7 @@ class ExtractorEngine(
   }
 
   /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State = MockState): OdinResults = {
     val odinResults = try {
       odinsonQuery.setState(Some(state))
       indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
@@ -320,6 +318,7 @@ object ExtractorEngine {
     inMemory(config[Config](path), docs)
   }
 
+  // Expecting a config that is already inside the `odinson` namespace
   def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
     // make a memory index
     val memWriter = OdinsonIndexWriter.inMemory
