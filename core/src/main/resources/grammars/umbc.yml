@@ -1,0 +1,87 @@
+vars:
+  chunk: "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
+  agents: "nsubj|nsubj:xsubj|nsubjpass:xsubj|csubj|csubjpass|nmod_along_with"
+  adverbial_clause: "advcl"
+  conjunctions: "appos|conj|conj_.*|cc"
+  complements: "xcomp|ccomp"
+  noun_modifiers: "amod|compound|name" #removed dep
+  negTriggers: "not"
+  objects: "dobj"
+  preps: "nmod_of|nmod_in|nmod_to|nmod_over|nmod_for|nmod_on|nmod_than|acl_of"
+  prep_dobjs: "nmod"
+  quant_modifiers: "amod|advmod"
+  passive_agents: "nmod_by|nmod_agent|agent"
+  passive_mark_verbs: "marked|defined|indicated|characterized"
+  transparent_nouns: "level|amount|quantit" # do we need these in general?
+  reasons: "cause|factor|motivation|reason"
+  report: "cite|give|mention|provide|report"
+  trigger: "caus"
+
+rules:
+  # Find a component for the next rule
+  - name: person-ner
+    type: basic
+    label: Person
+    priority: 1
+    pattern: |
+      [entity=/PERSON/]
+
+  - name: NP-chunk
+    type: basic
+    label: NP
+    priority: 1
+    pattern: |
+      # TODO: try with also removing lemma restriction
+      [chunk=B-NP] [chunk=I-NP]*
+      # [chunk=B-NP & lemma=/(r|s|t|l|n|e).*/] [chunk=I-NP]*
+
+
+  - name: action-test
+    type: event
+    label: X
+    priority: 2
+    pattern:
+      trigger = [tag=/V.*/]
+      agent:Person = >nsubj
+      theme:NP = >dobj 
+
+  - name: instrument-test
+    type: event
+    label: X
+    priority: 2
+    pattern:
+      trigger = [tag=/V.*/]
+      agent:NP = >nsubj
+      instrument:NP? = >nmod_with
+
+  
+  - name: time-test
+    type: event
+    label: Time
+    priority: 3
+    pattern:
+      trigger = [tag=/V.*/]
+      event:X = >nsubj
+      time:NP = >/nmod.*/
+
+  # - name: ported_syntax_1_verb-Causal
+  #   type: event
+  #   pattern: |
+  #     trigger = [norm=/${trigger}.*/ & tag=/V.*/] # (?! due to) todo: are lookaheads possible?
+  #     cause: ^Concept =
+  #       # optionally reverse traverse an advcl
+  #       </(${adverbial_clause}).*/?
+  #       # agents (i.e., noun subjects)
+  #       >/(${agents}).*/
+  #       # optionally you can follow specified modifiers
+  #       >/(nmod_than|${objects}|${conjunctions}|${noun_modifiers}|nmod_in|nmod_of).*/{,2}
+  #       # land in a chunk
+  #       ${chunk}
+  #     effect: ^Concept =
+  #       # direct objects or things like xcomp
+  #       >/(${objects}|${complements})/
+  #       # optionally you can follow specified modifiers
+  #       >/${noun_modifiers}|${preps}/{,2}
+  #       # land in a chunk
+  #       ${chunk}
+

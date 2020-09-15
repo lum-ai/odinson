@@ -17,8 +17,9 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{MockState, OdinResultsIterator, State, StateFactory}
+import ai.lum.odinson.state.{OdinResultsIterator, State, StateFactory}
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.mock.MockState
 import ai.lum.odinson.utils.MostRecentlyUsed
 
 
@@ -281,7 +282,7 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[Path]("indexDir")
+    val indexPath = config[File]("indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }
