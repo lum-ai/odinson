@@ -142,7 +142,7 @@ class ExtractorEngine(
   }
 
   private def extract(i: Int, state: State, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Seq[Mention] = {
-    for {
+    val resultsIterators = for {
       extractor <- extractors
       if extractor.priority matches i
       odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
