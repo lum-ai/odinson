@@ -6,6 +6,7 @@ import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.State
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
 class TestEvents extends EventSpec {
@@ -278,7 +279,7 @@ class TestEvents extends EventSpec {
         |      ARG = <dobj []
        """.stripMargin
 
-    a [RuntimeException] should be thrownBy ee.ruleReader.compileRuleString(rules)
+    a [OdinsonException] should be thrownBy ee.ruleReader.compileRuleString(rules)
 
   }
 

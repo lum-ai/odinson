@@ -4,6 +4,8 @@ import ai.lum.common.FileUtils._
 import java.io.File
 import java.nio.file.{Files, Path}
 
+import ai.lum.odinson.utils.exceptions.OdinsonException
+
 class TestRuleFile extends EventSpec {
   // extractor engine persists across tests (hacky way)
   def docGummy = getDocument("becky-gummy-bears-v2")
@@ -90,7 +92,7 @@ class TestRuleFile extends EventSpec {
         |  - import: /testGrammar/testRules.yml
         |
        """.stripMargin
-    assertThrows[RuntimeException]{
+    assertThrows[OdinsonException]{
       ee.compileRuleString(rules)
     }
   }
