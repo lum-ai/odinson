@@ -19,8 +19,11 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.EventPromoter
+import ai.lum.odinson.state.LabeledNamedOdinResults
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
+import ai.lum.odinson.state.SuperOdinResultsIterator
 import ai.lum.odinson.utils.MostRecentlyUsed
 
 
@@ -53,6 +56,8 @@ class ExtractorEngine(
   val indexReader = indexSearcher.getIndexReader()
 
   val ruleReader = new RuleReader(compiler)
+
+  val eventPromoter = new EventPromoter()
 
   // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
   // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
@@ -207,18 +212,20 @@ class ExtractorEngine(
 
   /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
-    val odinResults = try {
+    val odinResults: OdinResults = try {
       odinsonQuery.setState(Some(state))
       indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
     }
     finally {
       odinsonQuery.setState(None)
     }
-    // All of the odinResults will be added to the state, even though not all of them will
-    // necessarily be used to create mentions.
-    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
-    state.addResultItems(odinResultsIterator)
+    val labeledNamedOdinResults = LabeledNamedOdinResults(labelOpt, nameOpt, odinResults)
+    val labeledNamedOdinResultsArr = eventPromoter.promoteEvents(labeledNamedOdinResults)
+    val odinResultsIterator = new SuperOdinResultsIterator(labeledNamedOdinResultsArr)
+    // If event promotion was not needed, this line could be used instead.
+//     val odinResultsIterator = new OdinResultsIterator(labeledNamedOdinResults)
 
+    state.addResultItems(odinResultsIterator)
     odinResults
   }
 

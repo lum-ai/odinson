@@ -21,6 +21,7 @@ case class ArgumentQuery(
   label: Option[String],
   min: Int,
   max: Option[Int],
+  promote: Boolean, // capture mention on-the-fly if not already captured
   fullTraversal: FullTraversalQuery,
 ) {
 
@@ -28,9 +29,10 @@ case class ArgumentQuery(
     fullTraversal.setState(stateOpt)
   }
 
+  // TODO: more informative representation (for this and other Queries)
   def toString(field: String): String = {
     val traversal = fullTraversal.toString(field)
-    s"ArgumentQuery($name, $label, $min, $max, $traversal)"
+    s"ArgumentQuery($name, $label, $min, $max, $promote, $traversal)"
   }
 
   def createWeight(
@@ -38,13 +40,13 @@ case class ArgumentQuery(
     needsScores: Boolean
   ): ArgumentWeight = {
     val fullTraversalWeights = fullTraversal.createWeight(searcher, needsScores)
-    ArgumentWeight(name, label, min, max, fullTraversalWeights)
+    ArgumentWeight(name, label, min, max, promote, fullTraversalWeights)
   }
 
   def rewrite(reader: IndexReader): ArgumentQuery = {
     val rewrittenTraversal = fullTraversal.rewrite(reader)
     if (rewrittenTraversal != fullTraversal) {
-      ArgumentQuery(name, label, min, max, rewrittenTraversal)
+      ArgumentQuery(name, label, min, max, promote, rewrittenTraversal)
     } else {
       this
     }
@@ -57,6 +59,7 @@ case class ArgumentWeight(
   label: Option[String],
   min: Int,
   max: Option[Int],
+  promote: Boolean,
   fullTraversal: FullTraversalWeight,
 ) {
 
@@ -66,7 +69,7 @@ case class ArgumentWeight(
   ): ArgumentSpans = {
     val fullTraversalSpans = fullTraversal.getSpans(context, requiredPostings)
     if (fullTraversalSpans == null) return null
-    ArgumentSpans(name, label, min, max, fullTraversalSpans)
+    ArgumentSpans(name, label, min, max, promote, fullTraversalSpans)
   }
 
   def subWeights: List[OdinsonWeight] = {
@@ -80,6 +83,7 @@ case class ArgumentSpans(
   label: Option[String],
   min: Int,
   max: Option[Int],
+  promote: Boolean,
   fullTraversal: FullTraversalSpans,
 ) {
 

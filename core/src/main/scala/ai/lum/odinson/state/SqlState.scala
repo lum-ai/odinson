@@ -44,6 +44,8 @@ abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider)
   def start: Int = odinsonMatch.start
 
   def end: Int = odinsonMatch.end
+
+  override def toString(): String = s"""${getClass.getSimpleName}(name = "$name", id = $id, parentId = $parentId, length = ${childNodes.length}, label = "$label", start = $start, end = $end)"""
 }
 
 class ResultItemWriteNode(val resultItem: ResultItem, idProvider: IdProvider) extends WriteNode(resultItem.odinsonMatch, idProvider) {
@@ -160,6 +162,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   // Reuse the same connection and prepared statement.
   // TODO Group the mentions and insert multiple at a time.
   // TODO Also pass in the number of items, perhaps how many of each kind?
+  // TODO Make this a single transaction.
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
     val sql = s"""
       INSERT INTO $mentionsTable
@@ -175,8 +178,8 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
         val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
 //        println(resultItem) // debugging
-
         stateNodes.foreach { stateNode =>
+//          println(stateNode) // debugging
           dbSetter
               .setNext(resultItem.segmentDocBase)
               .setNext(resultItem.segmentDocId)
