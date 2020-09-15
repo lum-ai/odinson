@@ -69,7 +69,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
           doc_base INT NOT NULL,            -- offset corresponding to lucene segment
           label VARCHAR(50) NOT NULL,       -- mention label if parent or label of NamedCapture if child
           doc_id INT NOT NULL,              -- relative to lucene segment (not global)
-          UNIQUE KEY ${mentionIdsTable}_key_main (doc_base, label, doc_id) -- Use this to prevent duplicates
+          PRIMARY KEY (doc_base, label, doc_id) -- Use this to prevent duplicates
         );
       """
       using(connection.createStatement()) { statement =>
@@ -115,7 +115,7 @@ class FastSqlState(val connection: Connection, protected val factoryIndex: Long,
 
   val addResultItemIdsStatement: LazyPreparedStatement = LazyPreparedStatement(connection,
     s"""
-      INSERT IGNORE INTO $mentionIdsTable -- Do not throw exceptions on duplicate keys.
+      REPLACE INTO $mentionIdsTable -- Do not throw exceptions on duplicate keys.
         (doc_base, label, doc_id)
       VALUES (?, ?, ?)
       ;
