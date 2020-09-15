@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.utils.RuleSources.RuleSources
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 case class SituatedStream(stream: InputStream, canonicalPath: String, from: RuleSources) {
   def relativePathStream(path: String): SituatedStream = {
@@ -33,7 +34,7 @@ case class SituatedStream(stream: InputStream, canonicalPath: String, from: Rule
       case RuleSources.file =>
         val parent = new File(canonicalPath).getParentFile.getCanonicalPath
         new File(parent, path).getCanonicalPath
-      case RuleSources.string => throw new RuntimeException("Strings don't support imports and relative paths")
+      case RuleSources.string => throw new OdinsonException("Strings don't support imports and relative paths")
     }
   }
 
