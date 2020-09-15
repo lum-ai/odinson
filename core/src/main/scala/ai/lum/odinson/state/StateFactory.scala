@@ -6,6 +6,7 @@ import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.state.fastsql.FastSqlStateFactory
 import ai.lum.odinson.state.file.FileStateFactory
 import ai.lum.odinson.state.memory.MemoryStateFactory
+import ai.lum.odinson.state.mock.MockStateFactory
 import ai.lum.odinson.state.sql.SqlStateFactory
 
 trait StateFactory {

@@ -1,15 +1,19 @@
 package ai.lum.odinson.apsp
 
+import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.StateMatch
 import ai.lum.odinson.utils.Timer.Timer
-import ai.lum.odinson.{ExtractorEngine, Mention, NamedCapture}
+import ai.lum.odinson.ExtractorEngine
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 import scala.io.Source
 
 object TimerApp extends App {
   println("Starting odinson-tests...")
-  val ee = ExtractorEngine.fromConfig
+  val config = ConfigFactory.load("timerapp")
+  val odinsonConfig = config[Config]("odinson")
+  val ee = ExtractorEngine.fromConfig(odinsonConfig)
   val queries = {
     val rr = ee.ruleReader
     using(getClass.getResourceAsStream("/grammars/umbc.yml")) { rulesResource =>
