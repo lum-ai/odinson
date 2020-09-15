@@ -1,4 +1,12 @@
+# see https://docs.travis-ci.com/user/reference/focal/
 dist: focal
+# addons:
+#   apt:
+#     sources:
+#       - sourceline: 'deb https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable'
+#     packages:
+#     - docker
+
 language: scala
 
 services:
@@ -16,7 +24,7 @@ env:
     - DOCKER_COMPOSE_VERSION=1.4.2
     # see https://docs.travis-ci.com/user/encryption-keys#usage
     - secure: "Xle0FbRq0RbkvvyqZOUF/ay7KZoH9rddSk9lE4t5br180L5MOgMGoHyis62adqplrVjK0Dn3TzuZAwIm3Z3Y3OCJPFItvxtGqyQiyOjaKw6n/ftRe1VyaTiUAjhZf1KxAW6TH+rXpzIA0fAIQYoxd50sP5Xdfjim85unVTbDkU4BulX3W7ETIvyHndi3FIokHS1qoRrjF3UMuq+AIlVu+02bzU41YJwV9IHgnoCC36tAj+g3dSFVxlTEu3sOofBpBPeWfnnhEsISbyRpRdKQRcGbNtdUrCaMLPGv/z5CsXwo/x4tuRz3z2/cwxfcbvaG/oFUTX5KrR0qdi90/ROxPb6poJrEqctJOYgqOc38fjkK8urBiNL+tTd4yh7ilexje9NzuJHshIl5c5Jpcf0RS7NB9CWeDMAGYvD+JxQBJYc/58r3YD0AjzZ3+PMX9gbKbJRHJSghtAuRtJ8yO9rsm2R5XR89BumW7hfwERLXzFZT/INOD7253bLTLYzuD7ZLnEVm2cSGXzV3P5pgLtx2msWpdwacko+vnA4REJJTl+J0CjUfBiTxMElhb51VzVnpdhDmEgLj7rHkWYAnTBG7x5lM2WDSK2fiY4bON+u/pEh2hk1qeU7c3HHt/fpUBerwln9zPxjOYPNgb3gscsstEKhMw2cECPE1wdU7bNqPp4o="
-    - secure: "YEt3GJrGwvLmMBoGVwnyFQ6BS6if4zu+zvqn5kot1JK3yscwuOSWM/oL49biD7+GcwIClfv2riq+vuLMLZ9wKWRWagULfghOoRTYBnxrIMe2sWZTzOosg3SOsG1h2zLw9Y0P4bTHj34Ts+UvAZmcEyNRF6NKqi1A08joPA3zmN2oJE6ZtyC0y1bzbl7LxN62B2Xy+hWxW6zc3MY1qQOGXjQe/fwwT7rN0fCf4sDgGrgnsQXbcRw8MnZscg7xyOfFkxa327uSuVRS96uYJMgrmvJDtVwqJbfX6QjM6sLqpWKwqTfigzz58KZOWjQ4yQxf3uFCt5hxaCd9qCCOskxXhivQrzeA3NfG0Aaf5BWtPNChVUD6Xdn0VA2Pa/KL9AHbaJ9UsdT0fPknmY7Z/qfNaG5EFSSaiVkG4Xo26Bp0RvBv6gfKYjDG1xuaEFpD5pngYuMgTQPb0PYdaO9zLBhfWZfmkGvZ1ibGH5XN+ZDJyIqFxzNrOSUD3e94aV05nwuiGsS29dSzUh06tpncxq8Qjn6w8JQT3V0KM/DPM+vyM4QlRLhS5soTxfQ2L3KiCwfgx+mwHIJmaw0BB4Uj6odJOV8uXZfPR63dFdmRVPE3itLj2SLdmZ25YJ/WyHdTZL986GWa12pmNDvLV30sNKmM7px8WqO/VNxHMkFtfi31OaM="
+    - secure: "aht68E//Z0NlTqgH55qmzqwxQ4TLOq13Cl1JajsNITZ3zbOXJtBmV4bGwxoQspi0yfYIor92RWOwmMF5fllJRZkdwNGj8g+iGqCtx3FWEotj0wHQoFdIwmywApJJZuJZmIRebF8cRPyEeydT8/S7SamYdPX/5Io8repv5W1q7Dqz7lToMWXynQ+6Oixep2RsMOSEBJR6hhjeB9JNNN0KxJwl/XDmOhnbjoW+wbNog3QtNSV6i9nrSMGDxFMNmDkzFktZSPUFGfI/y+05Jm4Fnm+D3MejYB5HDV6LIKednIazkiPRj4HTfZuBNYGyxm70yFxWGnO13sdRpCOrkfEoLFNzvHb2B60fy8XBMqo9gasdnz4qkUGB9RO0JsWvnIp1i/E/VGM+jN5RJ4wH4J8xBCPzEpSi2fmnYaRkeZS92pY2B2ssfbxXmhk+BJhAuzSmaT81IOrcOfB7fNC1hfE3zhY9CgUmy6+m3bmQR4BIK0fPdU+sox5AOO6ZQFVrCz2f384BYuiXWmBSFgI3WtXTteME8qWEd4+calt/oV9ozxdFlN4ZY2NBO2Dh4K2GmrNpCnRWMeiKOXkDORFVLITtx4x3/RkbouFnHMo4e/+aIxN1VgIXj+MHhnFkZYPQsHFYmePlveTCL6GQP4Ul9EySyUsOcwLdQlqR8d6sCqelL1Q="
 
 before_install:
   - docker --version
