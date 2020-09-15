@@ -1,5 +1,7 @@
 package ai.lum.odinson.compiler
 
+import ai.lum.odinson.utils.exceptions.OdinsonException
+
 object Ast {
 
   sealed trait Matcher
@@ -44,7 +46,7 @@ object Ast {
     def argCheck(): Unit = {
      val argNames = arguments.map(_.name)
      if (argNames.toSet.size < argNames.length) {
-       throw new RuntimeException("There are multiple arguments with the same name in EventPattern.")
+       throw new OdinsonException("There are multiple arguments with the same name in EventPattern.")
      }
     }
   }

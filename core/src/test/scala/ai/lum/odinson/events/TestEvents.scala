@@ -1,6 +1,7 @@
 package ai.lum.odinson.events
 
 import ai.lum.odinson.EventMatch
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
 class TestEvents extends EventSpec {
@@ -262,7 +263,7 @@ class TestEvents extends EventSpec {
         |      ARG = <dobj []
        """.stripMargin
 
-    a [RuntimeException] should be thrownBy ee.ruleReader.compileRuleString(rules)
+    a [OdinsonException] should be thrownBy ee.ruleReader.compileRuleString(rules)
 
   }
 
