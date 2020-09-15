@@ -10,6 +10,7 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene.search.OdinsonQuery
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.utils.{RuleSources, SituatedStream, VariableSubstitutor}
 
 /** A RuleFile is the result of parsing a yaml file.
@@ -192,9 +193,7 @@ class RuleReader(val compiler: QueryCompiler) {
     data match {
       // if the vars are given as an import from a file
       case relativePath: String =>
-        if (source.from == RuleSources.string) {
-          throw new RuntimeException("Imports are not supported for string-only rules")
-        }
+        verifyImport(source)
         // handle substitutions in path name
         val resolved = new VariableSubstitutor(parentVars).apply(relativePath)
         val importStream = source.relativePathStream(resolved)
@@ -247,9 +246,7 @@ class RuleReader(val compiler: QueryCompiler) {
   def makeOrImportRules(data: Any, source: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     data match {
       case imported: JMap[String, Any] if imported.asScala.contains("import") =>
-        if (source.from == RuleSources.string) {
-          throw new RuntimeException("Imports are not supported for string-only rules")
-        }
+        verifyImport(source)
         // import rules from a file and return them
         // Parent vars passed in case we need to resolve variables in import paths
         val importVars = mkVariables(imported.asScala.toMap, source, parentVars)
@@ -302,6 +299,12 @@ class RuleReader(val compiler: QueryCompiler) {
     val yaml = new Yaml(new Constructor(classOf[JMap[String, Any]]))
     using(input.stream) { stream =>
       yaml.load(stream).asInstanceOf[JMap[String, Any]].asScala.toMap
+    }
+  }
+
+  private def verifyImport(source: SituatedStream): Unit = {
+    if (source.from == RuleSources.string) {
+      throw new OdinsonException("Imports are not supported for string-only rules")
     }
   }
 
