@@ -40,14 +40,12 @@ jobs:
     - stage: bundle
       script:
         - sbt dockerize
-    # run tests via docker
-    # - stage: docker-test
-    #   script: 
-    #     - docker run -it --rm --entrypoint java -version "lumai/odinson-extras:latest"
-    #     - docker run -it --rm --entrypoint java -version "lumai/odinson-rest-api:latest"
-    # push images to dockerhub
-    - stage: deploy
-      script:
+      # run tests via docker
+      # - stage: docker-test
+      #   script: 
+      #     - docker run -it --rm --entrypoint java -version "lumai/odinson-extras:latest"
+      #     - docker run -it --rm --entrypoint java -version "lumai/odinson-rest-api:latest"
+      # push images to dockerhub
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker push lumai/odinson-extras
         - docker push lumai/odinson-rest-api
