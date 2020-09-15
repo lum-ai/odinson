@@ -142,10 +142,20 @@ class ExtractorEngine(
     val filter = filters(allowTriggerOverlaps)
     val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
+    def localQuery(extractor: Extractor, state: State): OdinResults = {
+      val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
+      val odinResultsIterator = OdinResultsIterator(extractor.label, Some(extractor.name), odinResults)
+
+      // All of the odinResults will be added to the state, even though not all of them will
+      // necessarily be used to create mentions.
+      state.addResultItems(odinResultsIterator)
+      odinResults
+    }
+
     def extract(i: Int, state: State): Seq[Mention] = for {
       extractor <- extractors
       if extractor.priority matches i
-      odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
+      odinResults = localQuery(extractor, state)
       scoreDoc <- odinResults.scoreDocs
       idGetter = mruIdGetter.getOrNew(scoreDoc.doc)
       odinsonMatch <- scoreDoc.matches
@@ -214,10 +224,6 @@ class ExtractorEngine(
     finally {
       odinsonQuery.setState(None)
     }
-    // All of the odinResults will be added to the state, even though not all of them will
-    // necessarily be used to create mentions.
-    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
-    state.addResultItems(odinResultsIterator)
 
     odinResults
   }

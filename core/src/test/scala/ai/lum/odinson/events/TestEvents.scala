@@ -1,6 +1,11 @@
 package ai.lum.odinson.events
 
 import ai.lum.odinson.EventMatch
+import ai.lum.odinson.lucene.OdinResults
+import ai.lum.odinson.lucene.search.OdinsonQuery
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.state.OdinResultsIterator
+import ai.lum.odinson.state.State
 
 
 class TestEvents extends EventSpec {
@@ -173,11 +178,22 @@ class TestEvents extends EventSpec {
     val q1 = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
     val q2 = ee.compiler.compileEventQuery(pattern)
 
+    // The ee.query no longer adds to the state on its own, so this helper is being used.
+    def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
+      val odinResults = ee.query(odinsonQuery, labelOpt, nameOpt, n, after, disableMatchSelector, state)
+      val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
+
+      state.addResultItems(odinResultsIterator)
+      odinResults
+    }
+
     ee.stateFactory.usingState { state =>
-      val results1 = ee.query(q1, labelOpt = Some("NP"), nameOpt = None, 1, after = null, disableMatchSelector = false, state)
+      // This query adds to the state, so it is helped by the localQuery.
+      val results1 = localQuery(q1, labelOpt = Some("NP"), nameOpt = None, 1, after = null, disableMatchSelector = false, state)
       results1.totalHits should equal (1)
       results1.scoreDocs.head.matches should have size 2
 
+      // This query only needs to read from the state.
       val results2 = ee.query(q2, labelOpt = None, nameOpt = None, 1, after = null, disableMatchSelector = false, state)
       results2.totalHits should equal(1)
       results2.scoreDocs.head.matches should have size 1
