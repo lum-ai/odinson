@@ -28,7 +28,7 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 
 @Singleton
-class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)
+class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)(implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
   val config             = ConfigFactory.load()
@@ -37,8 +37,6 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
   val SENTENCE_ID_FIELD  = config[String]("odinson.index.sentenceIdField")
   val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
-
-  val odinsonContext: ExecutionContext = system.dispatchers.lookup("contexts.odinson")
 
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {
@@ -78,7 +76,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         "distinctDependencyRelations" -> depsVocabSize
       )
       json.format(pretty)
-    }(odinsonContext)
+    }
   }
 
   def getDocId(luceneDocId: Int): String = {
@@ -107,7 +105,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       val vocab = vocabulary.terms.toList.sorted
       val json  = Json.toJson(vocab)
       json.format(pretty)
-    }(odinsonContext)
+    }
   }
 
   /** Retrieves JSON for given sentence ID. <br>
@@ -118,7 +116,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
       // ensure doc id is correct
       val json  = mkAbridgedSentence(sentenceId)
       json.format(pretty)
-    }(odinsonContext)
+    }
   }
 
   /** Stores query results in state.
@@ -227,7 +225,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
         val json = Json.toJson(Json.obj("error" -> stackTrace))
         Status(400)(json)
     }
-  }//(odinsonContext)
+  }
 
   /**
     *
@@ -279,7 +277,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
           val json = Json.toJson(Json.obj("error" -> stackTrace))
           Status(400)(json)
       }
-    }(odinsonContext)
+    }
   }
 
   def getMetadataJsonByDocumentId(
@@ -297,7 +295,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
           val json = Json.toJson(Json.obj("error" -> stackTrace))
           Status(400)(json)
       }
-    }(odinsonContext)
+    }
   }
 
   def getMetadataJsonBySentenceId(
@@ -317,7 +315,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
           val json = Json.toJson(Json.obj("error" -> stackTrace))
           Status(400)(json)
       }
-    }(odinsonContext)
+    }
   }
 
   def getParentDocJsonBySentenceId(
@@ -337,7 +335,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
           val json = Json.toJson(Json.obj("error" -> stackTrace))
           Status(400)(json)
       }
-    }(odinsonContext)
+    }
   }
 
   def getParentDocJsonByDocumentId(
@@ -355,7 +353,7 @@ class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents
           val json = Json.toJson(Json.obj("error" -> stackTrace))
           Status(400)(json)
       }
-    }(odinsonContext)
+    }
   }
 
   def mkJson(
