@@ -1,9 +1,11 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.Arrays
+
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.search.CollectionTerminatedException
 
 
@@ -49,7 +51,7 @@ class OdinsonCollector(
 
     override def setScorer(scorer: Scorer): Unit = scorer match {
       case s: OdinsonScorer => this.scorer = s
-      case _ => sys.error("unsupported scorer")
+      case _ =>throw new OdinsonException("unsupported scorer")
     }
   }
 
