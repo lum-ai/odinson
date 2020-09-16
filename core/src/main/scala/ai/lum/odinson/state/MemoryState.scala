@@ -49,6 +49,11 @@ class MemoryState extends State {
 
     stateResultItems
   }
+
+  override def close(): Unit = {
+    baseIdLabelToResultItems.clear()
+    baseLabelToIds.clear()
+  }
 }
 
 object MemoryState {
