@@ -29,8 +29,8 @@ class TestRuleFile extends EventSpec {
       |      object: ^NP = >dobj ${chunk}
     """.stripMargin
     val extractors = eeGummy.ruleReader.compileRuleString(rules)
-    val mentions = eeGummy.extractMentions(extractors)
-    mentions should have size 1
+    val mentions = eeGummy.extractMentions(extractors).toArray
+    mentions should have size (1)
     val m = mentions.head.odinsonMatch
     // test trigger
     testEventTrigger(m, start = 1, end = 2)
@@ -60,15 +60,15 @@ class TestRuleFile extends EventSpec {
         |      [norm=/${turtle}/]
        """.stripMargin
     val extractors = eeNinja.compileRuleString(rules)
-    val mentions = eeNinja.extractMentions(extractors)
-    mentions should have size 2
+    val mentions = eeNinja.extractMentions(extractors).toArray
+    mentions should have size (2)
   }
 
   it should "allow rules to be imported in a master rule file" in {
     val masterPath = "/testGrammar/testMaster.yml"
     val extractors = eeGummy.compileRuleResource(masterPath)
-    val mentions = eeGummy.extractMentions(extractors)
-    mentions should have size 1
+    val mentions = eeGummy.extractMentions(extractors).toArray
+    mentions should have size (1)
     // Tests that the variables from the master file propagate
     mentions.head.foundBy should be("testRuleImported-IMPORT_LABEL")
   }
@@ -103,8 +103,8 @@ class TestRuleFile extends EventSpec {
   it should "allow resource file imports with absolute and relative paths and handle variables" in {
     val masterPath = "/testGrammar/testPaths.yml"
     val extractors = eeNinja.compileRuleResource(masterPath, Map("otherName" -> "HARD_CODED"))
-    val mentions = eeNinja.extractMentions(extractors)
-    mentions should have size 3
+    val mentions = eeNinja.extractMentions(extractors).toArray
+    mentions should have size (3)
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     // because import beats both parent (in a.yml) and local (in b.yml)
@@ -174,7 +174,7 @@ class TestRuleFile extends EventSpec {
     bFile.writeString(bContents)
 
     val extractors = eeNinja.compileRuleFile(masterFile)
-    val mentions = eeNinja.extractMentions(extractors)
+    val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size 2
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
@@ -186,8 +186,8 @@ class TestRuleFile extends EventSpec {
   it should "allow for importing vars from a resource" in {
     val masterPath = "/testGrammar/varImports/rules.yml"
     val extractors = eeNinja.compileRuleResource(masterPath)
-    val mentions = eeNinja.extractMentions(extractors)
-    mentions should have size 1
+    val mentions = eeNinja.extractMentions(extractors).toArray
+    mentions should have size (1)
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("leads-IMPORTED_FROM_VARS")
@@ -223,8 +223,8 @@ class TestRuleFile extends EventSpec {
     varsFile.writeString(varsContents)
 
     val extractors = eeNinja.compileRuleFile(rulesFile)
-    val mentions = eeNinja.extractMentions(extractors)
-    mentions should have size 1
+    val mentions = eeNinja.extractMentions(extractors).toArray
+    mentions should have size (1)
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("B-IMPORTED_NAME")

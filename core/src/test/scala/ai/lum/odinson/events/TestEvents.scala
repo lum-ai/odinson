@@ -72,7 +72,7 @@ class TestEvents extends EventSpec {
     // the above rule should match {bears} and {gummy bears}
     // and then keep only {gummy bears} because the quantifier `?` is greedy
     val extractors = ee.compileRuleString(rule)
-    val mentions = ee.extractMentions(extractors)
+    val mentions = ee.extractMentions(extractors).toArray
     mentions.length should equal (1)
     mentions.head.odinsonMatch shouldBe a [EventMatch]
     val em = mentions.head.odinsonMatch.asInstanceOf[EventMatch]
@@ -234,7 +234,7 @@ class TestEvents extends EventSpec {
        """.stripMargin
 
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = ee.extractMentions(extractors)
+    val mentions = ee.extractMentions(extractors).toArray
 
     mentions should have size(2)
 
