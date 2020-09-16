@@ -45,6 +45,14 @@ class MemoryState extends State {
 
     resultItems
   }
+
+  override def getAllResultItems(): Iterator[ResultItem] = {
+    val resultItemsIterator = baseIdLabelToResultItems
+      .toIterator
+      .flatMap{ case (baseIdLabel, resultItemSet) => resultItemSet.toIterator }
+    // TODO: @Keith check please :)
+    resultItemsIterator
+  }
 }
 
 object MemoryState {

@@ -1,5 +1,6 @@
 package ai.lum.odinson.state
 
+import ai.lum.odinson.state.OdinResultsIterator.emptyResultIterator
 import com.typesafe.config.Config
 
 
@@ -11,6 +12,8 @@ object MockState extends State {
   def getDocIds(docBase: Int, label: String): Array[Int] = Array.emptyIntArray
 
   def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = emptyResultItemArray
+
+  override def getAllResultItems(): Iterator[ResultItem] = emptyResultIterator
 }
 
 

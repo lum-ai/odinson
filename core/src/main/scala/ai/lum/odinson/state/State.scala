@@ -8,5 +8,7 @@ trait State {
 
   def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] // TODO: Return iterator
 
+  def getAllResultItems(): Iterator[ResultItem]
+
   def close(): Unit = ()
 }

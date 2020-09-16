@@ -263,6 +263,11 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     }
   }
 
+  override def getAllResultItems(): Iterator[ResultItem] = {
+    // TODO: Keith
+    ???
+  }
+
   override def close(): Unit = {
     if (!closed) {
       // Set this first so that failed drops are not attempted multiple times.

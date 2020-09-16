@@ -9,6 +9,8 @@ class FileState extends State {
   override def getDocIds(docBase: Int, label: String): Array[Int] = ???
 
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = ???
+
+  override def getAllResultItems(): Iterator[ResultItem] = ???
 }
 
 class FileStateFactory extends StateFactory {

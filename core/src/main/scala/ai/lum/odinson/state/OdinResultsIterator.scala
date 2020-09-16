@@ -54,5 +54,10 @@ class OdinResultsIterator(labelOpt: Option[String], nameOpt: Option[String], odi
 }
 
 object OdinResultsIterator {
+  val emptyResultIterator = Iterator[ResultItem]()
   def apply(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults): OdinResultsIterator = new OdinResultsIterator(labelOpt, nameOpt, odinResults)
+
+  def concatenate(iterators: Seq[Iterator[ResultItem]]): Iterator[ResultItem] = {
+    iterators.foldLeft(emptyResultIterator)(_ ++ _)
+  }
 }
