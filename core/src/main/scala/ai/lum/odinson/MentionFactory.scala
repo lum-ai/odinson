@@ -1,5 +1,8 @@
 package ai.lum.odinson
 
+import ai.lum.odinson.state.ResultItem
+import ai.lum.odinson.utils.MostRecentlyUsed
+
 trait IdGetter {
   def getDocId: String
   def getSentId: String
@@ -31,6 +34,17 @@ trait MentionFactory {
   ): Mention = {
     val arguments = mkArguments(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy)
     newMention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
+  }
+
+  def newMention(resultItem: ResultItem, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): Mention = {
+    newMention(
+      resultItem.odinsonMatch,
+      Some(resultItem.label),
+      resultItem.docIndex,
+      resultItem.segmentDocId,
+      resultItem.segmentDocBase,
+      mruIdGetter.getOrNew(resultItem.docIndex),
+      resultItem.name)
   }
 
   /** A map from argument name to a sequence of matches.
