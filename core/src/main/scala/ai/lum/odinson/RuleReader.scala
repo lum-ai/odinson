@@ -177,7 +177,7 @@ class RuleReader(val compiler: QueryCompiler) {
     val query = ruleType match {
       case "basic" => compiler.compile(pattern)
       case "event" => compiler.compileEventQuery(pattern)
-      case t => sys.error(s"invalid rule type '$t'")
+      case t => throw new OdinsonException(s"invalid rule type '$t'")
     }
     // return an extractor
     Extractor(name, label, priority, query)
@@ -204,7 +204,7 @@ class RuleReader(val compiler: QueryCompiler) {
           .asScala
           .map { case (k, v) => k.toString -> processVar(v) }
           .toMap
-      case _ => sys.error(s"invalid variables data: ${data}")
+      case _ => throw new OdinsonException(s"invalid variables data: ${data}")
     }
   }
 
@@ -226,9 +226,7 @@ class RuleReader(val compiler: QueryCompiler) {
 
   private def importVars(input: SituatedStream): Map[String, String] = {
     val contents = yamlContents(input)
-    contents
-      .map { case (k, v) => k.toString -> processVar(v) }
-      .toMap
+    contents.mapValues(processVar)
   }
 
   private def mkRules(data: Map[String, Any], source: SituatedStream, vars: Map[String, String]): Seq[RuleFile] = {
@@ -238,21 +236,27 @@ class RuleReader(val compiler: QueryCompiler) {
         rules.asScala.toSeq.flatMap { r =>
           makeOrImportRules(r, source, vars)
         }
-      case _ => sys.error("invalid rules data")
+      case _ => throw new OdinsonException("invalid rules data")
     }
   }
 
 
   def makeOrImportRules(data: Any, source: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
     data match {
-      case imported: JMap[String, Any] if imported.asScala.contains("import") =>
-        verifyImport(source)
-        // import rules from a file and return them
-        // Parent vars passed in case we need to resolve variables in import paths
-        val importVars = mkVariables(imported.asScala.toMap, source, parentVars)
-        importRules(imported.asScala.toMap, source, parentVars ++ importVars)
-        // RuleFile (seq[Rule], vars)
-      case _ => Seq(RuleFile(Seq(mkRule(data)), parentVars))
+      case ruleJMap: JMap[_, _] =>
+        val rulesData = ruleJMap.asInstanceOf[JMap[String, Any]].asScala.toMap
+        // If the rules are imported:
+        if (rulesData.contains("import")) {
+          verifyImport(source)
+          // import rules from a file and return them
+          // Parent vars passed in case we need to resolve variables in import paths
+          val importVars = mkVariables(rulesData, source, parentVars)
+          importRules(rulesData, source, parentVars ++ importVars)
+        } else {
+          // Otherwise, process the data as individual rules
+          Seq(RuleFile(Seq(mkRule(data)), parentVars))
+        }
+      case _ => ???
     }
   }
 
@@ -278,7 +282,7 @@ class RuleReader(val compiler: QueryCompiler) {
           fields.get(name).map(_.toString)
         // helper function to retrieve a required field
         def getRequiredField(name: String) =
-          getField(name).getOrElse(sys.error(s"'$name' is required"))
+          getField(name).getOrElse(throw new OdinsonException(s"'$name' is required"))
         // read fields
         val name = getRequiredField("name")
         val label = getField("label")
@@ -287,7 +291,7 @@ class RuleReader(val compiler: QueryCompiler) {
         val pattern = getRequiredField("pattern")
         // return rule
         Rule(name, label, ruleType, priority, pattern)
-      case _ => sys.error("invalid rule data")
+      case _ => throw new OdinsonException("invalid rule data")
     }
   }
 
