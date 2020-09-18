@@ -101,7 +101,10 @@ object SqlResultItem {
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, override val saveOnClose: Boolean, override val outfile: Option[File] = None) extends State {
+class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val saveOnClose: Boolean = false, val outfile: Option[File] = None) extends State {
+
+  if (saveOnClose) require(outfile.isDefined)
+
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected var closed = false
@@ -269,18 +272,15 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     ???
   }
 
-  override def save(): Unit = {
-    require(outfile.isDefined)
-    ???
-  }
-
-  override def saveTo(file: File): Unit = ???
-
+  /**
+    * Delete * from table
+    * Persist the tables
+    */
   override def clear(): Unit = ???
 
   override def close(): Unit = {
     // TODO
-    if (saveOnClose) save()
+    if (saveOnClose) dump(outfile.get)
 
     if (!closed) {
       // Set this first so that failed drops are not attempted multiple times.

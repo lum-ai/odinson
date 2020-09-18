@@ -11,8 +11,10 @@ import scala.collection.mutable
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState(override val saveOnClose: Boolean, override val outfile: Option[File] = None) extends State {
+class MemoryState(val saveOnClose: Boolean, val outfile: Option[File] = None) extends State {
   import MemoryState._
+
+  if (saveOnClose) require(outfile.isDefined)
 
   implicit val resultItemOrdering = MemoryState.ResultItemOrdering
   protected val baseIdLabelToResultItems: mutable.Map[BaseIdLabel, mutable.SortedSet[ResultItem]] = mutable.Map.empty
@@ -58,18 +60,13 @@ class MemoryState(override val saveOnClose: Boolean, override val outfile: Optio
     resultItemsIterator
   }
 
-  override def saveTo(file: File): Unit = {
-    val json = ??? // todo
-    file.writeString(json)
-  }
-
   override def clear(): Unit = {
     baseIdLabelToResultItems.clear()
     baseLabelToIds.clear()
   }
 
   override def close(): Unit = {
-    if (saveOnClose) save()
+    if (saveOnClose) dump(outfile.get)
     clear()
   }
 
@@ -83,10 +80,6 @@ object MemoryState {
     val saveOnClose = config[Boolean]("state.saveOnClose")
     val saveTo = config.get[File]("state.saveTo")
     new MemoryState(saveOnClose, saveTo)
-  }
-
-  def load(file: File): MemoryState = {
-    ???
   }
 
   // This original implementation is thought to create too many objects.

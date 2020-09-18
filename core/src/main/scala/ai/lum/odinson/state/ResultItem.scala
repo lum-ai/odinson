@@ -12,7 +12,7 @@ case class ResultItem(
   def size: Int = ResultItem.sizeOf(odinsonMatch)
 
 // Optionally store the docId and sentId now so that they don't have to be looked up later.
-//  val document: Document = entractorEngine.doc(docIndex)
+//  val document: Document = extractorEngine.doc(docIndex)
 //  val docId = document.getField("docId").stringValue
 //  val sentId= document.getField("sentId").stringValue
 }

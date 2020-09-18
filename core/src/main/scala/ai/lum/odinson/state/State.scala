@@ -7,11 +7,6 @@ import com.typesafe.config.Config
 
 trait State {
 
-  val saveOnClose: Boolean = false
-  val outfile: Option[File] = None
-  // If you want to save on close, you need to specify a location
-  if (saveOnClose) require(outfile.isDefined)
-
   def addResultItems(resultItems: Iterator[ResultItem]): Unit
 
   def getDocIds(docBase: Int, label: String): Array[Int] // TODO: Return iterator
@@ -20,15 +15,27 @@ trait State {
 
   def getAllResultItems(): Iterator[ResultItem]
 
-  def save(): Unit = {
-    require(outfile.isDefined)
-    saveTo(outfile.get)
-  }
+  /**
+    * Writes json lines representation of the ResultItems.  State retains its contents.
+    * // TODO: should these be Mentions
+    * @param file
+    */
+  def dump(file: File): Unit = ???
 
-  def saveTo(file: File): Unit
+  /**
+    * Loads json lines representation of the ResultItems, adds them to the current state.
+    * @param file
+    */
+  def load(file: File): Unit = ???
 
+  /**
+    * Delete the contents of the state, but leave the state open and able to store new results.
+    */
   def clear(): Unit
 
+  /**
+    * End connection (if any) to the state, finalize gracefully.
+    */
   def close(): Unit = ()
 }
 
@@ -46,4 +53,5 @@ object State {
 
     state
   }
+
 }

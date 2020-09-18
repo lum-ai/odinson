@@ -205,7 +205,7 @@ class TestEvents extends EventSpec {
       results1.scoreDocs.head.matches should have size 2
 
       // This query only needs to read from the state.
-      val results2 = ee.query(q2, labelOpt = None, nameOpt = None, 1, after = null, disableMatchSelector = false, clear = false)
+      val results2 = ee.query(q2, labelOpt = None, nameOpt = None, 1, after = null, disableMatchSelector = false)
       results2.totalHits should equal(1)
       results2.scoreDocs.head.matches should have size 1
 

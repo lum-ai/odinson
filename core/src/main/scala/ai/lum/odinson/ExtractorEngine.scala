@@ -269,9 +269,7 @@ class ExtractorEngine(
 
   /** executes query and returns next n results after the provided doc */
     //FIXME: the label and name aren't used!! :(
-  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, clear: Boolean = true): OdinResults = {
-    // FIXME: is this the right semantics here?
-    if (clear) clearState()
+  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
 
     val odinResults = try {
       odinsonQuery.setState(Some(state))
@@ -358,7 +356,7 @@ class ExtractorEngine(
     * @param file
     */
   def saveStateTo(file: File): Unit = {
-    state.saveTo(file)
+    state.dump(file)
   }
 
 }

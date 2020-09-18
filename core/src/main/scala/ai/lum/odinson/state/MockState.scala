@@ -16,10 +16,5 @@ object MockState extends State {
 
   override def getAllResultItems(): Iterator[ResultItem] = emptyResultIterator
 
-  override def save(): Unit = ()
-
-  override def saveTo(file: File): Unit = ()
-
   def clear(): Unit = ()
-
 }

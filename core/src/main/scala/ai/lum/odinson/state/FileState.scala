@@ -5,7 +5,7 @@ import java.io.File
 import ai.lum.common.ConfigUtils._
 import com.typesafe.config.Config
 
-class FileState(override val saveOnClose: Boolean, val saveTo: Option[File] = None) extends State {
+class FileState extends State {
 
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = ???
 
@@ -15,12 +15,9 @@ class FileState(override val saveOnClose: Boolean, val saveTo: Option[File] = No
 
   override def getAllResultItems(): Iterator[ResultItem] = ???
 
-  override def saveTo(file: File): Unit = ???
-
   override def clear(): Unit = ???
 
   override def close(): Unit = {
-    if (saveOnClose) save()
     ???
   }
 
@@ -31,10 +28,7 @@ object FileState {
   def apply(config: Config): FileState = {
     val saveOnClose = config[Boolean]("state.saveOnClose")
     val saveTo = config.get[File]("state.saveTo")
-    new FileState(saveOnClose, saveTo)
+    new FileState()
   }
 
-  def load(file: File): MemoryState = {
-    ???
-  }
 }
