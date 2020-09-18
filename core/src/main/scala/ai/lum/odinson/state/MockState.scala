@@ -1,7 +1,8 @@
 package ai.lum.odinson.state
 
+import java.io.File
+
 import ai.lum.odinson.state.OdinResultsIterator.emptyResultIterator
-import com.typesafe.config.Config
 
 
 object MockState extends State {
@@ -14,19 +15,11 @@ object MockState extends State {
   def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = emptyResultItemArray
 
   override def getAllResultItems(): Iterator[ResultItem] = emptyResultIterator
-}
 
+  override def save(): Unit = ()
 
-class MockStateFactory extends StateFactory {
+  override def saveTo(file: File): Unit = ()
 
-  override def usingState[T](function: State => T): T = {
-    function(MockState)
-  }
-}
+  def clear(): Unit = ()
 
-object MockStateFactory {
-
-  def apply(config: Config): MockStateFactory = {
-    new MockStateFactory()
-  }
 }

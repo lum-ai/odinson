@@ -1,8 +1,11 @@
 package ai.lum.odinson.state
 
+import java.io.File
+
+import ai.lum.common.ConfigUtils._
 import com.typesafe.config.Config
 
-class FileState extends State {
+class FileState(override val saveOnClose: Boolean, val saveTo: Option[File] = None) extends State {
 
   override def addResultItems(resultItems: Iterator[ResultItem]): Unit = ???
 
@@ -11,18 +14,27 @@ class FileState extends State {
   override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = ???
 
   override def getAllResultItems(): Iterator[ResultItem] = ???
-}
 
-class FileStateFactory extends StateFactory {
+  override def saveTo(file: File): Unit = ???
 
-  override def usingState[T](function: State => T): T = {
-    function(new FileState())
+  override def clear(): Unit = ???
+
+  override def close(): Unit = {
+    if (saveOnClose) save()
+    ???
   }
+
 }
 
-object FileStateFactory {
+object FileState {
 
-  def apply(config: Config): FileStateFactory = {
-    new FileStateFactory()
+  def apply(config: Config): FileState = {
+    val saveOnClose = config[Boolean]("state.saveOnClose")
+    val saveTo = config.get[File]("state.saveTo")
+    new FileState(saveOnClose, saveTo)
+  }
+
+  def load(file: File): MemoryState = {
+    ???
   }
 }

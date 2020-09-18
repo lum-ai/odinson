@@ -99,7 +99,7 @@ class TestSqlState extends BaseSpec {
 
   it should "survive a round trip" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
+    val state = SqlState(config)
     val resultItem1 = newResultItem()
     val odinsonScoreDocs = Array(
       new OdinsonScoreDoc(docIndex, 0.0f, -1,
@@ -110,7 +110,7 @@ class TestSqlState extends BaseSpec {
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
     val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults1)
-    val resultItems2 = stateFactory.usingState { state =>
+    val resultItems2 = {
       state.addResultItems(odinResultsIterator)
       state.getResultItems(docBase, docId, resultLabel)
     }
@@ -171,7 +171,7 @@ class TestSqlState extends BaseSpec {
 
   it should "work with one ResultItem at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
+    val state = SqlState(config)
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
@@ -187,7 +187,7 @@ class TestSqlState extends BaseSpec {
               }
           }
       val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults)
-      val resultItems2 = stateFactory.usingState { state =>
+      val resultItems2 = {
         state.addResultItems(odinResultsIterator)
         state.getResultItems(docBase, docId, resultLabel)
       }
@@ -216,7 +216,7 @@ class TestSqlState extends BaseSpec {
 
   it should "work with multiple ResultItems at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
+    val state = SqlState(config)
     val random = new Random(13)
 
     1.to(20).foreach { index => // Do this many tests.
@@ -230,7 +230,7 @@ class TestSqlState extends BaseSpec {
           }
         }
       }
-      val resultItems2 = stateFactory.usingState { state =>
+      val resultItems2 =  {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
           val odinResultsIterator = OdinResultsIterator(Some(label), Some(resultName), odinResults)
 

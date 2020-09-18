@@ -1,5 +1,9 @@
 package ai.lum.odinson.state
 
+import java.io.File
+
+import ai.lum.common.FileUtils.LumAICommonFileWrapper
+import ai.lum.common.ConfigUtils._
 import com.typesafe.config.Config
 
 import scala.collection.mutable
@@ -7,7 +11,7 @@ import scala.collection.mutable
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState extends State {
+class MemoryState(override val saveOnClose: Boolean, override val outfile: Option[File] = None) extends State {
   import MemoryState._
 
   implicit val resultItemOrdering = MemoryState.ResultItemOrdering
@@ -53,11 +57,37 @@ class MemoryState extends State {
     // TODO: @Keith check please :)
     resultItemsIterator
   }
+
+  override def saveTo(file: File): Unit = {
+    val json = ??? // todo
+    file.writeString(json)
+  }
+
+  override def clear(): Unit = {
+    baseIdLabelToResultItems.clear()
+    baseLabelToIds.clear()
+  }
+
+  override def close(): Unit = {
+    if (saveOnClose) save()
+    clear()
+  }
+
 }
 
 object MemoryState {
   case class BaseIdLabel(docBase: Int, docId: Int, label: String)
   case class BaseLabel(docBase: Int, label: String)
+
+  def apply(config: Config): MemoryState = {
+    val saveOnClose = config[Boolean]("state.saveOnClose")
+    val saveTo = config.get[File]("state.saveTo")
+    new MemoryState(saveOnClose, saveTo)
+  }
+
+  def load(file: File): MemoryState = {
+    ???
+  }
 
   // This original implementation is thought to create too many objects.
   // implicit val ordering: Ordering[ResultItem] = Ordering.by[ResultItem, (Int, Int)] { resultItem =>
@@ -74,19 +104,5 @@ object MemoryState {
         endSign // and if these are tied...
       }
     }
-  }
-}
-
-class MemoryStateFactory extends StateFactory {
-
-  override def usingState[T](function: State => T): T = {
-    function(new MemoryState())
-  }
-}
-
-object MemoryStateFactory {
-
-  def apply(config: Config): MemoryStateFactory = {
-    new MemoryStateFactory()
   }
 }

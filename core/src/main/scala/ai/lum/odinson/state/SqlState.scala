@@ -1,5 +1,6 @@
 package ai.lum.odinson.state
 
+import java.io.File
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
 
@@ -100,7 +101,7 @@ object SqlResultItem {
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long) extends State {
+class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, override val saveOnClose: Boolean, override val outfile: Option[File] = None) extends State {
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected var closed = false
@@ -268,7 +269,19 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     ???
   }
 
+  override def save(): Unit = {
+    require(outfile.isDefined)
+    ???
+  }
+
+  override def saveTo(file: File): Unit = ???
+
+  override def clear(): Unit = ???
+
   override def close(): Unit = {
+    // TODO
+    if (saveOnClose) save()
+
     if (!closed) {
       // Set this first so that failed drops are not attempted multiple times.
       closed = true
@@ -291,22 +304,14 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   }
 }
 
-class SqlStateFactory(dataSource: HikariDataSource, index: Long) extends StateFactory {
+
+object SqlState {
   protected var count: AtomicLong = new AtomicLong
 
-  override def usingState[T](function: State => T): T = {
-    using(dataSource.getConnection) { connection =>
-      using(new SqlState(connection, index, count.getAndIncrement)) { state =>
-        function(state)
-      }
-    }
-  }
-}
+  def apply(config: Config): SqlState = {
+    val saveOnClose = config[Boolean]("state.saveOnClose")
+    val saveTo = config.get[File]("state.saveTo")
 
-object SqlStateFactory {
-  protected var count: AtomicLong = new AtomicLong
-
-  def apply(config: Config): SqlStateFactory = {
     val jdbcUrl = config[String]("state.sql.url")
     val dataSource: HikariDataSource = {
       val config = new HikariConfig
@@ -322,6 +327,10 @@ object SqlStateFactory {
       new HikariDataSource(config)
     }
 
-    new SqlStateFactory(dataSource, count.getAndIncrement)
+    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, saveOnClose, saveTo)
+  }
+
+  def load(file: File): SqlState = {
+    ???
   }
 }
