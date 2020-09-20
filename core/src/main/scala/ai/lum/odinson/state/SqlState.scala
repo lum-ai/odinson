@@ -7,11 +7,11 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.NamedCapture
-import ai.lum.odinson.OdinsonMatch
-import ai.lum.odinson.StateMatch
+import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
+import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, MentionFactory, NamedCapture, OdinsonMatch, StateMatch}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.apache.lucene.search.IndexSearcher
 
 class IdProvider(protected var id: Int = 0) {
 
@@ -47,11 +47,11 @@ abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider)
   def end: Int = odinsonMatch.end
 }
 
-class ResultItemWriteNode(val resultItem: ResultItem, idProvider: IdProvider) extends WriteNode(resultItem.odinsonMatch, idProvider) {
+class MentionWriteNode(val mention: Mention, idProvider: IdProvider) extends WriteNode(mention.odinsonMatch, idProvider) {
 
-  def label: String = resultItem.label
+  def label: String = mention.label.getOrElse("")
 
-  def name: String = resultItem.name
+  def name: String = mention.foundBy
 
   def parentNodeOpt: Option[WriteNode] = None
 }
@@ -69,14 +69,14 @@ case class ReadNode(docIndex: Int, name: String, id: Int, parentId: Int, childCo
 
 object SqlResultItem {
 
-  def toWriteNodes(resultItem: ResultItem, idProvider: IdProvider): IndexedSeq[WriteNode] = {
+  def toWriteNodes(mention: Mention, idProvider: IdProvider): IndexedSeq[WriteNode] = {
     val arrayBuffer = new ArrayBuffer[WriteNode]()
 
-    new ResultItemWriteNode(resultItem, idProvider).flatten(arrayBuffer)
+    new MentionWriteNode(mention, idProvider).flatten(arrayBuffer)
     arrayBuffer.toIndexedSeq
   }
 
-  def fromReadNodes(docBase: Int, docId: Int, label: String, readItems: ArrayBuffer[ReadNode]): ResultItem = {
+  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
     val iterator = readItems.reverseIterator
     val first = iterator.next
 
@@ -94,16 +94,22 @@ object SqlResultItem {
       }
       namedCaptures
     }
-
-    ResultItem(docBase, docId, first.docIndex, label, first.name,
-      StateMatch(first.start, first.end, findNamedCaptures(first.childCount)))
+    mentionFactory.newMention(
+      StateMatch(first.start, first.end, findNamedCaptures(first.childCount)),
+      label,
+      first.docIndex, // luceneDocId
+      docId,          // luceneSegmentDocId
+      docBase,        // luceneSegmentDocBase
+      idGetter,
+      first.name,     // foundBy
+      )
   }
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val saveOnClose: Boolean = false, val outfile: Option[File] = None) extends State {
+class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val outfile: Option[File] = None, mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends State {
 
-  if (saveOnClose) require(outfile.isDefined)
+  if (persistOnClose) require(outfile.isDefined)
 
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
@@ -164,7 +170,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
   // Reuse the same connection and prepared statement.
   // TODO Group the mentions and insert multiple at a time.
   // TODO Also pass in the number of items, perhaps how many of each kind?
-  override def addResultItems(resultItems: Iterator[ResultItem]): Unit = {
+  override def addMentions(mentions: Iterator[Mention]): Unit = {
     val sql = s"""
       INSERT INTO $mentionsTable
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
@@ -175,17 +181,17 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       val dbSetter = DbSetter(preparedStatement)
 
       // TODO this should be altered to add several mentions in a single call
-      resultItems.foreach { resultItem =>
-        val stateNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
+      mentions.foreach { mention =>
+        val stateNodes = SqlResultItem.toWriteNodes(mention, idProvider)
 
 //        println(resultItem) // debugging
 
         stateNodes.foreach { stateNode =>
           dbSetter
-              .setNext(resultItem.segmentDocBase)
-              .setNext(resultItem.segmentDocId)
-              .setNext(resultItem.docIndex)
-              .setNext(resultItem.label)
+              .setNext(mention.luceneSegmentDocBase)
+              .setNext(mention.luceneSegmentDocId)
+              .setNext(mention.luceneDocId)
+              .setNext(mention.label.getOrElse(""))
               .setNext(stateNode.name)
               .setNext(stateNode.id)
               .setNext(stateNode.parentId)
@@ -229,7 +235,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     }
   }
 
-  override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = {
+  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
@@ -238,16 +244,16 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
       ;
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
-      val resultSet = new DbSetter(preparedStatement)
+      val mentionSet = new DbSetter(preparedStatement)
           .setNext(docBase)
           .setNext(docId)
           .setNext(label)
           .get
           .executeQuery()
       val readNodes = ArrayBuffer.empty[ReadNode]
-      val resultItems = ArrayBuffer.empty[ResultItem]
+      val mentions = ArrayBuffer.empty[Mention]
 
-      DbGetter(resultSet).foreach { dbGetter =>
+      DbGetter(mentionSet).foreach { dbGetter =>
         val docIndex = dbGetter.getInt
         val name = dbGetter.getStr
         val id = dbGetter.getInt
@@ -259,15 +265,16 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
 
         readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
-          resultItems += SqlResultItem.fromReadNodes(docBase, docId, label, readNodes)
+          val idGetter = LazyIdGetter(indexSearcher, docId)
+          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, mentionFactory, idGetter)
           readNodes.clear()
         }
       }
-      resultItems.toArray
+      mentions.toArray
     }
   }
 
-  override def getAllResultItems(): Iterator[ResultItem] = {
+  override def getAllMentions(): Iterator[Mention] = {
     // TODO: Keith
     ???
   }
@@ -280,7 +287,7 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
 
   override def close(): Unit = {
     // TODO
-    if (saveOnClose) dump(outfile.get)
+    if (persistOnClose) dump(outfile.get)
 
     if (!closed) {
       // Set this first so that failed drops are not attempted multiple times.
@@ -308,9 +315,9 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
 object SqlState {
   protected var count: AtomicLong = new AtomicLong
 
-  def apply(config: Config): SqlState = {
-    val saveOnClose = config[Boolean]("state.saveOnClose")
-    val saveTo = config.get[File]("state.saveTo")
+  def apply(config: Config, indexSearcher: OdinsonIndexSearcher): SqlState = {
+    val persistOnClose = config[Boolean]("state.sql.persistOnClose")
+    val stateDir = config.get[File]("state.sql.stateDir")
 
     val jdbcUrl = config[String]("state.sql.url")
     val dataSource: HikariDataSource = {
@@ -327,10 +334,9 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, saveOnClose, saveTo)
+    val mentionFactory = MentionFactory.fromConfig(config)
+
+    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateDir, mentionFactory, indexSearcher)
   }
 
-  def load(file: File): SqlState = {
-    ???
-  }
 }

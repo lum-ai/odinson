@@ -9,7 +9,7 @@ import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQu
 import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
@@ -17,7 +17,7 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{MockState, OdinResultsIterator, ResultItem, State}
+import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
@@ -37,7 +37,7 @@ object LazyIdGetter {
   def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
 }
 
-class ExtractorEngine(
+class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
@@ -134,35 +134,30 @@ class ExtractorEngine(
     extractMentions(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
-  /** Apply the extractors and return results for at most `numSentences` */
+  /** Apply the extractors and return results for at most `numSentences`, may not be thread safe. */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
-
     state match {
-      // If we have a mock state, we never need a state
-      case _: MockState.type => extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
-      // Otherwise, we may and we may not, check
+      case _: MockState.type =>
+        // If we have a mock state, we never need a state
+        extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
       case _ =>
         // Check to see if all the extractors have the **same** ExactPriority, if so, we don't need a state
-        if (needsState(extractors)) {
-          extractWithState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
-        } else {
-          extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
-        }
+        extractWithState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
     }
   }
 
-  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[ResultItem] = {
+  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
     val resultsIterators = for {
       extractor <- extractors
       if extractor.priority matches i
-    } yield extract(extractor, numSentences, disableMatchSelector)
+    } yield extract(extractor, numSentences, disableMatchSelector, mruIdGetter)
 
-    OdinResultsIterator.concatenate(resultsIterators)
+    OdinMentionsIterator.concatenate(resultsIterators)
   }
 
-  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean): Iterator[ResultItem] = {
+  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
     val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector)
-    OdinResultsIterator(extractor.label, Some(extractor.name), odinResults)
+    mentionFactory.mentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
   }
 
   private def extractWithState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
@@ -175,38 +170,38 @@ class ExtractorEngine(
 
     while (!finished) {
       // extract the mentions from all extractors of this priority
-      val resultItems = extractFromPriority(epoch, extractors, numSentences, disableMatchSelector, mruIdGetter)
+      val mentions = extractFromPriority(epoch, extractors, numSentences, disableMatchSelector, mruIdGetter)
       epoch += 1
       // if anything returned, add to the state
-      if (resultItems.hasNext) {
-        state.addResultItems(resultItems)
+      if (mentions.hasNext) {
+        // future actions here
+        state.addMentions(mentions)
       } else if (epoch > minIterations) {
         // if nothing has been found and we've satisfied the minIterations, stop
         finished = true
       }
     }
     // At the end of the priorities, gather all the ResultItems found from the state
-    val results = state.getAllResultItems()
+    val results = state.getAllMentions()
     // Filter any that are invalid and convert to Mentions
-    mkMentionsAndFilter(results, allowTriggerOverlaps, mruIdGetter)
+    filterMentions(results, allowTriggerOverlaps)
   }
 
   private def extractNoState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
     val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
     // Apply each extractor, concatenate results
-    val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector))
-    val results = OdinResultsIterator.concatenate(resultsIterators)
+    val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
+    val results = OdinMentionsIterator.concatenate(resultsIterators)
 
-    mkMentionsAndFilter(results, allowTriggerOverlaps, mruIdGetter)
+    filterMentions(results, allowTriggerOverlaps)
   }
 
-  private def mkMentionsAndFilter(results: Iterator[ResultItem], allowTriggerOverlaps: Boolean, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+  private def filterMentions(ms: Iterator[Mention], allowTriggerOverlaps: Boolean): Iterator[Mention] = {
     val filter = filters(allowTriggerOverlaps)
     for {
-      result <- results
-      mention = mentionFactory.newMention(result, mruIdGetter)
-      mentionOpt = filter(mention)
+      m <- ms
+      mentionOpt = filter(m)
       if mentionOpt.isDefined
     } yield mentionOpt.get
   }
@@ -267,7 +262,8 @@ class ExtractorEngine(
     query(odinsonQuery, None, None, n, after, disableMatchSelector)
   }
 
-  /** executes query and returns next n results after the provided doc */
+  /** executes query and returns next n results after the provided doc.
+    * Importantly, Note that here mentions are not added to the State. */
     //FIXME: the label and name aren't used!! :(
   def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
 
@@ -389,7 +385,7 @@ object ExtractorEngine {
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val state = State(config)
+    val state = State(config, indexSearcher)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,

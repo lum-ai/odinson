@@ -1,20 +1,19 @@
 package ai.lum.odinson.state
 
-import java.io.File
-
-import ai.lum.odinson.state.OdinResultsIterator.emptyResultIterator
+import ai.lum.odinson.Mention
+import ai.lum.odinson.state.OdinMentionsIterator.emptyMentionIterator
 
 
 object MockState extends State {
-  val emptyResultItemArray = new Array[ResultItem](0)
+  val emptyMentionArray = new Array[Mention](0)
 
-  def addResultItems(resultItems: Iterator[ResultItem]): Unit = ()
+  def addMentions(mentions: Iterator[Mention]): Unit = ()
 
   def getDocIds(docBase: Int, label: String): Array[Int] = Array.emptyIntArray
 
-  def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = emptyResultItemArray
+  def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = emptyMentionArray
 
-  override def getAllResultItems(): Iterator[ResultItem] = emptyResultIterator
+  override def getAllMentions(): Iterator[Mention] = emptyMentionIterator
 
   def clear(): Unit = ()
 }
