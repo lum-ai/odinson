@@ -1,7 +1,9 @@
 package ai.lum.odinson.state
 
+import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, MentionFactory}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.utils.MostRecentlyUsed
 
 import scala.annotation.tailrec
 
@@ -20,44 +22,44 @@ import scala.annotation.tailrec
       odinsonMatch <- scoreDoc.matches
       mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, docId, sentId, extractor.name)
  */
-class OdinResultsIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults) extends Iterator[ResultItem] {
-  val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
-  val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
+//class OdinMentionsIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults, factory: MentionFactory, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]) extends Iterator[Mention] {
+//  val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
+//  val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
+//
+//  var matchesRemaining: Int = matchesTotal
+//  var scoreDocsIndex: Int = 0
+//  var matchesIndex: Int = 0
+//
+//  override def hasNext: Boolean = 0 < matchesRemaining
+//
+//  @tailrec
+//  override final def next(): Mention = {
+//    val scoreDoc = scoreDocs(scoreDocsIndex)
+//    val docIndex = scoreDoc.doc
+//
+//    if (matchesIndex < scoreDoc.matches.length) {
+//      val odinsonMatch = scoreDoc.matches(matchesIndex)
+//
+//      matchesIndex += 1
+//      matchesRemaining -= 1
+//
+//      // TODO: double check that name == foundBy, replace?
+//      val idGetter = mruIdGetter.getOrNew(docIndex)
+//      factory.newMention(odinsonMatch, labelOpt, docIndex, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, nameOpt.getOrElse(""))
+//    }
+//    else {
+//      scoreDocsIndex += 1
+//      matchesIndex = 0
+//      next()
+//    }
+//  }
+//}
 
-  var matchesRemaining: Int = matchesTotal
-  var scoreDocsIndex: Int = 0
-  var matchesIndex: Int = 0
+object OdinMentionsIterator {
+  val emptyMentionIterator = Iterator[Mention]()
+//  def apply(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults, factory: MentionFactory, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): OdinMentionsIterator = new OdinMentionsIterator(labelOpt, nameOpt, odinResults, factory, mruIdGetter)
 
-  override def hasNext: Boolean = 0 < matchesRemaining
-
-  @tailrec
-  override final def next(): ResultItem = {
-    val scoreDoc = scoreDocs(scoreDocsIndex)
-    val docIndex = scoreDoc.doc
-
-    if (matchesIndex < scoreDoc.matches.length) {
-      val odinsonMatch = scoreDoc.matches(matchesIndex)
-
-      matchesIndex += 1
-      matchesRemaining -= 1
-      ResultItem(
-        scoreDoc.segmentDocBase, scoreDoc.segmentDocId, docIndex,
-        labelOpt.getOrElse(""), nameOpt.getOrElse(""), odinsonMatch
-      )
-    }
-    else {
-      scoreDocsIndex += 1
-      matchesIndex = 0
-      next()
-    }
-  }
-}
-
-object OdinResultsIterator {
-  val emptyResultIterator = Iterator[ResultItem]()
-  def apply(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults): OdinResultsIterator = new OdinResultsIterator(labelOpt, nameOpt, odinResults)
-
-  def concatenate(iterators: Seq[Iterator[ResultItem]]): Iterator[ResultItem] = {
-    iterators.foldLeft(emptyResultIterator)(_ ++ _)
+  def concatenate(iterators: Seq[Iterator[Mention]]): Iterator[Mention] = {
+    iterators.foldLeft(emptyMentionIterator)(_ ++ _)
   }
 }
