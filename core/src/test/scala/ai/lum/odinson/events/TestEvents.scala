@@ -5,7 +5,7 @@ import ai.lum.odinson.EventMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.state.OdinResultsIterator
+import ai.lum.odinson.state.OdinMentionsIterator
 import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
@@ -15,6 +15,8 @@ class TestEvents extends EventSpec {
   // extractor engine persists across tests (hacky way)
   def doc = getDocument("becky-gummy-bears")
   using (Utils.mkExtractorEngine(doc)) { ee =>
+
+    val factory = ee.mentionFactory
 
     "Odinson" should "match event with promoted entities" in {
       val pattern =
@@ -85,7 +87,7 @@ class TestEvents extends EventSpec {
       // the length of this list should not change if it goes to a set
       argMetadataNames.length should be(argMetadataNames.toSet.size)
 
-
+      ee.clearState()
     }
 
     it should "promote a token when no surface pattern is provided" in {
@@ -108,6 +110,7 @@ class TestEvents extends EventSpec {
         createArgument("object", 3, 4),
       )
       testEventArguments(m, desiredArgs)
+      ee.clearState()
     }
 
     it should "match when no label is provided" in {
@@ -130,6 +133,7 @@ class TestEvents extends EventSpec {
         createArgument("object", 2, 4),
       )
       testEventArguments(m, desiredArgs)
+      ee.clearState()
     }
 
     it should "promote a token when no surface pattern is provided and label is not provided" in {
@@ -152,6 +156,7 @@ class TestEvents extends EventSpec {
         createArgument("object", 3, 4),
       )
       testEventArguments(m, desiredArgs)
+      ee.clearState()
     }
 
     it should "not throw an exception when it fails" in {
@@ -163,6 +168,7 @@ class TestEvents extends EventSpec {
     """
       val q = ee.compiler.compileEventQuery(pattern)
       noException should be thrownBy ee.query(q, 1)
+      ee.clearState()
     }
 
     val pattern =
@@ -176,6 +182,7 @@ class TestEvents extends EventSpec {
       val q = ee.compiler.compileEventQuery(pattern)
       val results = ee.query(q, 1)
       results.totalHits should equal(0)
+      ee.clearState()
     }
 
     it should "populate the state with NPs" in {
@@ -183,6 +190,7 @@ class TestEvents extends EventSpec {
       val results = ee.query(query)
       results.totalHits should equal(1)
       results.scoreDocs.head.matches should have size 2
+      ee.clearState()
     }
 
     it should "find event with mentions from the state when the state is populated" in {
@@ -192,9 +200,9 @@ class TestEvents extends EventSpec {
       // The ee.query no longer adds to the state on its own, so this helper is being used.
       def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
         val odinResults = ee.query(odinsonQuery, labelOpt, nameOpt, n, after, disableMatchSelector)
-        val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
+        val odinMentionsIterator = factory.mentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
-        ee.state.addResultItems(odinResultsIterator)
+        ee.state.addMentions(odinMentionsIterator)
         odinResults
       }
 
@@ -218,7 +226,7 @@ class TestEvents extends EventSpec {
         createArgument("object", 2, 4),
       )
       testEventArguments(m, desiredArgs)
-
+      ee.clearState()
     }
 
     it should "retrieve events properly from the state" in {
@@ -273,6 +281,7 @@ class TestEvents extends EventSpec {
       val objType = obj.arguments("bearType")
       objType should have size (1)
       testEventArguments(obj.odinsonMatch, desiredBearArg)
+      ee.clearState()
     }
 
     // We can revisit the semantics here if desired

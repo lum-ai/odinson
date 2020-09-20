@@ -40,6 +40,7 @@ class TestRuleFile extends EventSpec {
       createArgument("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
+    eeGummy.clearState()
   }
 
   it should "correctly handle list vars" in {
@@ -62,6 +63,7 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleString(rules)
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size (2)
+    eeNinja.clearState()
   }
 
   it should "allow rules to be imported in a master rule file" in {
@@ -71,6 +73,7 @@ class TestRuleFile extends EventSpec {
     mentions should have size (1)
     // Tests that the variables from the master file propagate
     mentions.head.foundBy should be("testRuleImported-IMPORT_LABEL")
+    eeGummy.clearState()
   }
 
   // todo:
@@ -119,6 +122,7 @@ class TestRuleFile extends EventSpec {
     assert(factMentions.length == 1)
     // no import, but parent beats local, and hard-coded trumps all
     factMentions.head.foundBy should be("C-C-PARENT-HARD_CODED")
+    eeNinja.clearState()
   }
 
   //  4: test filesystem resources -- write temp directory with files, put a grammar there, delete when done (if possible)
@@ -181,6 +185,7 @@ class TestRuleFile extends EventSpec {
 
     val machinesMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "machines")
     assert(machinesMentions.length == 1)
+    eeNinja.clearState()
   }
 
   it should "allow for importing vars from a resource" in {
@@ -191,6 +196,7 @@ class TestRuleFile extends EventSpec {
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("leads-IMPORTED_FROM_VARS")
+    eeNinja.clearState()
   }
 
   it should "allow for importing vars from filesystem" in {
@@ -228,7 +234,7 @@ class TestRuleFile extends EventSpec {
     val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("B-IMPORTED_NAME")
-
-
+    eeNinja.clearState()
   }
+
 }

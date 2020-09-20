@@ -45,49 +45,52 @@ class TestEventTriggers extends EventSpec {
 
   "Odinson" should "match events for all trigger mentions using a basic pattern" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-     
+
     val rules = applyRuleTemplate(
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})",
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
     )
-    
+
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
     val animals = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
+    ee.close()
   }
 
   it should "match events for all trigger mentions using an event pattern" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-  
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
-    
+
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
     val animals = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
+    ee.close()
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "wild? animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
-    
+
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
     val animals = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
+    ee.close()
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger (variable right hand side)" in {
@@ -107,17 +110,19 @@ class TestEventTriggers extends EventSpec {
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match events with quantifiers in the trigger (overlap with different start and end)" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "[tag=DT | tag=JJ] [tag=JJ]",
       rulesPatternResult = "<amod [lemma=animal]",
     )
-    
+
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
     val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch.asInstanceOf[EventMatch].trigger))
@@ -126,11 +131,13 @@ class TestEventTriggers extends EventSpec {
     val expectedResults = List("animals", "animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match events with quantifiers in the trigger (greedy)" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []* animals",
@@ -144,11 +151,13 @@ class TestEventTriggers extends EventSpec {
     val expectedResults = List("elephants")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match events with quantifiers in the trigger (greedy; allow trigger overlaps)" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []* animals",
@@ -165,11 +174,13 @@ class TestEventTriggers extends EventSpec {
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals", "elephants")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match events for all trigger mentions using an event pattern with quantifiers in the trigger (laziness)" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []*? animals",
@@ -183,11 +194,13 @@ class TestEventTriggers extends EventSpec {
     val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match arguments of correct length using a basic pattern (i)" in {
     val ee = mkExtractorEngine("pre-european-diet")
-    
+
     val rules = applyRuleTemplate(
       varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})",
@@ -197,6 +210,8 @@ class TestEventTriggers extends EventSpec {
     val animals = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
   it should "match arguments of correct length using an event pattern (i)" in {
@@ -207,12 +222,14 @@ class TestEventTriggers extends EventSpec {
       rulesPatternTrigger = "animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}",
     )
-    
+
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
     val animals = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedResults = List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
+
+    ee.close()
   }
 
 }

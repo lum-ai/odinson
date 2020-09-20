@@ -59,6 +59,9 @@ class TestState extends BaseSpec{
 
     mentions should have size(4)
 
+    eeGummy.clearState()
+    eeGummy.close()
+
   }
 
 }
