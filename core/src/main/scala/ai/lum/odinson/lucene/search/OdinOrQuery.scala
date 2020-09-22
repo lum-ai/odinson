@@ -9,7 +9,6 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.common.JavaCollectionUtils._
 import ai.lum.odinson._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.state.State

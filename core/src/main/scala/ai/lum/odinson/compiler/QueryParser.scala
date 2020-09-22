@@ -2,7 +2,6 @@ package ai.lum.odinson.compiler
 
 import fastparse._
 import ScriptWhitespace._
-import ai.lum.odinson.lucene.search.FullTraversalQuery
 
 class QueryParser(
     val allTokenFields: Seq[String], // the names of all valid token fields

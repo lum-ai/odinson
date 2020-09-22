@@ -1,8 +1,6 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
-import scala.annotation.tailrec
-import scala.collection.mutable._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._

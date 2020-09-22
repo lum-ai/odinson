@@ -2,7 +2,6 @@ package ai.lum.odinson.state
 
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
-import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 trait StateFactory {
