@@ -26,18 +26,19 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
+import com.typesafe.config.Config
 
 @Singleton
-class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)(implicit ec: ExecutionContext)
+class OdinsonController @Inject() (config: Config = ConfigFactory.load(), system: ActorSystem, cc: ControllerComponents)(implicit ec: ExecutionContext)
   extends AbstractController(cc) {
-
-  val config             = ConfigFactory.load()
+  // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
+  val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config[Config]("odinson"))
   val docsDir            = config[File]("odinson.docsDir")
   val DOC_ID_FIELD       = config[String]("odinson.index.documentIdField")
   val SENTENCE_ID_FIELD  = config[String]("odinson.index.sentenceIdField")
   val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
-
+//  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {
     def format(pretty: Option[Boolean]): Result = pretty match {
