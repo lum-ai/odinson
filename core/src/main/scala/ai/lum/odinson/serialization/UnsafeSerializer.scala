@@ -11,14 +11,16 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
 
   /** gets an int from bytes at the current position */
   def getInt(): Int = {
-    val value = unsafe.getInt(bytes, byteArrayOffset + pos)
+    val offset = (byteArrayOffset + pos).toLong
+    val value = unsafe.getInt(bytes, offset)
     pos += sizeOfInt
     value
   }
 
   /** puts an int in bytes at the current position */
   def putInt(value: Int): Unit = {
-    unsafe.putInt(bytes, byteArrayOffset + pos, value)
+    val offset = (byteArrayOffset + pos).toLong
+    unsafe.putInt(bytes, offset, value)
     pos += sizeOfInt
   }
 
