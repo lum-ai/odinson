@@ -1,14 +1,11 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{Map => JMap, Set => JSet}
-
-import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, HashMap}
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.serialization.UnsafeSerializer

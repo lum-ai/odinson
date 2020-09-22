@@ -1,7 +1,6 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Map => JMap, Set => JSet }
-import scala.annotation.tailrec
 import scala.collection.mutable._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -10,7 +9,6 @@ import ai.lum.odinson._
 import ai.lum.odinson.state._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.lucene.search.spans._
-import scala.concurrent.duration.span
 
 case class SingleStepFullTraversalQuery(
   traversal: GraphTraversal,

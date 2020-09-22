@@ -1,8 +1,5 @@
 package ai.lum.odinson.compiler
 
-import java.io.File
-
-import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
@@ -12,11 +9,9 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
-import ai.lum.common.ConfigFactory
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
-import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class QueryCompiler(

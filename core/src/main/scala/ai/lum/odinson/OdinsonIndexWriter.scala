@@ -1,9 +1,7 @@
 package ai.lum.odinson
 
 import java.io.File
-import java.nio.file.Paths
 import java.util.Collection
-
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef

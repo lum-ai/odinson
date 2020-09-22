@@ -1,12 +1,10 @@
 package ai.lum.odinson.lucene.search
 
 import java.util.{ Arrays, Map => JMap, Set => JSet }
-import scala.collection.mutable.ArrayBuilder
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinRepetitionQuery(

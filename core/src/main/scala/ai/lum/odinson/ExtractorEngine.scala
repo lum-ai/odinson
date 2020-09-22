@@ -1,8 +1,6 @@
 package ai.lum.odinson
 
 import java.io.File
-import java.nio.file.Path
-
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
