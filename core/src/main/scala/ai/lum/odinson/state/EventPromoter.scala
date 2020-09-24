@@ -3,11 +3,12 @@ package ai.lum.odinson.state
 import ai.lum.odinson.EventMatch
 import ai.lum.odinson.NamedCapture
 import ai.lum.odinson.OdinsonMatch
-import ai.lum.odinson.StateMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
-class EventPromoter {
+
+abstract class EventPromoter {
+  def promoteEvents(labeledNamedOdinResults: LabeledNamedOdinResults): Array[LabeledNamedOdinResults]
 
   protected def countChildren(odinsonMatch: OdinsonMatch): Int = {
     val count = odinsonMatch.namedCaptures.foldLeft(0) { case (total, namedCapture) =>
@@ -40,13 +41,63 @@ class EventPromoter {
     )
   }
 
+  protected def promoteOdinsonMatch(odinsonMatch: OdinsonMatch, odinsonScoreDoc: OdinsonScoreDoc): Array[LabeledNamedOdinResults]
+
+  protected def promoteOdinResults(odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
+    odinResults.scoreDocs.flatMap { odinsonScoreDoc =>
+      odinsonScoreDoc.matches.flatMap { odinsonMatch =>
+        promoteOdinsonMatch(odinsonMatch, odinsonScoreDoc)
+      }
+    }
+  }
+}
+
+class FlatEventPromoter extends EventPromoter {
+
+  protected def promoteOdinsonMatch(odinsonMatch: OdinsonMatch, odinsonScoreDoc: OdinsonScoreDoc): Array[LabeledNamedOdinResults] = {
+    val result = odinsonMatch match {
+      case eventMatch: EventMatch =>
+        // Turn this back on for paranoia mode.
+        // {
+        //  val namesAndArgumentMetadatas = eventMatch.argumentMetadata.groupBy(_.name)
+        //  namesAndArgumentMetadatas.foreach { case (name, argumentMetadatas) =>
+        //    // Those with the same name should all be the same.
+        //    assert(argumentMetadatas.distinct.length == 1)
+        //  }
+        // }
+        val namesToPromote: Set[String] = eventMatch.argumentMetadata
+            .filter(_.promote)
+            .map(_.name)
+            .toSet
+        val namedCapturesToPromote = eventMatch.namedCaptures.filter { namedCapture =>
+          namesToPromote.contains(namedCapture.name)
+        }
+        val labeledNamedOdinResults = namedCapturesToPromote.map { namedCapture =>
+          newLabeledNamedOdinResults(namedCapture, odinsonScoreDoc)
+        }
+
+        labeledNamedOdinResults
+      case _ => Array.empty[LabeledNamedOdinResults]
+    }
+
+    result
+  }
+
+  override def promoteEvents(labeledNamedOdinResults: LabeledNamedOdinResults): Array[LabeledNamedOdinResults] = {
+    // Return the one that was passed in plus any others that result from promotions.
+    labeledNamedOdinResults +: promoteOdinResults(labeledNamedOdinResults.odinResults)
+  }
+}
+
+class HierarchicalEventPromoter extends EventPromoter {
+
   protected def promoteOdinsonMatch(odinsonMatch: OdinsonMatch, odinsonScoreDoc: OdinsonScoreDoc): Array[LabeledNamedOdinResults] = {
 
     def promoteOdinsonMatch(odinsonMatch: OdinsonMatch): Array[LabeledNamedOdinResults] = {
       val result = odinsonMatch match {
         // This is only ever considered in the case of an EventMatch.
         case eventMatch: EventMatch =>
-          val names = eventMatch.namedCaptures.map(_.name)
+          // val names = eventMatch.namedCaptures.map(_.name)
           // It is required that there are no duplicate names in the namedCaptures.
           // This is not true!
           // require(names.distinct.size == eventMatch.namedCaptures.length)
@@ -61,7 +112,7 @@ class EventPromoter {
 
           eventMatch.namedCaptures.flatMap { capture =>
             // Is it possible that not all namedArguments have ArgumentMetadata?
-            val promote = nameToPromote.get(capture.name).getOrElse(false)
+            val promote = nameToPromote.getOrElse(capture.name, false)
             val heads: Array[LabeledNamedOdinResults] =
               if (promote)
                 Array(newLabeledNamedOdinResults(capture, odinsonScoreDoc))
@@ -82,14 +133,6 @@ class EventPromoter {
     val result = promoteOdinsonMatch(odinsonMatch)
 
     result
-  }
-
-  protected def promoteOdinResults(odinResults: OdinResults): Array[LabeledNamedOdinResults] = {
-    odinResults.scoreDocs.flatMap { odinsonScoreDoc =>
-      odinsonScoreDoc.matches.flatMap { odinsonMatch =>
-        promoteOdinsonMatch(odinsonMatch, odinsonScoreDoc)
-      }
-    }
   }
 
   def promoteEvents(labeledNamedOdinResults: LabeledNamedOdinResults): Array[LabeledNamedOdinResults] = {

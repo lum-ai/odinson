@@ -19,7 +19,7 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.state.EventPromoter
+import ai.lum.odinson.state.FlatEventPromoter
 import ai.lum.odinson.state.LabeledNamedOdinResults
 import ai.lum.odinson.state.OdinResultsIterator
 import ai.lum.odinson.state.StateFactory
@@ -57,7 +57,7 @@ class ExtractorEngine(
 
   val ruleReader = new RuleReader(compiler)
 
-  val eventPromoter = new EventPromoter()
+  val eventPromoter = new FlatEventPromoter()
 
   // This boolean is for allowTriggerOverlaps.  This is so that we don't have to constantly check
   // allowTriggerOverlaps in an inner loop.  It's not going to change, after all.
