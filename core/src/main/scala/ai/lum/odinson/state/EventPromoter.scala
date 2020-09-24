@@ -66,6 +66,7 @@ class FlatEventPromoter extends EventPromoter {
         //  }
         // }
         val namesToPromote: Set[String] = eventMatch.argumentMetadata
+            .filter(_.promote)
             .map(_.name)
             .toSet
         val namedCapturesToPromote = eventMatch.namedCaptures.filter { namedCapture =>
