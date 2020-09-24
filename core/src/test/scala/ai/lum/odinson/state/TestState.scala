@@ -43,7 +43,7 @@ class TestState extends BaseSpec{
        """.stripMargin
 
     val extractors = eeGummy.ruleReader.compileRuleString(rules)
-    val mentions = eeGummy.extractMentions(extractors)
+    val mentions = eeGummy.extractMentions(extractors).toArray
 
     val first = mentions.filter(_.label.get == "First")
     first should have size(1)
@@ -58,6 +58,9 @@ class TestState extends BaseSpec{
     fourth should have size(1)
 
     mentions should have size(4)
+
+    eeGummy.clearState()
+    eeGummy.close()
 
   }
 

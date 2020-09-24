@@ -9,17 +9,18 @@ import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQu
 import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValueFactory}
+import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
-import ai.lum.common.ConfigFactory
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{MockState, OdinResultsIterator, State, StateFactory}
+import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
@@ -36,11 +37,11 @@ object LazyIdGetter {
   def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
 }
 
-class ExtractorEngine(
+class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
-  val stateFactory: StateFactory,
+  val state: State, // todo: should this be private?
   val parentDocIdField: String,
   val mentionFactory: MentionFactory
 ) {
@@ -124,61 +125,111 @@ class ExtractorEngine(
   }
 
   /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Iterator[Mention] = {
     extractMentions(extractors, numSentences, false, false)
   }
 
   /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Seq[Mention] = {
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Iterator[Mention] = {
     extractMentions(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
-  /** Apply the extractors and return results for at most `numSentences` */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
-    val minIterations = extractors.map(_.priority.minIterations).max
-    // This is here both to demonstrate how a filter might be passed into the method.
-    val filter = filters(allowTriggerOverlaps)
-    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
-
-    def localQueryAndAddToState(extractor: Extractor, state: State): OdinResults = {
-      val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
-      val odinResultsIterator = OdinResultsIterator(extractor.label, Some(extractor.name), odinResults)
-
-      // All of the odinResults will be added to the state, even though not all of them will
-      // necessarily be used to create mentions.
-      state.addResultItems(odinResultsIterator)
-      odinResults
+  /** Apply the extractors and return results for at most `numSentences`, may not be thread safe. */
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
+    state match {
+      case _: MockState.type =>
+        // If we have a mock state, we never need a state
+        extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
+      case _ =>
+        // Check to see if all the extractors have the **same** ExactPriority, if so, we don't need a state
+        extractWithState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
     }
+  }
 
-    def extract(i: Int, state: State): Seq[Mention] = for {
+  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+    val resultsIterators = for {
       extractor <- extractors
       if extractor.priority matches i
-      odinResults = localQueryAndAddToState(extractor, state)
-      scoreDoc <- odinResults.scoreDocs
-      idGetter = mruIdGetter.getOrNew(scoreDoc.doc)
-      odinsonMatch <- scoreDoc.matches
-      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
-      mentionOpt = filter(mention)
-      if (mentionOpt.isDefined)
+    } yield extract(extractor, numSentences, disableMatchSelector, mruIdGetter)
+
+    OdinMentionsIterator.concatenate(resultsIterators)
+  }
+
+  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+    val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector)
+    mentionFactory.mentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
+  }
+
+  private def extractWithState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
+    val minIterations = extractors.map(_.priority.minIterations).max
+    // This is here both to demonstrate how a filter might be passed into the method.
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+
+    var finished = false
+    var epoch = 1
+
+    while (!finished) {
+      // extract the mentions from all extractors of this priority
+      val mentions = extractFromPriority(epoch, extractors, numSentences, disableMatchSelector, mruIdGetter)
+      epoch += 1
+      // if anything returned, add to the state
+      if (mentions.hasNext) {
+        // future actions here
+        state.addMentions(mentions)
+      } else if (epoch > minIterations) {
+        // if nothing has been found and we've satisfied the minIterations, stop
+        finished = true
+      }
+    }
+    // At the end of the priorities, gather all the ResultItems found from the state
+    val results = state.getAllMentions()
+    // Filter any that are invalid and convert to Mentions
+    filterMentions(results, allowTriggerOverlaps)
+  }
+
+  private def extractNoState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+
+    // Apply each extractor, concatenate results
+    val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
+    val results = OdinMentionsIterator.concatenate(resultsIterators)
+
+    filterMentions(results, allowTriggerOverlaps)
+  }
+
+  private def filterMentions(ms: Iterator[Mention], allowTriggerOverlaps: Boolean): Iterator[Mention] = {
+    val filter = filters(allowTriggerOverlaps)
+    for {
+      m <- ms
+      mentionOpt = filter(m)
+      if mentionOpt.isDefined
     } yield mentionOpt.get
+  }
 
-    @annotation.tailrec
-    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
-      val newMentions: Seq[Mention] = extract(i, state)
-
-      if (0 < newMentions.length)
-        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
-      else if (i < minIterations)
-        loop(i + 1, mentions, state)
-      else
-        mentions
+  /** Used as an optimization to check and see if it's the case that all the priorities are (a) ExactPriorities
+    * and (b) they all have the same value (i.e., specified priority).  If so, return false (no state needed)
+    * else return true (state needed). */
+  private def needsState(extractors: Seq[Extractor]): Boolean = {
+    val (exactPriorityExtractors, otherExtractors) = extractors.partition(_.priority.isInstanceOf[ExactPriority])
+    // If any of the extractors are not ExactPriority, then we need a state
+    if (otherExtractors.nonEmpty) {
+      return true
     }
-
-    val mentions = stateFactory.usingState { state =>
-      loop(1, Seq.empty[Mention], state)
+    // If there were no other extractors, and yet this is empty, there's a problem (shouldn't happen)
+    if (exactPriorityExtractors.isEmpty) {
+      throw new OdinsonException("There are no extractors.")
     }
+    // Otherwise, see how many different priorities were used
+    val numPriorities = exactPriorityExtractors
+      // collect the priority values
+      .map(_.priority)
+      .collect{ case e: ExactPriority => e.value }
+      // deduplicate
+      .toSet
+      .size
 
-    mentions.distinct
+    // if more than one, we need a state
+    numPriorities > 1
   }
 
   /** executes query and returns all results */
@@ -208,13 +259,14 @@ class ExtractorEngine(
 
   /** executes query and returns next n results after the provided doc */
   def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
-    stateFactory.usingState { state =>
-      query(odinsonQuery, None, None, n, after, disableMatchSelector, state)
-    }
+    query(odinsonQuery, None, None, n, after, disableMatchSelector)
   }
 
-  /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State = MockState): OdinResults = {
+  /** executes query and returns next n results after the provided doc.
+    * Importantly, Note that here mentions are not added to the State. */
+    //FIXME: the label and name aren't used!! :(
+  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+
     val odinResults = try {
       odinsonQuery.setState(Some(state))
       indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
@@ -269,13 +321,47 @@ class ExtractorEngine(
     TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
   }
 
+  /**
+    * Close the open resources.
+    */
+  def close(): Unit = {
+    state.close()
+  }
+
+  // ----------------------------------------------
+  //                  Manage State
+  // ----------------------------------------------
+
+  /**
+    * Clears the state, afterwards previously found mentions will not be available.
+    */
+  def clearState(): Unit = {
+    state.clear()
+  }
+
+  /**
+    * Save the current state to the path provided.
+    * @param path
+    */
+  def saveStateTo(path: String): Unit = {
+    saveStateTo(new File(path))
+  }
+
+  /**
+    * Save the current state to the File provided
+    * @param file
+    */
+  def saveStateTo(file: File): Unit = {
+    state.dump(file)
+  }
+
 }
 
 object ExtractorEngine {
   val defaultPath = "odinson"
 
   lazy val defaultMentionFactory = new DefaultMentionFactory()
-  lazy val defaultConfig = ConfigFactory.load()[Config](defaultPath)
+  lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
     fromConfig(defaultPath)
@@ -299,13 +385,13 @@ object ExtractorEngine {
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val stateFactory = StateFactory(config)
+    val state = State(config, indexSearcher)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       displayField,
-      stateFactory,
+      state,
       parentDocIdField,
       mentionFactory
     )

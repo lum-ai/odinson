@@ -37,8 +37,8 @@ class TestMockState extends BaseSpec {
           |      arg: Bear = >amod
        """.stripMargin
 
-    val extractors = eeGummy.ruleReader.compileRuleString(rules)
-    val mentions = eeGummy.extractMentions(extractors)
+    val extractors = eeGummy.compileRuleString(rules)
+    val mentions = eeGummy.extractMentions(extractors).toArray
 
     mentions should have size (2)
 
@@ -76,7 +76,7 @@ class TestMockState extends BaseSpec {
        """.stripMargin
 
     val extractors = eeGummyMemory.ruleReader.compileRuleString(rules)
-    val mentions = eeGummyMemory.extractMentions(extractors)
+    val mentions = eeGummyMemory.extractMentions(extractors).toArray
 
     mentions should have size (3)
 
