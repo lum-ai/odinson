@@ -1,7 +1,9 @@
 package ai.lum.odinson.state
 
 import java.io.File
+import java.io.StringReader
 import java.sql.Connection
+import java.sql.DriverManager
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
@@ -107,9 +109,9 @@ object SqlResultItem {
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState(val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val outfile: Option[File] = None, mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends State {
+class SqlState protected (val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val persistFile: Option[File] = None, mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends State {
 
-  if (persistOnClose) require(outfile.isDefined)
+  if (persistOnClose) require(persistFile.isDefined)
 
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
@@ -279,20 +281,34 @@ class SqlState(val connection: Connection, protected val factoryIndex: Long, pro
     ???
   }
 
-  /**
-    * Delete * from table
-    * Persist the tables
-    */
-  override def clear(): Unit = ???
+  override def clear(): Unit = {
+    drop()
+    create()
+  }
+
+  def persist(file: File): Unit = {
+    val path = file.getPath
+    val sql = s"""
+      SCRIPT TO '$path'
+      ;
+    """
+    using(connection.prepareStatement(sql)) { preparedStatement =>
+      preparedStatement.execute()
+    }
+  }
 
   override def close(): Unit = {
-    // TODO
-    if (persistOnClose) dump(outfile.get)
+    if (persistOnClose)
+      persist(persistFile.get)
 
     if (!closed) {
-      // Set this first so that failed drops are not attempted multiple times.
-      closed = true
-      drop()
+      try {
+        drop()
+      }
+      finally {
+        closed = true
+        connection.close()
+      }
     }
   }
 
@@ -317,8 +333,7 @@ object SqlState {
 
   def apply(config: Config, indexSearcher: OdinsonIndexSearcher): SqlState = {
     val persistOnClose = config[Boolean]("state.sql.persistOnClose")
-    val stateDir = config.get[File]("state.sql.stateDir")
-
+    val stateFile = config.get[File]("state.sql.persistFile")
     val jdbcUrl = config[String]("state.sql.url")
     val dataSource: HikariDataSource = {
       val config = new HikariConfig
@@ -335,8 +350,7 @@ object SqlState {
     }
 
     val mentionFactory = MentionFactory.fromConfig(config)
-
-    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateDir, mentionFactory, indexSearcher)
+    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, mentionFactory, indexSearcher)
   }
 
 }
