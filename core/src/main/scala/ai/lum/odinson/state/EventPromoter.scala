@@ -62,7 +62,7 @@ class FlatEventPromoter extends EventPromoter {
         //  val namesAndArgumentMetadatas = eventMatch.argumentMetadata.groupBy(_.name)
         //  namesAndArgumentMetadatas.foreach { case (name, argumentMetadatas) =>
         //    // Those with the same name should all be the same.
-        //    argumentMetadatas.distinct.length == 1
+        //    assert(argumentMetadatas.distinct.length == 1)
         //  }
         // }
         val namesToPromote: Set[String] = eventMatch.argumentMetadata
