@@ -361,7 +361,7 @@ object ExtractorEngine {
   val defaultPath = "odinson"
 
   lazy val defaultMentionFactory = new DefaultMentionFactory()
-  lazy val defaultConfig = ConfigFactory.load()[Config](defaultPath)
+  lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
     fromConfig(defaultPath)
