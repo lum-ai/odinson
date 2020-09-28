@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   diacritic stripping, and some extra character mappings. This is the case both at index time and query time.
   This means you should reindex if you upgrade to this version.
 ### Fixed
+- Accept underscore at identifier start ([#209](https://github.com/lum-ai/odinson/pull/209))
 - Nullpointer exception related to event arguments.
 - size of roots array in `UnsafeSerializer`
 
