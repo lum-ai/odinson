@@ -1,13 +1,13 @@
 package ai.lum.odinson.state
 
+import java.io.File
+
 import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.mention.LazyIdGetter
 import ai.lum.odinson.mention.LuceneMentionIterator
 import ai.lum.odinson.mention.Mention
 import ai.lum.odinson.mention.NullIdGetter
-import ai.lum.odinson.utils.MostRecentlyUsed
 import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random
@@ -18,7 +18,7 @@ class TestSqlState extends BaseSpec {
   val docIndex = 212
   val resultLabel = "resultLabel"
   val resultName = "resultName"
-  val factory = new DefaultMentionFactory
+  val factory = new DefaultMentionFactory()
 
   def newOdinsonMatch(): StateMatch = {
     val odinsonMatch_0_0 = StateMatch(0, 1, Array.empty)
@@ -46,7 +46,7 @@ class TestSqlState extends BaseSpec {
 
   behavior of "Mention"
 
-  ignore should "flatten" in {
+  it should "flatten" in {
     val resultItem = newMention()
     val idProvider = new IdProvider()
     val writeNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
@@ -97,14 +97,14 @@ class TestSqlState extends BaseSpec {
         equals(left.odinsonMatch.asInstanceOf[StateMatch], right.odinsonMatch.asInstanceOf[StateMatch])
   }
 
-  ignore should "compare properly" in {
+  it should "compare properly" in {
     val m1 = newMention()
     val m2 = newMention()
 
     equals(m1, m2) should be (true)
   }
 
-  ignore should "survive a round trip" in {
+  it should "survive a round trip" in {
     val config = ExtractorEngine.defaultConfig
     val state = SqlState(config, null)
     val resultItem1 = newMention()
@@ -176,7 +176,7 @@ class TestSqlState extends BaseSpec {
     odinResults
   }
 
-  ignore should "work with one Mention at a time" in {
+  it should "work with one Mention at a time" in {
     val config = ExtractorEngine.defaultConfig
     val state = SqlState(config, null)
     val random = new Random(42)
@@ -224,7 +224,7 @@ class TestSqlState extends BaseSpec {
     docBasesAndIdsAndLabels
   }
 
-  ignore should "work with multiple ResultItems at a time" in {
+  it should "work with multiple ResultItems at a time" in {
     val config = ExtractorEngine.defaultConfig
     val state = SqlState(config, null)
     val random = new Random(13)
@@ -239,7 +239,7 @@ class TestSqlState extends BaseSpec {
           }
         }
       }
-      val resultItems2 =  {
+      val resultItems2 = {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
           val mentionsIterator = LuceneMentionIterator(Some(label), Some(resultName), odinResults, factory, mruIdGetter)
 
@@ -268,10 +268,17 @@ class TestSqlState extends BaseSpec {
 
   it should "persist" in {
     // Make sure it is sql in the first place
+    val filename = "../test.sql"
+    val file = new File(filename)
     val config = ExtractorEngine.defaultConfig
         .withValue("state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
-        .withValue("state.sql.persistFile", ConfigValueFactory.fromAnyRef("../test.sql"))
+        .withValue("state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
+
+    file.delete()
+    file.exists should be (false)
     val state = SqlState(config, null)
     state.close()
+    file.exists should be (true)
+    file.delete()
   }
 }

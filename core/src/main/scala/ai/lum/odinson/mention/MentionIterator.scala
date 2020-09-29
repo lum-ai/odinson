@@ -5,7 +5,8 @@ trait MentionIterator extends Iterator[Mention] {
 }
 
 class MentionsIterator(mentionIterators: Seq[MentionIterator]) extends MentionIterator {
-  protected val iterator = mentionIterators.foldLeft(Iterator.empty.asInstanceOf[Iterator[Mention]])(_ ++ _)
+  // This complexity is required to convince the compiler to cooperate.
+  protected val iterator: Iterator[Mention] = mentionIterators.foldLeft(Iterator.empty.asInstanceOf[Iterator[Mention]])(_ ++ _)
 
   override def close(): Unit = mentionIterators.foreach(_.close)
 
