@@ -15,7 +15,7 @@ object Literals {
   /** matches a valid java identifier */
   def identifier[_: P]: P[String] = {
     P(
-      CharPred(_.isUnicodeIdentifierStart) ~
+      CharPred(c => c.isUnicodeIdentifierStart || c == '_') ~
       CharsWhile(_.isUnicodeIdentifierPart).?
     ).!
   }
@@ -23,7 +23,7 @@ object Literals {
   /** matches a string that may contain colons and/or dashes */
   def extendedIdentifier[_: P]: P[String] = {
     P(
-      CharPred(_.isUnicodeIdentifierStart) ~
+      CharPred(c => c.isUnicodeIdentifierStart || c == '_') ~
       CharsWhile(c => c.isUnicodeIdentifierPart || c == ':' || c == '-').?
     ).!
   }
