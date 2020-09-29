@@ -15,20 +15,19 @@ class NullIdGetter() extends LazyIdGetter(null, 0) {
   override def getDocId: String = "NULL"
   override def getSentId: String = "NULL"
 }
+
 object NullIdGetter {
   // The x: Int is to fit the pattern of the mruIdGetter
   def apply(x: Int): NullIdGetter = new NullIdGetter()
 }
 
 class TestSqlState extends BaseSpec {
-
   val docBase = 42
   val docId = 13
   val docIndex = 212
   val resultLabel = "resultLabel"
   val resultName = "resultName"
   val factory = new DefaultMentionFactory
-
 
   def newOdinsonMatch(): StateMatch = {
     val odinsonMatch_0_0 = StateMatch(0, 1, Array.empty)
@@ -42,15 +41,14 @@ class TestSqlState extends BaseSpec {
     stateMatch
   }
 
-  def newMention(docBase: Int = docBase, docId: Int = docId, docIndex: Int = docIndex, resultLabel: String = resultLabel, resultName: String = resultName): Mention = {
+  def newMention(docBase: Int = docBase, docId: Int = docId, docIndex: Int = docIndex, resultLabel: String = resultLabel,
+      resultName: String = resultName): Mention = {
     val stateMatch = newOdinsonMatch()
-    //label: Option[String],
-    //    luceneDocId: Int,
-    //    luceneSegmentDocId: Int,
-    //    luceneSegmentDocBase: Int,
-    //    idGetter: IdGetter,
-    //    foundBy: String
-    val mention: Mention = factory.newMention(stateMatch, Some(resultLabel), docIndex, docId, docBase, nullIdGetter, resultName)
+    val resultLabelOpt =
+        if (resultLabel.isEmpty) None
+        else Some(resultLabel)
+    val mention: Mention = factory.newMention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
+        luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, idGetter = nullIdGetter, foundBy = resultName)
 
     mention
   }
@@ -218,6 +216,7 @@ class TestSqlState extends BaseSpec {
           println(s"left: $leftResultItem != right: $rightResultItem")
         equals(leftResultItem, rightResultItem) should be (true)
       }
+      state.clear()
     }
   }
 
