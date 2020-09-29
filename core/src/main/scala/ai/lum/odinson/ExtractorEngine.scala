@@ -17,25 +17,16 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
+import ai.lum.odinson.mention.IdGetter
+import ai.lum.odinson.mention.MentionIterator
+import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.mention.LazyIdGetter
+import ai.lum.odinson.mention.LuceneMentionIterator
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionFactory
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
-
-
-class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
-  protected lazy val document = indexSearcher.doc(documentId)
-  protected lazy val docId: String = document.getField("docId").stringValue
-  protected lazy val sentId: String = document.getField("sentId").stringValue
-
-  def getDocId: String = docId
-
-  def getSentId: String = sentId
-}
-
-object LazyIdGetter {
-  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
-}
 
 class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
@@ -146,18 +137,18 @@ class ExtractorEngine private (
     }
   }
 
-  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): MentionIterator = {
     val resultsIterators = for {
       extractor <- extractors
       if extractor.priority matches i
     } yield extract(extractor, numSentences, disableMatchSelector, mruIdGetter)
 
-    OdinMentionsIterator.concatenate(resultsIterators)
+    MentionIterator.concatenate(resultsIterators)
   }
 
-  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): MentionIterator = {
     val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector)
-    mentionFactory.mentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
+    LuceneMentionIterator(extractor.label, Some(extractor.name), odinResults, mentionFactory, mruIdGetter)
   }
 
   private def extractWithState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
@@ -192,7 +183,7 @@ class ExtractorEngine private (
 
     // Apply each extractor, concatenate results
     val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
-    val results = OdinMentionsIterator.concatenate(resultsIterators)
+    val results = MentionIterator.concatenate(resultsIterators)
 
     filterMentions(results, allowTriggerOverlaps)
   }

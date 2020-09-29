@@ -3,10 +3,19 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.Mention
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionIterator
 import com.typesafe.config.Config
 
 import scala.collection.mutable
+
+class MemoryMentionIterator(iterator: Iterator[Mention]) extends MentionIterator {
+  override def close(): Unit = ()
+
+  override def hasNext: Boolean = iterator.hasNext
+
+  override def next(): Mention = iterator.next
+}
 
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
@@ -54,12 +63,12 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
     resultItems
   }
 
-  override def getAllMentions(): Iterator[Mention] = {
+  override def getAllMentions(): MentionIterator = {
     val mentionIterator = baseIdLabelToMentions
       .toIterator
       .flatMap{ case (baseIdLabel, mentionSet) => mentionSet.toIterator }
-    // TODO: @Keith check please :)
-    mentionIterator
+
+    new MemoryMentionIterator(mentionIterator)
   }
 
   override def clear(): Unit = {

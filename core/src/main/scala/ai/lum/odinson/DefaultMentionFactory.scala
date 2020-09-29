@@ -1,5 +1,9 @@
 package ai.lum.odinson
 
+import ai.lum.odinson.mention.IdGetter
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionFactory
+
 class DefaultMentionFactory extends MentionFactory {
 
   def newMention(

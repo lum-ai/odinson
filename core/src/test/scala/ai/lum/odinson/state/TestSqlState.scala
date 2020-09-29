@@ -1,25 +1,16 @@
 package ai.lum.odinson.state
 
-import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.mention.LazyIdGetter
+import ai.lum.odinson.mention.LuceneMentionIterator
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.NullIdGetter
 import ai.lum.odinson.utils.MostRecentlyUsed
 import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random
-
-class NullIdGetter() extends LazyIdGetter(null, 0) {
-  override lazy val document = ???
-  override lazy val docId: String = "NULL"
-  override lazy val sentId: String = "NULL"
-  override def getDocId: String = "NULL"
-  override def getSentId: String = "NULL"
-}
-
-object NullIdGetter {
-  // The x: Int is to fit the pattern of the mruIdGetter
-  def apply(x: Int): NullIdGetter = new NullIdGetter()
-}
 
 class TestSqlState extends BaseSpec {
   val docBase = 42
@@ -125,7 +116,7 @@ class TestSqlState extends BaseSpec {
         docId, docBase)
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
-    val mentionsIterator = factory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
+    val mentionsIterator = LuceneMentionIterator(Some(resultLabel), Some(resultName), odinResults1, factory, mruIdGetter)
     val resultItems2 = {
       state.addMentions(mentionsIterator)
       state.getMentions(docBase, docId, resultLabel)
@@ -204,7 +195,7 @@ class TestSqlState extends BaseSpec {
                   scoreDoc.segmentDocBase, idGetter, resultName)
               }
           }
-      val mentionsIterator = mentionFactory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
+      val mentionsIterator = LuceneMentionIterator(Some(resultLabel), Some(resultName), odinResults, factory, mruIdGetter)
       val resultItems2 = {
         state.addMentions(mentionsIterator)
         state.getMentions(docBase, docId, resultLabel)
@@ -250,7 +241,7 @@ class TestSqlState extends BaseSpec {
       }
       val resultItems2 =  {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
-          val mentionsIterator = factory.mentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
+          val mentionsIterator = LuceneMentionIterator(Some(label), Some(resultName), odinResults, factory, mruIdGetter)
 
           state.addMentions(mentionsIterator)
         }

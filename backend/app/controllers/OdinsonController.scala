@@ -20,12 +20,13 @@ import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
+import ai.lum.odinson.mention.Mention
 
 @Singleton
 class OdinsonController @Inject() (system: ActorSystem, cc: ControllerComponents, extractorEngine: ExtractorEngine)
