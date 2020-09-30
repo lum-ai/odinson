@@ -32,6 +32,7 @@ import com.typesafe.config.Config
 class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(implicit ec: ExecutionContext)
   extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
+
   val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config[Config]("odinson"))
   val docsDir            = config[File]("odinson.docsDir")
   val DOC_ID_FIELD       = config[String]("odinson.index.documentIdField")
