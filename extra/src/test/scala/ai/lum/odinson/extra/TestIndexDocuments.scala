@@ -1,5 +1,7 @@
 package ai.lum.odinson.extra
 
+import java.nio.file.Files
+
 import org.scalatest._
 //import ai.lum.common.ConfigFactory
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -21,16 +23,14 @@ class TestIndexDocuments extends FlatSpec with Matchers {
 //  }
   // get the resources folder
   val resourcesFolder = getClass.getResource("/").getFile
-  println(resourcesFolder)
 
-
-  val tmpFolder = "/tmp/"
+  val tmpFolder = Files.createTempDirectory("odinson-test").toFile()
 
   val srcDir = new File(resourcesFolder)
-  val destDir = new File(tmpFolder)
-  //
+
+
     try {
-      FileUtils.copyDirectory(srcDir, destDir);
+      FileUtils.copyDirectory(srcDir, tmpFolder);
     } catch {
       case e: IOException =>
         println("Can't copy resources directory")
@@ -39,7 +39,6 @@ class TestIndexDocuments extends FlatSpec with Matchers {
   //
   def deleteIndex = {
     val dir = new Directory(new File(tmpFolder + "index"))
-    println("Deleting dir: " + dir)
     dir.deleteRecursively()
   }
   // make sure the function that reads the files work when pointing to the resources
@@ -47,7 +46,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     // delete index if it already exists
     deleteIndex
     // run stuff
-    IndexDocuments.main(Array(tmpFolder))
+    IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
     // get config and ingect required values
     var config = ConfigFactory.load()
     config = config
