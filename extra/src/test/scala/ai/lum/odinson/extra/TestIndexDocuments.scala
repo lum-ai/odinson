@@ -2,6 +2,7 @@ package ai.lum.odinson.extra
 
 import java.nio.file.Files
 
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.scalatest._
 //import ai.lum.common.ConfigFactory
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -16,11 +17,6 @@ import org.apache.commons.io.FileUtils._
 // TODO: can I also extend basespec from here?
 class TestIndexDocuments extends FlatSpec with Matchers {
 
-//  val defaultconfig = ConfigFactory.load()
-//
-//  val testConfig = {
-//    defaultconfig.withValue()
-//  }
   // get the resources folder
   val resourcesFolder = getClass.getResource("/").getFile
 
@@ -33,14 +29,19 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       FileUtils.copyDirectory(srcDir, tmpFolder);
     } catch {
       case e: IOException =>
-        println("Can't copy resources directory")
+        throw new OdinsonException("Can't copy resources directory")
     }
 
-  //
+  val dataDir = tmpFolder.getAbsolutePath
+  val indexDir =  new File(tmpFolder, "index")
+  val docsDir = new File(tmpFolder, "docs").getAbsolutePath
+
+
   def deleteIndex = {
-    val dir = new Directory(new File(tmpFolder + "index"))
+    val dir = new Directory(indexDir)
     dir.deleteRecursively()
   }
+
   // make sure the function that reads the files work when pointing to the resources
   "IndexDocuments" should "get the correct list of files" in {
     // delete index if it already exists
@@ -54,14 +55,13 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",
-        ConfigValueFactory.fromAnyRef(tmpFolder + "/index")
+        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
       )
       .withValue(
         "odinson.docsDir",
-        ConfigValueFactory.fromAnyRef(tmpFolder + "/docs")
+        ConfigValueFactory.fromAnyRef(docsDir)
       )
 
-//    println("conf odinson path: " + config.atKey("odinson"))
     // get an ee
     val ee = ExtractorEngine.fromConfig(config.getConfig("odinson"))
 

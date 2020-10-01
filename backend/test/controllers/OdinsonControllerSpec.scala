@@ -4,6 +4,7 @@ import java.io.{File, IOException}
 import java.nio.file.Files
 
 import ai.lum.odinson.extra.IndexDocuments
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
@@ -33,22 +34,19 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
 
+  val srcDir: File = new File(getClass.getResource("/").getFile)
 
-//  val srcDir = new File("/home/alexeeva/Repos/odinson/extra/src/test/resources") //fixme: rel to project
- val srcDir: File = new File(getClass.getResource("/").getFile)
-  println("=>" + srcDir.getAbsolutePath)
 
 
   try {
     FileUtils.copyDirectory(srcDir, tmpFolder)
   } catch {
     case e: IOException =>
-      println("Can't copy resources directory")
+      throw new OdinsonException("Can't copy resources directory")
   }
 
   val dataDir = tmpFolder.getAbsolutePath
-  val indexDir =  new File(tmpFolder, "index").getAbsolutePath
-  println(s"indexDir ${indexDir}")
+  val indexDir =  new File(tmpFolder, "index")
   val docsDir = new File(tmpFolder, "docs").getAbsolutePath
 
   val testConfig: Config = {
@@ -57,7 +55,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       // re-compute the index and docs path's
       .withValue(
       "odinson.indexDir",
-      ConfigValueFactory.fromAnyRef(indexDir)
+      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
     )
       .withValue(
         "odinson.docsDir",
@@ -67,8 +65,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   }
 
   def deleteIndex = {
-    val dir = new Directory(new File(tmpFolder, "index"))
-//    println("Deleting dir: " + dir)
+    val dir = new Directory(indexDir)
     dir.deleteRecursively()
   }
 
@@ -76,12 +73,10 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   // run stuff
   IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
-  //todo: either copy resources needed to the temp dir or point to them; later make this whole thing a util
-
 
   implicit override def newAppForTest(testData: TestData): Application = new GuiceApplicationBuilder()
   .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
-  .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir))
+  .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
   .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
   .build()
 
