@@ -2,6 +2,7 @@ package ai.lum.odinson.events
 
 import ai.lum.odinson.EventMatch
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.StateMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
@@ -95,11 +96,11 @@ class TestEvents extends EventSpec with BeforeAndAfterAll with BeforeAndAfterEac
     val extractors = ee.compileRuleString(rule)
     val mentions = ee.extractMentions(extractors).toArray
     mentions.length should equal(1)
-    mentions.head.odinsonMatch shouldBe a[EventMatch]
-    val em = mentions.head.odinsonMatch.asInstanceOf[EventMatch]
-    val argMetadataNames = em.argumentMetadata.toSeq.map(_.name)
+    mentions.head.odinsonMatch shouldBe a[StateMatch]
+    val stateMatch = mentions.head.odinsonMatch.asInstanceOf[StateMatch]
+    val namedCaptures = stateMatch.namedCaptures.toSeq.map(_.name)
     // The length of this list should not change if it goes to a set.
-    argMetadataNames.length should be(argMetadataNames.toSet.size)
+    namedCaptures.length should be(namedCaptures.toSet.size)
   }
 
   it should "promote a token when no surface pattern is provided" in {
@@ -192,14 +193,21 @@ class TestEvents extends EventSpec with BeforeAndAfterAll with BeforeAndAfterEac
     results.totalHits should equal(0)
   }
 
-  it should "populate the state with NPs" in {
+  def repopulateState(): OdinResults = {
     val query = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
     val results = ee.query(query)
+
+    results
+  }
+
+  it should "populate the state with NPs" in {
+    val results = repopulateState()
     results.totalHits should equal(1)
     results.scoreDocs.head.matches should have size 2
   }
 
   it should "find event with mentions from the state when the state is populated" in {
+    repopulateState() // They would have been cleared by now.
     val q1 = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
     val q2 = ee.compiler.compileEventQuery(pattern)
 
@@ -211,7 +219,6 @@ class TestEvents extends EventSpec with BeforeAndAfterAll with BeforeAndAfterEac
       ee.state.addMentions(odinMentionsIterator)
       odinResults
     }
-
 
     // This query adds to the state, so it is helped by the localQuery.
     val results1 = localQuery(q1, labelOpt = Some("NP"), nameOpt = None, 1, after = null, disableMatchSelector = false)
@@ -235,7 +242,6 @@ class TestEvents extends EventSpec with BeforeAndAfterAll with BeforeAndAfterEac
   }
 
   it should "retrieve events properly from the state" in {
-
     val rules =
       """
         |rules:
