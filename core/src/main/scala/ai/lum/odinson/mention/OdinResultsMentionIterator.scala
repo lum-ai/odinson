@@ -6,7 +6,7 @@ import ai.lum.odinson.utils.MostRecentlyUsed
 
 import scala.annotation.tailrec
 
-class LuceneMentionIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults,
+class OdinResultsMentionIterator(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults,
     factory: MentionFactory, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]) extends MentionIterator {
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
   val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
@@ -42,9 +42,9 @@ class LuceneMentionIterator(labelOpt: Option[String], nameOpt: Option[String], o
   override def close(): Unit = ()
 }
 
-object LuceneMentionIterator {
+object OdinResultsMentionIterator {
 
   def apply(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults, factory: MentionFactory,
-      mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): LuceneMentionIterator =
-    new LuceneMentionIterator(labelOpt, nameOpt, odinResults, factory, mruIdGetter)
+      mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): OdinResultsMentionIterator =
+    new OdinResultsMentionIterator(labelOpt, nameOpt, odinResults, factory, mruIdGetter)
 }

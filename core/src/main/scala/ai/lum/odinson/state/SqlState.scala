@@ -1,9 +1,7 @@
 package ai.lum.odinson.state
 
 import java.io.File
-import java.io.StringReader
 import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.util.concurrent.atomic.AtomicLong
@@ -20,8 +18,6 @@ import ai.lum.odinson.mention.MentionIterator
 import ai.lum.odinson.{NamedCapture, OdinsonMatch, StateMatch}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import org.apache.lucene.search.IndexSearcher
-
 
 class SqlMentionIterator(protected val preparedStatement: PreparedStatement, protected val mentionSet: ResultSet,
     protected val mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends MentionIterator {
@@ -129,8 +125,8 @@ object SqlResultItem {
     arrayBuffer.toIndexedSeq
   }
 
-  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
-    val iterator = readItems.reverseIterator
+  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readNodes: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
+    val iterator = readNodes.reverseIterator
     val first = iterator.next
 
     def findNamedCaptures(childCount: Int): Array[NamedCapture] = {
@@ -154,8 +150,8 @@ object SqlResultItem {
       docId,          // luceneSegmentDocId
       docBase,        // luceneSegmentDocBase
       idGetter,
-      first.name,     // foundBy
-      )
+      first.name      // foundBy
+    )
   }
 }
 
@@ -239,8 +235,7 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
       mentions.foreach { mention =>
         val stateNodes = SqlResultItem.toWriteNodes(mention, idProvider)
 
-//        println(resultItem) // debugging
-
+        // println(resultItem) // debugging
         stateNodes.foreach { stateNode =>
           dbSetter
               .setNext(mention.luceneSegmentDocBase)
@@ -321,7 +316,6 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
           .setNext(label)
           .get
           .executeQuery()
-      val readNodes = ArrayBuffer.empty[ReadNode]
       val mentions = ArrayBuffer.empty[Mention]
 
       DbGetter(mentionSet).foreach { dbGetter =>

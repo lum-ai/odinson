@@ -22,7 +22,7 @@ import ai.lum.odinson.mention.MentionIterator
 import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.mention.LazyIdGetter
-import ai.lum.odinson.mention.LuceneMentionIterator
+import ai.lum.odinson.mention.OdinResultsMentionIterator
 import ai.lum.odinson.mention.Mention
 import ai.lum.odinson.mention.MentionFactory
 import ai.lum.odinson.utils.MostRecentlyUsed
@@ -148,7 +148,7 @@ class ExtractorEngine private (
 
   private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]): MentionIterator = {
     val odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector)
-    LuceneMentionIterator(extractor.label, Some(extractor.name), odinResults, mentionFactory, mruIdGetter)
+    OdinResultsMentionIterator(extractor.label, Some(extractor.name), odinResults, mentionFactory, mruIdGetter)
   }
 
   private def extractWithState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {

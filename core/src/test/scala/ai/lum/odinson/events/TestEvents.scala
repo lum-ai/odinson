@@ -5,7 +5,7 @@ import ai.lum.odinson.EventMatch
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.mention.LuceneMentionIterator
+import ai.lum.odinson.mention.OdinResultsMentionIterator
 import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
@@ -200,7 +200,7 @@ class TestEvents extends EventSpec {
       // The ee.query no longer adds to the state on its own, so this helper is being used.
       def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
         val odinResults = ee.query(odinsonQuery, labelOpt, nameOpt, n, after, disableMatchSelector)
-        val odinMentionsIterator = LuceneMentionIterator(labelOpt, nameOpt, odinResults, factory, mruIdGetter)
+        val odinMentionsIterator = OdinResultsMentionIterator(labelOpt, nameOpt, odinResults, factory, mruIdGetter)
 
         ee.state.addMentions(odinMentionsIterator)
         odinResults
