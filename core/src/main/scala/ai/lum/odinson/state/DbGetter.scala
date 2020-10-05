@@ -4,12 +4,16 @@ import java.sql.ResultSet
 
 class DbGetter(resultSet: ResultSet) extends Iterator[DbGetter] {
   val columnCount = resultSet.getMetaData.getColumnCount
-  protected var parameterIndex = columnCount
+  protected var parameterIndex = 0
   protected var checkedNext = false
   protected var checkedNextResult = false
 
-  protected def incParameterIndex(): Unit =
+  protected def incParameterIndex(): Unit = {
+//    if (parameterIndex == columnCount && !checkedNext)
+//      next()
     parameterIndex = parameterIndex % columnCount + 1
+    checkedNext = false
+  }
 
   def getInt: Int = {
     incParameterIndex()
@@ -30,11 +34,13 @@ class DbGetter(resultSet: ResultSet) extends Iterator[DbGetter] {
       checkedNextResult
     }
 
-
   override def next(): DbGetter = {
-    if (!checkedNext)
-      resultSet.next()
-    checkedNext = false
+    if (!checkedNext) {
+      checkedNextResult = resultSet.next()
+//      checkedNext = true
+    }
+//    else
+      checkedNext = false
     this
   }
 }
