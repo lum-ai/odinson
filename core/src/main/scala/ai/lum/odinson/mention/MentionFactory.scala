@@ -1,13 +1,7 @@
 package ai.lum.odinson.mention
 
-import ai.lum.odinson.DefaultMentionFactory
 import ai.lum.odinson.OdinsonMatch
-import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.utils.MostRecentlyUsed
 import com.typesafe.config.Config
-
-import scala.annotation.tailrec
 
 trait MentionFactory {
 

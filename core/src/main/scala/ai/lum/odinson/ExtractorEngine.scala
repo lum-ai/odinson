@@ -17,10 +17,10 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.mention.IdGetter
 import ai.lum.odinson.mention.MentionIterator
 import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.mention.DefaultMentionFactory
 import ai.lum.odinson.mention.LazyIdGetter
 import ai.lum.odinson.mention.OdinResultsMentionIterator
 import ai.lum.odinson.mention.Mention

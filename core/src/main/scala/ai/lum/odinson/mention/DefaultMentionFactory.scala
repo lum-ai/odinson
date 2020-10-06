@@ -1,8 +1,6 @@
-package ai.lum.odinson
+package ai.lum.odinson.mention
 
-import ai.lum.odinson.mention.IdGetter
-import ai.lum.odinson.mention.Mention
-import ai.lum.odinson.mention.MentionFactory
+import ai.lum.odinson.OdinsonMatch
 
 class DefaultMentionFactory extends MentionFactory {
 

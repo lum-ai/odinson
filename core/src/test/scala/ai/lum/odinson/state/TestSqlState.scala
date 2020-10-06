@@ -2,12 +2,12 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{BaseSpec, ExtractorEngine, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.mention.DefaultMentionFactory
 import ai.lum.odinson.mention.OdinResultsMentionIterator
 import ai.lum.odinson.mention.Mention
-import ai.lum.odinson.mention.NullIdGetter
 import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random

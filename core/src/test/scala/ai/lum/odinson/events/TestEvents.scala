@@ -21,7 +21,6 @@ class TestEvents extends EventSpec with BeforeAndAfterAll with BeforeAndAfterEac
   }
 
   override def beforeEach(): Unit = {
-    println("Before")
   }
 
   override def afterEach(): Unit = {
