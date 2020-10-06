@@ -3,7 +3,8 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.Mention
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionIterator
 import com.typesafe.config.Config
 
 class FileState extends State {
@@ -14,7 +15,7 @@ class FileState extends State {
 
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = ???
 
-  override def getAllMentions(): Iterator[Mention] = ???
+  override def getAllMentions(): MentionIterator = ???
 
   override def clear(): Unit = ???
 

@@ -1,19 +1,68 @@
 package ai.lum.odinson.state
 
 import java.io.File
-import java.io.StringReader
 import java.sql.Connection
-import java.sql.DriverManager
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, MentionFactory, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.mention.IdGetter
+import ai.lum.odinson.mention.LazyIdGetter
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionFactory
+import ai.lum.odinson.mention.MentionIterator
+import ai.lum.odinson.{NamedCapture, OdinsonMatch, StateMatch}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import org.apache.lucene.search.IndexSearcher
+import javax.sql.DataSource
+
+class SqlMentionIterator(protected val connection: Connection, protected val preparedStatement: PreparedStatement, protected val mentionSet: ResultSet,
+    protected val mentionFactory: MentionFactory, protected val indexSearcher: OdinsonIndexSearcher) extends MentionIterator {
+  protected val dbGetter = DbGetter(mentionSet)
+
+  override def close(): Unit = {
+    // This is supposed to close the ResultSet as well.
+    preparedStatement.close()
+    connection.close()
+  }
+
+  override def hasNext: Boolean = dbGetter.hasNext
+
+  override def next(): Mention = {
+    val readNodes = ArrayBuffer.empty[ReadNode]
+    var docBase = -1
+    var docId = -1
+    var label = ""
+
+    def addReadNode(): Boolean = {
+      docBase = dbGetter.getInt
+      docId = dbGetter.getInt
+      val docIndex = dbGetter.getInt
+      label = dbGetter.getStr
+      val name = dbGetter.getStr
+      val id = dbGetter.getInt
+      val parentId = dbGetter.getInt
+      val childCount = dbGetter.getInt
+      val childLabel = dbGetter.getStr
+      val start = dbGetter.getInt
+      val end = dbGetter.getInt
+
+      readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
+      parentId == -1
+    }
+
+    while (hasNext && !addReadNode()) { }
+
+    val idGetter = LazyIdGetter(indexSearcher, docId)
+    val result = SqlResultItem.fromReadNodes(docBase, docId, if (label.nonEmpty) Some(label) else None, readNodes, mentionFactory, idGetter)
+    readNodes.clear()
+    result
+  }
+}
 
 class IdProvider(protected var id: Int = 0) {
 
@@ -78,8 +127,8 @@ object SqlResultItem {
     arrayBuffer.toIndexedSeq
   }
 
-  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
-    val iterator = readItems.reverseIterator
+  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readNodes: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
+    val iterator = readNodes.reverseIterator
     val first = iterator.next
 
     def findNamedCaptures(childCount: Int): Array[NamedCapture] = {
@@ -103,16 +152,18 @@ object SqlResultItem {
       docId,          // luceneSegmentDocId
       docBase,        // luceneSegmentDocBase
       idGetter,
-      first.name,     // foundBy
-      )
+      first.name      // foundBy
+    )
   }
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState protected (val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val persistFile: Option[File] = None, mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends State {
-
+class SqlState protected (val dataSource: DataSource, protected val factoryIndex: Long, protected val stateIndex: Long,
+    val persistOnClose: Boolean = false, val persistFile: Option[File] = None, mentionFactory: MentionFactory,
+    indexSearcher: OdinsonIndexSearcher) extends State {
   if (persistOnClose) require(persistFile.isDefined)
 
+  protected val connection = dataSource.getConnection
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected var closed = false
@@ -186,8 +237,7 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
       mentions.foreach { mention =>
         val stateNodes = SqlResultItem.toWriteNodes(mention, idProvider)
 
-//        println(resultItem) // debugging
-
+        // println(resultItem) // debugging
         stateNodes.foreach { stateNode =>
           dbSetter
               .setNext(mention.luceneSegmentDocBase)
@@ -224,7 +274,7 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
       ORDER BY doc_id
       ;
     """
-    using(connection.prepareStatement(sql)) { preparedStatement =>
+    val result = using(connection.prepareStatement(sql)) { preparedStatement =>
       val resultSet = DbSetter(preparedStatement)
           .setNext(docBase)
           .setNext(label)
@@ -235,9 +285,27 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
         dbGetter.getInt
       }.toArray
     }
+
+    result
   }
 
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
+    val readNodes = ArrayBuffer.empty[ReadNode]
+
+    def addReadNode(dbGetter: DbGetter): Boolean = {
+      val docIndex = dbGetter.getInt
+      val name = dbGetter.getStr
+      val id = dbGetter.getInt
+      val parentId = dbGetter.getInt
+      val childCount = dbGetter.getInt
+      val childLabel = dbGetter.getStr
+      val start = dbGetter.getInt
+      val end = dbGetter.getInt
+
+      readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
+      parentId == -1
+    }
+
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
@@ -245,40 +313,44 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
       ORDER BY id
       ;
     """
-    using(connection.prepareStatement(sql)) { preparedStatement =>
+    val result = using(connection.prepareStatement(sql)) { preparedStatement =>
       val mentionSet = new DbSetter(preparedStatement)
           .setNext(docBase)
           .setNext(docId)
           .setNext(label)
           .get
           .executeQuery()
-      val readNodes = ArrayBuffer.empty[ReadNode]
       val mentions = ArrayBuffer.empty[Mention]
+      val dbGetter = DbGetter(mentionSet)
 
-      DbGetter(mentionSet).foreach { dbGetter =>
-        val docIndex = dbGetter.getInt
-        val name = dbGetter.getStr
-        val id = dbGetter.getInt
-        val parentId = dbGetter.getInt
-        val childCount = dbGetter.getInt
-        val childLabel = dbGetter.getStr
-        val start = dbGetter.getInt
-        val end = dbGetter.getInt
-
-        readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
-        if (parentId == -1) {
+      dbGetter.foreach { dbGetter =>
+        if (addReadNode(dbGetter)) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
+
           mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, mentionFactory, idGetter)
           readNodes.clear()
         }
       }
       mentions.toArray
     }
+
+    result
   }
 
-  override def getAllMentions(): Iterator[Mention] = {
-    // TODO: Keith
-    ???
+  // This will return a connection and there moy be overlapping connections, so get a new one.
+  override def getAllMentions(): MentionIterator = {
+    val sql = s"""
+      SELECT doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token
+      FROM $mentionsTable
+      ORDER BY id
+      ;
+    """
+    val connection = dataSource.getConnection()
+    val preparedStatement = connection.prepareStatement(sql)
+    val mentionSet = preparedStatement.executeQuery()
+    val mentionIterator = new SqlMentionIterator(connection, preparedStatement, mentionSet, mentionFactory, indexSearcher)
+
+    mentionIterator
   }
 
   override def clear(): Unit = {
@@ -350,7 +422,6 @@ object SqlState {
     }
 
     val mentionFactory = MentionFactory.fromConfig(config)
-    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, mentionFactory, indexSearcher)
+    new SqlState(dataSource, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, mentionFactory, indexSearcher)
   }
-
 }

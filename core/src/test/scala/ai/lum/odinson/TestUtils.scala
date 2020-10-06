@@ -5,7 +5,8 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.documentation.ExampleSentences
-import ai.lum.odinson.state.NullIdGetter
+import ai.lum.odinson.mention.LazyIdGetter
+import ai.lum.odinson.mention.NullIdGetter
 import ai.lum.odinson.utils.MostRecentlyUsed
 
 trait BaseFixtures {
