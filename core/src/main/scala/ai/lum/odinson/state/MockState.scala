@@ -1,8 +1,8 @@
 package ai.lum.odinson.state
 
-import ai.lum.odinson.Mention
-import ai.lum.odinson.state.OdinMentionsIterator.emptyMentionIterator
-
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionIterator
+import ai.lum.odinson.mention.NullMentionIterator
 
 object MockState extends State {
   val emptyMentionArray = new Array[Mention](0)
@@ -13,7 +13,7 @@ object MockState extends State {
 
   def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = emptyMentionArray
 
-  override def getAllMentions(): Iterator[Mention] = emptyMentionIterator
+  override def getAllMentions(): MentionIterator = NullMentionIterator.empty
 
   def clear(): Unit = ()
 }

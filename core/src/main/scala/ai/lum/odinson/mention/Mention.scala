@@ -1,4 +1,6 @@
-package ai.lum.odinson
+package ai.lum.odinson.mention
+
+import ai.lum.odinson.OdinsonMatch
 
 class Mention(
   val odinsonMatch: OdinsonMatch,

@@ -3,8 +3,9 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.Mention
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionIterator
 import com.typesafe.config.Config
 
 trait State {
@@ -19,7 +20,7 @@ trait State {
   def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] // TODO: Return iterator
 
   // Note: may not be thread-safe
-  def getAllMentions(): Iterator[Mention]
+  def getAllMentions(): MentionIterator
 
   /**
     * Writes json lines representation of the ResultItems.  State retains its contents.
@@ -70,7 +71,6 @@ trait State {
 }
 
 object State {
-
   def apply(config: Config, indexSearcher: OdinsonIndexSearcher): State = {
     val provider = config[String]("state.provider")
     val state = provider match {

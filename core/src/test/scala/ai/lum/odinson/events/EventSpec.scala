@@ -1,14 +1,11 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.{BaseSpec, EventMatch, OdinsonMatch}
+import ai.lum.odinson.{BaseSpec, OdinsonMatch}
 
 class EventSpec extends BaseSpec {
   def testEventTrigger(m: OdinsonMatch, start: Int, end: Int): Unit = {
-    m shouldBe an [EventMatch]
-    val em = m.asInstanceOf[EventMatch]
-    val trigger = em.trigger
-    trigger.start shouldEqual start
-    trigger.end shouldEqual end
+    m.start shouldEqual start
+    m.end shouldEqual end
   }
 
   def testEventArguments(m: OdinsonMatch, desiredArgs: Seq[Argument]): Unit = {

@@ -3,20 +3,37 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.Mention
+import ai.lum.odinson.StateMatch
+import ai.lum.odinson.mention.Mention
+import ai.lum.odinson.mention.MentionFactory
+import ai.lum.odinson.mention.MentionIterator
 import com.typesafe.config.Config
 
 import scala.collection.mutable
 
+class MemoryMentionIterator(iterator: Iterator[Mention], mentionFactory: MentionFactory) extends MentionIterator {
+  override def close(): Unit = ()
+
+  override def hasNext: Boolean = iterator.hasNext
+
+  override def next(): Mention = {
+    val mention = iterator.next
+    val odinsonMatch = mention.odinsonMatch
+    val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
+
+    mention.copy(mentionFactory, stateMatch)
+  }
+}
+
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None) extends State {
+class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None, mentionFactory: MentionFactory) extends State {
   import MemoryState._
 
   if (persistOnClose) require(outfile.isDefined)
 
-  implicit val resultItemOrdering = MemoryState.MentionOrdering
+  implicit val resultItemOrdering: MemoryState.MentionOrdering.type = MemoryState.MentionOrdering
   protected val baseIdLabelToMentions: mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] = mutable.Map.empty
   protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
@@ -31,7 +48,6 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
 
     ids.add(mention.luceneSegmentDocId)
   }
-
 
   override def addMentions(mentions: Iterator[Mention]): Unit = {
     mentions.foreach(addMention)
@@ -49,17 +65,23 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
     val baseIdLabel = BaseIdLabel(docBase, docId, label)
     val mentionsOpt = baseIdLabelToMentions.get(baseIdLabel)
-    val resultItems = mentionsOpt.map(_.toArray).getOrElse(Array.empty)
+    val mentions = mentionsOpt.map(_.toArray).getOrElse(Array.empty)
+    val stateMentions = mentions.map { mention =>
+      val odinsonMatch = mention.odinsonMatch
+      val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
 
-    resultItems
+      mention.copy(mentionFactory, stateMatch)
+    }
+
+    stateMentions
   }
 
-  override def getAllMentions(): Iterator[Mention] = {
+  override def getAllMentions(): MentionIterator = {
     val mentionIterator = baseIdLabelToMentions
       .toIterator
-      .flatMap{ case (baseIdLabel, mentionSet) => mentionSet.toIterator }
-    // TODO: @Keith check please :)
-    mentionIterator
+      .flatMap { case (_, mentionSet) => mentionSet.toIterator }
+
+    new MemoryMentionIterator(mentionIterator, mentionFactory)
   }
 
   override def clear(): Unit = {
@@ -82,7 +104,8 @@ object MemoryState {
   def apply(config: Config): MemoryState = {
     val persistOnClose = config[Boolean]("state.memory.persistOnClose")
     val saveTo = config.get[File]("state.memory.stateDir")
-    new MemoryState(persistOnClose, saveTo)
+    val mentionFactory = MentionFactory.fromConfig(config)
+    new MemoryState(persistOnClose, saveTo, mentionFactory)
   }
 
   // This original implementation is thought to create too many objects.
