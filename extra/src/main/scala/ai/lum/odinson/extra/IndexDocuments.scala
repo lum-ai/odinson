@@ -19,7 +19,7 @@ object IndexDocuments extends App with LazyLogging {
 
   val dirPath = args(0)
   val passedInDataDir = new File(dirPath).getAbsolutePath
-  val passedIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
+  val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
   val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
 
   // inject a new arg for the folder
@@ -31,7 +31,7 @@ object IndexDocuments extends App with LazyLogging {
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",
-        ConfigValueFactory.fromAnyRef(passedIndexDir)
+        ConfigValueFactory.fromAnyRef(passedInIndexDir)
       )
       .withValue(
         "odinson.docsDir",

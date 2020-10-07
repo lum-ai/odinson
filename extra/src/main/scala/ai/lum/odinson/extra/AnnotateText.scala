@@ -4,6 +4,7 @@ import java.io.File
 
 import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.clulab.processors.Processor
 import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
@@ -15,10 +16,30 @@ import ai.lum.odinson.Document
 
 object AnnotateText extends App with LazyLogging {
 
-  val config = ConfigFactory.load()
+  var config = ConfigFactory.load()
+
+  if (args.length == 1) {
+    val dirPath = args(0)
+    logger.info(s"Received dataDir as a parameter <${dirPath}>")
+    // receive the path from the arguments
+    config = config
+      .withValue("odinson.textDir", ConfigValueFactory.fromAnyRef(new File(dirPath, "text").getAbsolutePath))
+      // re-compute the index and docs path's
+      .withValue(
+      "odinson.docsDir",
+      ConfigValueFactory.fromAnyRef(new File(dirPath, "docs").getAbsolutePath)
+    )
+      .withValue(
+        "odinson.processorType",
+        ConfigValueFactory.fromAnyRef("FastNLPProcessor")
+      )
+  }
+
+
   val textDir: File = config[File]("odinson.textDir")
   val docsDir: File = config[File]("odinson.docsDir")
   val processorType = config[String]("odinson.extra.processorType")
+
 
   val processor: Processor = processorType match {
     case "FastNLPProcessor" => new FastNLPProcessor

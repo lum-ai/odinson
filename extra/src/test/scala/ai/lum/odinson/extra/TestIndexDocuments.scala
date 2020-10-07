@@ -51,7 +51,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     // get config and ingect required values
     var config = ConfigFactory.load()
     config = config
-      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(tmpFolder))
+      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",
