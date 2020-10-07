@@ -44,13 +44,25 @@ class TestAnnotateDocuments extends FlatSpec with Matchers {
   }
 
 
-  "AnnotateDocuments" should "get the correct annotated file" in {
+  "AnnotateDocuments" should "get the correct annotated file when processing with FastNLPProcessor" in {
 
     //delete docs if already exists
     deleteDocs
 
     // run the annotation
-    AnnotateText.main(Array(tmpFolder))
+    AnnotateText.main(Array(tmpFolder, "FastNLPProcessor"))
+
+    docsDir.listFiles() should contain (new File(docsDir, "test-text.json.gz"))
+
+  }
+
+  "AnnotateDocuments" should "get the correct annotated file when processing with CluProcessor" in {
+
+    //delete docs if already exists
+    deleteDocs
+
+    // run the annotation
+    AnnotateText.main(Array(tmpFolder, "CluProcessor"))
 
     docsDir.listFiles() should contain (new File(docsDir, "test-text.json.gz"))
 

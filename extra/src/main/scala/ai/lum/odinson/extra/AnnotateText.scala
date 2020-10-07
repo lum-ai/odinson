@@ -18,8 +18,10 @@ object AnnotateText extends App with LazyLogging {
 
   var config = ConfigFactory.load()
 
-  if (args.length == 1) {
+  if (args.length == 2) {
     val dirPath = args(0)
+    val processor = args(1)
+
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
     config = config
@@ -31,7 +33,7 @@ object AnnotateText extends App with LazyLogging {
     )
       .withValue(
         "odinson.processorType",
-        ConfigValueFactory.fromAnyRef("FastNLPProcessor")
+        ConfigValueFactory.fromAnyRef(processor)
       )
   }
 
