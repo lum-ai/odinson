@@ -22,7 +22,7 @@ object IndexDocuments extends App with LazyLogging {
   val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
   val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
 
-  // inject a new arg for the folder
+
   if (args.length == 1) {
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments

@@ -39,7 +39,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   val SENTENCE_ID_FIELD  = config[String]("odinson.index.sentenceIdField")
   val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
-  val indexDir = config[File]("odinson.indexDir") //fixme: todo: this is just here to check if the right config is passed in OdinsonControlleSpec
+
 //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {

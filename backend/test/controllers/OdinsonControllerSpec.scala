@@ -25,24 +25,20 @@ import scala.reflect.io.Directory
  */
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
-  //todo: can we use the provider module?
-  //todo: dont join paths the way i do
-  //todo: tests to annotate test (that's how we can test for java 11 issues)
-   val defaultconfig = ConfigFactory.load()
+
+  val defaultconfig = ConfigFactory.load()
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
-
   val srcDir: File = new File(getClass.getResource("/").getFile)
-
 
 
   try {
     FileUtils.copyDirectory(srcDir, tmpFolder)
   } catch {
     case e: IOException =>
-      throw new OdinsonException("Can't copy resources directory")
+      throw new OdinsonException(s"Can't copy resources directory ${srcDir}")
   }
 
   val dataDir = tmpFolder.getAbsolutePath
@@ -70,7 +66,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   }
 
   deleteIndex
-  // run stuff
+  // create index
   IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
 
@@ -95,48 +91,5 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       (contentAsJson(buildinfo) \ "name").as[String] mustBe "odinson-core"
 
     }
-  }
-
-
-  "HomeController GET /pattern" should {
-
-    "access the /pattern endpoint from a new instance of controller" in {
-
-      val pattern = controller.runQuery("[lemma=be] []", None, None, None, None, None, false, None).apply(FakeRequest(GET, "/pattern"))
-
-      status(pattern) mustBe OK
-      contentType(pattern) mustBe Some("application/json")
-      Helpers.contentAsString(pattern) must include ("core")
-
-
-
-    }
-
-//    "render the index page from a new instance of controller" in {
-//      val controller = new HomeController(stubControllerComponents())
-//      val home = controller.index().apply(FakeRequest(GET, "/"))
-//
-//      status(home) mustBe OK
-//      contentType(home) mustBe Some("text/html")
-//      contentAsString(home) must include ("Welcome to Play")
-//    }
-//
-//    "render the index page from the application" in {
-//      val controller = inject[HomeController]
-//      val home = controller.index().apply(FakeRequest(GET, "/"))
-//
-//      status(home) mustBe OK
-//      contentType(home) mustBe Some("text/html")
-//      contentAsString(home) must include ("Welcome to Play")
-//    }
-//
-//    "render the index page from the router" in {
-//      val request = FakeRequest(GET, "/")
-//      val home = route(app, request).get
-//
-//      status(home) mustBe OK
-//      contentType(home) mustBe Some("text/html")
-//      contentAsString(home) must include ("Welcome to Play")
-//    }
   }
 }
