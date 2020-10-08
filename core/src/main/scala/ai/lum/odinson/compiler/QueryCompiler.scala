@@ -1,21 +1,18 @@
 package ai.lum.odinson.compiler
 
-import java.io.File
-import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
-import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
+import org.apache.lucene.queryparser.classic.{QueryParser => LuceneQueryParser}
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
-import ai.lum.common.ConfigFactory
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
-import ai.lum.odinson.state.State
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class QueryCompiler(
     val allTokenFields: Seq[String],
@@ -410,14 +407,14 @@ class QueryCompiler(
 
     case Ast.DisjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
-        case Seq() => sys.error("OR without clauses")
+        case Seq() => throw new OdinsonException("OR without clauses")
         case Seq(clause) => clause
         case clauses => new OdinOrQuery(clauses, defaultTokenField)
       }
 
     case Ast.ConjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
-        case Seq() => sys.error("AND without clauses")
+        case Seq() => throw new OdinsonException("AND without clauses")
         case Seq(clause) => clause
         case clauses => new OdinTermAndQuery(clauses, defaultTokenField)
       }
@@ -463,7 +460,7 @@ class QueryCompiler(
 
     case Ast.DisjunctiveTraversal(traversals) =>
       traversals.map(mkGraphTraversal).distinct.partition(_ == NoTraversal) match {
-        case (Seq(), Seq()) => sys.error("OR without clauses")
+        case (Seq(), Seq()) => throw new OdinsonException("OR without clauses")
         case (Seq(), gts) =>
           gts.filter(_ != FailTraversal) match {
             case Seq() => FailTraversal

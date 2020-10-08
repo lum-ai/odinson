@@ -2,7 +2,6 @@ package ai.lum.odinson.lucene.util
 
 import org.apache.lucene.util.PriorityQueue
 import ai.lum.odinson._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
 class SpanPositionQueue(maxSize: Int) extends PriorityQueue[OdinsonSpans](maxSize, false) {

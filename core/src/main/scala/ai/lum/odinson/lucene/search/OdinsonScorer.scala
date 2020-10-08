@@ -5,7 +5,6 @@ import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities.Similarity.SimScorer
 import ai.lum.odinson._
-import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinsonScorer(

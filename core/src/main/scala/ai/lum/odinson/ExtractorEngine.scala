@@ -1,8 +1,6 @@
 package ai.lum.odinson
 
 import java.io.File
-import java.nio.file.Path
-
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
@@ -281,7 +279,7 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[Path]("indexDir")
+    val indexPath = config[File]("indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }

@@ -1,9 +1,7 @@
 package ai.lum.odinson
 
 import java.io.File
-import java.nio.file.Paths
 import java.util.Collection
-
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
@@ -266,7 +264,7 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.empty
         (dir, vocab)
       case path =>
-        val dir = FSDirectory.open(Paths.get(path))
+        val dir = FSDirectory.open(new File(path).toPath)
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }

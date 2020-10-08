@@ -2,7 +2,7 @@ package ai.lum.odinson.state
 
 import com.typesafe.config.Config
 import ai.lum.common.ConfigUtils._
-import ai.lum.common.TryWithResources.using
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 trait StateFactory {
   def usingState[T](function: State => T): T
@@ -17,7 +17,7 @@ object StateFactory {
       case "file" => FileStateFactory(config)
       case "memory" => MemoryStateFactory(config)
       case "mock" => MockStateFactory(config)
-      case _ => throw new Exception(s"Unknown state provider: $provider")
+      case _ => throw new OdinsonException(s"Unknown state provider: $provider")
     }
 
     stateFactory

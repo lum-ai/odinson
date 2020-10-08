@@ -34,6 +34,17 @@ case class StateMatch(start: Int, end: Int, namedCaptures: Array[NamedCapture]) 
   }
 }
 
+object StateMatch {
+
+  protected def recFromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch = {
+    StateMatch(odinsonMatch.start, odinsonMatch.end, odinsonMatch.namedCaptures.map { namedCapture =>
+      namedCapture.copy(capturedMatch = recFromOdinsonMatch(namedCapture.capturedMatch))
+    })
+  }
+
+  def fromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch = recFromOdinsonMatch(odinsonMatch)
+}
+
 /** helper class to store the metadata related to an EventMention's argument,
  *  like it's name and some information about its quantifiers.
  */
