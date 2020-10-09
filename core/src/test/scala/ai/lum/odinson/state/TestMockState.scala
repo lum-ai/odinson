@@ -38,7 +38,7 @@ class TestMockState extends BaseSpec {
        """.stripMargin
 
     val extractors = eeGummy.compileRuleString(rules)
-    val mentions = eeGummy.extractMentions(extractors).toArray
+    val mentions = eeGummy.extractNoState(extractors).toArray
 
     mentions should have size (2)
 

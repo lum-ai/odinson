@@ -199,7 +199,7 @@ class TestEvents extends EventSpec {
 
       // The ee.query no longer adds to the state on its own, so this helper is being used.
       def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
-        val odinResults = ee.query(odinsonQuery, labelOpt, nameOpt, n, after, disableMatchSelector)
+        val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
         val odinMentionsIterator = factory.mentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
         ee.state.addMentions(odinMentionsIterator)
@@ -213,7 +213,7 @@ class TestEvents extends EventSpec {
       results1.scoreDocs.head.matches should have size 2
 
       // This query only needs to read from the state.
-      val results2 = ee.query(q2, labelOpt = None, nameOpt = None, 1, after = null, disableMatchSelector = false)
+      val results2 = ee.query(q2, 1, after = null, disableMatchSelector = false)
       results2.totalHits should equal(1)
       results2.scoreDocs.head.matches should have size 1
 
