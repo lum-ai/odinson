@@ -14,22 +14,28 @@ import ai.lum.odinson.{Document, OdinsonIndexWriter}
 import scala.collection.GenIterable
 
 object IndexDocuments extends App with LazyLogging {
-  //
+
   var config = ConfigFactory.load()
-  // inject a new arg for the folder
+
+  val dirPath = args(0)
+  val passedInDataDir = new File(dirPath).getAbsolutePath
+  val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
+  val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
+
+
   if (args.length == 1) {
-    logger.info(s"Received dataDir as a parameter <${args(0)}>")
+    logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
     config = config
-      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(args(0)))
+      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(passedInDataDir))
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",
-        ConfigValueFactory.fromAnyRef(args(0) + "/index")
+        ConfigValueFactory.fromAnyRef(passedInIndexDir)
       )
       .withValue(
         "odinson.docsDir",
-        ConfigValueFactory.fromAnyRef(args(0) + "/docs")
+        ConfigValueFactory.fromAnyRef(passedInDocsDir)
       )
   }
   //
