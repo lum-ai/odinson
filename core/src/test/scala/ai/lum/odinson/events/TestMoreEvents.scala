@@ -24,6 +24,7 @@ class TestMoreEvents extends EventSpec {
     val desiredArgs2 = Seq(createArgument("theme", 2, 3), createArgument("tool", 7, 8))
     testEventArguments(m1, desiredArgs1)
     testEventArguments(m2, desiredArgs2)
+    ee.clearState()
   }
 
   it should "find one events with two tools" in {
@@ -42,6 +43,7 @@ class TestMoreEvents extends EventSpec {
     // test arguments
     val desiredArgs1 = Seq(createArgument("theme", 2, 3), createArgument("tool", 4, 5), createArgument("tool", 7, 8))
     testEventArguments(m1, desiredArgs1)
+    ee.clearState()
   }
 
   it should "find two events, one with two tools, and one with zero" in {
@@ -67,6 +69,7 @@ class TestMoreEvents extends EventSpec {
     // test arguments
     val desiredArgs2 = Seq(createArgument("theme", 2, 3))
     testEventArguments(m2, desiredArgs2)
+    ee.clearState()
   }
 
   it should "find two events with one tool each even if theme is optional" in {
@@ -88,6 +91,7 @@ class TestMoreEvents extends EventSpec {
     val desiredArgs2 = Seq(createArgument("theme", 2, 3), createArgument("tool", 7, 8))
     testEventArguments(m1, desiredArgs1)
     testEventArguments(m2, desiredArgs2)
+    ee.clearState()
   }
 
   it should "not find events with both tool and location" in {
@@ -100,6 +104,7 @@ class TestMoreEvents extends EventSpec {
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 5)
     results.totalHits should equal (0)
+    ee.clearState()
   }
 
   it should "find three events when theme, tool, and location are optional" in {
@@ -131,6 +136,7 @@ class TestMoreEvents extends EventSpec {
     // test arguments
     val desiredArgs3 = Seq(createArgument("theme", 2, 3), createArgument("location", 5, 6))
     testEventArguments(m3, desiredArgs3)
+    ee.clearState()
   }
 
   it should "find one event with required location" in {
@@ -150,5 +156,6 @@ class TestMoreEvents extends EventSpec {
     // test arguments
     val desiredArgs1 = Seq(createArgument("theme", 2, 3), createArgument("location", 5, 6))
     testEventArguments(m1, desiredArgs1)
+    ee.clearState()
   }
 }

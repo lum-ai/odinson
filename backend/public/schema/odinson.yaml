@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.2
 info:
   version: "1.0.0"
   title: odinson
@@ -32,7 +32,7 @@ tags:
     description: |
       Information about the app.
 
-paths: 
+paths:
   /api/execute/pattern:
     get:
       tags:
@@ -53,7 +53,7 @@ paths:
           example: "[lemma=phosphorylate] []"
         - name: parentQuery
           in: query
-          required: true
+          required: false
           type: string
           schema:
             type: string
@@ -119,45 +119,18 @@ paths:
       description: |
         Executes an Odinson grammar against a corpus.  Optionally include a doc-level Lucene query to identify a subset of documents to which the grammar should be applied.  Results include sentence details (token attributes, graphs, etc.) for use in query refinement.
       operationId: execute-grammar
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: grammar
-          required: true
-          schema:
-            type: string
-          description: |
-            An Odinson grammar.
-          example: |
-            # an example grammar
-            rules:
-              - name: "example"
-                label: Death
-                type: event
-                pattern: |
-                  trigger = [lemma=die]
-                  date: ^Date  = >nmod_on
-        - in: body
-          name: parentQuery
-          type: string
-          description: |
-            A Lucene query to filter Documents before applying an Odinson pattern.
-          example: "year: 1973"
-        - in: body
-          name: pageSize
-          description: |
-            The maximum number of sentences to execute the rules against.
-          schema:
-            type: integer
-            format: int32
-        - in: body
-          name: allowTriggerOverlaps
-          required: false
-          description: |
-            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
-          schema:
-            type: boolean
+
+      requestBody:
+        description: |
+          An Odinson grammar.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OdinsonGrammarRequest'
+#      consumes:
+#        - application/json
+
 
       responses:
         '200':
@@ -467,6 +440,41 @@ paths:
 components:
   schemas:
 
+    OdinsonGrammarRequest:
+      type: object
+      required:
+        - rules
+      properties:
+        grammar:
+          type: string
+          description: |
+            An Odinson grammar.
+          example: |
+             # an example grammar
+             rules:
+              - name: "example"
+                label: GrammaticalSubject
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  subject  = >nsubj []
+#        parentQuery:
+#          type: string
+#          description: |
+#            A Lucene query to filter Documents before applying an Odinson pattern.
+#          example: "year: 1973"
+        pageSize:
+          type: integer
+          format: int32
+          description: |
+            The maximum number of sentences to execute the rules against.
+          example: 10
+        allowTriggerOverlaps:
+          type: boolean
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
+          example: false
+
     OdinsonGrammarResults:
       type: object
       required:
@@ -495,7 +503,7 @@ components:
           type: string
         match:
           $ref: '#/components/schemas/OdinsonMatch'
-    
+
     OdinsonMention:
       type: object
       required:
@@ -522,7 +530,7 @@ components:
           pattern: |
             trigger = [lemma=die]
             date: ^Date  = >nmod_on
-  
+
     OdinsonPattern:
       name: odinsonQuery
       type: string
@@ -676,7 +684,7 @@ components:
       type: integer
       format: int32
       description: The index of this sentence in the parent document (0-based).
-      
+
     words:
       type: array
       description: Tokens for the document (sentence).
@@ -689,7 +697,7 @@ components:
       items:
         $ref: '#/components/schemas/OdinsonMatch'
       description: The list of matching spans for this document.
-    
+
     DocHit:
       type: object
       required:
@@ -791,7 +799,7 @@ components:
         - string
         - store
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.StringField
@@ -820,7 +828,7 @@ components:
         - string
         - store
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.DateField
@@ -838,13 +846,13 @@ components:
           type: boolean
           description: |
             Whether or not this Field should be stored in the Odinson index.
-          
+
     OdinsonTokensField:
       type: object
       description: |
         A type of token attribute.
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.TokensField
@@ -867,7 +875,7 @@ components:
       description: |
         A type of directed graph.
       properties:
-        $type: 
+        $type:
           type: string
           description: |
             ai.lum.odinson.GraphField
@@ -892,7 +900,7 @@ components:
 
     Edge:
       type: array
-      items: 
+      items:
         oneOf:
           - type: string
           - type: integer

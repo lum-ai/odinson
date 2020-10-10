@@ -1,22 +1,34 @@
 package ai.lum.odinson.state
 
-import ai.lum.odinson.BaseSpec
-import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.NamedCapture
-import ai.lum.odinson.OdinsonMatch
-import ai.lum.odinson.StateMatch
+import java.io.File
+
+import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random
 
-class TestSqlState extends BaseSpec {
+class NullIdGetter() extends LazyIdGetter(null, 0) {
+  override lazy val document = ???
+  override lazy val docId: String = "NULL"
+  override lazy val sentId: String = "NULL"
+  override def getDocId: String = "NULL"
+  override def getSentId: String = "NULL"
+}
 
+object NullIdGetter {
+  // The x: Int is to fit the pattern of the mruIdGetter
+  def apply(x: Int): NullIdGetter = new NullIdGetter()
+}
+
+class TestSqlState extends BaseSpec {
   val docBase = 42
   val docId = 13
   val docIndex = 212
   val resultLabel = "resultLabel"
   val resultName = "resultName"
+  val factory = new DefaultMentionFactory
 
   def newOdinsonMatch(): StateMatch = {
     val odinsonMatch_0_0 = StateMatch(0, 1, Array.empty)
@@ -30,17 +42,22 @@ class TestSqlState extends BaseSpec {
     stateMatch
   }
 
-  def newResultItem(docBase: Int = docBase, docId: Int = docId, docIndex: Int = docIndex, resultLabel: String = resultLabel, resultName: String = resultName): ResultItem = {
+  def newMention(docBase: Int = docBase, docId: Int = docId, docIndex: Int = docIndex, resultLabel: String = resultLabel,
+      resultName: String = resultName): Mention = {
     val stateMatch = newOdinsonMatch()
-    val resultItem: ResultItem = new ResultItem(docBase, docId, docIndex, resultLabel, resultName, stateMatch)
+    val resultLabelOpt =
+        if (resultLabel.isEmpty) None
+        else Some(resultLabel)
+    val mention: Mention = factory.newMention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
+        luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, idGetter = nullIdGetter, foundBy = resultName)
 
-    resultItem
+    mention
   }
 
-  behavior of "ResultItem"
+  behavior of "Mention"
 
   it should "flatten" in {
-    val resultItem = newResultItem()
+    val resultItem = newMention()
     val idProvider = new IdProvider()
     val writeNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
@@ -81,26 +98,26 @@ class TestSqlState extends BaseSpec {
         }
   }
 
-  def equals(left: ResultItem, right: ResultItem): Boolean = {
-    left.segmentDocBase == right.segmentDocBase &&
-        left.segmentDocId == right.segmentDocId &&
-        left.docIndex == right.docIndex &&
+  def equals(left: Mention, right: Mention): Boolean = {
+    left.luceneSegmentDocBase == right.luceneSegmentDocBase &&
+        left.luceneSegmentDocId == right.luceneSegmentDocId &&
+        left.luceneDocId == right.luceneDocId &&
         left.label == right.label &&
-        left.name == right.name &&
+        left.foundBy == right.foundBy &&
         equals(left.odinsonMatch.asInstanceOf[StateMatch], right.odinsonMatch.asInstanceOf[StateMatch])
   }
 
   it should "compare properly" in {
-    val resultItem1 = newResultItem()
-    val resultItem2 = newResultItem()
+    val m1 = newMention()
+    val m2 = newMention()
 
-    equals(resultItem1, resultItem2) should be (true)
+    equals(m1, m2) should be (true)
   }
 
   it should "survive a round trip" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
-    val resultItem1 = newResultItem()
+    val state = SqlState(config, null)
+    val resultItem1 = newMention()
     val odinsonScoreDocs = Array(
       new OdinsonScoreDoc(docIndex, 0.0f, -1,
         Array(
@@ -109,10 +126,10 @@ class TestSqlState extends BaseSpec {
         docId, docBase)
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
-    val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults1)
-    val resultItems2 = stateFactory.usingState { state =>
-      state.addResultItems(odinResultsIterator)
-      state.getResultItems(docBase, docId, resultLabel)
+    val mentionsIterator = factory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
+    val resultItems2 = {
+      state.addMentions(mentionsIterator)
+      state.getMentions(docBase, docId, resultLabel)
     }
 
     resultItems2.length should be (1)
@@ -169,12 +186,14 @@ class TestSqlState extends BaseSpec {
     odinResults
   }
 
-  it should "work with one ResultItem at a time" in {
+  it should "work with one Mention at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
+    val state = SqlState(config, null)
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
+    val mentionFactory = new DefaultMentionFactory
+    val idGetter = new NullIdGetter
 
     1.to(100).foreach { index => // Do this many tests.
       val odinResults = newRandomOdinResults(random, docId, docBase)
@@ -182,14 +201,14 @@ class TestSqlState extends BaseSpec {
       val resultItems1 = odinResults.scoreDocs
           .flatMap { scoreDoc =>
               scoreDoc.matches.map { odinsonMatch =>
-                new ResultItem(scoreDoc.segmentDocBase, scoreDoc.segmentDocId, scoreDoc.doc,
-                    resultLabel, resultName, odinsonMatch)
+                mentionFactory.newMention(odinsonMatch, Some(resultLabel), scoreDoc.doc, scoreDoc.segmentDocId,
+                  scoreDoc.segmentDocBase, idGetter, resultName)
               }
           }
-      val odinResultsIterator = OdinResultsIterator(Some(resultLabel), Some(resultName), odinResults)
-      val resultItems2 = stateFactory.usingState { state =>
-        state.addResultItems(odinResultsIterator)
-        state.getResultItems(docBase, docId, resultLabel)
+      val mentionsIterator = mentionFactory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
+      val resultItems2 = {
+        state.addMentions(mentionsIterator)
+        state.getMentions(docBase, docId, resultLabel)
       }
 
       resultItems1.length should be (resultItems2.length)
@@ -198,6 +217,7 @@ class TestSqlState extends BaseSpec {
           println(s"left: $leftResultItem != right: $rightResultItem")
         equals(leftResultItem, rightResultItem) should be (true)
       }
+      state.clear()
     }
   }
 
@@ -216,7 +236,7 @@ class TestSqlState extends BaseSpec {
 
   it should "work with multiple ResultItems at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val stateFactory = SqlStateFactory(config)
+    val state = SqlState(config, null)
     val random = new Random(13)
 
     1.to(20).foreach { index => // Do this many tests.
@@ -225,23 +245,22 @@ class TestSqlState extends BaseSpec {
       val resultItems1 = odinResultses.zip(docBasesAndIdsAndLabels).flatMap { case (odinResults, (_, _, label)) =>
         odinResults.scoreDocs.flatMap { scoreDoc =>
           scoreDoc.matches.map { odinsonMatch =>
-            new ResultItem(scoreDoc.segmentDocBase, scoreDoc.segmentDocId, scoreDoc.doc,
-              label, resultName, odinsonMatch)
+            factory.newMention(odinsonMatch, Some(label), scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, nullIdGetter, resultName)
           }
         }
       }
-      val resultItems2 = stateFactory.usingState { state =>
+      val resultItems2 =  {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
-          val odinResultsIterator = OdinResultsIterator(Some(label), Some(resultName), odinResults)
+          val mentionsIterator = factory.mentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
 
-          state.addResultItems(odinResultsIterator)
+          state.addMentions(mentionsIterator)
         }
 
         docBasesAndIdsAndLabels.flatMap { docBaseAndIdAndLabel: (Int, Int, String) =>
           val (docBase, docId, label) = docBaseAndIdAndLabel
-          val resultItems = state.getResultItems(docBase, docId, label)
+          val mentions = state.getMentions(docBase, docId, label)
 
-          resultItems
+          mentions
         }
       }
 
@@ -253,5 +272,23 @@ class TestSqlState extends BaseSpec {
         equals(leftResultItem, rightResultItem) should be (true)
       }
     }
+  }
+
+  behavior of "persistent state"
+
+  it should "persist" in {
+    // Make sure it is sql in the first place
+    val filename = "../test.sql"
+    val file = new File(filename)
+    val config = ExtractorEngine.defaultConfig
+        .withValue("state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
+        .withValue("state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
+
+    file.delete()
+    file.exists should be (false)
+    val state = SqlState(config, null)
+    state.close()
+    file.exists should be (true)
+    file.delete()
   }
 }

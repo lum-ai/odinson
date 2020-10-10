@@ -1,5 +1,7 @@
 package ai.lum.odinson.compiler
 
+import ai.lum.odinson.utils.exceptions.OdinsonException
+
 object Ast {
 
   sealed trait Matcher
@@ -36,7 +38,18 @@ object Ast {
   case class ExpandPattern(pattern: Pattern) extends Pattern
 
   // FIXME should these be `Pattern` or something else?
-  case class EventPattern(trigger: Pattern, arguments: List[ArgumentPattern]) extends Pattern
+  case class EventPattern(trigger: Pattern, arguments: List[ArgumentPattern]) extends Pattern {
+    // We don't currently allow more than one argument with the same name
+    // Check to make sure this doesn't happen.
+    argCheck()
+
+    def argCheck(): Unit = {
+     val argNames = arguments.map(_.name)
+     if (argNames.toSet.size < argNames.length) {
+       throw new OdinsonException("There are multiple arguments with the same name in EventPattern.")
+     }
+    }
+  }
   case class ArgumentPattern(
     name: String,
     label: Option[String],

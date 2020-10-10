@@ -9,19 +9,18 @@ import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQu
 import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValueFactory}
+import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
-import ai.lum.common.ConfigFactory
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.State
+import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.state.OdinResultsIterator
-import ai.lum.odinson.state.StateFactory
 import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
@@ -38,11 +37,11 @@ object LazyIdGetter {
   def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
 }
 
-class ExtractorEngine(
+class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
-  val stateFactory: StateFactory,
+  val state: State, // todo: should this be private?
   val parentDocIdField: String,
   val mentionFactory: MentionFactory
 ) {
@@ -70,14 +69,161 @@ class ExtractorEngine(
     }
   )
 
+  /**
+    * Gets a lucene document id and returns the stored fields
+    * corresponding to that document.
+    *
+    * @param docID lucene document id
+    * @return a lucene document
+    */
   def doc(docID: Int): LuceneDocument = {
     indexSearcher.doc(docID)
   }
 
+  /**
+    * Returns the number of lucene documents in the index.
+    * Note that this is not the same as the number of indexed sentences,
+    * because there are also lucene documents indexed that store metadata.
+    *
+    * @return number of lucene documents in the index
+    */
   def numDocs(): Int = {
     indexReader.numDocs()
   }
 
+  /*************
+   * These methods represent the ExtractorEngine first entrypoint,
+   * that gets an OdinsonQuery and returns OdinResults.
+   * This is meant to be similar to Lucene API.
+   ************/
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with all the matched documents and their corresponding matches.
+    *
+    * @param odinsonQuery
+    * @return an OdinResult object
+    */
+  def query(odinsonQuery: OdinsonQuery): OdinResults = {
+    query(odinsonQuery, false)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with all the matched documents and their corresponding matches.
+    * 
+    * If disableMatchSelector is set to true, then the MatchSelector algorithm
+    * will not be executed. This means that all the possible candidates for a match
+    * will be returned, instead of just the correct one according to the query semantics,
+    * e.g., select the longest match for the greedy quantifiers.
+    * 
+    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    *
+    * @param odinsonQuery
+    * @param disableMatchSelector
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with the first `n` matched lucene documents and their corresponding matches.
+    * In this situation `n` can be considered to be the desired number of sentences to match.
+    *
+    * @param odinsonQuery
+    * @param n
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, n: Int): OdinResults = {
+    query(odinsonQuery, n, false)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with the first `n` matched lucene documents and their corresponding matches.
+    * In this situation `n` can be considered to be the desired number of sentences to match.
+    * 
+    * If disableMatchSelector is set to true, then the MatchSelector algorithm
+    * will not be executed. This means that all the possible candidates for a match
+    * will be returned, instead of just the correct one according to the query semantics,
+    * e.g., select the longest match for the greedy quantifiers.
+    * 
+    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    *
+    * @param odinsonQuery
+    * @param n
+    * @param disableMatchSelector
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
+    query(odinsonQuery, n, null, disableMatchSelector)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with the next `n` matched lucene documents and their corresponding matches,
+    * starting after the last lucene document in the OdinResults `after`.
+    *
+    * @param odinsonQuery
+    * @param n number of desired lucene documents
+    * @param after an OdinResults with a set of lucene documents
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinResults): OdinResults = {
+    query(odinsonQuery, n, after.scoreDocs.last)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with the next `n` matched lucene documents and their corresponding matches,
+    * starting after the lucene document `after`.
+    *
+    * @param odinsonQuery
+    * @param n number of desired lucene documents
+    * @param after the last lucene document to ignore
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+    query(odinsonQuery, n, after, false)
+  }
+
+  /**
+    * Executes an OdinsonQuery and returns an OdinResult
+    * with the next `n` matched lucene documents and their corresponding matches,
+    * starting after the lucene document `after`.
+    *
+    * If disableMatchSelector is set to true, then the MatchSelector algorithm
+    * will not be executed. This means that all the possible candidates for a match
+    * will be returned, instead of just the correct one according to the query semantics,
+    * e.g., select the longest match for the greedy quantifiers.
+    * 
+    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    * 
+    * @param odinsonQuery
+    * @param n
+    * @param after
+    * @param disableMatchSelector
+    * @return
+    */
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+    val odinResults = try {
+      // we may need to read from the state as part of executing the query
+      odinsonQuery.setState(Some(state))
+      // actually execute the query
+      indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+    }
+    finally {
+      // clean up after ourselves
+      odinsonQuery.setState(None)
+    }
+    // return results
+    odinResults
+  }
+
+
+  // FIXME rewrite this
   /** Retrieves the parent Lucene Document by docId */
   def getParentDoc(docId: String): LuceneDocument = {
     val sterileDocID =  docId.escapeJava
@@ -125,101 +271,115 @@ class ExtractorEngine(
     ruleReader.compileRuleResource(rulePath, variables)
   }
 
-  /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int): Seq[Mention] = {
-    extractMentions(extractors, numSentences, false, false)
+  private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+    val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
+    mentionFactory.mentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
   }
 
-  /** Apply the extractors and return all results */
-  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Seq[Mention] = {
+  /**
+    * Execute all rules in a grammar without populating the state.
+    * This method will iterate once over all the rules, ignoring their priorities.
+    * Returns an iterator over all the found Mentions.
+    * Note that more than one mention may occurr in the same sentence.
+    * Also note that "NoState" means the state won't be written, but may be read.
+    *
+    * @param extractors
+    * @param allowTriggerOverlaps
+    * @param disableMatchSelector
+    * @return
+    */
+  def extractNoState(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Iterator[Mention] = {
+    extractNoState(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
+  }
+
+  /**
+    * Execute all rules in a grammar without populating the state.
+    * This method will iterate once over all the rules, ignoring their priorities.
+    * Returns an iterator over the Mentions found in the first n matched sentences in the index.
+    * Note that the number of mentions returned will be greater than or equal to numSentences.
+    * Also note that "NoState" means the state won't be written, but may be read.
+    *
+    * @param extractors
+    * @param numSentences
+    * @param allowTriggerOverlaps
+    * @param disableMatchSelector
+    * @return
+    */
+  def extractNoState(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+
+    // Apply each extractor, concatenate results
+    val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
+    val results = OdinMentionsIterator.concatenate(resultsIterators)
+
+    filterMentions(results, allowTriggerOverlaps)
+  }
+
+  /**
+    * Execute all extractors in a grammar according to their priorities,
+    * and writing their results to the State to be used by subsequent extractors.
+    * Returns an iterator over the contents of the State.
+    *
+    * @param extractors
+    * @param allowTriggerOverlaps
+    * @param disableMatchSelector
+    * @return
+    */
+  def extractMentions(extractors: Seq[Extractor], allowTriggerOverlaps: Boolean = false, disableMatchSelector: Boolean = false): Iterator[Mention] = {
     extractMentions(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
-  /** Apply the extractors and return results for at most `numSentences` */
-  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Seq[Mention] = {
+  /**
+    * Execute all extractors in a grammar according to their priorities,
+    * and writing their results to the State to be used by subsequent extractors.
+    * Returns an iterator over the contents of the State.
+    *
+    * @param extractors
+    * @param numSentences
+    * @param allowTriggerOverlaps
+    * @param disableMatchSelector
+    * @return
+    */
+  def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
     val minIterations = extractors.map(_.priority.minIterations).max
-    // This is here both to demonstrate how a filter might be passed into the method.
-    val filter = filters(allowTriggerOverlaps)
     val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
-    def extract(i: Int, state: State): Seq[Mention] = for {
+    var finished = false
+    var epoch = 1
+
+    while (!finished) {
+      // extract the mentions from all extractors of this priority
+      val mentions = extractFromPriority(epoch, extractors, numSentences, disableMatchSelector, mruIdGetter)
+      epoch += 1
+      // if anything returned, add to the state
+      if (mentions.hasNext) {
+        // future actions here
+        state.addMentions(mentions)
+      } else if (epoch > minIterations) {
+        // if nothing has been found and we've satisfied the minIterations, stop
+        finished = true
+      }
+    }
+    // At the end of the priorities, gather all the ResultItems found from the state
+    val results = state.getAllMentions()
+    // Filter any that are invalid and convert to Mentions
+    filterMentions(results, allowTriggerOverlaps)
+  }
+
+  private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
+    val resultsIterators = for {
       extractor <- extractors
       if extractor.priority matches i
-      odinResults = query(extractor.query, extractor.label, Some(extractor.name), numSentences, null, disableMatchSelector, state)
-      scoreDoc <- odinResults.scoreDocs
-      idGetter = mruIdGetter.getOrNew(scoreDoc.doc)
-      odinsonMatch <- scoreDoc.matches
-      mention = mentionFactory.newMention(odinsonMatch, extractor.label, scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, extractor.name)
-      mentionOpt = filter(mention)
-      if (mentionOpt.isDefined)
-    } yield mentionOpt.get
-
-    @annotation.tailrec
-    def loop(i: Int, mentions: Seq[Mention], state: State): Seq[Mention] = {
-      val newMentions: Seq[Mention] = extract(i, state)
-
-      if (0 < newMentions.length)
-        loop(i + 1, newMentions ++: mentions, state) // TODO: Think about the order and efficiency.
-      else if (i < minIterations)
-        loop(i + 1, mentions, state)
-      else
-        mentions
-    }
-
-    val mentions = stateFactory.usingState { state =>
-      loop(1, Seq.empty[Mention], state)
-    }
-
-    mentions.distinct
+    } yield extract(extractor, numSentences, disableMatchSelector, mruIdGetter)
+    OdinMentionsIterator.concatenate(resultsIterators)
   }
 
-  /** executes query and returns all results */
-  def query(odinsonQuery: OdinsonQuery): OdinResults = {
-    query(odinsonQuery, false)
-  }
-
-  /** executes query and returns all results */
-  def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
-    query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
-  }
-
-  /** executes query and returns at most n documents */
-  def query(odinsonQuery: OdinsonQuery, n: Int): OdinResults = {
-    query(odinsonQuery, n, false)
-  }
-
-  /** executes query and returns at most n documents */
-  def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
-    query(odinsonQuery, n, null, disableMatchSelector)
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
-    query(odinsonQuery, n, after, false)
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
-    stateFactory.usingState { state =>
-      query(odinsonQuery, None, None, n, after, disableMatchSelector, state)
-    }
-  }
-
-  /** executes query and returns next n results after the provided doc */
-  def query(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean, state: State): OdinResults = {
-    val odinResults = try {
-      odinsonQuery.setState(Some(state))
-      indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
-    }
-    finally {
-      odinsonQuery.setState(None)
-    }
-    // All of the odinResults will be added to the state, even though not all of them will
-    // necessarily be used to create mentions.
-    val odinResultsIterator = OdinResultsIterator(labelOpt, nameOpt, odinResults)
-    state.addResultItems(odinResultsIterator)
-
-    odinResults
+  private def filterMentions(ms: Iterator[Mention], allowTriggerOverlaps: Boolean): Iterator[Mention] = {
+    val filter = filters(allowTriggerOverlaps)
+    for {
+      m <- ms
+      mention <- filter(m)
+    } yield mention
   }
 
   @deprecated(message = "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
@@ -265,13 +425,47 @@ class ExtractorEngine(
     TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
   }
 
+  /**
+    * Close the open resources.
+    */
+  def close(): Unit = {
+    state.close()
+  }
+
+  // ----------------------------------------------
+  //                  Manage State
+  // ----------------------------------------------
+
+  /**
+    * Clears the state, afterwards previously found mentions will not be available.
+    */
+  def clearState(): Unit = {
+    state.clear()
+  }
+
+  /**
+    * Save the current state to the path provided.
+    * @param path
+    */
+  def saveStateTo(path: String): Unit = {
+    saveStateTo(new File(path))
+  }
+
+  /**
+    * Save the current state to the File provided
+    * @param file
+    */
+  def saveStateTo(file: File): Unit = {
+    state.dump(file)
+  }
+
 }
 
 object ExtractorEngine {
   val defaultPath = "odinson"
 
   lazy val defaultMentionFactory = new DefaultMentionFactory()
-  lazy val defaultConfig = ConfigFactory.load()[Config](defaultPath)
+  lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
     fromConfig(defaultPath)
@@ -295,13 +489,13 @@ object ExtractorEngine {
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val stateFactory = StateFactory(config)
+    val state = State(config, indexSearcher)
     val parentDocIdField = config[String]("index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       displayField,
-      stateFactory,
+      state,
       parentDocIdField,
       mentionFactory
     )
@@ -320,6 +514,7 @@ object ExtractorEngine {
     inMemory(config[Config](path), docs)
   }
 
+  // Expecting a config that is already inside the `odinson` namespace
   def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
     // make a memory index
     val memWriter = OdinsonIndexWriter.inMemory
