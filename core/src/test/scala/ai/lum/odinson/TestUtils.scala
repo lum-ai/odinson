@@ -1,16 +1,21 @@
 package ai.lum.odinson
 
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.documentation.ExampleSentences
+import ai.lum.odinson.state.NullIdGetter
+import ai.lum.odinson.utils.MostRecentlyUsed
 
 trait BaseFixtures {
 
   def getDocumentFromJson(json: String): Document = Document.fromJson(json)
   def getDocument(id: String): Document = getDocumentFromJson(ExampleSentences.json(id))
-  
+
+  val nullIdGetter = new NullIdGetter()
+  val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](NullIdGetter.apply)
+
   object Utils {
     val config = ConfigFactory.load()
     val odinsonConfig:Config = config[Config]("odinson")

@@ -102,10 +102,10 @@ class StateQuery(
         currentDoc = docIds(currentDocIndex)
         matchStart = -1
         // retrieve mentions
-        val resultItems = stateOpt.get.getResultItems(docBase, currentDoc, label)
-        startMatches = resultItems.map(_.odinsonMatch.start)
-        endMatches = resultItems.map(_.odinsonMatch.end)
-        namedCapturesesOpt = Some(resultItems.map(_.odinsonMatch.namedCaptures))
+        val mentions = stateOpt.get.getMentions(docBase, currentDoc, label)
+        startMatches = mentions.map(_.odinsonMatch.start)
+        endMatches = mentions.map(_.odinsonMatch.end)
+        namedCapturesesOpt = Some(mentions.map(_.odinsonMatch.namedCaptures))
         currentMatchIndex = -1
         matchStart = -1
         matchEnd = -1
