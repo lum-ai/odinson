@@ -1,26 +1,36 @@
 package ai.lum.odinson.state
 
+import java.io.File
+
+import ai.lum.common.ConfigUtils._
+import ai.lum.odinson.Mention
 import com.typesafe.config.Config
 
 class FileState extends State {
 
-  override def addResultItems(resultItems: Iterator[ResultItem]): Unit = ???
+  override def addMentions(mentions: Iterator[Mention]): Unit = ???
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = ???
 
-  override def getResultItems(docBase: Int, docId: Int, label: String): Array[ResultItem] = ???
+  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = ???
+
+  override def getAllMentions(): Iterator[Mention] = ???
+
+  override def clear(): Unit = ???
+
+  override def close(): Unit = {
+    ???
+  }
+
 }
 
-class FileStateFactory extends StateFactory {
+object FileState {
 
-  override def usingState[T](function: State => T): T = {
-    function(new FileState())
+  def apply(config: Config): FileState = {
+    // whether or not to persist the state after the engine is closed
+    val saveOnClose = config[Boolean]("state.saveOnClose")
+    val saveTo = config.get[File]("state.saveTo")
+    new FileState()
   }
-}
 
-object FileStateFactory {
-
-  def apply(config: Config): FileStateFactory = {
-    new FileStateFactory()
-  }
 }
