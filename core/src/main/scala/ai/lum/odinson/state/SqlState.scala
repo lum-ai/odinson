@@ -163,19 +163,20 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
     indexSearcher: OdinsonIndexSearcher) extends State {
   if (persistOnClose) require(persistFile.isDefined)
 
-  protected val connection = dataSource.getConnection
   protected val mentionsTable = s"mentions_${factoryIndex}_$stateIndex"
   protected val idProvider = new IdProvider()
   protected var closed = false
 
-  create()
-
-  def create(): Unit = {
-    createTable()
-    createIndexes()
+  using(dataSource.getConnection) { connection =>
+    create(connection)
   }
 
-  def createTable(): Unit = {
+  protected def create(connection: Connection): Unit = {
+    createTable(connection)
+    createIndexes(connection)
+  }
+
+  protected def createTable(connection: Connection): Unit = {
     val sql = s"""
       CREATE TABLE IF NOT EXISTS $mentionsTable (
         doc_base INT NOT NULL,            -- offset corresponding to lucene segment
@@ -196,7 +197,7 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
     }
   }
 
-  def createIndexes(): Unit = {
+  protected def createIndexes(connection: Connection): Unit = {
     {
       val sql =
         s"""
@@ -220,10 +221,16 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
     }
   }
 
+  override def addMentions(mentions: Iterator[Mention]): Unit = {
+    using (dataSource.getConnection) { conneciton =>
+      addMentions(conneciton, mentions)
+    }
+  }
+
   // Reuse the same connection and prepared statement.
   // TODO Group the mentions and insert multiple at a time.
   // TODO Also pass in the number of items, perhaps how many of each kind?
-  override def addMentions(mentions: Iterator[Mention]): Unit = {
+  protected def addMentions(connection: Connection, mentions: Iterator[Mention]): Unit = {
     val sql = s"""
       INSERT INTO $mentionsTable
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
@@ -258,6 +265,12 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
     }
   }
 
+  override def getDocIds(docBase: Int, label: String): Array[Int] = {
+    using(dataSource.getConnection) { connection =>
+      getDocIds(connection, docBase, label)
+    }
+  }
+
   // TODO: This should be in a separate, smaller table so that
   // looking through it is faster and no DISTINCT is necessary.
   // See MemoryState for guidance.
@@ -266,7 +279,7 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
    *  to lucene documents that contain a mention with the
    *  specified label
    */
-  override def getDocIds(docBase: Int, label: String): Array[Int] = {
+  protected def getDocIds(connection: Connection, docBase: Int, label: String): Array[Int] = {
     val sql = s"""
       SELECT DISTINCT doc_id
       FROM $mentionsTable
@@ -290,6 +303,12 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
   }
 
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
+    using(dataSource.getConnection) { connection =>
+      getMentions(connection, docBase, docId, label)
+    }
+  }
+
+  protected def getMentions(connection: Connection, docBase: Int, docId: Int, label: String): Array[Mention] = {
     val readNodes = ArrayBuffer.empty[ReadNode]
 
     def addReadNode(dbGetter: DbGetter): Boolean = {
@@ -354,11 +373,17 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
   }
 
   override def clear(): Unit = {
-    drop()
-    create()
+    using(dataSource.getConnection) { connection =>
+      clear(connection)
+    }
   }
 
-  def persist(file: File): Unit = {
+  protected def clear(connection: Connection): Unit = {
+    drop(connection)
+    create(connection)
+  }
+
+  protected def persist(connection: Connection, file: File): Unit = {
     val path = file.getPath
     val sql = s"""
       SCRIPT TO '$path'
@@ -370,16 +395,22 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
   }
 
   override def close(): Unit = {
+    if (persistOnClose || !closed)
+      using(dataSource.getConnection) { connection =>
+        close(connection)
+      }
+  }
+
+  protected def close(connection: Connection): Unit = {
     if (persistOnClose)
-      persist(persistFile.get)
+      persist(connection, persistFile.get)
 
     if (!closed) {
       try {
-        drop()
+        drop(connection)
       }
       finally {
         closed = true
-        connection.close()
       }
     }
   }
@@ -388,7 +419,7 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
   // "TRUNCATE is faster than DELETE since it does not generate rollback information and does not
   // fire any delete triggers."  There's also no need to update indexes.
   // However, DROP is what we want.  The tables and indexes should completely disappear.
-  protected def drop(): Unit = {
+  protected def drop(connection: Connection): Unit = {
     val sql = s"""
       DROP TABLE $mentionsTable
       ;
@@ -398,7 +429,6 @@ class SqlState protected (val dataSource: DataSource, protected val factoryIndex
     }
   }
 }
-
 
 object SqlState {
   protected var count: AtomicLong = new AtomicLong
