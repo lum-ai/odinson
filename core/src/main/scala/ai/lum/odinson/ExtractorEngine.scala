@@ -392,8 +392,6 @@ class ExtractorEngine private (
         // have the names found above
         val argsToPromote = argNamesToPromote.flatMap{ argName =>
            m.arguments.getOrElse(argName, Array())
-             // Exclude Mentions which are already in the State
-             .filter(!_.odinsonMatch.isInstanceOf[StateMatch])
         }
         // Return the original mention and all arguments which need promotion
         Seq(m) ++ argsToPromote
