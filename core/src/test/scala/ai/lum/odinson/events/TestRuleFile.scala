@@ -23,6 +23,7 @@ class TestRuleFile extends EventSpec {
       |rules:
       |  - name: testrule
       |    type: event
+      |    label: Test
       |    pattern: |
       |      trigger = [lemma=eat]
       |      subject: ^NP = >nsubj ${chunk}
@@ -30,7 +31,9 @@ class TestRuleFile extends EventSpec {
     """.stripMargin
     val extractors = eeGummy.ruleReader.compileRuleString(rules)
     val mentions = eeGummy.extractMentions(extractors).toArray
+      .filter(_.label.getOrElse("None") == "Test")
     mentions should have size (1)
+    // todo keep fixing from here
     val m = mentions.head.odinsonMatch
     // test trigger
     testEventTrigger(m, start = 1, end = 2)
@@ -70,7 +73,7 @@ class TestRuleFile extends EventSpec {
     val masterPath = "/testGrammar/testMaster.yml"
     val extractors = eeGummy.compileRuleResource(masterPath)
     val mentions = eeGummy.extractMentions(extractors).toArray
-    mentions should have size (1)
+    mentions should have size (3)
     // Tests that the variables from the master file propagate
     mentions.head.foundBy should be("testRuleImported-IMPORT_LABEL")
     eeGummy.clearState()

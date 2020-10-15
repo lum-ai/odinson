@@ -78,7 +78,8 @@ class TestMockState extends BaseSpec {
     val extractors = eeGummyMemory.ruleReader.compileRuleString(rules)
     val mentions = eeGummyMemory.extractMentions(extractors).toArray
 
-    mentions should have size (3)
+    // the 3 main extractions + 2 promoted args
+    mentions should have size (5)
 
     mentions.filter(_.label.get == "Gummy") should have size (1)
 
