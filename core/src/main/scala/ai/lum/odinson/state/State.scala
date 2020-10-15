@@ -3,7 +3,7 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.Mention
+import ai.lum.odinson.{Mention, MentionFactory, StateMatch}
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import com.typesafe.config.Config
 
@@ -83,6 +83,12 @@ object State {
     }
 
     state
+  }
+
+  def toStateMention(mentionFactory: MentionFactory, mention: Mention): Mention = {
+    val odinsonMatch = mention.odinsonMatch
+    val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
+    mention.copy(mentionFactory, stateMatch)
   }
 
 }

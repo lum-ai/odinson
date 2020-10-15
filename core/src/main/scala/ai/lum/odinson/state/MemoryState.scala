@@ -16,7 +16,7 @@ class MemoryState(val mentionFactory: MentionFactory, val persistOnClose: Boolea
 
   if (persistOnClose) require(outfile.isDefined)
 
-  implicit val resultItemOrdering = MemoryState.MentionOrdering
+  implicit val resultItemOrdering: MemoryState.MentionOrdering.type = MemoryState.MentionOrdering
   protected val baseIdLabelToMentions: mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] = mutable.Map.empty
   protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
@@ -49,19 +49,18 @@ class MemoryState(val mentionFactory: MentionFactory, val persistOnClose: Boolea
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
     val baseIdLabel = BaseIdLabel(docBase, docId, label)
     val mentionsOpt = baseIdLabelToMentions.get(baseIdLabel)
-    val resultItems = mentionsOpt.map(_.toArray).getOrElse(Array.empty)
-    val stateResultItems = resultItems.map { resultItem =>
-      resultItem.copy(mentionFactory, odinsonMatch = StateMatch.fromOdinsonMatch(resultItem.odinsonMatch))
-    }
+    val mentions = mentionsOpt.map(_.toArray).getOrElse(Array.empty)
+    val stateMentions = mentions.map(m => State.toStateMention(mentionFactory, m))
 
-    stateResultItems
+    stateMentions
   }
 
   override def getAllMentions(): Iterator[Mention] = {
     val mentionIterator = baseIdLabelToMentions
       .toIterator
-      .flatMap{ case (baseIdLabel, mentionSet) => mentionSet.toIterator }
-    // TODO: @Keith check please :)
+      .flatMap{ case (_, mentionSet) => mentionSet.toIterator }
+      .map(m => State.toStateMention(mentionFactory, m))
+
     mentionIterator
   }
 
