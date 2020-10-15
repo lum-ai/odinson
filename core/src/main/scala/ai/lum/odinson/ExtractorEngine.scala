@@ -197,7 +197,7 @@ class ExtractorEngine private (
     * will be returned, instead of just the correct one according to the query semantics,
     * e.g., select the longest match for the greedy quantifiers.
     * 
-    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    * If you don't know why you should disable the MatchSelector, then keep it enabled.
     * 
     * @param odinsonQuery
     * @param n
@@ -352,16 +352,53 @@ class ExtractorEngine private (
       // if anything returned, add to the state
       if (mentions.hasNext) {
         // future actions here
-        state.addMentions(mentions)
+        // handle promotion
+        // Filter any that are invalid and convert to Mentions
+        val filtered = filterMentions(mentions, allowTriggerOverlaps)
+        val promotedMentions = handleArgumentPromotion(filtered)
+        state.addMentions(promotedMentions)
       } else if (epoch > minIterations) {
         // if nothing has been found and we've satisfied the minIterations, stop
         finished = true
       }
     }
-    // At the end of the priorities, gather all the ResultItems found from the state
-    val results = state.getAllMentions()
-    // Filter any that are invalid and convert to Mentions
-    filterMentions(results, allowTriggerOverlaps)
+    // At the end of the priorities, return all the Mentions found from the state
+    state.getAllMentions()
+  }
+
+  private def handleArgumentPromotion(mentions: Iterator[Mention]): Iterator[Mention] = {
+    mentions.flatMap(m => handleArgumentPromotion(m))
+  }
+
+  /**
+    * Look into the Mention and bring any Mentions which need to be "promoted"
+    * (i.e., added to the State) to the top-level.  Arguments are promoted if
+    * (a) they were designated as such in the event rule, and (b) they are not already
+    * in the State.
+    *
+    * @param m Mention
+    * @return original Mention plus any argument Mentions that need to be added to the State
+    */
+  private def handleArgumentPromotion(m: Mention): Seq[Mention] = {
+    m.odinsonMatch match {
+      // Argument promotion only applies to EventMatches
+      case em: EventMatch =>
+        // gather the arguments which were specified to promote in the rule
+        val argNamesToPromote = em.argumentMetadata
+          .filter(_.promote == true)
+          .map(_.name)
+          .distinct
+        // then, iterate through all the mention arguments, gather the mentions which
+        // have the names found above
+        val argsToPromote = argNamesToPromote.flatMap{ argName =>
+           m.arguments.getOrElse(argName, Array())
+             // Exclude Mentions which are already in the State
+             .filter(!_.odinsonMatch.isInstanceOf[StateMatch])
+        }
+        // Return the original mention and all arguments which need promotion
+        Seq(m) ++ argsToPromote
+      case _ => Seq(m)
+    }
   }
 
   private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {

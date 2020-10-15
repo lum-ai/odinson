@@ -368,7 +368,7 @@ class QueryCompiler(
 
   def mkArgumentQuery(arg: Ast.ArgumentPattern): Option[ArgumentQuery] = {
     mkFullTraversalQuery(arg.fullTraversal).map { tr =>
-      ArgumentQuery(arg.name, arg.label, arg.min, arg.max, tr)
+      ArgumentQuery(arg.name, arg.label, arg.min, arg.max, arg.promote, tr)
     }
   }
 
