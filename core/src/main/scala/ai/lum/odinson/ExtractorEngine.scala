@@ -1,6 +1,7 @@
 package ai.lum.odinson
 
 import java.io.File
+
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
@@ -19,6 +20,8 @@ import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
+
+import scala.collection.mutable.ArrayBuffer
 
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
@@ -379,7 +382,7 @@ class ExtractorEngine private (
     * @param m Mention
     * @return original Mention plus any argument Mentions that need to be added to the State
     */
-  private def handleArgumentPromotion(m: Mention): Seq[Mention] = {
+  private def handleArgumentPromotion(m: Mention, usingState: Boolean): Seq[Mention] = {
     m.odinsonMatch match {
       // Argument promotion only applies to EventMatches
       case em: EventMatch =>
@@ -389,9 +392,26 @@ class ExtractorEngine private (
           .map(_.name)
           .distinct
         // then, iterate through all the mention arguments, gather the mentions which
-        // have the names found above
+        // have the names found above, and if they weren't already in the state:
+        //    1. transform them into StateMatches (if using State)
+        //    2. promote
+        // FIXME: convert to state match here, iterate with indices,
         val argsToPromote = argNamesToPromote.flatMap{ argName =>
-           m.arguments.getOrElse(argName, Array())
+          val argArray = m.arguments.getOrElse(argName, Array())
+          val toPromote = new ArrayBuffer[Mention]()
+          var i = 0
+          while (i < argArray.length) {
+            val original = argArray(i)
+            //
+            if (!original.odinsonMatch.isInstanceOf[StateMatch]) {
+              // TODO
+              val transformed = ???
+              argArray(i) = transformed
+              toPromote.append(transformed)
+            }
+            i += 1
+          }
+          toPromote
         }
         // Return the original mention and all arguments which need promotion
         Seq(m) ++ argsToPromote

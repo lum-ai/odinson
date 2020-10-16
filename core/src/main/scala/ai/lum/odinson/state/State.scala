@@ -85,6 +85,9 @@ object State {
     state
   }
 
+  // Convert the inner odinsonMatch to a StateMatch.  We don't need to do this
+  // recursively bc an event's arguments inherently are already state mentions
+  // either through promotion or being previously found.
   def toStateMention(mentionFactory: MentionFactory, mention: Mention): Mention = {
     val odinsonMatch = mention.odinsonMatch
     val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
