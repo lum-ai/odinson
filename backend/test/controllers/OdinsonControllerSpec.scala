@@ -5,6 +5,8 @@ import java.nio.file.Files
 
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
+import akka.stream.Materializer
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
@@ -13,7 +15,16 @@ import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
 import org.scalatest.TestData
 import play.api.Application
+import play.api.http.HeaderNames
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.test.WithApplication
+
+import scala.concurrent.Future
+import org.scalatestplus.play._
+import play.api.mvc._
+import play.api.test._
+
 
 import scala.reflect.io.Directory
 
@@ -23,6 +34,20 @@ import scala.reflect.io.Directory
  *
  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
  */
+
+case class GrammarRequest(
+                           grammar: String,
+                           parentQuery: Option[String] = None,
+                           pageSize: Option[Int] = None,
+                           allowTriggerOverlaps: Option[Boolean] = None,
+                           pretty: Option[Boolean] = None
+                         )
+
+object GrammarRequest {
+  implicit val fmt = Json.format[GrammarRequest]
+  implicit val read = Json.reads[GrammarRequest]
+}
+
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
 
@@ -91,5 +116,45 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       (contentAsJson(buildinfo) \ "name").as[String] mustBe "odinson-core"
 
     }
+
+    }
+
+  "OdinsonController" should {
+
+    "process a pattern query" in {
+
+      val pattern = controller.runQuery("[lemma=be] []", parentQuery=None, label=None, commit=None, prevDoc=None, prevScore=None, enriched=false, pretty=None).apply(FakeRequest(GET, "/pattern"))
+      status(pattern) mustBe OK
+      contentType(pattern) mustBe Some("application/json")
+      Helpers.contentAsString(pattern) must include("core")
+
+    }
+
+    "execute a grammar" in {
+
+      val ruleString =
+        s"""
+           |rules:
+           | - name: "example"
+           |   label: GrammaticalSubject
+           |   type: event
+           |   pattern: |
+           |       trigger = [lemma=have]
+           |       subject  = >nsubj []
+           |
+        """.stripMargin
+
+      val body = Json.obj("grammar" -> ruleString,
+        "pageSize" -> 10,
+        "allowTriggerOverlaps" -> false
+      )
+
+      val pattern = controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
+      status(pattern) mustBe OK
+      contentType(pattern) mustBe Some("application/json")
+      Helpers.contentAsString(pattern) must include("adults")
+
+    }
+
   }
 }
