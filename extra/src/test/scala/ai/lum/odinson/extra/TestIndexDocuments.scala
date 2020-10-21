@@ -3,12 +3,16 @@ package ai.lum.odinson.extra
 import java.nio.file.Files
 
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import org.apache.lucene.store.FSDirectory
 import org.scalatest._
+import org.apache.lucene.store.IOContext
+
+import scala.reflect.io.Directory
+import scala.util.parsing.json.JSON
 //import ai.lum.common.ConfigFactory
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import ai.lum.odinson.ExtractorEngine
 
-import scala.reflect.io.Directory
 import java.io.{File, IOException}
 
 import org.apache.commons.io.FileUtils
@@ -54,9 +58,9 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))
       // re-compute the index and docs path's
       .withValue(
-        "odinson.indexDir",
-        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
-      )
+      "odinson.indexDir",
+      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
+    )
       .withValue(
         "odinson.docsDir",
         ConfigValueFactory.fromAnyRef(docsDir)
@@ -71,4 +75,31 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     // with 100 sentences + 1 parent doc = 252 docs
     ee.numDocs shouldEqual (252)
   }
+
+    it should "contain the appropriate meta files" in {
+
+      val buildInfoFileName = "buildinfo.json"
+      val buildInfoJsonFile = new File(indexDir, buildInfoFileName)
+      val dependenciesFile = new File(indexDir, "dependencies.txt")
+
+
+      indexDir.listFiles() should contain (dependenciesFile)
+      indexDir.listFiles() should contain (buildInfoJsonFile)
+
+
+      def jsonToMap(directory: File, jsonFileName: String): Map[String, Any] = {
+        // takes a json file and returns a map
+        // fixme: may need recursion for nested maps
+        // todo: move to utils
+        val dir = FSDirectory.open(directory.toPath)
+        val inputStream = dir.openInput(jsonFileName, new IOContext).readString()
+        val jsonAsMap = JSON.parseFull(inputStream).get.asInstanceOf[Map[String, Any]]
+        jsonAsMap
+      }
+
+      val buildInfoJson = jsonToMap(indexDir, buildInfoFileName)
+      buildInfoJson.keys should contain ("version")
+
+    }
+
 }

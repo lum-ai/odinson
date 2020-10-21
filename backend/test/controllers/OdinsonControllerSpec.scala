@@ -35,19 +35,6 @@ import scala.reflect.io.Directory
  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
  */
 
-case class GrammarRequest(
-                           grammar: String,
-                           parentQuery: Option[String] = None,
-                           pageSize: Option[Int] = None,
-                           allowTriggerOverlaps: Option[Boolean] = None,
-                           pretty: Option[Boolean] = None
-                         )
-
-object GrammarRequest {
-  implicit val fmt = Json.format[GrammarRequest]
-  implicit val read = Json.reads[GrammarRequest]
-}
-
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
 
@@ -149,10 +136,10 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         "allowTriggerOverlaps" -> false
       )
 
-      val pattern = controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
-      status(pattern) mustBe OK
-      contentType(pattern) mustBe Some("application/json")
-      Helpers.contentAsString(pattern) must include("adults")
+      val response = controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      Helpers.contentAsString(response) must include("adults")
 
     }
 
