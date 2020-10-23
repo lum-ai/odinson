@@ -5,24 +5,16 @@ import java.nio.file.Files
 
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
-import akka.stream.Materializer
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
-import play.api.test._
 import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
 import org.scalatest.TestData
 import play.api.Application
-import play.api.http.HeaderNames
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.test.WithApplication
+import play.api.libs.json.Json
 
-import scala.concurrent.Future
 import org.scalatestplus.play._
-import play.api.mvc._
 import play.api.test._
 
 
@@ -91,7 +83,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
   val controller = new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
 
-  "OdinsonController GET /buildinfo" should {
+  "OdinsonController" should {
 
     "access the /buildinfo endpoint from a new instance of controller" in {
 
@@ -102,22 +94,37 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       contentType(buildinfo) mustBe Some("application/json")
       (contentAsJson(buildinfo) \ "name").as[String] mustBe "odinson-core"
 
-    }
+      }
 
-    }
+    "process a pattern query using the runQuery method" in {
 
-  "OdinsonController" should {
+      val pattern = controller.runQuery(
+        odinsonQuery= "[lemma=be] []",
+        parentQuery=None,
+        label=None,
+        commit=None,
+        prevDoc=None,
+        prevScore=None,
+        enriched=false,
+        pretty=None).apply(FakeRequest(GET, "/pattern"))
 
-    "process a pattern query" in {
-
-      val pattern = controller.runQuery("[lemma=be] []", parentQuery=None, label=None, commit=None, prevDoc=None, prevScore=None, enriched=false, pretty=None).apply(FakeRequest(GET, "/pattern"))
       status(pattern) mustBe OK
       contentType(pattern) mustBe Some("application/json")
       Helpers.contentAsString(pattern) must include("core")
 
-    }
+      }
 
-    "execute a grammar" in {
+      "process a pattern query by accessing the /pattern endpoint" in {
+        // the pattern used in this test: "[lemma=be] []"
+        val result = route(app, FakeRequest(GET, "/api/execute/pattern?odinsonQuery=%5Blemma%3Dbe%5D%20%5B%5D")).get
+
+        status(result) mustBe OK
+        contentType(result) mustBe Some("application/json")
+        Helpers.contentAsString(result) must include("core")
+
+      }
+
+    "execute a grammar using the executeGrammar method" in {
 
       val ruleString =
         s"""
@@ -136,6 +143,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         "allowTriggerOverlaps" -> false
       )
 
+
       val response = controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -143,5 +151,34 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
+    "execute a grammar by accessing the /grammar endpoint" in {
+
+      val ruleString =
+        s"""
+           |rules:
+           | - name: "example"
+           |   label: GrammaticalSubject
+           |   type: event
+           |   pattern: |
+           |       trigger = [lemma=have]
+           |       subject  = >nsubj []
+           |
+        """.stripMargin
+
+      val body = Json.obj("grammar" -> ruleString,
+        "pageSize" -> 10,
+        "allowTriggerOverlaps" -> false
+      )
+
+      val response = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body)).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      Helpers.contentAsString(response) must include("adults")
+
+    }
+
   }
+
+
 }

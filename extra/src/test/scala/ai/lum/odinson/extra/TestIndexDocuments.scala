@@ -90,12 +90,12 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       def jsonToMap(directory: File, jsonFileName: String): Map[String, Any] = {
         // takes a json file and returns a map
         // fixme: may need recursion for nested maps
-        // todo: move to utils
         val dir = FSDirectory.open(directory.toPath)
         val inputStream = dir.openInput(jsonFileName, new IOContext).readString()
         val jsonAsMap = JSON.parseFull(inputStream).get.asInstanceOf[Map[String, Any]]
         jsonAsMap
       }
+
 
       val buildInfoJson = jsonToMap(indexDir, buildInfoFileName)
       buildInfoJson.keys should contain ("version")

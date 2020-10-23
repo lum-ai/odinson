@@ -29,17 +29,13 @@ class TestOdinsonIndexWriter extends BaseSpec {
     )
   }
 
-  def deleteIndexFile =  {
-    val config = ConfigFactory.load()
-    val indexDir = config.getConfig("odinson").getString("indexDir")
-    val file = new File(indexDir)
-    val directory = new Directory(file)
-    directory.deleteRecursively
+  def deleteIndex = {
+    val dir = new Directory(indexDir)
+    dir.deleteRecursively()
   }
-  //def getOdinsonIndexWriter()(test: Fixture => Unit): Unit = {
-  def getOdinsonIndexWriter = {
-    // TODO: can this cause any trouble?
-    deleteIndexFile
+
+  def getOdinsonIndexWriter: OdinsonIndexWriter = {
+    deleteIndex
     OdinsonIndexWriter.fromConfig(testConfig.getConfig("odinson"))
   }
   
