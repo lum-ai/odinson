@@ -3,7 +3,7 @@ package ai.lum.odinson.state
 import java.io.File
 
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.{Mention, MentionFactory, StateMatch}
+import ai.lum.odinson.Mention
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import com.typesafe.config.Config
 
@@ -52,21 +52,6 @@ trait State {
     */
   def close(): Unit = ()
 
-  """
-    |
-    |SQL -> eph = h2, in memory
-    |    -> pers = h2 in disk, postgres / mysql, etc
-    |
-    |Memory -> eph = self
-    |       -> pers = serialize on close? java serialization
-    |
-    |File -> eph = tempdir / maybe actively delete when done
-    |     -> pers = default
-    |
-    |""".stripMargin
-
-
-
 }
 
 object State {
@@ -83,15 +68,6 @@ object State {
     }
 
     state
-  }
-
-  // Convert the inner odinsonMatch to a StateMatch.  We don't need to do this
-  // recursively bc an event's arguments inherently are already state mentions
-  // either through promotion or being previously found.
-  def toStateMention(mentionFactory: MentionFactory, mention: Mention): Mention = {
-    val odinsonMatch = mention.odinsonMatch
-    val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
-    mention.copy(mentionFactory, stateMatch)
   }
 
 }

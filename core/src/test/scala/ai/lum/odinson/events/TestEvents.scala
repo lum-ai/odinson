@@ -80,7 +80,8 @@ class TestEvents extends EventSpec {
     // and then keep only {gummy bears} because the quantifier `?` is greedy
     val extractors = ee.compileRuleString(rule)
     val mentions = ee.extractNoState(extractors).toArray
-    mentions.length should equal(1)
+    // the main event and the two args
+    mentions.length should equal(3)
 
     val em = mentions.map(_.odinsonMatch).collect{case m:EventMatch => m}.head
     val argMetadataNames = em.argumentMetadata.toSeq.map(_.name)

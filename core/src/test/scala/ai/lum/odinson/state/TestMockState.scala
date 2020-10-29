@@ -13,7 +13,7 @@ class TestMockState extends BaseSpec {
     val rules = """
           |rules:
           |  - name: gummy-rule
-          |    label: Bear
+          |    label: Gummy
           |    type: basic
           |    priority: 1
           |    pattern: |
@@ -29,21 +29,21 @@ class TestMockState extends BaseSpec {
           |      object: ^NP = >dobj []
           |
           |  - name: nomatch-rule
-          |    label: Gummy
+          |    label: GummyBear
           |    type: event
           |    priority: 2
           |    pattern: |
           |      trigger = bears
-          |      arg: Bear = >amod
+          |      arg: Gummy = >amod
        """.stripMargin
 
     val extractors = eeGummy.compileRuleString(rules)
-    val mentions = eeGummy.extractNoState(extractors).toArray
+    val mentions = eeGummy.extractMentions(extractors).toArray
 
-    mentions should have size (2)
+    // "gummy" from first rule and the main event with both args in second
+    mentions should have size (4)
 
-    mentions.filter(_.label.get == "Gummy") should have size (0)
-
+    mentions.filter(_.label.get == "GummyBear") should have size (0)
 
   }
 
