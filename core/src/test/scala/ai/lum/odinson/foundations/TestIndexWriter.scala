@@ -1,6 +1,9 @@
 package ai.lum.odinson.foundations
 
 // test imports
+import java.nio.file.Files
+
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest._
 // lum imports
 import ai.lum.odinson.{OdinsonIndexWriter, BaseSpec, DateField, StringField}
@@ -12,18 +15,28 @@ import java.io.File
 class TestOdinsonIndexWriter extends BaseSpec {
   type Fixture = OdinsonIndexWriter
 
-  def deleteIndexFile =  {
-    val config = ConfigFactory.load()
-    val indexDir = config.getConfig("odinson").getString("indexDir")
-    val file = new File(indexDir)
-    val directory = new Directory(file)
-    directory.deleteRecursively
+  val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
+  val indexDir = new File(tmpFolder, "index")
+
+
+  val defaultConfig = ConfigFactory.load()
+  val testConfig: Config = {
+    defaultConfig
+      // re-compute the index and docs path's
+      .withValue(
+      "odinson.indexDir",
+      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
+    )
   }
-  //def getOdinsonIndexWriter()(test: Fixture => Unit): Unit = {
-  def getOdinsonIndexWriter = {
-    // TODO: can this cause any trouble?
-    deleteIndexFile
-    OdinsonIndexWriter.fromConfig
+
+  def deleteIndex = {
+    val dir = new Directory(indexDir)
+    dir.deleteRecursively()
+  }
+
+  def getOdinsonIndexWriter: OdinsonIndexWriter = {
+    deleteIndex
+    OdinsonIndexWriter.fromConfig(testConfig.getConfig("odinson"))
   }
   
   "OdinsonIndexWriter" should "object should return index from config correctly" in {

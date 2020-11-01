@@ -5,11 +5,7 @@ import java.nio.file.Files
 import ai.lum.odinson.Document
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.scalatest._
-//import ai.lum.common.ConfigFactory
 import java.io.{File, IOException}
-
-import ai.lum.odinson.ExtractorEngine
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.apache.commons.io.FileUtils
 
 import scala.reflect.io.Directory
