@@ -52,21 +52,6 @@ trait State {
     */
   def close(): Unit = ()
 
-  """
-    |
-    |SQL -> eph = h2, in memory
-    |    -> pers = h2 in disk, postgres / mysql, etc
-    |
-    |Memory -> eph = self
-    |       -> pers = serialize on close? java serialization
-    |
-    |File -> eph = tempdir / maybe actively delete when done
-    |     -> pers = default
-    |
-    |""".stripMargin
-
-
-
 }
 
 object State {

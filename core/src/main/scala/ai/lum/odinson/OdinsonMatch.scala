@@ -48,7 +48,7 @@ object StateMatch {
 /** helper class to store the metadata related to an EventMention's argument,
  *  like it's name and some information about its quantifiers.
  */
-case class ArgumentMetadata(name: String, min: Int, max: Option[Int])
+case class ArgumentMetadata(name: String, min: Int, max: Option[Int], promote: Boolean)
 
 class EventMatch(
   val trigger: OdinsonMatch,
@@ -89,9 +89,14 @@ class EventSketch(
   val start: Int = trigger.start
   val end: Int = trigger.end
   val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
-  val argumentMetadata: Array[ArgumentMetadata] = argSketches
-    .map(a => ArgumentMetadata(a._1.name, a._1.min, a._1.max))
-    .distinct
+  val argumentMetadata: Array[ArgumentMetadata] = {
+    val metadata = argSketches.map { a =>
+      // If we need to promote
+      val promote = a._1.promote
+      ArgumentMetadata(a._1.name, a._1.min, a._1.max, promote)
+    }
+    metadata.distinct
+  }
 }
 
 class NGramMatch(

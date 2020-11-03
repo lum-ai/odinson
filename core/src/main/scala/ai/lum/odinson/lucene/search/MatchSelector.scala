@@ -149,15 +149,15 @@ object MatchSelector {
       m <- pickMatches(g)
     } yield m
     val packages = arg match {
-      case ArgumentSpans(name, label, min, Some(max), _) if min == max =>
+      case ArgumentSpans(name, label, min, Some(max), _, _) if min == max =>
         // exact range (note that a range 1-1 means no quantifier)
         matches.combinations(min).toList
-      case ArgumentSpans(name, label, min, Some(max), _) =>
+      case ArgumentSpans(name, label, min, Some(max), _, _) =>
         // range with min and max (note that min could be 0)
         if (matches.size < min) Nil
         else if (matches.size > max) matches.combinations(max).toList
         else Seq(matches)
-      case ArgumentSpans(name, label, min, None, _) =>
+      case ArgumentSpans(name, label, min, None ,_, _) =>
         // at least min
         if (matches.size < min) Nil
         else Seq(matches)

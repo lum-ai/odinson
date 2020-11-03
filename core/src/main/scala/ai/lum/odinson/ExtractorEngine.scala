@@ -1,6 +1,7 @@
 package ai.lum.odinson
 
 import java.io.File
+
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
@@ -19,6 +20,8 @@ import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
+
+import scala.collection.mutable.ArrayBuffer
 
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
@@ -197,7 +200,7 @@ class ExtractorEngine private (
     * will be returned, instead of just the correct one according to the query semantics,
     * e.g., select the longest match for the greedy quantifiers.
     * 
-    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    * If you don't know why you should disable the MatchSelector, then keep it enabled.
     * 
     * @param odinsonQuery
     * @param n
@@ -310,7 +313,11 @@ class ExtractorEngine private (
     val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
     val results = OdinMentionsIterator.concatenate(resultsIterators)
 
-    filterMentions(results, allowTriggerOverlaps)
+    // Apply the triggerOverlap filter, if enabled
+    val filtered = filterMentions(results, allowTriggerOverlaps)
+
+    // Handle argument promotion
+    processAndPromote(filtered, usingState = false)
   }
 
   /**
@@ -339,6 +346,12 @@ class ExtractorEngine private (
     * @return
     */
   def extractMentions(extractors: Seq[Extractor], numSentences: Int, allowTriggerOverlaps: Boolean, disableMatchSelector: Boolean): Iterator[Mention] = {
+    // If there is a mock state, then we don't want to add mentions to the state, rather, we want to extract without a state
+    // FIXME: maybe remove the mock state since we have "extractNoState" entry point?
+    if (state.isInstanceOf[MockState.type]) {
+      return extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
+    }
+
     val minIterations = extractors.map(_.priority.minIterations).max
     val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
@@ -352,16 +365,101 @@ class ExtractorEngine private (
       // if anything returned, add to the state
       if (mentions.hasNext) {
         // future actions here
-        state.addMentions(mentions)
+        // handle promotion
+        // Filter any that are invalid and convert to Mentions
+        val filtered = filterMentions(mentions, allowTriggerOverlaps)
+        val processedMentions = processAndPromote(filtered, usingState = true)
+        state.addMentions(processedMentions)
       } else if (epoch > minIterations) {
         // if nothing has been found and we've satisfied the minIterations, stop
         finished = true
       }
     }
-    // At the end of the priorities, gather all the ResultItems found from the state
-    val results = state.getAllMentions()
-    // Filter any that are invalid and convert to Mentions
-    filterMentions(results, allowTriggerOverlaps)
+    // At the end of the priorities, return all the Mentions found from the state
+    state.getAllMentions()
+  }
+
+  /**
+    * Process each mention: if any of the arg mentions need to be promoted, bring them to the
+    * top-level.  Also, if using the State, convert the odinsonMatches to StateMatches
+    *
+    * @param mentions
+    * @param usingState
+    * @return
+    */
+  private def processAndPromote(mentions: Iterator[Mention], usingState: Boolean): Iterator[Mention] = {
+    mentions.flatMap(m => handleArgumentPromotion(m, usingState))
+  }
+
+  /**
+    * Look into the Mention and bring any Mentions which need to be "promoted"
+    * (i.e., added to the State) to the top-level.  Arguments are promoted if
+    * (a) they were designated as such in the event rule, and (b) they are not already
+    * in the State.  Also, in the process, if the state is in use, converts the
+    * arguments AND the original, top-level mention to a State mention
+    *
+    * @param m Mention
+    * @return original Mention plus any argument Mentions that need to be added to the State
+    */
+  private def handleArgumentPromotion(m: Mention, usingState: Boolean): Seq[Mention] = {
+    // This will accrue the promoted argument mentions and original mention, all of which
+    // will be converted to having StateMatches (if usingState)
+    val results = new ArrayBuffer[Mention]()
+
+    // Process and accrue the arguments
+    m.odinsonMatch match {
+      // Argument promotion only applies to EventMatches
+      case em: EventMatch =>
+        // gather the arguments which were specified to promote in the rule
+        val argNamesToPromote = em.argumentMetadata
+          .filter(_.promote == true)
+          .map(_.name)
+          .distinct
+        // then, iterate through all the mention arguments, gather the mentions which
+        // have the names found above, and if they weren't already in the state:
+        //    1. transform them into StateMatches (if using State)
+        //    2. promote
+        argNamesToPromote.foreach { argName =>
+          // If the arguments contains found Mentions for that argument:
+          if (m.arguments.contains(argName)) {
+            // Retrieve the Array of argument Mentions
+            val argArray = m.arguments(argName)
+            // Loop through the argument Mentions, handling each at a time
+            var i = 0
+            while (i < argArray.length) {
+              val originalArgMention = argArray(i)
+              // If it's not already a StateMatch handle it.  This check is helpful because
+              // if it's already a state match then (a) it doesn't need to be promoted (i.e.,
+              // added to the state, and (b) it doesn't need to be converted to a StateMatch
+              if (!originalArgMention.odinsonMatch.isInstanceOf[StateMatch]) {
+                // TODO: make sure works with nested (event, arg = event, all found in same priority
+                if (usingState) {
+                  // Convert the Mention into one with a StateMatch
+                  val processedMention = toStateMention(originalArgMention)
+                  // Replace the original, to make sure the pointers are valid
+                  argArray(i) = processedMention
+                  // Add to the results, so it gets promoted
+                  results.append(processedMention)
+                } else {
+                  // Even if we're not using the state, we still need to promote
+                  results.append(originalArgMention)
+                }
+              }
+              i += 1
+            }
+          }
+        }
+      case _ => ()
+    }
+
+    // Add the top-level mention passed in, converting to a StateMatch if using the State
+    if (usingState) {
+      results.append(toStateMention(m))
+    } else {
+      results.append(m)
+    }
+
+    results
   }
 
   private def extractFromPriority(i: Int, extractors: Seq[Extractor], numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
@@ -455,6 +553,19 @@ class ExtractorEngine private (
     */
   def saveStateTo(file: File): Unit = {
     state.dump(file)
+  }
+
+  // Convert the inner odinsonMatch to a StateMatch.  We don't need to do this
+  // recursively bc an event's arguments inherently are already state mentions
+  // either through promotion or being previously found.
+  def toStateMention(mention: Mention): Mention = {
+    val odinsonMatch = mention.odinsonMatch
+    if (odinsonMatch.isInstanceOf[StateMatch]) {
+      mention
+    } else {
+      val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
+      mention.copy(mentionFactory, stateMatch)
+    }
   }
 
 }

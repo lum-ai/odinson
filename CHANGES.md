@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added argument promotion, i.e., arguments specified for promotion or underspecified will be added to the state ([#218](https://github.com/lum-ai/odinson/pull/218))
 - Add tests for REST API endpoints
 - Grammar files now support imports of rules and variables, from both resources and filesystem; absolute and relative paths ([#175](https://github.com/lum-ai/odinson/pull/175), [#180](https://github.com/lum-ai/odinson/pull/180)).
 - Validation of tokens to ensure they are compatible with Lucene ([#170](https://github.com/lum-ai/odinson/pull/170))
