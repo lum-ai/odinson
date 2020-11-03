@@ -17,13 +17,13 @@ object IndexDocuments extends App with LazyLogging {
 
   var config = ConfigFactory.load()
 
-  val dirPath = args(0)
-  val passedInDataDir = new File(dirPath).getAbsolutePath
-  val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
-  val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
-
-
   if (args.length == 1) {
+
+    val dirPath = args(0)
+    val passedInDataDir = new File(dirPath).getAbsolutePath
+    val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
+    val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
+
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
     config = config

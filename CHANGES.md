@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### Added
 - Added argument promotion, i.e., arguments specified for promotion or underspecified will be added to the state ([#218](https://github.com/lum-ai/odinson/pull/218))
+- Add tests for REST API endpoints
 - Grammar files now support imports of rules and variables, from both resources and filesystem; absolute and relative paths ([#175](https://github.com/lum-ai/odinson/pull/175), [#180](https://github.com/lum-ai/odinson/pull/180)).
 - Validation of tokens to ensure they are compatible with Lucene ([#170](https://github.com/lum-ai/odinson/pull/170))
 - Add priority as String to `Rule` and as `Priority` to `Extractor`
@@ -39,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   diacritic stripping, and some extra character mappings. This is the case both at index time and query time.
   This means you should reindex if you upgrade to this version.
 ### Fixed
+- Use temporary directories for /extra and /backend tests to avoid the main index (`data/odinson/index`) being overwritten during testing
 - Accept underscore at identifier start ([#209](https://github.com/lum-ai/odinson/pull/209))
 - Nullpointer exception related to event arguments.
 - size of roots array in `UnsafeSerializer`
