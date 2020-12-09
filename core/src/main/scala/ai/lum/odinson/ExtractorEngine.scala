@@ -16,7 +16,7 @@ import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{MockState, OdinMentionsIterator, State}
+import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
@@ -24,27 +24,12 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 import scala.collection.mutable.ArrayBuffer
 
 
-class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
-  protected lazy val document = indexSearcher.doc(documentId)
-  protected lazy val docId: String = document.getField("docId").stringValue
-  protected lazy val sentId: String = document.getField("sentId").stringValue
-
-  def getDocId: String = docId
-
-  def getSentId: String = sentId
-}
-
-object LazyIdGetter {
-  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
-}
-
 class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
   val state: State, // todo: should this be private?
   val parentDocIdField: String,
-  val mentionFactory: MentionFactory
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -61,7 +46,7 @@ class ExtractorEngine private (
       // If needed, filter results to discard trigger overlaps.
       mention.odinsonMatch match {
         case eventMatch: EventMatch =>
-          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(mentionFactory = mentionFactory, odinsonMatch = eventMatch))
+          eventMatch.removeTriggerOverlaps.map(eventMatch => mention.copy(odinsonMatch = eventMatch))
         case _ => Some(mention)
       }
     },
@@ -274,7 +259,7 @@ class ExtractorEngine private (
 
   private def extract(extractor: Extractor, numSentences: Int, disableMatchSelector: Boolean, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): Iterator[Mention] = {
     val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
-    mentionFactory.mentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
+    new MentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
   }
 
   /**
@@ -311,7 +296,7 @@ class ExtractorEngine private (
 
     // Apply each extractor, concatenate results
     val resultsIterators = extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
-    val results = OdinMentionsIterator.concatenate(resultsIterators)
+    val results = MentionsIterator.concatenate(resultsIterators)
 
     // Apply the triggerOverlap filter, if enabled
     val filtered = filterMentions(results, allowTriggerOverlaps)
@@ -467,7 +452,7 @@ class ExtractorEngine private (
       extractor <- extractors
       if extractor.priority matches i
     } yield extract(extractor, numSentences, disableMatchSelector, mruIdGetter)
-    OdinMentionsIterator.concatenate(resultsIterators)
+    MentionsIterator.concatenate(resultsIterators)
   }
 
   private def filterMentions(ms: Iterator[Mention], allowTriggerOverlaps: Boolean): Iterator[Mention] = {
@@ -564,7 +549,7 @@ class ExtractorEngine private (
       mention
     } else {
       val stateMatch = StateMatch.fromOdinsonMatch(odinsonMatch)
-      mention.copy(mentionFactory, stateMatch)
+      mention.copy(odinsonMatch = stateMatch)
     }
   }
 
@@ -573,7 +558,6 @@ class ExtractorEngine private (
 object ExtractorEngine {
   val defaultPath = "odinson"
 
-  lazy val defaultMentionFactory = new DefaultMentionFactory()
   lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
 
   def fromConfig(): ExtractorEngine = {
@@ -591,7 +575,7 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromDirectory(config: Config, indexDir: Directory, mentionFactory: MentionFactory = defaultMentionFactory): ExtractorEngine = {
+  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("computeTotalHits")
     val displayField = config[String]("displayField")
@@ -606,7 +590,6 @@ object ExtractorEngine {
       displayField,
       state,
       parentDocIdField,
-      mentionFactory
     )
   }
 

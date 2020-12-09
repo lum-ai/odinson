@@ -1,12 +1,9 @@
 package ai.lum.odinson.events
 
-import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.EventMatch
+import ai.lum.odinson.{EventMatch, MentionsIterator}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.state.OdinMentionsIterator
-import ai.lum.odinson.state.State
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
@@ -15,8 +12,6 @@ class TestEvents extends EventSpec {
   // extractor engine persists across tests (hacky way)
   def doc = getDocument("becky-gummy-bears")
   val ee = Utils.mkExtractorEngine(doc)
-
-  val factory = ee.mentionFactory
 
   "Odinson" should "match event with promoted entities" in {
     val pattern =
@@ -201,7 +196,7 @@ class TestEvents extends EventSpec {
     // The ee.query no longer adds to the state on its own, so this helper is being used.
     def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
       val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
-      val odinMentionsIterator = factory.mentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
+      val odinMentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
       ee.state.addMentions(odinMentionsIterator)
       odinResults
