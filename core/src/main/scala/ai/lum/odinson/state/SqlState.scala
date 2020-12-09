@@ -10,7 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, MentionFactory, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.lucene.search.IndexSearcher
@@ -80,7 +80,7 @@ object SqlResultItem {
     arrayBuffer.toIndexedSeq
   }
 
-  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], mentionFactory: MentionFactory, idGetter: IdGetter): Mention = {
+  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], idGetter: IdGetter): Mention = {
     val iterator = readItems.reverseIterator
     val first = iterator.next
 
@@ -101,7 +101,7 @@ object SqlResultItem {
       namedCaptures
     }
 
-    mentionFactory.newMention(
+    new Mention(
       StateMatch(first.start, first.end, findNamedCaptures(first.childCount)),
       label,
       first.docIndex, // luceneDocId
@@ -114,7 +114,7 @@ object SqlResultItem {
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState protected (val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val persistFile: Option[File] = None, mentionFactory: MentionFactory, indexSearcher: OdinsonIndexSearcher) extends State {
+class SqlState protected (val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val persistFile: Option[File] = None, indexSearcher: OdinsonIndexSearcher) extends State {
 
   if (persistOnClose) require(persistFile.isDefined)
 
@@ -274,7 +274,7 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
         readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
-          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, mentionFactory, idGetter)
+          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, idGetter)
           readNodes.clear()
         }
       }
@@ -355,8 +355,7 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    val mentionFactory = MentionFactory.fromConfig(config)
-    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, mentionFactory, indexSearcher)
+    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, indexSearcher)
   }
 
 }
