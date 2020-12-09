@@ -1,0 +1,77 @@
+rules:
+  # Designed for sentence: Rainbows shine bright bright bright.
+  - name: NGram
+    label: NgramMention
+    priority: 1
+    type: basic
+    pattern: |
+      Rainbows
+
+  - name: Event
+    label: EventMention
+    priority: 1
+    type: event
+    pattern: |
+      trigger = shine
+      subj = >nsubj Rainbows
+      obj = >xcomp bright
+
+  - name: Event-plus
+    label: EventMention
+    priority: 1
+    type: event
+    pattern: |
+      trigger = shine
+      subj = >nsubj Rainbows
+      obj: ^Concept+ = >> bright
+
+  - name: Event-3
+    label: EventMention
+    priority: 1
+    type: event
+    pattern: |
+      trigger = shine
+      subj = >nsubj Rainbows
+      obj: ^Concept{1,2} = >> bright
+
+  - name: GraphTraversal
+    label: GraphTraversalMention
+    priority: 1
+    type: basic
+    pattern: |
+      Rainbows <nsubj shine
+
+  - name: Repetition
+    label: RepetitionLabel
+    priority: 1
+    type: basic
+    pattern: |
+      [word=bright]{1,3}
+
+  - name: Repetition-lazy
+    label: RepetitionLabel
+    priority: 1
+    type: basic
+    pattern: |
+      [word=bright]{1,3}?
+
+  - name: Optional
+    label: OptionalLabel
+    priority: 1
+    type: basic
+    pattern: |
+      Rainbows shine?
+
+  - name: Or
+    label: OrLabel
+    priority: 1
+    type: basic
+    pattern: |
+      [word=/shine|fine/]
+
+  - name: Named
+    label: NamedLabel
+    priority: 1
+    type: basic
+    pattern: |
+      (?<name> Rainbows)
