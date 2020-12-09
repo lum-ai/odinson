@@ -11,7 +11,7 @@ import com.typesafe.config.Config
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState(val mentionFactory: MentionFactory, val persistOnClose: Boolean, val outfile: Option[File] = None) extends State {
+class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None) extends State {
   import MemoryState._
 
   if (persistOnClose) require(outfile.isDefined)
@@ -91,10 +91,9 @@ object MemoryState {
   case class BaseLabel(docBase: Int, label: String)
 
   def apply(config: Config): MemoryState = {
-    val mentionFactory = MentionFactory.fromConfig(config)
     val persistOnClose = config[Boolean]("state.memory.persistOnClose")
     val saveTo = config.get[File]("state.memory.stateDir")
-    new MemoryState(mentionFactory, persistOnClose, saveTo)
+    new MemoryState(persistOnClose, saveTo)
   }
 
   // This original implementation is thought to create too many objects.

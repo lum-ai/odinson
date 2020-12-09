@@ -2,7 +2,7 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{BaseSpec, DefaultMentionFactory, ExtractorEngine, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{BaseSpec, ExtractorEngine, LazyIdGetter, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import com.typesafe.config.ConfigValueFactory
@@ -28,7 +28,6 @@ class TestSqlState extends BaseSpec {
   val docIndex = 212
   val resultLabel = "resultLabel"
   val resultName = "resultName"
-  val factory = new DefaultMentionFactory
 
   def newOdinsonMatch(): StateMatch = {
     val odinsonMatch_0_0 = StateMatch(0, 1, Array.empty)
@@ -48,7 +47,7 @@ class TestSqlState extends BaseSpec {
     val resultLabelOpt =
         if (resultLabel.isEmpty) None
         else Some(resultLabel)
-    val mention: Mention = factory.newMention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
+    val mention: Mention = new Mention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
         luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, idGetter = nullIdGetter, foundBy = resultName)
 
     mention
@@ -126,7 +125,7 @@ class TestSqlState extends BaseSpec {
         docId, docBase)
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
-    val mentionsIterator = factory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
+    val mentionsIterator = new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
     val resultItems2 = {
       state.addMentions(mentionsIterator)
       state.getMentions(docBase, docId, resultLabel)
@@ -192,7 +191,6 @@ class TestSqlState extends BaseSpec {
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
-    val mentionFactory = new DefaultMentionFactory
     val idGetter = new NullIdGetter
 
     1.to(100).foreach { index => // Do this many tests.
@@ -201,11 +199,11 @@ class TestSqlState extends BaseSpec {
       val resultItems1 = odinResults.scoreDocs
           .flatMap { scoreDoc =>
               scoreDoc.matches.map { odinsonMatch =>
-                mentionFactory.newMention(odinsonMatch, Some(resultLabel), scoreDoc.doc, scoreDoc.segmentDocId,
+                new Mention(odinsonMatch, Some(resultLabel), scoreDoc.doc, scoreDoc.segmentDocId,
                   scoreDoc.segmentDocBase, idGetter, resultName)
               }
           }
-      val mentionsIterator = mentionFactory.mentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
+      val mentionsIterator = new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
       val resultItems2 = {
         state.addMentions(mentionsIterator)
         state.getMentions(docBase, docId, resultLabel)
@@ -245,13 +243,13 @@ class TestSqlState extends BaseSpec {
       val resultItems1 = odinResultses.zip(docBasesAndIdsAndLabels).flatMap { case (odinResults, (_, _, label)) =>
         odinResults.scoreDocs.flatMap { scoreDoc =>
           scoreDoc.matches.map { odinsonMatch =>
-            factory.newMention(odinsonMatch, Some(label), scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, nullIdGetter, resultName)
+            new Mention(odinsonMatch, Some(label), scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, nullIdGetter, resultName)
           }
         }
       }
       val resultItems2 =  {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
-          val mentionsIterator = factory.mentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
+          val mentionsIterator = new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
 
           state.addMentions(mentionsIterator)
         }
