@@ -111,9 +111,11 @@ object JsonSerializer {
   }
 
   def jsonify(arguments: Map[String, Array[Mention]]): Value = {
-    ujson.Arr(
-      arguments.mapValues(_.map(jsonify).toSeq)
-    )
+    val json = ujson.Obj()
+    arguments.toIterator.foreach { case (argName, mentions) =>
+      json(argName) = mentions.map(jsonify).toSeq
+    }
+    json
   }
 
   def jsonify(metadatas: Array[ArgumentMetadata]): Value = {
@@ -224,13 +226,7 @@ object JsonSerializer {
   }
 
   def deserializeArguments(json: Value): Map[String, Array[Mention]] = {
-    // The serialization of the Map is in the first (and only) element of an ArrayBuffer,
-    // hence the arr.headOption
-    json.arr.headOption match {
-      case Some(empty) if empty.obj.isEmpty => Map.empty[String, Array[Mention]]
-      case Some(args) => args.obj.mapValues(deserialize).toMap
-      case None => Map.empty[String, Array[Mention]]
-    }
+    json.obj.mapValues(deserialize).toMap
   }
 
   def deserializeNamedCaptures(json: Value): Array[NamedCapture] = {
@@ -238,7 +234,7 @@ object JsonSerializer {
   }
   def deserializeNamedCapture(json: Value): NamedCapture = {
     val name = json("name").str
-    val label = deserializeOptionString(json("label").str)
+    val label = deserializeOptionString(json("label"))
     val capturedMatch = deserializeMatch(json("capturedMatch"))
     NamedCapture(name, label, capturedMatch)
   }

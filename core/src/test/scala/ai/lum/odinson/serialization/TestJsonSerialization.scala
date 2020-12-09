@@ -1,8 +1,6 @@
-package ai.lum.odinson.foundations
+package ai.lum.odinson.serialization
 
-import ai.lum.odinson.serialization.JsonSerializer
-import ai.lum.odinson.{BaseSpec, Mention, OdinsonMatch}
-import ai.lum.odinson._
+import ai.lum.odinson.{BaseSpec, Mention, OdinsonMatch, _}
 
 class TestJsonSerialization extends BaseSpec {
 
@@ -20,10 +18,10 @@ class TestJsonSerialization extends BaseSpec {
     b.luceneSegmentDocBase should be (a.luceneSegmentDocBase)
     b.arguments.keySet should contain theSameElementsAs (a.arguments.keySet)
     for (arg <- b.arguments.keySet) {
-      val bArgs = b.arguments(arg)
-      val aArgs = a.arguments(arg)
-      bArgs.foreach { mention =>
-        aArgs.exists(m => mentionsAreEqual(mention, m)) should be (true)
+      val bArgs = b.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
+      val aArgs = a.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
+      for (i <- aArgs.indices) {
+        mentionsAreEqual(aArgs(i), bArgs(i))
       }
     }
     matchesAreEqual(a.odinsonMatch, b.odinsonMatch)
@@ -98,8 +96,10 @@ class TestJsonSerialization extends BaseSpec {
       b1.name should be (a1.name)
       matchesAreEqual(a1.capturedMatch, b1.capturedMatch)
     }
-    b foreach { bNC =>
-      a.exists(aNC => ncEqual(aNC, bNC)) should be (true)
+    val sortedA = a.sortBy(nc => (nc.capturedMatch.start, nc.capturedMatch.end))
+    val sortedB = b.sortBy(nc => (nc.capturedMatch.start, nc.capturedMatch.end))
+    for (i <- sortedA.indices) {
+      ncEqual(sortedA(i), sortedB(i))
     }
   }
 
@@ -112,8 +112,10 @@ class TestJsonSerialization extends BaseSpec {
       // If it didn't find an error above we're good!
       true
     }
-    b foreach { bArgMD =>
-      a.exists(aArgMD => mdEqual(aArgMD, bArgMD)) should be (true)
+    val sortedA = a.sortBy(amd => (amd.name, amd.min, amd.max))
+    val sortedB = b.sortBy(amd => (amd.name, amd.min, amd.max))
+    for (i <- sortedA.indices) {
+      mdEqual(sortedA(i), sortedB(i))
     }
   }
 
@@ -219,9 +221,89 @@ class TestJsonSerialization extends BaseSpec {
   // With state
   val stateMentions = engine.extractMentions(extractors).toArray
 
-  it should "handle StateMentions" in {
-    // Shouldn't matter which, all OdinsonMatches will be StateMatches
+  "JsonSerializer" should "handle NGramMentions with State" in {
+    val m = getMentionFromRule(stateMentions, "NGram")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle basic EventMatches with State" in {
+    val m = getMentionFromRule(stateMentions, "Event")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle EventMatches with arg quantifiers with State" in {
+    val m = getMentionFromRule(stateMentions, "Event-plus")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle EventMatches with arg ranges with State" in {
+    val m = getMentionFromRule(stateMentions, "Event-3")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle GraphTraversals with State" in {
+    val m = getMentionFromRule(stateMentions, "GraphTraversal")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle Repetition with State" in {
+    val m = getMentionFromRule(stateMentions, "Repetition")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle Repetition (lazy) with State" in {
+    val m = getMentionFromRule(stateMentions, "Repetition-lazy")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle Optional with State" in {
+    val m = getMentionFromRule(stateMentions, "Optional")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle Or with State" in {
     val m = getMentionFromRule(stateMentions, "Or")
+    val json = JsonSerializer.jsonify(Array(m))
+    val reconstituted = JsonSerializer.deserialize(json)
+    reconstituted should have length(1)
+
+    mentionsAreEqual(m, reconstituted.head) should be (true)
+  }
+
+  it should "handle Named with State" in {
+    val m = getMentionFromRule(stateMentions, "Named")
     val json = JsonSerializer.jsonify(Array(m))
     val reconstituted = JsonSerializer.deserialize(json)
     reconstituted should have length(1)

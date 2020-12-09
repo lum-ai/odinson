@@ -13,8 +13,8 @@ trait IdGetter {
 }
 
 class KnownIdGetter(docId: String, sentId: String) extends IdGetter {
-  override def getDocId: String = docId
-  override def getSentId: String = sentId
+  def getDocId: String = docId
+  def getSentId: String = sentId
 }
 
 class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
