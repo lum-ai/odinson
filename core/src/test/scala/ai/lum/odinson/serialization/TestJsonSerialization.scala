@@ -130,7 +130,7 @@ class TestJsonSerialization extends BaseSpec {
 
   "JsonSerializer" should "handle NGramMentions" in {
     val m = getMentionFromRule(mentions, "NGram")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -139,7 +139,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle basic EventMatches" in {
     val m = getMentionFromRule(mentions, "Event")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -148,7 +148,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle EventMatches with arg quantifiers" in {
     val m = getMentionFromRule(mentions, "Event-plus")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -157,7 +157,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle EventMatches with arg ranges" in {
     val m = getMentionFromRule(mentions, "Event-3")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -166,7 +166,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle GraphTraversals" in {
     val m = getMentionFromRule(mentions, "GraphTraversal")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -175,7 +175,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Repetition" in {
     val m = getMentionFromRule(mentions, "Repetition")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -184,7 +184,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Repetition (lazy)" in {
     val m = getMentionFromRule(mentions, "Repetition-lazy")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -193,7 +193,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Optional" in {
     val m = getMentionFromRule(mentions, "Optional")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -202,7 +202,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Or" in {
     val m = getMentionFromRule(mentions, "Or")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -211,7 +211,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Named" in {
     val m = getMentionFromRule(mentions, "Named")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -223,7 +223,7 @@ class TestJsonSerialization extends BaseSpec {
 
   "JsonSerializer" should "handle NGramMentions with State" in {
     val m = getMentionFromRule(stateMentions, "NGram")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -232,7 +232,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle basic EventMatches with State" in {
     val m = getMentionFromRule(stateMentions, "Event")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -241,7 +241,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle EventMatches with arg quantifiers with State" in {
     val m = getMentionFromRule(stateMentions, "Event-plus")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -250,7 +250,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle EventMatches with arg ranges with State" in {
     val m = getMentionFromRule(stateMentions, "Event-3")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -259,7 +259,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle GraphTraversals with State" in {
     val m = getMentionFromRule(stateMentions, "GraphTraversal")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -268,7 +268,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Repetition with State" in {
     val m = getMentionFromRule(stateMentions, "Repetition")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -277,7 +277,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Repetition (lazy) with State" in {
     val m = getMentionFromRule(stateMentions, "Repetition-lazy")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -286,7 +286,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Optional with State" in {
     val m = getMentionFromRule(stateMentions, "Optional")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -295,7 +295,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Or with State" in {
     val m = getMentionFromRule(stateMentions, "Or")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
@@ -304,7 +304,7 @@ class TestJsonSerialization extends BaseSpec {
 
   it should "handle Named with State" in {
     val m = getMentionFromRule(stateMentions, "Named")
-    val json = JsonSerializer.asJson(Array(m))
+    val json = JsonSerializer.asJsonValue(Array(m))
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
