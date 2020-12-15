@@ -482,15 +482,31 @@ class ExtractorEngine private (
   }
 
   def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch)
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
+  }
+
+  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
+  }
+
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
+    getTokensForSpan(docID, displayField, m.start, m.end)
+  }
+
+  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
+    getTokensForSpan(docID, fieldName, m.start, m.end)
+  }
+
+  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = {
+    getTokensForSpan(docID, displayField, start, end)
+  }
+
+  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
+    getTokens(docID, fieldName).slice(start, end)
   }
 
   @deprecated(message = "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
   def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokens(docID, displayField).slice(m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
     getTokens(docID, displayField).slice(m.start, m.end)
   }
 
@@ -505,6 +521,7 @@ class ExtractorEngine private (
   def getTokens(docID: Int, fieldName: String): Array[String] = {
     TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
   }
+
 
   /**
     * Close the open resources.
