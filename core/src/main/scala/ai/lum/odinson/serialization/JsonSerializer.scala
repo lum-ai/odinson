@@ -5,21 +5,72 @@ import ujson.Value
 
 object JsonSerializer {
 
-  def jsonify(ms: Iterator[Mention]): Value = {
-    jsonify(ms.toSeq)
+  // Json String
+
+  def asJsonPretty(ms: Iterator[Mention]): String = {
+    asJsonPretty(ms, indent = 4)
   }
 
-  def jsonify(ms: Seq[Mention]): Value = {
-    ms.map(jsonify)
+  def asJsonPretty(ms: Iterator[Mention], indent: Int): String = {
+    asJsonPretty(ms.toSeq, indent)
   }
 
-  def jsonify(m: Mention): Value = {
+  def asJsonPretty(ms: Seq[Mention]): String = {
+    asJsonPretty(ms, indent = 4)
+  }
+
+  def asJsonPretty(ms: Seq[Mention], indent: Int): String = {
+    ujson.write(asJson(ms), indent)
+  }
+
+  def asJsonPretty(m: Mention): String = {
+    ujson.write(asJson(m), indent = 4)
+  }
+
+  def asJsonPretty(m: Mention, indent: Int): String = {
+    ujson.write(asJson(m), indent)
+  }
+
+  def asJsonString(ms: Iterator[Mention]): String = {
+    asJsonString(ms.toSeq)
+  }
+
+  def asJsonString(ms: Seq[Mention]): String = {
+    ujson.write(asJson(ms))
+  }
+
+  def asJsonString(m: Mention): String = {
+    ujson.write(asJson(m))
+  }
+
+
+  // Json Lines
+
+  def asJsonLines(ms: Iterator[Mention]): Seq[String] = {
+    asJsonLines(ms.toSeq)
+  }
+
+  def asJsonLines(ms: Seq[Mention]): Seq[String] = {
+    ms.map(asJsonString)
+  }
+
+  // Json Value
+
+  def asJson(ms: Iterator[Mention]): Value = {
+    asJson(ms.toSeq)
+  }
+
+  def asJson(ms: Seq[Mention]): Value = {
+    ms.map(asJson)
+  }
+
+  def asJson(m: Mention): Value = {
     val corpusDocId = m.idGetter.getDocId
     val corpusSentId = m.idGetter.getSentId
 
     ujson.Obj (
       "scalaType" -> m.getClass.getCanonicalName,
-      "odinsonMatch" -> jsonify(m.odinsonMatch),
+      "odinsonMatch" -> asJson(m.odinsonMatch),
       "label" -> stringOrNull(m.label),
       "luceneDocId" -> m.luceneDocId,
       "luceneSegmentDocId" -> m.luceneSegmentDocId,
@@ -27,11 +78,11 @@ object JsonSerializer {
       "docId" -> corpusDocId,
       "sentId" -> corpusSentId,
       "foundBy" -> m.foundBy,
-      "arguments" -> jsonify(m.arguments)
+      "arguments" -> asJson(m.arguments)
     )
   }
 
-  def jsonify(om: OdinsonMatch): Value = {
+  def asJson(om: OdinsonMatch): Value = {
     val scalaType = om.getClass.getCanonicalName
      om match {
       case sm: StateMatch =>
@@ -39,7 +90,7 @@ object JsonSerializer {
           "scalaType" -> scalaType,
           "start" -> sm.start,
           "end" -> sm.end,
-          "namedCaptures" -> sm.namedCaptures.map(jsonify).toSeq
+          "namedCaptures" -> sm.namedCaptures.map(asJson).toSeq
         )
       case ng: NGramMatch =>
         ujson.Obj(
@@ -50,49 +101,49 @@ object JsonSerializer {
       case em: EventMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "trigger" -> jsonify(em.trigger),
-          "namedCaptures" -> em.namedCaptures.map(jsonify).toSeq,
-          "argMetadata" -> jsonify(em.argumentMetadata)
+          "trigger" -> asJson(em.trigger),
+          "namedCaptures" -> em.namedCaptures.map(asJson).toSeq,
+          "argMetadata" -> asJson(em.argumentMetadata)
         )
 
       case gt: GraphTraversalMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "srcMatch" -> jsonify(gt.srcMatch),
-          "dstMatch" -> jsonify(gt.dstMatch),
+          "srcMatch" -> asJson(gt.srcMatch),
+          "dstMatch" -> asJson(gt.dstMatch),
         )
 
       case concat: ConcatMatch =>
       ujson.Obj(
         "scalaType" -> scalaType,
-        "subMatches" -> concat.subMatches.map(jsonify).toSeq,
+        "subMatches" -> concat.subMatches.map(asJson).toSeq,
       )
 
       case rep: RepetitionMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "subMatches" -> rep.subMatches.map(jsonify).toSeq,
+          "subMatches" -> rep.subMatches.map(asJson).toSeq,
           "isGreedy" -> rep.isGreedy,
         )
 
       case opt: OptionalMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "subMatch" -> jsonify(opt.subMatch),
+          "subMatch" -> asJson(opt.subMatch),
           "isGreedy" -> opt.isGreedy,
         )
 
       case or: OrMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "subMatch" -> jsonify(or.subMatch),
+          "subMatch" -> asJson(or.subMatch),
           "clauseID" -> or.clauseID
         )
 
       case named: NamedMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
-          "subMatch" -> jsonify(named.subMatch),
+          "subMatch" -> asJson(named.subMatch),
           "name" -> named.name,
           "label" -> stringOrNull(named.label),
         )
@@ -101,30 +152,30 @@ object JsonSerializer {
     }
   }
 
-  def jsonify(n: NamedCapture): Value = {
+  def asJson(n: NamedCapture): Value = {
     ujson.Obj(
       "scalaType" -> n.getClass.getCanonicalName,
       "name" -> n.name,
       "label" -> stringOrNull(n.label),
-      "capturedMatch" -> jsonify(n.capturedMatch)
+      "capturedMatch" -> asJson(n.capturedMatch)
     )
   }
 
-  def jsonify(arguments: Map[String, Array[Mention]]): Value = {
+  def asJson(arguments: Map[String, Array[Mention]]): Value = {
     val json = ujson.Obj()
     arguments.toIterator.foreach { case (argName, mentions) =>
-      json(argName) = mentions.map(jsonify).toSeq
+      json(argName) = mentions.map(asJson).toSeq
     }
     json
   }
 
-  def jsonify(metadatas: Array[ArgumentMetadata]): Value = {
+  def asJson(metadatas: Array[ArgumentMetadata]): Value = {
     ujson.Arr{
-      metadatas.map(jsonify).toSeq
+      metadatas.map(asJson).toSeq
     }
   }
 
-  def jsonify(metadata: ArgumentMetadata): Value = {
+  def asJson(metadata: ArgumentMetadata): Value = {
     ujson.Obj(
       "name" -> metadata.name,
       "min" -> metadata.min,
@@ -144,9 +195,31 @@ object JsonSerializer {
 
   // Deserialization
 
-  // Method to call when deserializing an Array of Mentions, as such,
+  // Deserialize from String
+
+  def deserializeMentions(json: String): Array[Mention] = {
+    ujson.read(json).arr.map(deserializeMention).toArray
+  }
+
+  def deserializeMention(json: String): Mention = {
+    deserializeMention(ujson.read(json))
+  }
+
+  // Deserialize JsonLines
+
+  def deserializeJsonLines(lines: Seq[String]): Array[Mention] = {
+    deserializeJsonLines(lines.toArray)
+  }
+
+  def deserializeJsonLines(lines: Array[String]): Array[Mention] = {
+    lines.map(deserializeMention)
+  }
+
+  // Deserialize from Json Value
+
+  // Method to call when deserializing json of Array of Mentions, as such,
   // this is likely the most common "entry point"
-  def deserialize(json: Value): Array[Mention] = {
+  def deserializeMentions(json: Value): Array[Mention] = {
     json.arr.map(deserializeMention).toArray
   }
 
@@ -226,7 +299,7 @@ object JsonSerializer {
   }
 
   def deserializeArguments(json: Value): Map[String, Array[Mention]] = {
-    json.obj.mapValues(deserialize).toMap
+    json.obj.mapValues(deserializeMentions).toMap
   }
 
   def deserializeNamedCaptures(json: Value): Array[NamedCapture] = {
