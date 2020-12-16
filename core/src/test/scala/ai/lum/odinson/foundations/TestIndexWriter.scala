@@ -36,14 +36,12 @@ class TestOdinsonIndexWriter extends BaseSpec {
 
   def getOdinsonIndexWriter: OdinsonIndexWriter = {
     deleteIndex
-    OdinsonIndexWriter.fromConfig(testConfig.getConfig("odinson"))
+    OdinsonIndexWriter.fromConfig(testConfig)
   }
   
   "OdinsonIndexWriter" should "object should return index from config correctly" in {
     // get index writer
     val indexWriter = getOdinsonIndexWriter
-    // get the directory
-    val directory = indexWriter.directory
     // make sure the folder was created with only the locker inside
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close

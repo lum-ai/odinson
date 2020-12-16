@@ -46,7 +46,7 @@ object Shell extends App {
   }
   
   // setup searcher
-  val extractorEngine = ExtractorEngine.fromConfig("odinson")
+  val extractorEngine = ExtractorEngine.fromConfig()
 
   // retrieve dependencies
   val dependenciesVocabulary = extractorEngine.compiler.dependenciesVocabulary

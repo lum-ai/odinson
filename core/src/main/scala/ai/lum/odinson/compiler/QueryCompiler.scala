@@ -589,14 +589,14 @@ object QueryCompiler {
 
   def apply(config: Config, vocabulary: Vocabulary): QueryCompiler = {
     new QueryCompiler(
-      config[List[String]]("compiler.allTokenFields"),
-      config[String]("compiler.defaultTokenField"),
-      config[String]("compiler.sentenceLengthField"),
-      config[String]("compiler.dependenciesField"),
-      config[String]("compiler.incomingTokenField"),
-      config[String]("compiler.outgoingTokenField"),
+      config[List[String]]("odinson.compiler.allTokenFields"),
+      config[String]("odinson.compiler.defaultTokenField"),
+      config[String]("odinson.compiler.sentenceLengthField"),
+      config[String]("odinson.compiler.dependenciesField"),
+      config[String]("odinson.compiler.incomingTokenField"),
+      config[String]("odinson.compiler.outgoingTokenField"),
       vocabulary,
-      config[Boolean]("compiler.aggressiveNormalizationToDefaultField")
+      config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField")
     )
   }
 

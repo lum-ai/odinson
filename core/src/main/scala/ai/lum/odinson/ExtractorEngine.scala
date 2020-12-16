@@ -482,15 +482,31 @@ class ExtractorEngine private (
   }
 
   def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch)
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
+  }
+
+  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
+  }
+
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
+    getTokensForSpan(docID, displayField, m.start, m.end)
+  }
+
+  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
+    getTokensForSpan(docID, fieldName, m.start, m.end)
+  }
+
+  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = {
+    getTokensForSpan(docID, displayField, start, end)
+  }
+
+  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
+    getTokens(docID, fieldName).slice(start, end)
   }
 
   @deprecated(message = "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.", since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a")
   def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokens(docID, displayField).slice(m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
     getTokens(docID, displayField).slice(m.start, m.end)
   }
 
@@ -505,6 +521,7 @@ class ExtractorEngine private (
   def getTokens(docID: Int, fieldName: String): Array[String] = {
     TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
   }
+
 
   /**
     * Close the open resources.
@@ -556,34 +573,27 @@ class ExtractorEngine private (
 }
 
 object ExtractorEngine {
-  val defaultPath = "odinson"
-
-  lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
+  lazy val defaultConfig: Config = ConfigFactory.load()
 
   def fromConfig(): ExtractorEngine = {
-    fromConfig(defaultPath)
-  }
-
-  def fromConfig(path: String): ExtractorEngine = {
-    val config = ConfigFactory.load()
-    fromConfig(config[Config](path))
+    fromConfig(defaultConfig)
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[File]("indexDir").toPath
+    val indexPath = config[File]("odinson.indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }
 
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config[Boolean]("computeTotalHits")
-    val displayField = config[String]("displayField")
+    val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
+    val displayField = config[String]("odinson.displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher)
-    val parentDocIdField = config[String]("index.documentIdField")
+    val parentDocIdField = config[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
@@ -598,18 +608,13 @@ object ExtractorEngine {
   }
 
   def inMemory(docs: Seq[Document]): ExtractorEngine = {
-    inMemory("odinson", docs)
-  }
-
-  def inMemory(path: String, docs: Seq[Document]): ExtractorEngine = {
-    val config = ConfigFactory.load()
-    inMemory(config[Config](path), docs)
+    inMemory(ConfigFactory.load(), docs)
   }
 
   // Expecting a config that is already inside the `odinson` namespace
   def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
     // make a memory index
-    val memWriter = OdinsonIndexWriter.inMemory
+    val memWriter = OdinsonIndexWriter.inMemory(config)
     // add documents to index
     for (doc <- docs) {
       val block = memWriter.mkDocumentBlock(doc)

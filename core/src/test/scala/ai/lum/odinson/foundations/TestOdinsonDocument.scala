@@ -59,8 +59,6 @@ class TestOdinsonDocument extends BaseSpec {
     val tokenField = TokensField.fromJson(field)
     // check if the name is being parsed correct
     tokenField.name should be("chunk")
-    // check if default is there
-    tokenField.store should be(false)
     // test toJson
     tokenField.toJson should equal(field)
     // test pretty
@@ -81,8 +79,6 @@ class TestOdinsonDocument extends BaseSpec {
     // test roots
     graphField.roots shouldBe a[Set[_]]
     graphField.roots.head should equal(1)
-    // test store
-    graphField.store should be(false)
     // test firs and last elements
     graphField.edges.head shouldBe (1, 0, "nsubj")
     graphField.edges.last shouldBe (3, 2, "amod")
@@ -145,7 +141,6 @@ class TestOdinsonDocument extends BaseSpec {
     // parse field
     val stringField = StringField.fromJson(field)
     // check stuff
-    stringField.store shouldBe (false)
     stringField.name shouldBe ("smth")
     stringField.string shouldBe ("smthString")
   }

@@ -53,7 +53,6 @@ object Sentence {
 
 sealed trait Field {
   def name: String
-  def store: Boolean
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
 }
@@ -72,7 +71,6 @@ object Field {
 case class TokensField(
   name: String,
   tokens: Seq[String],
-  store: Boolean = false,
 ) extends Field
 
 object TokensField {
@@ -86,7 +84,6 @@ case class GraphField(
   name: String,
   edges: Seq[(Int, Int, String)],
   roots: Set[Int],
-  store: Boolean = false,
 ) extends Field {
 
   def mkIncomingEdges(numTokens: Int): Array[Array[(Int, String)]] = {
@@ -117,7 +114,6 @@ object GraphField {
 case class StringField(
   name: String,
   string: String,
-  store: Boolean = false,
 ) extends Field
 
 object StringField {
@@ -130,7 +126,6 @@ object StringField {
 case class DateField(
   name: String,
   date: String,
-  store: Boolean = false,
 ) extends Field {
   val localDate = LocalDate.parse(date)
 }
@@ -145,11 +140,11 @@ object DateField {
 
   def fromDate(name: String, date: Date, store: Boolean = false): DateField = {
     val localDate = date.toInstant.atZone(ZoneId.systemDefault).toLocalDate
-    fromLocalDate(name, localDate, store)
+    fromLocalDate(name, localDate)
   }
 
   def fromLocalDate(name: String, date: LocalDate, store: Boolean = false): DateField = {
-    DateField(name, date.toString, store)
+    DateField(name, date.toString)
   }
 
 }
