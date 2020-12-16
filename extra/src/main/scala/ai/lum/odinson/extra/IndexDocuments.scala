@@ -43,7 +43,7 @@ object IndexDocuments extends App with LazyLogging {
   val synchronizeOrderWithDocumentId =
     config[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
   //
-  val writer = OdinsonIndexWriter.fromConfig(config.getConfig("odinson"))
+  val writer = OdinsonIndexWriter.fromConfig(config)
   val wildcards = Seq("*.json", "*.json.gz")
   logger.info(s"Gathering documents from $docsDir")
   // make this a function

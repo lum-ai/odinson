@@ -1,11 +1,7 @@
 package ai.lum.odinson.foundations
 
 import org.scalatest._
-
-import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.BaseSpec
-import ai.lum.odinson.{TokensField, Sentence, Document}
-
+import ai.lum.odinson.{BaseSpec, Document, ExtractorEngine, Sentence, TokensField, utils}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.document.{Document => LuceneDocument, _}
 import org.apache.lucene.document.Field.Store
@@ -16,6 +12,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.state.State
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class TestExtractorEngine extends BaseSpec {
   val config = ConfigFactory.load()
@@ -24,7 +21,7 @@ class TestExtractorEngine extends BaseSpec {
   
   // create a test sentence
   val text = "Rain causes flood"
-  val tokens = TokensField(rawTokenField, text.split(" "), store = true)
+  val tokens = TokensField(rawTokenField, text.split(" "))
   val sentence = Sentence(tokens.tokens.length, Seq(tokens))
   val doc1 = Document("<TEST-ID1>", Nil, Seq(sentence))
   val doc2 = Document("<TEST-ID2>", Nil, Seq(sentence))
@@ -43,6 +40,55 @@ class TestExtractorEngine extends BaseSpec {
     val q = ee.compiler.mkQuery("causes")
     val results = ee.query(q, 1)
     results.totalHits should equal (2)
+  }
+
+  it should "getTokensFromSpan correctly from existing Field" in {
+    // Becky ate gummy bears.
+    val doc = getDocument("becky-gummy-bears-v2")
+    val ee = Utils.extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
+    val rules = """
+        |rules:
+        |  - name: testrule
+        |    type: event
+        |    label: Test
+        |    pattern: |
+        |      trigger = [lemma=eat]
+        |      subject: ^NP = >nsubj []
+        |      object: ^NP = >dobj []
+    """.stripMargin
+    val extractors = ee.ruleReader.compileRuleString(rules)
+    val mentions = ee.extractMentions(extractors).toArray
+      .filter(_.label.getOrElse("None") == "Test")
+    mentions should have size (1)
+
+    val mention = mentions.head
+
+    ee.getTokensForSpan(mention.luceneSegmentDocId, mention.odinsonMatch) should contain only ("ate")
+    ee.getTokensForSpan(mention.luceneSegmentDocId, mention.odinsonMatch, fieldName = "lemma") should contain only ("eat")
+  }
+
+  it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
+    // Becky ate gummy bears.
+    val doc = getDocument("becky-gummy-bears-v2")
+    val ee = Utils.extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
+    val rules = """
+      |rules:
+      |  - name: testrule
+      |    type: event
+      |    label: Test
+      |    pattern: |
+      |      trigger = [lemma=eat]
+      |      subject: ^NP = >nsubj []
+      |      object: ^NP = >dobj []
+    """.stripMargin
+    val extractors = ee.ruleReader.compileRuleString(rules)
+    val mentions = ee.extractMentions(extractors).toArray
+      .filter(_.label.getOrElse("None") == "Test")
+    mentions should have size (1)
+
+    val mention = mentions.head
+
+    an [utils.exceptions.OdinsonException] should be thrownBy ee.getTokensForSpan(mention.luceneSegmentDocId, mention.odinsonMatch, fieldName = "notAField")
   }
 
   // TODO: implement index fixture to test the features bellow

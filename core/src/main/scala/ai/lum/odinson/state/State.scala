@@ -57,7 +57,7 @@ trait State {
 object State {
 
   def apply(config: Config, indexSearcher: OdinsonIndexSearcher): State = {
-    val provider = config[String]("state.provider")
+    val provider = config[String]("odinson.state.provider")
     val state = provider match {
       // The SQL state needs an IndexSearcher to get the docIds from the
       case "sql" => SqlState(config, indexSearcher)

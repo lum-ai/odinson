@@ -279,8 +279,8 @@ class TestSqlState extends BaseSpec {
     val filename = "../test.sql"
     val file = new File(filename)
     val config = ExtractorEngine.defaultConfig
-        .withValue("state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
-        .withValue("state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
+        .withValue("odinson.state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
+        .withValue("odinson.state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
 
     file.delete()
     file.exists should be (false)

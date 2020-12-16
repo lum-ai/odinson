@@ -67,7 +67,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       )
 
     // get an ee
-    val ee = ExtractorEngine.fromConfig(config.getConfig("odinson"))
+    val ee = ExtractorEngine.fromConfig(config)
 
 
     // make sure the files are there

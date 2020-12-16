@@ -573,34 +573,27 @@ class ExtractorEngine private (
 }
 
 object ExtractorEngine {
-  val defaultPath = "odinson"
-
-  lazy val defaultConfig: Config = ConfigFactory.load()[Config](defaultPath)
+  lazy val defaultConfig: Config = ConfigFactory.load()
 
   def fromConfig(): ExtractorEngine = {
-    fromConfig(defaultPath)
-  }
-
-  def fromConfig(path: String): ExtractorEngine = {
-    val config = ConfigFactory.load()
-    fromConfig(config[Config](path))
+    fromConfig(defaultConfig)
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[File]("indexDir").toPath
+    val indexPath = config[File]("odinson.indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }
 
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config[Boolean]("computeTotalHits")
-    val displayField = config[String]("displayField")
+    val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
+    val displayField = config[String]("odinson.displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher)
-    val parentDocIdField = config[String]("index.documentIdField")
+    val parentDocIdField = config[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
@@ -615,18 +608,13 @@ object ExtractorEngine {
   }
 
   def inMemory(docs: Seq[Document]): ExtractorEngine = {
-    inMemory("odinson", docs)
-  }
-
-  def inMemory(path: String, docs: Seq[Document]): ExtractorEngine = {
-    val config = ConfigFactory.load()
-    inMemory(config[Config](path), docs)
+    inMemory(ConfigFactory.load(), docs)
   }
 
   // Expecting a config that is already inside the `odinson` namespace
   def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
     // make a memory index
-    val memWriter = OdinsonIndexWriter.inMemory
+    val memWriter = OdinsonIndexWriter.inMemory(config)
     // add documents to index
     for (doc <- docs) {
       val block = memWriter.mkDocumentBlock(doc)

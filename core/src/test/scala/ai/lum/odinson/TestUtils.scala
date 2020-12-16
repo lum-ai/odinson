@@ -18,7 +18,6 @@ trait BaseFixtures {
 
   object Utils {
     val config = ConfigFactory.load()
-    val odinsonConfig:Config = config[Config]("odinson")
     val rawTokenField = config[String]("odinson.index.rawTokenField")
 
     /**
@@ -39,7 +38,11 @@ trait BaseFixtures {
 
 
     def extractorEngineWithSpecificState(doc: Document, provider: String): ExtractorEngine = {
-      val newConfig = odinsonConfig.withValue("state.provider", ConfigValueFactory.fromAnyRef(provider))
+      extractorEngineWithConfigValue(doc, "odinson.state.provider", provider)
+    }
+
+    def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
+      val newConfig = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       mkExtractorEngine(newConfig, doc)
     }
 
@@ -55,7 +58,7 @@ trait BaseFixtures {
     }
 
     def mkExtractorEngine(text: String): ExtractorEngine = {
-      val tokens = TokensField(rawTokenField, text.split(" "), store = true)
+      val tokens = TokensField(rawTokenField, text.split(" "))
       val sentence = Sentence(tokens.tokens.length, Seq(tokens))
       val document = Document("<TEST-ID>", Nil, Seq(sentence))
       mkExtractorEngine(document)

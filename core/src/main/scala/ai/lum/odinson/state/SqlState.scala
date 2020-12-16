@@ -338,9 +338,9 @@ object SqlState {
   protected var count: AtomicLong = new AtomicLong
 
   def apply(config: Config, indexSearcher: OdinsonIndexSearcher): SqlState = {
-    val persistOnClose = config[Boolean]("state.sql.persistOnClose")
-    val stateFile = config.get[File]("state.sql.persistFile")
-    val jdbcUrl = config[String]("state.sql.url")
+    val persistOnClose = config[Boolean]("odinson.state.sql.persistOnClose")
+    val stateFile = config.get[File]("odinson.state.sql.persistFile")
+    val jdbcUrl = config[String]("odinson.state.sql.url")
     val dataSource: HikariDataSource = {
       val config = new HikariConfig
       config.setJdbcUrl(jdbcUrl)

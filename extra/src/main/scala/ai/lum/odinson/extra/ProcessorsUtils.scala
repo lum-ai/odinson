@@ -47,7 +47,7 @@ object ProcessorsUtils {
 
   /** convert processors sentence to odinson sentence */
   def convertSentence(s: ProcessorsSentence): OdinsonSentence = {
-    val raw = TokensField(rawTokenField, s.raw, store = true)
+    val raw = TokensField(rawTokenField, s.raw)
     val word = TokensField(wordTokenField, s.words)
     val maybeTag = s.tags.map(tags => TokensField(posTagTokenField, tags))
     val maybeLemma = s.lemmas.map(lemmas => TokensField(lemmaTokenField, lemmas))
