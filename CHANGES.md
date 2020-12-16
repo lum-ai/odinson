@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added some additional methods to ExtractorEngine to access tokens from diff fields of a Lucene Doc ([#231](https://github.com/lum-ai/odinson/pull/231))
 - Added json serialization and deserialization of Mentions and OdinsonMatches to core ([#226](https://github.com/lum-ai/odinson/pull/226))
 - Added argument promotion, i.e., arguments specified for promotion or underspecified will be added to the state ([#218](https://github.com/lum-ai/odinson/pull/218))
 - Add tests for REST API endpoints
@@ -29,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
 - Started documentation at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
+- using whole config to create ExtractorEngine and its components (rather than subconfigs) ([#231](https://github.com/lum-ai/odinson/pull/231))
 - removed the MentionFactory, rename OdinMentionsIterator to MentionsIterator ([#228](https://github.com/lum-ai/odinson/pull/228))
 - Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
 - Turn `State` into a trait with very basic `SqlState` and even more basic `MemoryState` and placeholder `FileState` implementations by [@kwalcock](https://github.com/kwalcock)
