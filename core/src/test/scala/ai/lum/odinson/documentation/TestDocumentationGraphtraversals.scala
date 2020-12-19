@@ -51,11 +51,11 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
 
   // make sure it matches the correct thing
@@ -70,11 +70,11 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 3, end = 4)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 3, end = 4)
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
   it should "work for '>>{2,3}' example" in {
@@ -88,11 +88,11 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // this should not match
     val pattern1 = """
       trigger = [lemma=bear]

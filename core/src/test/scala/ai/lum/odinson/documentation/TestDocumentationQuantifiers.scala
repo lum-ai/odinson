@@ -27,7 +27,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // TODO: why?
     val pattern1 = """
       trigger = [lemma=bar]
@@ -43,7 +43,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val desiredArgs1 = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s1.scoreDocs.head.matches.head, desiredArgs1)
+    testEventArguments(s1.scoreDocs.head.matches.head, desiredArgs1)
   }
   // []*
   it should "work for '[]*'" in {
@@ -66,11 +66,11 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val s = ee.query(q)
     //
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
   };
   //
   it should "work for '>amod []'" in {
