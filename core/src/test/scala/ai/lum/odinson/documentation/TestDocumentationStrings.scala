@@ -1,13 +1,9 @@
 package ai.lum.odinson.documentation
 
-import org.scalatest._
-
-import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.BaseSpec
-//import ai.lum.odinson.events.EventSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.{Document, OdinsonMatch}
 
-class TestDocumentationString extends BaseSpec {
+class TestDocumentationString extends OdinsonTest {
   
   def doc: Document =
     Document.fromJson(
@@ -16,27 +12,27 @@ class TestDocumentationString extends BaseSpec {
   
   // - does not need quotes
   "Odinson StringQueries from docs" should "work with - no quotes" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     val q = ee.compiler.mkQuery("[chunk=B-NP]")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)
   }
   // : does not need quotes
   it should "work with : no quotes" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     val q = ee.compiler.mkQuery("[entity=foo:bar]")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)
   }
   // "3:10" to Yuma
   it should "work with quoted stuff" in {
-    val ee = this.Utils.mkExtractorEngine("lala lala 3:10 to Yuma")
+    val ee = mkExtractorEngineFromText("lala lala 3:10 to Yuma")
     val q = ee.compiler.mkQuery("\"3:10\" to Yuma")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)
   }
   it should "work with regex for syntax" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     val q = ee.compiler.mkQuery("(?<foo> [word=bears]) >/nmod_.*/ []")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)

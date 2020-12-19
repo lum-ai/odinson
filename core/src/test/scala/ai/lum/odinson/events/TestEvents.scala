@@ -4,14 +4,14 @@ import ai.lum.odinson.{EventMatch, MentionsIterator}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 
-class TestEvents extends EventSpec {
+class TestEvents extends OdinsonTest {
 
   // extractor engine persists across tests (hacky way)
-  def doc = getDocument("becky-gummy-bears")
-  val ee = Utils.mkExtractorEngine(doc)
+  val ee = mkExtractorEngine("becky-gummy-bears")
 
   "Odinson" should "match event with promoted entities" in {
     val pattern =
@@ -29,8 +29,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -53,8 +53,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
   }
@@ -102,8 +102,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 3, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 3, 4),
     )
     testEventArguments(m, desiredArgs)
     ee.clearState()
@@ -125,8 +125,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
     ee.clearState()
@@ -148,8 +148,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 3, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 3, 4),
     )
     testEventArguments(m, desiredArgs)
     ee.clearState()
@@ -218,8 +218,8 @@ class TestEvents extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
     ee.clearState()
@@ -255,17 +255,17 @@ class TestEvents extends EventSpec {
     mentions should have size (4)
 
     // Bear event
-    val bears = mentions.filter(_.label.getOrElse("None") == "Bear")
+    val bears = getMentionsWithLabel(mentions, "Bear")
     bears should have size (1)
     val bear = bears.head
     bear.arguments.keySet should have size 1
     val bearType = bear.arguments("bearType")
     bearType should have size (1)
-    val desiredBearArg = Seq(createArgument("bearType", 2, 3))
+    val desiredBearArg = Seq(ArgumentOffsets("bearType", 2, 3))
     testEventArguments(bear.odinsonMatch, desiredBearArg)
 
     // Consumption Event, which should include the Bear event above as an arg, from the State
-    val eats = mentions.filter(_.label.getOrElse("None") == "Consumption")
+    val eats = getMentionsWithLabel(mentions, "Consumption")
     eats should have size 1
     val eat = eats.head
     eat.arguments.keySet should have size 2

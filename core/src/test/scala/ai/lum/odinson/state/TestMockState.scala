@@ -1,13 +1,13 @@
 package ai.lum.odinson.state
 
-import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestMockState extends BaseSpec {
+class TestMockState extends OdinsonTest {
 
   val docGummy = getDocument("becky-gummy-bears-v2")
 
-  val eeGummy = Utils.extractorEngineWithSpecificState(docGummy, "mock")
-  val eeGummyMemory = Utils.extractorEngineWithSpecificState(docGummy, "memory")
+  val eeGummy = extractorEngineWithSpecificState(docGummy, "mock")
+  val eeGummyMemory = extractorEngineWithSpecificState(docGummy, "memory")
 
   "MockState" should "return mentions" in {
     val rules = """
@@ -43,36 +43,36 @@ class TestMockState extends BaseSpec {
     // "gummy" from first rule and the main event with both args in second
     mentions should have size (4)
 
-    mentions.filter(_.label.get == "GummyBear") should have size (0)
+    getMentionsWithLabel(mentions, "GummyBear") should have size (0)
 
   }
 
   "MemoryState" should "return mentions" in {
     val rules = """
-                  |rules:
-                  |  - name: gummy-rule
-                  |    label: Bear
-                  |    type: basic
-                  |    priority: 1
-                  |    pattern: |
-                  |      gummy
-                  |
-                  |  - name: eating-rule
-                  |    label: Consumption
-                  |    type: event
-                  |    priority: 2
-                  |    pattern: |
-                  |      trigger = [lemma=eat]
-                  |      subject: ^NP = >nsubj []
-                  |      object: ^NP = >dobj []
-                  |
-                  |  - name: nomatch-rule
-                  |    label: Gummy
-                  |    type: event
-                  |    priority: 2
-                  |    pattern: |
-                  |      trigger = bears
-                  |      arg: Bear = >amod
+        |rules:
+        |  - name: gummy-rule
+        |    label: Bear
+        |    type: basic
+        |    priority: 1
+        |    pattern: |
+        |      gummy
+        |
+        |  - name: eating-rule
+        |    label: Consumption
+        |    type: event
+        |    priority: 2
+        |    pattern: |
+        |      trigger = [lemma=eat]
+        |      subject: ^NP = >nsubj []
+        |      object: ^NP = >dobj []
+        |
+        |  - name: nomatch-rule
+        |    label: Gummy
+        |    type: event
+        |    priority: 2
+        |    pattern: |
+        |      trigger = bears
+        |      arg: Bear = >amod
        """.stripMargin
 
     val extractors = eeGummyMemory.ruleReader.compileRuleString(rules)
@@ -81,7 +81,7 @@ class TestMockState extends BaseSpec {
     // the 3 main extractions + 2 promoted args
     mentions should have size (5)
 
-    mentions.filter(_.label.get == "Gummy") should have size (1)
+    getMentionsWithLabel(mentions, "Gummy") should have size (1)
 
   }
 

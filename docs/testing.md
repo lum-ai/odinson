@@ -52,7 +52,7 @@ make sure you follow these guidelines:
 - Follow the [scalatest documentation](https://www.scalatest.org/) when writing tests.
 - Aim to test a single functionality in each test.
 - Be mindful when naming tests and only use `it` when necessary.
-- Every test suite should extend `ai.lum.odinson.BaseSpec`.
+- Every test suite should extend `ai.lum.odinson.utils.TestUtils.OdinsonTest`.
 - It is good practice to structure your tests to avoid unhelpful messages.  For example, if
 you consistently assert that `x should be (true)`, when a test fails you will only know that "false did not equal true", instead of the real problem!
 
@@ -74,12 +74,11 @@ sbt CoverageReport
 // part of foundations
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.BaseSpec
-import org.scalatest._
+ai.lum.odinson.utils.TestUtils.OdinsonTest
 import collection.mutable.Stack
 
 // extend BaseSpec
-class TestSomething extends BaseSpec {
+class TestSomething extends OdinsonTest {
   // use a descriptive name
   "A Stack" should "pop values in last-in-first-out order" in {
     val stack = new Stack[Int]

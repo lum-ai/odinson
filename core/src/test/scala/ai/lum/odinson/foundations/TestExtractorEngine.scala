@@ -1,24 +1,10 @@
 package ai.lum.odinson.foundations
 
-import org.scalatest._
-import ai.lum.odinson.{BaseSpec, Document, ExtractorEngine, Sentence, TokensField, utils}
-import org.apache.lucene.index.DirectoryReader
-import org.apache.lucene.document.{Document => LuceneDocument, _}
-import org.apache.lucene.document.Field.Store
-import com.typesafe.config.Config
-import ai.lum.common.ConfigFactory
-import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.compiler.QueryCompiler
-import ai.lum.odinson.state.State
-import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.{Document, ExtractorEngine, Sentence, TokensField, utils}
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestExtractorEngine extends BaseSpec {
-  val config = ConfigFactory.load()
-  val odinsonConfig = config[Config]("odinson")
-  val rawTokenField = config[String]("odinson.index.rawTokenField")
-  
+class TestExtractorEngine extends OdinsonTest {
+
   // create a test sentence
   val text = "Rain causes flood"
   val tokens = TokensField(rawTokenField, text.split(" "))
@@ -45,7 +31,7 @@ class TestExtractorEngine extends BaseSpec {
   it should "getTokensFromSpan correctly from existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = Utils.extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
     val rules = """
         |rules:
         |  - name: testrule
@@ -57,8 +43,7 @@ class TestExtractorEngine extends BaseSpec {
         |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = ee.extractMentions(extractors).toArray
-      .filter(_.label.getOrElse("None") == "Test")
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
 
     val mention = mentions.head
@@ -70,7 +55,7 @@ class TestExtractorEngine extends BaseSpec {
   it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = Utils.extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
     val rules = """
       |rules:
       |  - name: testrule
@@ -82,8 +67,7 @@ class TestExtractorEngine extends BaseSpec {
       |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = ee.extractMentions(extractors).toArray
-      .filter(_.label.getOrElse("None") == "Test")
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
 
     val mention = mentions.head

@@ -1,12 +1,14 @@
 package ai.lum.odinson.events
 
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestArgQuantifiers extends EventSpec {
-  def doc = getDocument("gummy-bears-consumption")
-  def ee = Utils.mkExtractorEngine(doc)
 
-  def desiredArgs35: Seq[Argument] = Seq(createArgument("theme", 3, 5))
-  def desiredArgs67: Seq[Argument] = Seq(createArgument("theme", 6, 7))
+class TestArgQuantifiers extends OdinsonTest {
+
+  def ee = mkExtractorEngine("gummy-bears-consumption")
+
+  def desiredArgs35: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 3, 5))
+  def desiredArgs67: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 6, 7))
 
   "Odinson" should "find two events with one required theme each" in {
     val pattern = """

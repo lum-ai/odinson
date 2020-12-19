@@ -1,20 +1,17 @@
 package ai.lum.odinson.traversals
 
-import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestTraversals extends BaseSpec {
+class TestTraversals extends OdinsonTest {
 
-  val docAlien = getDocument("alien-species")
-  val eeAlien = Utils.mkExtractorEngine(docAlien)
+  val eeAlien = mkExtractorEngine("alien-species")
 
   // Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals
   // such as deer and zoo animals including elephants can also contract it .
-  val docHedgehogs = getDocument("hedgehogs-coypy-2")
-  val eeHedgehogs = Utils.mkExtractorEngine(docHedgehogs)
+  val eeHedgehogs = mkExtractorEngine("hedgehogs-coypy-2")
 
   // John ate ramen with chopsticks and a spoon.
-  val docSpoon = getDocument("chopsticks-spoon")
-  val eeSpoon = Utils.mkExtractorEngine(docSpoon)
+  val eeSpoon = mkExtractorEngine("chopsticks-spoon")
 
   "Odinson" should "find all matches across conj_and" in {
     val pattern = "[word=cats] >conj_and [tag=/N.*/]"

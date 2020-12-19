@@ -4,16 +4,15 @@ import ai.lum.common.FileUtils._
 import java.io.File
 import java.nio.file.{Files, Path}
 
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
-class TestRuleFile extends EventSpec {
+class TestRuleFile extends OdinsonTest {
   // extractor engine persists across tests (hacky way)
-  def docGummy = getDocument("becky-gummy-bears-v2")
-  def eeGummy = Utils.mkExtractorEngine(docGummy)
+  def eeGummy = mkExtractorEngine("becky-gummy-bears-v2")
 
   // Leonardo leads, Donatello does machines (That's a fact, jack!)
-  val docNinja = getDocument("ninja-turtles")
-  val eeNinja = Utils.mkExtractorEngine(docNinja)
+  val eeNinja = mkExtractorEngine("ninja-turtles")
 
   "Odinson" should "match event with rules defined in a rule file" in {
     val rules = """
@@ -30,8 +29,7 @@ class TestRuleFile extends EventSpec {
       |      object: ^NP = >dobj ${chunk}
     """.stripMargin
     val extractors = eeGummy.ruleReader.compileRuleString(rules)
-    val mentions = eeGummy.extractMentions(extractors).toArray
-      .filter(_.label.getOrElse("None") == "Test")
+    val mentions = getMentionsWithLabel(eeGummy.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
     // todo keep fixing from here
     val m = mentions.head.odinsonMatch
@@ -39,8 +37,8 @@ class TestRuleFile extends EventSpec {
     testEventTrigger(m, start = 1, end = 2)
     // test arguments
     val desiredArgs = Seq(
-      createArgument("subject", 0, 1),
-      createArgument("object", 2, 4),
+      ArgumentOffsets("subject", 0, 1),
+      ArgumentOffsets("object", 2, 4),
     )
     testEventArguments(m, desiredArgs)
     eeGummy.clearState()
@@ -84,7 +82,7 @@ class TestRuleFile extends EventSpec {
   it should "throw an exception with imports in string" in {
     // Leonardo leads, Donatello does machines (That's a fact, jack!)
     val doc = getDocument("ninja-turtles")
-    val ee = Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     val rules =
       """
         |vars:
@@ -111,17 +109,17 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleResource(masterPath, Map("otherName" -> "HARD_CODED"))
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size (3)
-    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
     assert(leadsMentions.length == 1)
     // because import beats both parent (in a.yml) and local (in b.yml)
     leadsMentions.head.foundBy should be("B-IMPORT_FROM_A")
 
-    val machinesMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "machines")
+    val machinesMentions = getMentionsWithStringValue(mentions, "machines", eeNinja)
     assert(machinesMentions.length == 1)
     // because import beats both parent and local
     machinesMentions.head.foundBy should be("A-IMPORT_NAME")
 
-    val factMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "fact")
+    val factMentions = getMentionsWithStringValue(mentions, "fact", eeNinja)
     assert(factMentions.length == 1)
     // no import, but parent beats local, and hard-coded trumps all
     factMentions.head.foundBy should be("C-C-PARENT-HARD_CODED")
@@ -183,10 +181,10 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleFile(masterFile)
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size 2
-    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
     assert(leadsMentions.length == 1)
 
-    val machinesMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "machines")
+    val machinesMentions = getMentionsWithStringValue(mentions, "machines", eeNinja)
     assert(machinesMentions.length == 1)
     eeNinja.clearState()
   }
@@ -196,7 +194,7 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleResource(masterPath)
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size (1)
-    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("leads-IMPORTED_FROM_VARS")
     eeNinja.clearState()
@@ -234,7 +232,7 @@ class TestRuleFile extends EventSpec {
     val extractors = eeNinja.compileRuleFile(rulesFile)
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size (1)
-    val leadsMentions = mentions.filter(m => eeNinja.getStringForSpan(m.luceneDocId, m.odinsonMatch) == "leads")
+    val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
     assert(leadsMentions.length == 1)
     leadsMentions.head.foundBy should be("B-IMPORTED_NAME")
     eeNinja.clearState()
