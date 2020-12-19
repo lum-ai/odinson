@@ -12,7 +12,6 @@ lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
   excludeDependencies += "commons-logging" % "commons-logging",
-  publishArtifact in (Test, packageBin) := true,
 )
 
 lazy val core = project
