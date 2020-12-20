@@ -27,7 +27,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // TODO: why?
     val pattern1 = """
       trigger = [lemma=bar]
@@ -43,7 +43,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val desiredArgs1 = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    testEventArguments(s1.scoreDocs.head.matches.head, desiredArgs1)
+    testArguments(s1.scoreDocs.head.matches.head, desiredArgs1)
   }
   // []*
   it should "work for '[]*'" in {
@@ -70,7 +70,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   };
   //
   it should "work for '>amod []'" in {

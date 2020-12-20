@@ -19,7 +19,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
  
   it should "work for '<foo' example" in {
@@ -37,7 +37,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
   it should "work for '<<' example" in {
@@ -55,7 +55,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 3, 4)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
 
   // make sure it matches the correct thing
@@ -74,7 +74,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
   it should "work for '>>{2,3}' example" in {
@@ -92,7 +92,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val desiredArgs = Seq(
       ArgumentOffsets("object", 2, 3)
     )
-    testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // this should not match
     val pattern1 = """
       trigger = [lemma=bear]

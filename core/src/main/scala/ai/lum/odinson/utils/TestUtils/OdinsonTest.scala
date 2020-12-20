@@ -6,6 +6,7 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest._
 
@@ -110,7 +111,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @return ExtractorEngine
     */
   def mkExtractorEngineFromText(text: String): ExtractorEngine = {
-    val tokens = TokensField(rawTokenField, text.split(" "))
+    val tokens = TokensField(rawTokenField, text.split("\\s+"))
     val sentence = Sentence(tokens.tokens.length, Seq(tokens))
     val document = Document("<TEST-ID>", Nil, Seq(sentence))
     mkExtractorEngine(document)
@@ -122,7 +123,9 @@ class OdinsonTest extends FlatSpec with Matchers {
   // Methods for checking mention/match equivalence
 
   def getSingleMentionFromRule(ms: Seq[Mention], rulename: String): Mention = {
-    getMentionsFromRule(ms, rulename).head
+    val opt = getMentionsFromRule(ms, rulename).headOption
+    if (opt.isDefined) opt.get
+    else throw new OdinsonException(s"No rules found with rulename: $rulename")
   }
 
   def getMentionsFromRule(ms: Seq[Mention], rulename: String): Seq[Mention] = {
@@ -144,7 +147,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param b
     * @return
     */
-  def mentionsAreEqual(a: Mention, b: Mention): Boolean = {
+  def mentionsShouldBeEqual(a: Mention, b: Mention): Boolean = {
     b.foundBy should equal(a.foundBy)
     b.label should equal(a.label)
     b.idGetter.getDocId should be (a.idGetter.getDocId)
@@ -157,10 +160,10 @@ class OdinsonTest extends FlatSpec with Matchers {
       val bArgs = b.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
       val aArgs = a.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
       for (i <- aArgs.indices) {
-        mentionsAreEqual(aArgs(i), bArgs(i))
+        mentionsShouldBeEqual(aArgs(i), bArgs(i))
       }
     }
-    matchesAreEqual(a.odinsonMatch, b.odinsonMatch)
+    matchesShouldBeEqual(a.odinsonMatch, b.odinsonMatch)
   }
 
   /**
@@ -170,13 +173,13 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param b
     * @return
     */
-  def matchesAreEqual(a: OdinsonMatch, b: OdinsonMatch): Boolean = {
+  def matchesShouldBeEqual(a: OdinsonMatch, b: OdinsonMatch): Boolean = {
     a match {
       case a: StateMatch =>
         b shouldBe an [StateMatch]
         b.start should equal(a.start)
         b.end should equal(a.end)
-        namedCapturesAreEqual(a.namedCaptures, b.namedCaptures)
+        namedCapturesShouldBeEqual(a.namedCaptures, b.namedCaptures)
 
       case a: NGramMatch =>
         b shouldBe an [NGramMatch]
@@ -185,37 +188,37 @@ class OdinsonTest extends FlatSpec with Matchers {
 
       case a: EventMatch =>
         b shouldBe an [EventMatch]
-        matchesAreEqual(a.trigger, b.asInstanceOf[EventMatch].trigger)
-        namedCapturesAreEqual(a.namedCaptures, b.namedCaptures)
-        argMetaDataAreEqual(a.argumentMetadata, b.asInstanceOf[EventMatch].argumentMetadata)
+        matchesShouldBeEqual(a.trigger, b.asInstanceOf[EventMatch].trigger)
+        namedCapturesShouldBeEqual(a.namedCaptures, b.namedCaptures)
+        argMetaDataShouldBeEqual(a.argumentMetadata, b.asInstanceOf[EventMatch].argumentMetadata)
 
       case a: GraphTraversalMatch =>
         b shouldBe an [GraphTraversalMatch]
-        matchesAreEqual(a.srcMatch, b.asInstanceOf[GraphTraversalMatch].srcMatch)
-        matchesAreEqual(a.dstMatch, b.asInstanceOf[GraphTraversalMatch].dstMatch)
+        matchesShouldBeEqual(a.srcMatch, b.asInstanceOf[GraphTraversalMatch].srcMatch)
+        matchesShouldBeEqual(a.dstMatch, b.asInstanceOf[GraphTraversalMatch].dstMatch)
 
       case a: ConcatMatch =>
         b shouldBe an [ConcatMatch]
-        matchesAreEqual(a.subMatches, b.asInstanceOf[ConcatMatch].subMatches)
+        matchesShouldBeEqual(a.subMatches, b.asInstanceOf[ConcatMatch].subMatches)
 
       case a: RepetitionMatch =>
         b shouldBe an [RepetitionMatch]
-        matchesAreEqual(a.subMatches, b.asInstanceOf[RepetitionMatch].subMatches)
+        matchesShouldBeEqual(a.subMatches, b.asInstanceOf[RepetitionMatch].subMatches)
         a.isGreedy should be (b.asInstanceOf[RepetitionMatch].isGreedy)
 
       case a: OptionalMatch =>
         b shouldBe an [OptionalMatch]
-        matchesAreEqual(a.subMatch, b.asInstanceOf[OptionalMatch].subMatch)
+        matchesShouldBeEqual(a.subMatch, b.asInstanceOf[OptionalMatch].subMatch)
         a.isGreedy should be (b.asInstanceOf[OptionalMatch].isGreedy)
 
       case a: OrMatch =>
         b shouldBe an [OrMatch]
-        matchesAreEqual(a.subMatch, b.asInstanceOf[OrMatch].subMatch)
+        matchesShouldBeEqual(a.subMatch, b.asInstanceOf[OrMatch].subMatch)
         a.clauseID should be (b.asInstanceOf[OrMatch].clauseID)
 
       case a: NamedMatch =>
         b shouldBe an [NamedMatch]
-        matchesAreEqual(a.subMatch, b.asInstanceOf[NamedMatch].subMatch)
+        matchesShouldBeEqual(a.subMatch, b.asInstanceOf[NamedMatch].subMatch)
         a.name should equal(b.asInstanceOf[NamedMatch].name)
         a.label should equal(b.asInstanceOf[NamedMatch].label)
 
@@ -227,44 +230,38 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /**
     * Tests that the provided Arrays of OdinsonMatches contain the same OdinsonMatches.
-    * The Arrays don't need to be sorted prior to sending.
+    * The Arrays need to be in the same order.
     * @param a
     * @param b
     */
-  def matchesAreEqual(a: Array[OdinsonMatch], b: Array[OdinsonMatch]): Unit = {
-    val sortedA = a.sortBy(m => (m.start, m.end))
-    val sortedB = b.sortBy(m => (m.start, m.end))
-    for (i <- sortedA.indices) {
-      matchesAreEqual(sortedA(i), sortedB(i)) should be (true)
+  def matchesShouldBeEqual(a: Array[OdinsonMatch], b: Array[OdinsonMatch]): Unit = {
+    for (i <- a.indices) {
+      matchesShouldBeEqual(a(i), b(i)) should be (true)
     }
   }
 
   /**
     * Tests that the provided Arrays of NamedCaptures contain the same NamedCaptures.
-    * The Arrays don't need to be sorted prior to sending.
     * @param a
     * @param b
     */
-  def namedCapturesAreEqual(a: Array[NamedCapture], b: Array[NamedCapture]): Unit = {
+  def namedCapturesShouldBeEqual(a: Array[NamedCapture], b: Array[NamedCapture]): Unit = {
     def ncEqual(a1: NamedCapture, b1: NamedCapture): Boolean = {
       b1.label should be (a1.label)
       b1.name should be (a1.name)
-      matchesAreEqual(a1.capturedMatch, b1.capturedMatch)
+      matchesShouldBeEqual(a1.capturedMatch, b1.capturedMatch)
     }
-    val sortedA = a.sortBy(nc => (nc.capturedMatch.start, nc.capturedMatch.end))
-    val sortedB = b.sortBy(nc => (nc.capturedMatch.start, nc.capturedMatch.end))
-    for (i <- sortedA.indices) {
-      ncEqual(sortedA(i), sortedB(i))
+    for (i <- a.indices) {
+      ncEqual(a(i), b(i))
     }
   }
 
   /**
     * Tests that the provided Arrays of ArgumentMetadata contain the same ArgumentMetadata.
-    * The Arrays don't need to be sorted prior to sending.
     * @param a
     * @param b
     */
-  def argMetaDataAreEqual(a: Array[ArgumentMetadata], b: Array[ArgumentMetadata]): Unit = {
+  def argMetaDataShouldBeEqual(a: Array[ArgumentMetadata], b: Array[ArgumentMetadata]): Unit = {
     def mdEqual(a1: ArgumentMetadata, b1: ArgumentMetadata): Boolean = {
       b1.min should be (a1.min)
       b1.max should be (a1.max)
@@ -273,10 +270,8 @@ class OdinsonTest extends FlatSpec with Matchers {
       // If it didn't find an error above we're good!
       true
     }
-    val sortedA = a.sortBy(amd => (amd.name, amd.min, amd.max))
-    val sortedB = b.sortBy(amd => (amd.name, amd.min, amd.max))
-    for (i <- sortedA.indices) {
-      mdEqual(sortedA(i), sortedB(i))
+    for (i <- a.indices) {
+      mdEqual(a(i), b(i))
     }
   }
 
@@ -284,17 +279,17 @@ class OdinsonTest extends FlatSpec with Matchers {
   // Methods for testing events and event attributes
 
   /**
-    * Tests that the provided OdinsonMatch has the provided desired trigger and arguments (by string value),
-    * and only those desired arguments.  This is specifically designed for testing extraction rules developed
-    * in downstream systems.
+    * Tests that the provided OdinsonMatch has the provided desired text (potentially trigger text) and
+    * arguments (by string value), and only those desired arguments.
+    * This is specifically designed for testing extraction rules developed in downstream systems.
     * @param m
-    * @param desiredTrigger the text that the trigger should consist of
+    * @param desiredMentionText the text that the Mention should consist of (for events, this is the trigger)
     * @param desiredArgs  the Arguments that should be found in the event
     * @param engine ExtractorEngine
     */
-  def testEvent(m: Mention, desiredTrigger: String, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
+  def testMention(m: Mention, desiredMentionText: String, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
     // Check that the trigger is as desired
-    engine.getStringForSpan(m.luceneDocId, m.odinsonMatch) shouldEqual (desiredTrigger)
+    engine.getStringForSpan(m.luceneDocId, m.odinsonMatch) shouldEqual (desiredMentionText)
 
     // extract match arguments from the mathing objects
     val matchArgs = for {
@@ -305,7 +300,9 @@ class OdinsonTest extends FlatSpec with Matchers {
     // all desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)
     val groupedDesired = desiredArgs.groupBy(_.name)
-    //
+
+    groupedDesired.keySet should have size (groupedMatched.keySet.size)
+
     for ((desiredRole, desired) <- groupedDesired) {
       // there should be arg(s) of the desired label
       groupedMatched.keySet should contain (desiredRole)
@@ -332,7 +329,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     val trigger = m match {
       case e: EventMatch => e.trigger
       case s: StateMatch => s
-      case _ => ???
+      case _ => throw new OdinsonException("Method only compatible with events")
     }
     trigger.start shouldEqual start
     trigger.end shouldEqual end
@@ -350,7 +347,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     val trigger = m match {
       case e: EventMatch => e.trigger
       case s: StateMatch => s
-      case _ => ???
+      case _ => throw new OdinsonException("Method only compatible with events")
     }
     engine.getStringForSpan(docID, trigger) shouldEqual (text)
   }
@@ -361,7 +358,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param m
     * @param desiredArgs
     */
-  def testEventArguments(m: OdinsonMatch, desiredArgs: Seq[ArgumentOffsets]): Unit = {
+  def testArguments(m: OdinsonMatch, desiredArgs: Seq[ArgumentOffsets]): Unit = {
     // extract match arguments from the mathing objects
     val matchArgs = for(nc <- m.namedCaptures)
       yield ArgumentOffsets(nc.name, nc.capturedMatch.start, nc.capturedMatch.end)
@@ -378,10 +375,20 @@ class OdinsonTest extends FlatSpec with Matchers {
       for (d <- desired) {
         matchedForThisRole should contain (d)
       }
-      // there shouldn't be any found arguments that we didn't want
-      val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
-      unwantedArgs shouldBe empty
     }
+    for ((foundRole, found) <- groupedMatched) {
+      // there should be arg(s) of the desired label
+      groupedDesired.keySet should contain (foundRole)
+      // should have the same number of arguments of that label
+      val desiredForThisRole = groupedDesired(foundRole)
+      found should have size desiredForThisRole.length
+      for (f <- found) {
+        desiredForThisRole should contain (f)
+      }
+    }
+    // there shouldn't be any found arguments that we didn't want
+    val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
+    unwantedArgs shouldBe empty
   }
 
   /**
@@ -392,14 +399,14 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param desiredArgs
     * @param engine ExtractorEngine
     */
-  def testEventArguments(docId: Int, m: OdinsonMatch, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
+  def testArguments(docId: Int, m: OdinsonMatch, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
     // extract match arguments from the mathing objects
     val matchArgs = for(nc <- m.namedCaptures)
       yield Argument(nc.name, engine.getStringForSpan(docId, nc.capturedMatch))
     // all desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)
     val groupedDesired = desiredArgs.groupBy(_.name)
-    //
+
     for ((desiredRole, desired) <- groupedDesired) {
       // there should be arg(s) of the desired label
       groupedMatched.keySet should contain (desiredRole)
@@ -409,10 +416,22 @@ class OdinsonTest extends FlatSpec with Matchers {
       for (d <- desired) {
         matchedForThisRole should contain (d)
       }
-      // there shouldn't be any found arguments that we didn't want
-      val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
-      unwantedArgs shouldBe empty
     }
+
+    for ((foundRole, found) <- groupedMatched) {
+      // there should be arg(s) of the desired label
+      groupedDesired.keySet should contain (foundRole)
+      // should have the same number of arguments of that label
+      val desiredForThisRole = groupedDesired(foundRole)
+      found should have size desiredForThisRole.length
+      for (f <- found) {
+        desiredForThisRole should contain (f)
+      }
+    }
+
+    // there shouldn't be any found arguments that we didn't want
+    val unwantedArgs = groupedMatched.keySet.diff(groupedDesired.keySet)
+    unwantedArgs shouldBe empty
   }
 
   /**

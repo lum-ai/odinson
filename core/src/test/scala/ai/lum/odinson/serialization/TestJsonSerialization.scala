@@ -18,7 +18,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle basic EventMatches" in {
@@ -27,7 +27,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle EventMatches with arg quantifiers" in {
@@ -36,7 +36,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle EventMatches with arg ranges" in {
@@ -45,7 +45,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle GraphTraversals" in {
@@ -54,7 +54,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Repetition" in {
@@ -63,7 +63,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Repetition (lazy)" in {
@@ -72,7 +72,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Optional" in {
@@ -81,7 +81,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Or" in {
@@ -90,7 +90,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Named" in {
@@ -99,7 +99,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   // With state
@@ -111,7 +111,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle basic EventMatches with State" in {
@@ -120,7 +120,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle EventMatches with arg quantifiers with State" in {
@@ -129,7 +129,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle EventMatches with arg ranges with State" in {
@@ -138,7 +138,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle GraphTraversals with State" in {
@@ -147,7 +147,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Repetition with State" in {
@@ -156,7 +156,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Repetition (lazy) with State" in {
@@ -165,7 +165,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Optional with State" in {
@@ -174,7 +174,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Or with State" in {
@@ -183,7 +183,7 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "handle Named with State" in {
@@ -192,18 +192,18 @@ class TestJsonSerialization extends OdinsonTest {
     val reconstituted = JsonSerializer.deserializeMentions(json)
     reconstituted should have length(1)
 
-    mentionsAreEqual(m, reconstituted.head) should be (true)
+    mentionsShouldBeEqual(m, reconstituted.head) should be (true)
   }
 
   it should "properly serialize and deserialized using json strings" in {
     val m = getSingleMentionFromRule(stateMentions, "Or")
     val jsonString = JsonSerializer.asJsonString(m)
     val deserialized = JsonSerializer.deserializeMention(jsonString)
-    mentionsAreEqual(m, deserialized) should be (true)
+    mentionsShouldBeEqual(m, deserialized) should be (true)
 
     val jsonPretty = JsonSerializer.asJsonPretty(m)
     val deserializedPretty = JsonSerializer.deserializeMention(jsonPretty)
-    mentionsAreEqual(m, deserializedPretty) should be (true)
+    mentionsShouldBeEqual(m, deserializedPretty) should be (true)
   }
 
   it should "properly serialize and deserialized using json lines" in {
@@ -212,8 +212,8 @@ class TestJsonSerialization extends OdinsonTest {
     val jsonLines = JsonSerializer.asJsonLines(Seq(m1, m2))
     val deserialized = JsonSerializer.deserializeJsonLines(jsonLines)
     deserialized should have length (2)
-    mentionsAreEqual(m1, deserialized(0)) should be (true)
-    mentionsAreEqual(m2, deserialized(1)) should be (true)
+    mentionsShouldBeEqual(m1, deserialized(0)) should be (true)
+    mentionsShouldBeEqual(m2, deserialized(1)) should be (true)
   }
 
 }

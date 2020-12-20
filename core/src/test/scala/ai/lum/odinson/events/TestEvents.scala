@@ -32,7 +32,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 2, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
 
   it should "respect quantifiers in arguments" in {
@@ -56,7 +56,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 2, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
 
   it should "have only one argument metadata with any given name" in {
@@ -105,7 +105,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 3, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
     ee.clearState()
   }
 
@@ -128,7 +128,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 2, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
     ee.clearState()
   }
 
@@ -151,7 +151,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 3, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
     ee.clearState()
   }
 
@@ -221,7 +221,7 @@ class TestEvents extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 2, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
     ee.clearState()
   }
 
@@ -262,7 +262,7 @@ class TestEvents extends OdinsonTest {
     val bearType = bear.arguments("bearType")
     bearType should have size (1)
     val desiredBearArg = Seq(ArgumentOffsets("bearType", 2, 3))
-    testEventArguments(bear.odinsonMatch, desiredBearArg)
+    testArguments(bear.odinsonMatch, desiredBearArg)
 
     // Consumption Event, which should include the Bear event above as an arg, from the State
     val eats = getMentionsWithLabel(mentions, "Consumption")
@@ -276,7 +276,7 @@ class TestEvents extends OdinsonTest {
     obj.arguments.keySet should have size 1
     val objType = obj.arguments("bearType")
     objType should have size (1)
-    testEventArguments(obj.odinsonMatch, desiredBearArg)
+    testArguments(obj.odinsonMatch, desiredBearArg)
     ee.clearState()
   }
 

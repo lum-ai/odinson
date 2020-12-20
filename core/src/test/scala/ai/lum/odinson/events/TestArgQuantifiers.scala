@@ -24,8 +24,8 @@ class TestArgQuantifiers extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    testEventArguments(m1, desiredArgs35)
-    testEventArguments(m2, desiredArgs67)
+    testArguments(m1, desiredArgs35)
+    testArguments(m2, desiredArgs67)
   }
   
   it should "find two events with one optional theme each" in {
@@ -42,8 +42,8 @@ class TestArgQuantifiers extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    testEventArguments(m1, desiredArgs35)
-    testEventArguments(m2, desiredArgs67)
+    testArguments(m1, desiredArgs35)
+    testArguments(m2, desiredArgs67)
   }
   
   it should "find one event with two required themes" in {
@@ -63,7 +63,7 @@ class TestArgQuantifiers extends OdinsonTest {
       desiredArgs35.head,
       desiredArgs67.head
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
   
   it should "find one event with two optional themes" in {
@@ -83,7 +83,7 @@ class TestArgQuantifiers extends OdinsonTest {
       desiredArgs35.head,
       desiredArgs67.head
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
 }
 

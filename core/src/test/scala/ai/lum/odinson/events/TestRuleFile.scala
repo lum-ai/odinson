@@ -40,7 +40,7 @@ class TestRuleFile extends OdinsonTest {
       ArgumentOffsets("subject", 0, 1),
       ArgumentOffsets("object", 2, 4),
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
     eeGummy.clearState()
   }
 

@@ -23,8 +23,8 @@ class TestMoreEvents extends OdinsonTest {
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
     val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
-    testEventArguments(m1, desiredArgs1)
-    testEventArguments(m2, desiredArgs2)
+    testArguments(m1, desiredArgs1)
+    testArguments(m2, desiredArgs2)
     ee.clearState()
   }
 
@@ -43,7 +43,7 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5), ArgumentOffsets("tool", 7, 8))
-    testEventArguments(m1, desiredArgs1)
+    testArguments(m1, desiredArgs1)
     ee.clearState()
   }
 
@@ -62,14 +62,14 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5), ArgumentOffsets("tool", 7, 8))
-    testEventArguments(m1, desiredArgs1)
+    testArguments(m1, desiredArgs1)
     results.scoreDocs(1).matches should have size 1
     val Array(m2) = results.scoreDocs(1).matches
     // test trigger
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
     val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3))
-    testEventArguments(m2, desiredArgs2)
+    testArguments(m2, desiredArgs2)
     ee.clearState()
   }
 
@@ -90,8 +90,8 @@ class TestMoreEvents extends OdinsonTest {
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
     val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
-    testEventArguments(m1, desiredArgs1)
-    testEventArguments(m2, desiredArgs2)
+    testArguments(m1, desiredArgs1)
+    testArguments(m2, desiredArgs2)
     ee.clearState()
   }
 
@@ -127,8 +127,8 @@ class TestMoreEvents extends OdinsonTest {
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
     val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
-    testEventArguments(m1, desiredArgs1)
-    testEventArguments(m2, desiredArgs2)
+    testArguments(m1, desiredArgs1)
+    testArguments(m2, desiredArgs2)
     // sentence 2
     results.scoreDocs(1).matches should have size 1
     val Array(m3) = results.scoreDocs(1).matches
@@ -136,7 +136,7 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m3, start = 1, end = 2)
     // test arguments
     val desiredArgs3 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
-    testEventArguments(m3, desiredArgs3)
+    testArguments(m3, desiredArgs3)
     ee.clearState()
   }
 
@@ -156,7 +156,7 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     // test arguments
     val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
-    testEventArguments(m1, desiredArgs1)
+    testArguments(m1, desiredArgs1)
     ee.clearState()
   }
 }
