@@ -1,9 +1,8 @@
 package ai.lum.odinson.compiler
 
-import org.scalatest._
-import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestParser extends BaseSpec {
+class TestParser extends OdinsonTest {
 
   val parser = new QueryParser(Seq("norm", "word", "tag"), "norm")
 

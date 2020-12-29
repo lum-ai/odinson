@@ -1,12 +1,9 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.common._
-import org.scalatest._
 import ai.lum.common.StringUtils._
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-import ai.lum.odinson.BaseSpec
-
-class TestUnicodeNormalization extends BaseSpec {
+class TestUnicodeNormalization extends OdinsonTest {
 
   "unicode normalization" should "normalize unicode strings" in {
     val s1 = "caf\u00e9"

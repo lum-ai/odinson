@@ -1,12 +1,14 @@
 package ai.lum.odinson.events
 
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestArgQuantifiers extends EventSpec {
-  def doc = getDocument("gummy-bears-consumption")
-  def ee = Utils.mkExtractorEngine(doc)
 
-  def desiredArgs35: Seq[Argument] = Seq(createArgument("theme", 3, 5))
-  def desiredArgs67: Seq[Argument] = Seq(createArgument("theme", 6, 7))
+class TestArgQuantifiers extends OdinsonTest {
+
+  def ee = mkExtractorEngine("gummy-bears-consumption")
+
+  def desiredArgs35: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 3, 5))
+  def desiredArgs67: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 6, 7))
 
   "Odinson" should "find two events with one required theme each" in {
     val pattern = """
@@ -22,8 +24,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    testEventArguments(m1, desiredArgs35)
-    testEventArguments(m2, desiredArgs67)
+    testArguments(m1, desiredArgs35)
+    testArguments(m2, desiredArgs67)
   }
   
   it should "find two events with one optional theme each" in {
@@ -40,8 +42,8 @@ class TestArgQuantifiers extends EventSpec {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    testEventArguments(m1, desiredArgs35)
-    testEventArguments(m2, desiredArgs67)
+    testArguments(m1, desiredArgs35)
+    testArguments(m2, desiredArgs67)
   }
   
   it should "find one event with two required themes" in {
@@ -61,7 +63,7 @@ class TestArgQuantifiers extends EventSpec {
       desiredArgs35.head,
       desiredArgs67.head
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
   
   it should "find one event with two optional themes" in {
@@ -81,7 +83,7 @@ class TestArgQuantifiers extends EventSpec {
       desiredArgs35.head,
       desiredArgs67.head
     )
-    testEventArguments(m, desiredArgs)
+    testArguments(m, desiredArgs)
   }
 }
 

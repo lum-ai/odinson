@@ -2,27 +2,16 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{BaseSpec, ExtractorEngine, LazyIdGetter, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{ExtractorEngine, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.utils.TestUtils
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random
 
-class NullIdGetter() extends LazyIdGetter(null, 0) {
-  override lazy val document = ???
-  override lazy val docId: String = "NULL"
-  override lazy val sentId: String = "NULL"
-  override def getDocId: String = "NULL"
-  override def getSentId: String = "NULL"
-}
-
-object NullIdGetter {
-  // The x: Int is to fit the pattern of the mruIdGetter
-  def apply(x: Int): NullIdGetter = new NullIdGetter()
-}
-
-class TestSqlState extends BaseSpec {
+class TestSqlState extends OdinsonTest {
   val docBase = 42
   val docId = 13
   val docIndex = 212
@@ -48,7 +37,7 @@ class TestSqlState extends BaseSpec {
         if (resultLabel.isEmpty) None
         else Some(resultLabel)
     val mention: Mention = new Mention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
-        luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, idGetter = nullIdGetter, foundBy = resultName)
+        luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, nullIdGetter, foundBy = resultName)
 
     mention
   }
@@ -191,7 +180,7 @@ class TestSqlState extends BaseSpec {
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
-    val idGetter = new NullIdGetter
+    val idGetter = new TestUtils.NullIdGetter
 
     1.to(100).foreach { index => // Do this many tests.
       val odinResults = newRandomOdinResults(random, docId, docBase)

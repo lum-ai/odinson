@@ -3,23 +3,21 @@ package ai.lum.odinson.foundations
 // test imports
 import java.nio.file.Files
 
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.{Config, ConfigValueFactory}
-import org.scalatest._
 // lum imports
-import ai.lum.odinson.{OdinsonIndexWriter, BaseSpec, DateField, StringField}
+import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
 import ai.lum.common.ConfigFactory
 // file imports
 import scala.reflect.io.Directory
 import java.io.File
 
-class TestOdinsonIndexWriter extends BaseSpec {
+class TestOdinsonIndexWriter extends OdinsonTest {
   type Fixture = OdinsonIndexWriter
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
   val indexDir = new File(tmpFolder, "index")
 
-
-  val defaultConfig = ConfigFactory.load()
   val testConfig: Config = {
     defaultConfig
       // re-compute the index and docs path's
@@ -70,7 +68,7 @@ class TestOdinsonIndexWriter extends BaseSpec {
 
   it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
     val doc = getDocument("bad-character")
-    def ee = Utils.mkExtractorEngine(doc)
+    def ee = mkExtractorEngine(doc)
 
     val pattern = "complex <nsubj phosphorylate >dobj []"
     val expectedMatches = Array("AKT1")

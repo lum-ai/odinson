@@ -1,23 +1,14 @@
 package ai.lum.odinson.foundations
 
-import java.util.Date
 import java.text.SimpleDateFormat
 import java.io.File
+
 import scala.io.Source
+import ai.lum.odinson.Document
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.{DateField, Field, GraphField, Sentence, StringField, TokensField}
 
-import org.scalatest._
-import ai.lum.odinson.{Document, BaseSpec}
-
-import ai.lum.odinson.{
-  TokensField,
-  GraphField,
-  Sentence,
-  Field,
-  StringField,
-  DateField
-}
-
-class TestOdinsonDocument extends BaseSpec {
+class TestOdinsonDocument extends OdinsonTest {
   "OdinsonDocument Document" should "handle a json File correctly" in {
     // Check my code to see how to open a file like this
     val jsonFile =

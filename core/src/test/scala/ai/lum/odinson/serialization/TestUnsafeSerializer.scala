@@ -1,11 +1,9 @@
 package ai.lum.odinson.serialization
 
-import org.scalatest._
 import ai.lum.odinson.digraph.DirectedGraph
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-import ai.lum.odinson.BaseSpec
-
-class TestUnsafeSerializer extends BaseSpec {
+class TestUnsafeSerializer extends OdinsonTest {
   // TODO use a real dependency graph
   val g = new DirectedGraph(
     Array(1,2,3,4,5,6,7,8,9,12,12,12,12,23,4,6,7,8,3,5,6,78,8,9,4,5,1,2,3,4,3,4),

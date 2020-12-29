@@ -1,9 +1,9 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.BaseSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
-class TestExceptions extends BaseSpec {
+class TestExceptions extends OdinsonTest {
 
   "OdinsonException" should "properly throw exceptions" in {
 

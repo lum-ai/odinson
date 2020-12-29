@@ -11,7 +11,7 @@ fork in ThisBuild := true
 lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
-  excludeDependencies += "commons-logging" % "commons-logging"
+  excludeDependencies += "commons-logging" % "commons-logging",
 )
 
 lazy val core = project

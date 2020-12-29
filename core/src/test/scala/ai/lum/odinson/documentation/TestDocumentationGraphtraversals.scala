@@ -1,11 +1,11 @@
 package ai.lum.odison.documentation
 
-import ai.lum.odinson.events.EventSpec
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
-class TestDocumentationGraphTraversals extends EventSpec {
+class TestDocumentationGraphTraversals extends OdinsonTest {
   val doc = getDocument("becky-gummy-bears")
   "Odinson TestDocumentationGraphTraversals" should "work for '>foo' example" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
       trigger = [lemma=eat]
@@ -15,15 +15,15 @@ class TestDocumentationGraphTraversals extends EventSpec {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
     val desiredArgs = Seq(
-      this.createArgument("object", 3, 4)
+      ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
  
   it should "work for '<foo' example" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
       trigger = [lemma=gummy]
@@ -33,15 +33,15 @@ class TestDocumentationGraphTraversals extends EventSpec {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
     val desiredArgs = Seq(
-      createArgument("object", 3, 4)
+      ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
   it should "work for '<<' example" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
       trigger = [lemma=gummy]
@@ -51,16 +51,16 @@ class TestDocumentationGraphTraversals extends EventSpec {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 2, end = 3)
     val desiredArgs = Seq(
-      createArgument("object", 3, 4)
+      ArgumentOffsets("object", 3, 4)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
 
   // make sure it matches the correct thing
   it should "work for '>>' example" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
       trigger = [lemma=bear]
@@ -70,15 +70,15 @@ class TestDocumentationGraphTraversals extends EventSpec {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 3, end = 4)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 3, end = 4)
     val desiredArgs = Seq(
-      createArgument("object", 2, 3)
+      ArgumentOffsets("object", 2, 3)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
   
   it should "work for '>>{2,3}' example" in {
-    val ee = this.Utils.mkExtractorEngine(doc)
+    val ee = mkExtractorEngine(doc)
     // what is there should match
     val pattern = """
       trigger = [lemma=eat]
@@ -88,11 +88,11 @@ class TestDocumentationGraphTraversals extends EventSpec {
     val s = ee.query(q)
     // something that is not there should not match
     s.totalHits shouldEqual (1)
-    this.testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
+    testEventTrigger(s.scoreDocs.head.matches.head, start = 1, end = 2)
     val desiredArgs = Seq(
-      createArgument("object", 2, 3)
+      ArgumentOffsets("object", 2, 3)
     )
-    this.testEventArguments(s.scoreDocs.head.matches.head, desiredArgs)
+    testArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // this should not match
     val pattern1 = """
       trigger = [lemma=bear]
