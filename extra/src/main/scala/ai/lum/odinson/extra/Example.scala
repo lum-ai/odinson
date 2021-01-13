@@ -5,7 +5,10 @@ import java.io.File
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{EventMatch, ExtractorEngine, NamedCapture, OdinsonMatch}
+import ai.lum.odinson.serialization.JsonSerializer
+import ai.lum.odinson.utils.DisplayUtils.displayMention
+import ai.lum.odinson.utils.SituatedStream
+import ai.lum.odinson.ExtractorEngine
 import com.typesafe.scalalogging.LazyLogging
 import upickle.default._
 
@@ -37,51 +40,20 @@ object Example extends App with LazyLogging{
   // Specify paths and settings in the local config file
   val config = ConfigFactory.load()
   val outputFile: File = config[File]("odinson.extra.outputFile")
-  val rulesFile: File = config[File]("odinson.extra.rulesFile")
+  val rulesFile: String = config[String]("odinson.extra.rulesFile")
+  val rulesStream = SituatedStream.fromResource(rulesFile)
 
   // Initialize the extractor engine, using the index specified in the config
   val extractorEngine = ExtractorEngine.fromConfig()
-  val extractors = extractorEngine.ruleReader.compileRuleFile(rulesFile)
+  val extractors = extractorEngine.ruleReader.compileRuleStream(rulesStream)
+  println(s"Found ${extractors.length} extractors")
 
   // Extract Mentions
-  val mentions = extractorEngine.extractMentions(extractors)
+  val mentions = extractorEngine.extractMentions(extractors).toArray
+  mentions.foreach(displayMention(_, extractorEngine))
 
-  // Export Mentions
-  val jsonMentions = for {
-    mention <- mentions
-    // Get the OdinsonMatch
-    m = mention.odinsonMatch
-    // Get the source for the extraction (document and sentence index)
-    luceneDocID = mention.luceneDocId
-    sentence = extractorEngine.getTokens(luceneDocID, extractorEngine.displayField).mkString(" ")
-    // Get the name of the rule that found the extraction
-    foundBy = mention.foundBy
-    // Get the results of the rule, with the trigger if there is one
-    namedCaptures = m.namedCaptures ++ triggerNamedCaptureOpt(m).toSeq
-    args = mkArgs(luceneDocID, namedCaptures)
-  } yield {
-    // Combine the info into a wrapper class and convert to json
-    MentionInfo(luceneDocID, mention.idGetter.getDocId, mention.idGetter.getSentId, sentence, foundBy, args).toJson
-  }
-
-  // Export as json lines format (i.e., one json per mention, one per line)
-  outputFile.writeString(jsonMentions.mkString("\n"))
-
-
-  private def triggerNamedCaptureOpt(m: OdinsonMatch): Option[NamedCapture] = {
-    m match {
-      case em: EventMatch => Some(NamedCapture("trigger", None, em.trigger))
-      case _ => None
-    }
-  }
-
-  private def mkArgs(luceneDocID: Int, namedCaptures: Array[NamedCapture]): Seq[ArgInfo] = {
-    for {
-      nc <- namedCaptures
-      argName = nc.name
-      capturedMatch = nc.capturedMatch
-      tokens = extractorEngine.getTokensForSpan(luceneDocID, capturedMatch).toSeq
-    } yield ArgInfo(argName, tokens)
-  }
+  // Export Mentions (here as json lines)
+  val serialized = JsonSerializer.asJsonLines(mentions)
+  outputFile.writeString(serialized.mkString("\n"))
 
 }
