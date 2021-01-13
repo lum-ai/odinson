@@ -102,10 +102,8 @@ val extractors = extractorEngine.compileRuleString(rules)
 // Extract Mentions
 val mentions = extractorEngine.extractMentions(extractors)
 
-
-// Display the mentiopns
+// Display the mentions
 mentions.foreach(displayMention(_, extractorEngine))
-
 ```
 
 The output of the above code is:
