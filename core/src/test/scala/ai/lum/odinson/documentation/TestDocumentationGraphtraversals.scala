@@ -1,5 +1,6 @@
 package ai.lum.odison.documentation
 
+import ai.lum.odinson.documentation.DocumentationDocs
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
 class TestDocumentationGraphTraversals extends OdinsonTest {
@@ -101,5 +102,16 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     val q1 = ee.compiler.compileEventQuery(pattern1)
     val s1 = ee.query(q1)
     s1.totalHits shouldEqual (0)
+  }
+
+  it should "word for She saw example 1" in {
+    // She saw >dobj [] (>conj_and []){,2}
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
+    val pattern = "She saw >dobj [] (>conj_and []){,2}"
+//    val pattern = "She saw >dobj (?^ [] >conj_and []){0,2}"
+    val query = engine.compiler.compile(pattern)
+    val results = engine.query(query)
+
+    println()
   }
 } 
