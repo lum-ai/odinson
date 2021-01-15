@@ -19,10 +19,9 @@ class TestDocumentationBasicQueries extends OdinsonTest {
     val ee = mkExtractorEngine(doc)
     // what is there should match
     val q = ee.compiler.mkQuery("[tag=/N.*/] and [lemma=dog]")
-    val s = ee.query(q)
-    s.totalHits shouldEqual (1)
-    s.scoreDocs.head.matches.head.start shouldEqual (0)
-    s.scoreDocs.head.matches.head.end shouldEqual (3)
+    val results = ee.query(q)
+    numMatches(results) shouldEqual (1)
+    existsMatchWithSpan(results, doc = 0, start = 0, end = 3) should be (true)
   }
 
   // (?<animal> [tag=/N.*/]) and [lemma=dog]

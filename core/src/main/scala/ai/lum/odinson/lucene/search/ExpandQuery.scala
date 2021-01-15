@@ -1,12 +1,14 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
+
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search.spans.OdinsonSpans
 import ai.lum.odinson._
 import ai.lum.odinson.lucene.util.QueueByPosition
+import org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS
 
 // TODO rename to FlattenQuery?
 class ExpandQuery(val query: OdinsonQuery) extends OdinsonQuery {
@@ -77,12 +79,35 @@ class ExpandSpans(val spans: OdinsonSpans) extends OdinsonSpans {
 
   def nextDoc(): Int = {
     atFirstInCurrentDoc = true
-    spans.nextDoc()
+    if (spans.nextDoc() == NO_MORE_DOCS) {
+      NO_MORE_DOCS
+    } else {
+      toMatchDoc()
+    }
+    //spans.nextDoc()
+  }
+
+  def toMatchDoc(): Int = {
+    @annotation.tailrec
+    def getDoc(): Int = {
+      if (twoPhaseCurrentDocMatches()) {
+        docID()
+      } else if (spans.nextDoc() == NO_MORE_DOCS) {
+        NO_MORE_DOCS
+      } else {
+        getDoc()
+      }
+    }
+    getDoc()
   }
 
   def advance(target: Int): Int = {
     atFirstInCurrentDoc = true
-    spans.advance(target)
+    if (spans.advance(target) == NO_MORE_DOCS) {
+      NO_MORE_DOCS
+    } else {
+      toMatchDoc()
+    }
   }
 
   def docID(): Int = {
