@@ -12,11 +12,11 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     // what is there should match
     val q = ee.compiler.mkQuery("dog")
     val s = ee.query(q)
-    s.totalHits shouldEqual (1)
+    numMatches(s) shouldEqual (1)
     // something that is not there should not match
     val q1 = ee.compiler.mkQuery("cat")
     val s1 = ee.query(q1)
-    s1.totalHits shouldEqual (0)
+    numMatches(s1) shouldEqual (0)
   }
   
   it should "work for 'Using the token fields'" in {
@@ -24,13 +24,14 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     val ee = mkExtractorEngine(doc)
     // [tag=/N.*/]
     // get a document with tags
-    val q = ee.compiler.mkQuery("[tag=/N*./]")
+    val q = ee.compiler.mkQuery("[tag=/N.*/]")
     val s = ee.query(q)
-    s.totalHits shouldEqual (1)
+    // 2 nouns
+    numMatches(s) shouldEqual (2)
     // 
-    val q1 = ee.compiler.mkQuery("[tag=/V*./]")
+    val q1 = ee.compiler.mkQuery("[tag=/V.*/]")
     val s1 = ee.query(q1)
-    s1.totalHits shouldEqual (1)
+    numMatches(s1) shouldEqual (1)
   }
   
   it should "work for 'Operators for token constraints'" in {
@@ -39,11 +40,11 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     // [tag=/N.*/ & (entity=ORGANIZATION | tag=NNP)]
     val q = ee.compiler.mkQuery("[tag=/N.*/ & (entity=ORGANIZATION | tag=NNP)]")
     val s = ee.query(q)
-    s.totalHits shouldEqual (1)
+    numMatches(s) shouldEqual (1)
     // should not return
     val q1 = ee.compiler.mkQuery("[tag=/N.*/ & (entity=FOO | tag=BAR)]")
     val s1 = ee.query(q1)
-    s1.totalHits shouldEqual (0)
+    numMatches(s1) shouldEqual (0)
   }
   
   it should "work for 'Wildcards'" in {
@@ -54,7 +55,8 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     // make sure it compiles to the right thing
     q.toString shouldEqual ("AllNGramsQuery(1)")
     val s = ee.query(q)
-    s.totalHits shouldEqual (1)
+    // each token in the sentence
+    numMatches(s) shouldEqual (5)
   }
   
   it should "work for 'quantifiers'" in {
@@ -63,9 +65,8 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     // testing wilcard
     val q = ee.compiler.mkQuery("[chunk=B-NP] [chunk=I-NP]*")
     val s = ee.query(q)
-    s.totalHits shouldEqual (1)
+    numMatches(s) shouldEqual (1)
     // make sure it extracts all 4 tokens
-    s.scoreDocs.head.matches.head.start shouldEqual (0)
-    s.scoreDocs.head.matches.head.end shouldEqual (4)
+    existsMatchWithSpan(s, doc = 0, start = 0, end = 4)
   }
 }

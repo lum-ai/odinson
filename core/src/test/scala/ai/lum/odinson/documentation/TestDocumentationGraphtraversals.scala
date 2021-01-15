@@ -8,7 +8,8 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   "Odinson TestDocumentationGraphTraversals" should "work for '>foo' example" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val pattern = """
+    val pattern =
+      """
       trigger = [lemma=eat]
       object: ^NP = >dobj
     """
@@ -22,11 +23,12 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     )
     testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
- 
+
   it should "work for '<foo' example" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val pattern = """
+    val pattern =
+      """
       trigger = [lemma=gummy]
       object: ^NP = </amod|xcomp/
     """
@@ -40,11 +42,12 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     )
     testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
-  
+
   it should "work for '<<' example" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val pattern = """
+    val pattern =
+      """
       trigger = [lemma=gummy]
       object: ^NP = <<
     """
@@ -63,7 +66,8 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   it should "work for '>>' example" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val pattern = """
+    val pattern =
+      """
       trigger = [lemma=bear]
       object: ^NP = >>
     """
@@ -77,11 +81,12 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     )
     testArguments(s.scoreDocs.head.matches.head, desiredArgs)
   }
-  
+
   it should "work for '>>{2,3}' example" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val pattern = """
+    val pattern =
+      """
       trigger = [lemma=eat]
       object: ^NP = >>{2,3}
     """
@@ -95,7 +100,8 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     )
     testArguments(s.scoreDocs.head.matches.head, desiredArgs)
     // this should not match
-    val pattern1 = """
+    val pattern1 =
+      """
       trigger = [lemma=bear]
       object: ^NP = >>{2,3}
     """
@@ -104,14 +110,60 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
     s1.totalHits shouldEqual (0)
   }
 
-  it should "word for She saw example 1" in {
-    // She saw >dobj [] (>conj_and []){,2}
+  it should "work for Julio graph traversal with optional" in {
     val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
-    val pattern = "She saw >dobj [] (>conj_and []){,2}"
-//    val pattern = "She saw >dobj (?^ [] >conj_and []){0,2}"
+    val pattern = "She saw >dobj [] (>conj_and [])?"
     val query = engine.compiler.compile(pattern)
     val results = engine.query(query)
-
-    println()
+    // one sentence/lucene doc
+    results.totalHits should be(1)
+    // should have two matches -- one for 'me' and one for 'Julio'
+    numMatches(results) should be(2)
+    // me
+    existsMatchWithSpan(results, doc = 0, start = 2, end = 3) should be(true)
+    // Julio
+    existsMatchWithSpan(results, doc = 0, start = 4, end = 5) should be(true)
   }
-} 
+
+  it should "work for Julio graph traversal with ranged quantifier" in {
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
+    val pattern = "She saw >dobj [] (>conj_and []){,2}"
+    val query = engine.compiler.compile(pattern)
+    val results = engine.query(query)
+    // one sentence/lucene doc
+    results.totalHits should be(1)
+    // should have two matches -- one for 'me' and one for 'Julio'
+    numMatches(results) should be(2)
+    // me
+    existsMatchWithSpan(results, doc = 0, start = 2, end = 3) should be(true)
+    // Julio
+    existsMatchWithSpan(results, doc = 0, start = 4, end = 5) should be(true)
+  }
+
+  it should "work for Julio graph traversal with optional expansion" in {
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
+    val pattern = "She saw >dobj (?^ [] >conj_and [])?"
+    val query = engine.compiler.compile(pattern)
+    val results = engine.query(query)
+    // one sentence/lucene doc
+    results.totalHits should be(1)
+    // should have match -- for 'me and Julio'
+    numMatches(results) should be(1)
+    // me and Julio
+    existsMatchWithSpan(results, doc = 0, start = 2, end = 5) should be(true)
+  }
+
+  it should "work for Julio graph traversal with ranged expansion" in {
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
+    val pattern = "She saw >dobj (?^ [] >conj_and []){,2}"
+    val query = engine.compiler.compile(pattern)
+    val results = engine.query(query)
+    // one sentence/lucene doc
+    results.totalHits should be(1)
+    // should have match -- for 'me and Julio'
+    numMatches(results) should be(1)
+    // me and Julio
+    existsMatchWithSpan(results, doc = 0, start = 2, end = 5) should be(true)
+  }
+
+}

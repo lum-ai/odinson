@@ -119,6 +119,41 @@ class OdinsonTest extends FlatSpec with Matchers {
 
 
 
+  // Methods for checking query results (not Mentions)
+
+  def numMatches(odinResults: OdinResults): Int = getAllMatches(odinResults).length
+
+  def getAllMatches(odinResults: OdinResults): Array[(Int, OdinsonMatch)] = {
+    for {
+      scoreDoc <- odinResults.scoreDocs
+      m <- scoreDoc.matches
+    } yield (scoreDoc.doc, m)
+  }
+
+  def getOnlyMatch(odinResults: OdinResults): OdinsonMatch = {
+    val matches = getAllMatches(odinResults)
+    matches should have size(1)
+    matches.head._2
+  }
+
+  def existsMatchWithSpan(odinResults: OdinResults, doc: Int, start: Int, end: Int): Boolean = {
+    getAllMatches(odinResults)
+      .collect{ case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) => mMatch}
+      .nonEmpty
+  }
+
+  def existsMatchWithCapturedMatchSpan(odinResults: OdinResults, doc: Int, start: Int, end: Int): Boolean = {
+    val primary = getAllMatches(odinResults)
+    val captured = for {
+      (doc, m) <- primary
+      nc <- m.namedCaptures
+    } yield (doc, nc.capturedMatch)
+
+    captured
+      .collect{ case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) => mMatch}
+      .nonEmpty
+  }
+
 
   // Methods for checking mention/match equivalence
 
