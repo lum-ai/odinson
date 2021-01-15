@@ -86,6 +86,13 @@ object MatchSelector {
     }
 
     if (lhs.start == rhs.start) {
+      if (lhs.end == rhs.end) {
+        // if the matches are identical in terms of start and end, then they are
+        // essentially equivalent, so return left because in Odinson semantics, as with regex,
+        // the left hand side of the OR takes precedence.
+        return List(lhs)
+      }
+
       // if both mentions start at the same place then use our selection algorithm
       traverse(List(lhs), List(rhs))
     } else if (lhs.tokenInterval intersects rhs.tokenInterval) {
