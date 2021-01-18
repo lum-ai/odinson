@@ -1,9 +1,10 @@
 package ai.lum.odinson.extra
 
 import java.util.UUID
+
 import org.clulab.processors.{
   Document => ProcessorsDocument,
-  Sentence => ProcessorsSentence,
+  Sentence => ProcessorsSentence
 }
 import ai.lum.odinson.{
   Document => OdinsonDocument,
@@ -12,8 +13,15 @@ import ai.lum.odinson.{
 }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
+import edu.cmu.dynet.Initialize
+import org.clulab.dynet.DyNetSync
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.mutable
 
 object ProcessorsUtils {
+
+  private val logger: Logger = LoggerFactory.getLogger(ProcessorsUtils.getClass)
 
   // load field names from config
   val config = ConfigFactory.load()
@@ -56,6 +64,33 @@ object ProcessorsUtils {
     val maybeDeps = s.dependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
     val fields = Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
     OdinsonSentence(s.size, fields.flatten)
+  }
+
+  // CluLab processors now uses dynet models, which need to be initialized at first
+  // loading.  These variables and initialization method are for that process.
+  val RANDOM_SEED = 2522620396L // used for both DyNet, and the JVM seed for shuffling data
+  val WEIGHT_DECAY = 1e-5f
+
+  private var IS_DYNET_INITIALIZED = false
+
+  def initializeDyNet(autoBatch: Boolean = false, mem: String = ""): Unit = {
+    DyNetSync.synchronized {
+      if (!IS_DYNET_INITIALIZED) {
+        logger.debug("Initializing DyNet...")
+
+        val params = new mutable.HashMap[String, Any]()
+        params += "random-seed" -> RANDOM_SEED
+        params += "weight-decay" -> WEIGHT_DECAY
+        if (autoBatch) {
+          params += "autobatch" -> 1
+          params += "dynet-mem" -> mem
+        }
+
+        Initialize.initialize(params.toMap)
+        logger.debug("DyNet initialization complete.")
+        IS_DYNET_INITIALIZED = true
+      }
+    }
   }
 
 }
