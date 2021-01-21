@@ -12,6 +12,7 @@ import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.odinson.Document
+import ai.lum.odinson.extra.ProcessorsUtils.initializeDyNet
 
 
 object AnnotateText extends App with LazyLogging {
@@ -45,8 +46,14 @@ object AnnotateText extends App with LazyLogging {
 
 
   val processor: Processor = processorType match {
-    case "FastNLPProcessor" => new FastNLPProcessor
-    case "CluProcessor" => new CluProcessor
+    case "FastNLPProcessor" => {
+      initializeDyNet()
+      new FastNLPProcessor
+    }
+    case "CluProcessor" => {
+      initializeDyNet()
+      new CluProcessor
+    }
   }
 
   // create output directory if it does not exist
