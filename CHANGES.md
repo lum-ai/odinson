@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
 - Started documentation at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
+- updated version of CluLab processors in `extra/` to 8.2.3 ([#241](https://github.com/lum-ai/odinson/pull/241))
 - using whole config to create ExtractorEngine and its components (rather than subconfigs) ([#231](https://github.com/lum-ai/odinson/pull/231))
 - removed the MentionFactory, rename OdinMentionsIterator to MentionsIterator ([#228](https://github.com/lum-ai/odinson/pull/228))
 - Different organization for tests. Now every test extends a `BaseSpec` class and there are 6 categories of tests.
