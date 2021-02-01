@@ -194,10 +194,10 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @param label The label to use when committing matches.
     */
   def commitResults(
-                     odinsonQuery: String,
-                     parentQuery: Option[String],
-                     label: String = "Mention"
-                   ): Unit = {
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    label: String = "Mention"
+  ): Unit = {
     val results = parentQuery match {
       case None =>
         val q = extractorEngine.compiler.mkQuery(odinsonQuery)
@@ -217,10 +217,10 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return JSON of matches
     */
   def retrieveResults(
-                       odinsonQuery: OdinsonQuery,
-                       prevDoc: Option[Int],
-                       prevScore: Option[Float],
-                     ): OdinResults = {
+    odinsonQuery: OdinsonQuery,
+    prevDoc: Option[Int],
+    prevScore: Option[Float],
+  ): OdinResults = {
     (prevDoc, prevScore) match {
       case (Some(doc), Some(score)) =>
         val osd = new OdinsonScoreDoc(doc, score)
@@ -231,12 +231,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   case class GrammarRequest(
-                             grammar: String,
-                             parentQuery: Option[String] = None,
-                             pageSize: Option[Int] = None,
-                             allowTriggerOverlaps: Option[Boolean] = None,
-                             pretty: Option[Boolean] = None
-                           )
+    grammar: String,
+    parentQuery: Option[String] = None,
+    pageSize: Option[Int] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
+    pretty: Option[Boolean] = None
+  )
 
   object GrammarRequest {
     implicit val fmt = Json.format[GrammarRequest]
@@ -310,15 +310,15 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return JSON of matches
     */
   def runQuery(
-                odinsonQuery: String,
-                parentQuery: Option[String],
-                label: Option[String], // FIXME: in the future, this will be decided in the grammar
-                commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
-                prevDoc: Option[Int],
-                prevScore: Option[Float],
-                enriched: Boolean,
-                pretty: Option[Boolean]
-              ) = Action.async {
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    label: Option[String], // FIXME: in the future, this will be decided in the grammar
+    commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
+    prevDoc: Option[Int],
+    prevScore: Option[Float],
+    enriched: Boolean,
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       try {
         val oq = parentQuery match {
@@ -353,9 +353,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getMetadataJsonByDocumentId(
-                                   documentId: String,
-                                   pretty: Option[Boolean]
-                                 ) = Action.async {
+    documentId: String,
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       try {
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
@@ -371,9 +371,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getMetadataJsonBySentenceId(
-                                   sentenceId: Int,
-                                   pretty: Option[Boolean]
-                                 ) = Action.async {
+    sentenceId: Int,
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       try {
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
@@ -391,9 +391,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getParentDocJsonBySentenceId(
-                                    sentenceId: Int,
-                                    pretty: Option[Boolean]
-                                  ) = Action.async {
+    sentenceId: Int,
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       try {
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
@@ -411,9 +411,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getParentDocJsonByDocumentId(
-                                    documentId: String,
-                                    pretty: Option[Boolean]
-                                  ) = Action.async {
+    documentId: String,
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       try {
         val odinsonDoc = loadParentDocByDocumentId(documentId)
@@ -429,12 +429,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def mkJson(
-              odinsonQuery: String,
-              parentQuery: Option[String],
-              duration: Float,
-              results: OdinResults,
-              enriched: Boolean
-            ): JsValue = {
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    duration: Float,
+    results: OdinResults,
+    enriched: Boolean
+  ): JsValue = {
 
     val scoreDocs: JsValue = enriched match {
       case true  => Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse):_*)
@@ -452,11 +452,11 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   /** Process results from executeGrammar */
   def mkJson(
-              parentQuery: Option[String],
-              duration: Float,
-              allowTriggerOverlaps: Boolean,
-              mentions: Seq[Mention]
-            ): JsValue = {
+    parentQuery: Option[String],
+    duration: Float,
+    allowTriggerOverlaps: Boolean,
+    mentions: Seq[Mention]
+  ): JsValue = {
 
     val mentionsJson: JsValue = Json.arr(mentions.map(mkJson):_*)
 
