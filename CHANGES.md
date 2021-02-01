@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added REST API endpoint for returning frequencies of token-based annotations in a corpus.
 - Added `ai.lum.odinson.utils.TestUtils` and the corresponding `OdinsonText` in the main project for using the test utils in dependent projects ([#232](https://github.com/lum-ai/odinson/pull/231))
 - Added some additional methods to ExtractorEngine to access tokens from diff fields of a Lucene Doc ([#231](https://github.com/lum-ai/odinson/pull/231))
 - Added json serialization and deserialization of Mentions and OdinsonMatches to core ([#226](https://github.com/lum-ai/odinson/pull/226))

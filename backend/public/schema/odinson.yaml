@@ -290,6 +290,82 @@ paths:
                 format: int32
                 example: 10000
 
+  /api/term-freq:
+    get:
+      tags:
+        - statistics
+      summary: |
+        Retrieves the frequencies of token annotations such as word and lemma counts.
+      description: |
+        Retrieves the frequencies of token annotations such as word and lemma counts.
+      operationId: term-freq
+      parameters:
+        - name: field
+          in: query
+          description: |
+            The token field (e.g., word, lemma) whose frequencies are to be counted.
+          required: true
+          schema:
+            type: string
+            example: tag
+        - name: order
+          in: query
+          description: |
+            The order in which to return results: "alpha" or "freq" (default).
+          required: false
+          schema:
+            type: string
+            example: freq
+        - name: min
+          in: query
+          description: |
+            The smallest rank to return, with 0 (default) being the highest ranked.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 0
+        - name: max
+          in: query
+          description: |
+            The highest rank to return, e.g. 9 (default).
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 9
+        - name: scale
+          in: query
+          description: |
+            Scaling to apply to frequency counts. Choices are "count" (default), "log10", and "percent".
+          required: false
+          schema:
+            type: string
+            example: count
+        - name: reverse
+          in: query
+          description: |
+            Whether to reverse the rank order, to select the 10 lease frequent results, for example.
+          required: false
+          schema:
+            type: boolean
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Frequencies of token annotations such as word and lemma counts.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/TermFrequency'
+
   # /api/most-common:
   #   get:
   #     tags:
@@ -559,6 +635,22 @@ components:
           format: float
           description: The similarity score for the returned term.
           example: 0.673
+
+    TermFrequency:
+      type: object
+      required:
+        - term
+        - frequency
+      properties:
+        term:
+          type: string
+          description: A term in a token field.
+          example: NNPS
+        frequency:
+          type: number
+          format: float
+          description: The number of occurrences of the term (potentially scaled).
+          example: 104291.0
 
     # MatchFrequency:
     #   type: object

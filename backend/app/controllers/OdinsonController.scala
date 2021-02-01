@@ -5,6 +5,8 @@ import java.nio.file.Path
 
 import javax.inject._
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.Map
 import scala.util.control.NonFatal
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -16,6 +18,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.search.highlight.TokenSources
+import org.apache.lucene.index.MultiFields
 import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
@@ -40,7 +43,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
   val pageSize           = config[Int]("odinson.pageSize")
 
-//  val extractorEngine = opm.extractorEngineProvider()
+  //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {
     def format(pretty: Option[Boolean]): Result = pretty match {
@@ -63,6 +66,65 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
+  /**
+    * For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
+
+    * @param field raw, token, lemma, tag, etc.
+    * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
+    */
+  def termFreq(field: String, order: Option[String], min: Option[Int], max: Option[Int],
+               scale: Option[String], reverse: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+    Future {
+      // ensure that the requested field exists in the index
+      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fieldNames = fields.iterator.asScala.toList
+      // if the field exists, find the frequencies of each term
+      if (fieldNames contains field) {
+        // find the frequency of all terms in this field
+        val terms = fields.terms(field)
+        val termsEnum = terms.iterator()
+        val termFreqs = scala.collection.mutable.HashMap[String, Long]()
+        while (termsEnum.next() != null) {
+          val term = termsEnum.term.utf8ToString
+          termFreqs.update(term, termsEnum.totalTermFreq)
+        }
+
+        // order the resulting frequencies as requested
+        val ordered = order match {
+          // alphabetical
+          case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
+          // alphabetical
+          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
+        }
+
+        // reverse if necessary
+        val reversed = reverse match {
+          case Some(true) => ordered.reverse
+          case _ => ordered
+        }
+
+        // transform the frequencies as requested
+        val scaled: Seq[(String, Double)] = scale match {
+          case Some("log10") => reversed map { case (term, freq) => (term, math.log10(freq)) }
+          case Some("percent") =>
+            val countTotal = reversed.foldLeft(0.toLong)((s, term) => s + term._2)
+            reversed map { case (term, freq) => (term, freq.toDouble / countTotal)}
+          case _ => reversed.map{ case (term, freq) => (term, freq.toDouble) }
+        }
+
+        // cutoff the results to the requested ranks
+        val defaultMin = 0
+        val defaultMax = 9
+        val res = scaled.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1)
+
+        Json.toJson(res.toMap).format(pretty)
+      } else {
+        // the requested field isn't in this index
+        Json.obj().format(pretty)
+      }
+    }
+  }
+
   /** Information about the current corpus. <br>
     * Directory name, num docs, num dependency types, etc.
     */
@@ -73,10 +135,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
+      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fieldNames = fields.iterator.asScala.toList
       val json = Json.obj(
         "numDocs" -> numDocs,
-        "corpus"   -> corpusDir,
-        "distinctDependencyRelations" -> depsVocabSize
+        "corpus" -> corpusDir,
+        "distinctDependencyRelations" -> depsVocabSize,
+        "fields" -> fieldNames
       )
       json.format(pretty)
     }
@@ -145,12 +210,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   /**
     * Queries the index.
-    * 
+    *
     * @param odisonQuery An OdinsonQuery
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
     * @param prevScore The score of the last Document see on the previous page (required if retrieving page 2+).
     * @return JSON of matches
-  */
+    */
   def retrieveResults(
     odinsonQuery: OdinsonQuery,
     prevDoc: Option[Int],
@@ -181,15 +246,15 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   // import play.api.libs.json.Json
 
   /**
-  * Executes the provided Odinson grammar.
-  * 
-  * @param grammar An Odinson grammar
-  * @param parentQuery A Lucene query to filter documents (optional).
-  * @param pageSize The maximum number of sentences to execute the rules against.
-  * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger. 
-  * @return JSON of matches
-  */
-  def executeGrammar() = Action { request => 
+    * Executes the provided Odinson grammar.
+    *
+    * @param grammar An Odinson grammar
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param pageSize The maximum number of sentences to execute the rules against.
+    * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
+    * @return JSON of matches
+    */
+  def executeGrammar() = Action { request =>
     //println(s"body: ${request.body}")
     //val json: JsValue = request.body.asJson.get
     // FIXME: replace .get with validation check
@@ -204,7 +269,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       // rules -> OdinsonQuery
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
       val composedExtractors = parentQuery match {
-        case Some(pq) => 
+        case Some(pq) =>
           val cpq = extractorEngine.compiler.mkParentQuery(pq)
           baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
         case None => baseExtractors
@@ -221,7 +286,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val iterator = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps, disableMatchSelector = false)
         iterator.toVector
       }
-      
+
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
       val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
@@ -256,12 +321,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
       try {
-       val oq = parentQuery match {
-          case Some(pq) => 
+        val oq = parentQuery match {
+          case Some(pq) =>
             extractorEngine.compiler.mkQuery(odinsonQuery, pq)
           case None =>
             extractorEngine.compiler.mkQuery(odinsonQuery)
-       }
+        }
         val start = System.currentTimeMillis()
         val results: OdinResults = retrieveResults(oq, prevDoc, prevScore)
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
@@ -288,7 +353,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getMetadataJsonByDocumentId(
-    documentId: String, 
+    documentId: String,
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
@@ -326,7 +391,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getParentDocJsonBySentenceId(
-    sentenceId: Int, 
+    sentenceId: Int,
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
@@ -346,7 +411,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getParentDocJsonByDocumentId(
-    documentId: String, 
+    documentId: String,
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
@@ -364,10 +429,10 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def mkJson(
-    odinsonQuery: String, 
-    parentQuery: Option[String], 
-    duration: Float, 
-    results: OdinResults, 
+    odinsonQuery: String,
+    parentQuery: Option[String],
+    duration: Float,
+    results: OdinResults,
     enriched: Boolean
   ): JsValue = {
 
@@ -387,9 +452,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   /** Process results from executeGrammar */
   def mkJson(
-    parentQuery: Option[String], 
-    duration: Float, 
-    allowTriggerOverlaps: Boolean, 
+    parentQuery: Option[String],
+    duration: Float,
+    allowTriggerOverlaps: Boolean,
     mentions: Seq[Mention]
   ): JsValue = {
 
@@ -402,7 +467,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       "mentions"    -> mentionsJson
     )
   }
-  
+
   def mkJson(mention: Mention): Json.JsValueWrapper = {
     //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
     // We want **all** tokens for the sentence

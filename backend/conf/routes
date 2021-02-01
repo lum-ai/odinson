@@ -18,21 +18,22 @@ POST    /api/execute/grammar            controllers.OdinsonController.executeGra
 #GET    /api/execute/grammar            controllers.OdinsonController.executeGrammar(grammar: String, parentQuery: Option[String], pageSize: Option[Int], allowTriggerOverlaps: Boolean, pretty: Option[Boolean])
 
 # parent doc
-GET     /api/parent/by-document-id                    controllers.OdinsonController.getParentDocJsonByDocumentId(documentId: String, pretty: Option[Boolean])
-GET     /api/parent/by-sentence-id                    controllers.OdinsonController.getParentDocJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
+GET     /api/parent/by-document-id      controllers.OdinsonController.getParentDocJsonByDocumentId(documentId: String, pretty: Option[Boolean])
+GET     /api/parent/by-sentence-id      controllers.OdinsonController.getParentDocJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
 
 # metadata
-GET     /api/metadata/by-document-id                    controllers.OdinsonController.getMetadataJsonByDocumentId(documentId: String, pretty: Option[Boolean])
-GET     /api/metadata/by-sentence-id                    controllers.OdinsonController.getMetadataJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
+GET     /api/metadata/by-document-id    controllers.OdinsonController.getMetadataJsonByDocumentId(documentId: String, pretty: Option[Boolean])
+GET     /api/metadata/by-sentence-id    controllers.OdinsonController.getMetadataJsonBySentenceId(sentenceId: Int, pretty: Option[Boolean])
 
 # sentence json
 GET     /api/sentence                   controllers.OdinsonController.sentenceJsonForSentId(sentenceId: Int, pretty: Option[Boolean])
 
 # counts
 GET     /api/numdocs                    controllers.OdinsonController.numDocs
+GET     /api/term-freq                  controllers.OdinsonController.termFreq(field: String, order: Option[String], min: Option[Int], max: Option[Int], scale: Option[String], reverse: Option[Boolean], pretty: Option[Boolean])
 
 # corpus info and statistics
-GET     /api/corpus                    controllers.OdinsonController.corpusInfo(pretty: Option[Boolean])
+GET     /api/corpus                     controllers.OdinsonController.corpusInfo(pretty: Option[Boolean])
 
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
