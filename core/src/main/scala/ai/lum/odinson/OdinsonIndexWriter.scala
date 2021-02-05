@@ -37,6 +37,8 @@ class OdinsonIndexWriter(
   val invalidCharacterReplacement: String,
   val storeAllFields: Boolean,
   val displayField: String,
+  val parentDocFieldType: String,
+  val parentDocField: String
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
@@ -107,7 +109,7 @@ class OdinsonIndexWriter(
 
   def mkMetadataDoc(d: Document): lucenedoc.Document = {
     val metadata = new lucenedoc.Document
-    metadata.add(new lucenedoc.StringField("type", "metadata", Store.NO))
+    metadata.add(new lucenedoc.StringField(parentDocFieldType, parentDocField, Store.NO))
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
     for {
       odinsonField <- d.metadata
@@ -247,18 +249,6 @@ object OdinsonIndexWriter {
 
   def fromConfig(config: Config): OdinsonIndexWriter = {
     val indexDir = config[String]("odinson.indexDir")
-    val documentIdField = config[String]("odinson.index.documentIdField")
-    val sentenceIdField = config[String]("odinson.index.sentenceIdField")
-    val sentenceLengthField  = config[String]("odinson.index.sentenceLengthField")
-    val normalizedTokenField = config[String]("odinson.index.normalizedTokenField")
-    val addToNormalizedField = config[List[String]]("odinson.index.addToNormalizedField")
-    val incomingTokenField   = config[String]("odinson.index.incomingTokenField")
-    val outgoingTokenField   = config[String]("odinson.index.outgoingTokenField")
-    val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
-    val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
-    val invalidCharacterReplacement  = config[String]("odinson.index.invalidCharacterReplacement")
-    val storeAllFields = config[Boolean]("odinson.index.storeAllFields")
-    val displayField   = config[String]("odinson.displayField")
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
@@ -271,19 +261,22 @@ object OdinsonIndexWriter {
         (dir, vocab)
     }
     new OdinsonIndexWriter(
-      directory, vocabulary,
-      documentIdField,
-      sentenceIdField,
-      sentenceLengthField,
-      normalizedTokenField,
-      addToNormalizedField.toSet,
-      incomingTokenField,
-      outgoingTokenField,
-      sortedDocValuesFieldMaxSize,
-      maxNumberOfTokensPerSentence,
-      invalidCharacterReplacement,
-      storeAllFields,
-      displayField
+      directory = directory, 
+      vocabulary = vocabulary,
+      documentIdField = config[String]("odinson.index.documentIdField"),
+      sentenceIdField = config[String]("odinson.index.sentenceIdField"),
+      sentenceLengthField = config[String]("odinson.index.sentenceLengthField"),
+      normalizedTokenField = config[String]("odinson.index.normalizedTokenField"),
+      addToNormalizedField = config[List[String]]("odinson.index.addToNormalizedField").toSet,
+      incomingTokenField = config[String]("odinson.index.incomingTokenField"),
+      outgoingTokenField = config[String]("odinson.index.outgoingTokenField"),
+      sortedDocValuesFieldMaxSize = config[Int]("odinson.index.sortedDocValuesFieldMaxSize"),
+      maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence"),
+      invalidCharacterReplacement = config[String]("odinson.index.invalidCharacterReplacement"),
+      storeAllFields = config[Boolean]("odinson.index.storeAllFields"),
+      displayField = config[String]("odinson.displayField"),
+      parentDocFieldType = config[String]("odinson.index.parentDocFieldType"),
+      parentDocField = config[String]("odinson.index.parentDocField")
     )
   }
 

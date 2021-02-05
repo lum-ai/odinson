@@ -1,6 +1,19 @@
 {
   "id": "test-backend",
-  "metadata": [],
+  "metadata": [
+    {
+      "$type": "ai.lum.odinson.StringField",
+      "name": "title",
+      "string": "Substance Use Disorders",
+      "store": true
+    }
+    {
+      "$type": "ai.lum.odinson.StringField",
+      "name": "url",
+      "string": "https://healthandwelfare.idaho.gov/services-programs/behavioral-health/about-substance-use-disorder",
+      "store": true
+    }
+  ],
   "sentences": [
     {
          "numTokens":32,

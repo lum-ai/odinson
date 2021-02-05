@@ -37,11 +37,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
   val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
-  val docsDir            = config[File]("odinson.docsDir")
-  val DOC_ID_FIELD       = config[String]("odinson.index.documentIdField")
-  val SENTENCE_ID_FIELD  = config[String]("odinson.index.sentenceIdField")
-  val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
-  val pageSize           = config[Int]("odinson.pageSize")
+  val indexDir               = config[File]("odinson.indexDir")
+  val docsDir                = config[File]("odinson.docsDir")
+  val DOC_ID_FIELD           = config[String]("odinson.index.documentIdField")
+  val SENTENCE_ID_FIELD      = config[String]("odinson.index.sentenceIdField")
+  val PARENT_DOC_FILE_NAME   = config[String]("odinson.index.parentDocFieldFileName")
+  val WORD_TOKEN_FIELD       = config[String]("odinson.displayField")
+  val pageSize               = config[Int]("odinson.pageSize")
 
   //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
@@ -131,7 +133,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
       val numDocs = extractorEngine.indexReader.numDocs
-      val corpusDir = config[File]("odinson.indexDir").getName
+      val corpusDir = indexDir.getName
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
@@ -522,11 +524,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
-    //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
-    //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
-    val odinsonDocFile = new File(docsDir, parentDoc.getField("fileName").stringValue)
+    val odinsonDocFile = new File(docsDir, parentDoc.getField(PARENT_DOC_FILE_NAME).stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }
 

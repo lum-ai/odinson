@@ -14,21 +14,26 @@ import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
+
 class QueryCompiler(
     val allTokenFields: Seq[String],
     val defaultTokenField: String,
     val sentenceLengthField: String,
+    // FIXME: Consider renaming to graphField
     val dependenciesField: String,
     val incomingTokenField: String,
     val outgoingTokenField: String,
     val dependenciesVocabulary: Vocabulary,
-    val aggressiveNormalizationToDefaultField: Boolean
+    val aggressiveNormalizationToDefaultField: Boolean,
+    val documentIdField: String,
+    val parentDocFieldType: String,
+    val parentDocField: String
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
 
   /** query parser for parent doc queries */
-  val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
+  val queryParser = new LuceneQueryParser(documentIdField, new WhitespaceAnalyzer)
 
   // FIXME temporary entrypoint
   def compileEventQuery(pattern: String): OdinsonQuery = {
@@ -66,8 +71,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
-    // FIXME the strings "type" and "parent" should probably be defined in the config
-    val termQuery = new TermQuery(new Term("type", "parent"))
+    val termQuery = new TermQuery(new Term(parentDocFieldType, parentDocField))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
     new OdinsonFilteredQuery(query, filter)
@@ -589,14 +593,17 @@ object QueryCompiler {
 
   def apply(config: Config, vocabulary: Vocabulary): QueryCompiler = {
     new QueryCompiler(
-      config[List[String]]("odinson.compiler.allTokenFields"),
-      config[String]("odinson.compiler.defaultTokenField"),
-      config[String]("odinson.compiler.sentenceLengthField"),
-      config[String]("odinson.compiler.dependenciesField"),
-      config[String]("odinson.compiler.incomingTokenField"),
-      config[String]("odinson.compiler.outgoingTokenField"),
-      vocabulary,
-      config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField")
+      allTokenFields = config[List[String]]("odinson.compiler.allTokenFields"),
+      defaultTokenField = config[String]("odinson.compiler.defaultTokenField"),
+      sentenceLengthField = config[String]("odinson.compiler.sentenceLengthField"),
+      dependenciesField = config[String]("odinson.compiler.dependenciesField"),
+      incomingTokenField = config[String]("odinson.compiler.incomingTokenField"),
+      outgoingTokenField = config[String]("odinson.compiler.outgoingTokenField"),
+      dependenciesVocabulary = vocabulary,
+      aggressiveNormalizationToDefaultField = config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
+      documentIdField = config[String]("odinson.index.documentIdField"),
+      parentDocFieldType = config[String]("odinson.index.parentDocFieldType"),
+      parentDocField = config[String]("odinson.index.parentDocField")
     )
   }
 
