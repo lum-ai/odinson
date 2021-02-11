@@ -4,36 +4,65 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuilder
 import ai.lum.odinson.OdinsonMatch
 
-/**
- * A GraphTraversal takes a graph and a starting point (or several)
- * and returns the ending points of the traversal.
- */
+/** A GraphTraversal takes a graph and a starting point (or several)
+  * and returns the ending points of the traversal.
+  */
 trait GraphTraversal {
   protected def traverse(graph: DirectedGraph, startNode: Int): Seq[Int]
+
   // the results of traverseFrom() should be distinct
-  def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = traverse(graph, startNode).distinct
-  def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = startNodes.flatMap(n => traverse(graph, n)).distinct
-  def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = traverseFrom(graph, odinsonMatch.tokenInterval)
+  def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] =
+    traverse(graph, startNode).distinct
+
+  def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] =
+    startNodes.flatMap(n => traverse(graph, n)).distinct
+
+  def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] =
+    traverseFrom(graph, odinsonMatch.tokenInterval)
+
 }
 
 /** a no-op traversal */
 case object NoTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
-  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
-  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = startNodes.distinct
-  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = odinsonMatch.tokenInterval
+
+  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] =
+    Seq(startNode)
+
+  override def traverseFrom(
+    graph: DirectedGraph,
+    startNodes: Seq[Int]
+  ): Seq[Int] = startNodes.distinct
+
+  override def traverseFrom(
+    graph: DirectedGraph,
+    odinsonMatch: OdinsonMatch
+  ): Seq[Int] = odinsonMatch.tokenInterval
+
 }
 
 /** a traversal that always fails */
 case object FailTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
-  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
-  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = Nil
-  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = Nil
+
+  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] =
+    Nil
+
+  override def traverseFrom(
+    graph: DirectedGraph,
+    startNodes: Seq[Int]
+  ): Seq[Int] = Nil
+
+  override def traverseFrom(
+    graph: DirectedGraph,
+    odinsonMatch: OdinsonMatch
+  ): Seq[Int] = Nil
+
 }
 
 /** traverse all incoming edges */
 case object IncomingWildcard extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (startNode < graph.incomingSlices.length - 1) {
       val start = graph.incomingSlices(startNode)
@@ -51,11 +80,12 @@ case object IncomingWildcard extends GraphTraversal {
       Array.emptyIntArray
     }
   }
-}
 
+}
 
 /** traverse all outgoing edges */
 case object OutgoingWildcard extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (startNode < graph.outgoingSlices.length - 1) {
       val start = graph.outgoingSlices(startNode)
@@ -73,10 +103,12 @@ case object OutgoingWildcard extends GraphTraversal {
       Array.emptyIntArray
     }
   }
+
 }
 
 /** traverse an incoming edge whose label can be matched by the label matcher */
 case class Incoming(matcher: LabelMatcher) extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (startNode < graph.incomingSlices.length - 1) {
       val start = graph.incomingSlices(startNode)
@@ -95,10 +127,12 @@ case class Incoming(matcher: LabelMatcher) extends GraphTraversal {
       Array.emptyIntArray
     }
   }
+
 }
 
 /** traverse an outgoing edge whose label can be matched by the label matcher */
 case class Outgoing(matcher: LabelMatcher) extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (startNode < graph.outgoingSlices.length - 1) {
       val start = graph.outgoingSlices(startNode)
@@ -117,10 +151,13 @@ case class Outgoing(matcher: LabelMatcher) extends GraphTraversal {
       Array.emptyIntArray
     }
   }
+
 }
 
 /** execute a series of traversals where each one starts at the result of the previous one */
-case class Concatenation(traversals: List[GraphTraversal]) extends GraphTraversal {
+case class Concatenation(traversals: List[GraphTraversal])
+    extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (traversals.isEmpty) return Nil
     traversals.foldLeft(Seq(startNode)) {
@@ -129,20 +166,25 @@ case class Concatenation(traversals: List[GraphTraversal]) extends GraphTraversa
         traversal.traverseFrom(graph, currentNodes)
     }
   }
+
 }
 
 /** the union of the results of several traversals */
 case class Union(traversals: List[GraphTraversal]) extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     traversals.flatMap(_.traverseFrom(graph, startNode))
   }
+
 }
 
 /** a traversal that is optional */
 case class Optional(traversal: GraphTraversal) extends GraphTraversal {
+
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     startNode +: traversal.traverseFrom(graph, startNode)
   }
+
 }
 
 /** a traversal that matches zero or more times. */
@@ -152,15 +194,23 @@ case class KleeneStar(traversal: GraphTraversal) extends GraphTraversal {
     collect(graph, Seq(startNode), Set.empty)
   }
 
-  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = {
+  override def traverseFrom(
+    graph: DirectedGraph,
+    startNodes: Seq[Int]
+  ): Seq[Int] = {
     collect(graph, startNodes, Set.empty)
   }
 
   @tailrec
-  private def collect(graph: DirectedGraph, remaining: Seq[Int], seen: Set[Int]): Seq[Int] = remaining match {
-    case Seq() => seen.toSeq
+  private def collect(
+    graph: DirectedGraph,
+    remaining: Seq[Int],
+    seen: Set[Int]
+  ): Seq[Int] = remaining match {
+    case Seq()                              => seen.toSeq
     case node +: rest if seen contains node => collect(graph, rest, seen)
-    case node +: rest => collect(graph, traversal.traverseFrom(graph, node) ++ rest, seen + node)
+    case node +: rest =>
+      collect(graph, traversal.traverseFrom(graph, node) ++ rest, seen + node)
   }
 
 }

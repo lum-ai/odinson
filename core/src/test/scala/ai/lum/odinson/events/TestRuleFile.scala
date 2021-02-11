@@ -2,7 +2,7 @@ package ai.lum.odinson.events
 
 import ai.lum.common.FileUtils._
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.{ Files, Path }
 
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
@@ -29,7 +29,8 @@ class TestRuleFile extends OdinsonTest {
       |      object: ^NP = >dobj ${chunk}
     """.stripMargin
     val extractors = eeGummy.ruleReader.compileRuleString(rules)
-    val mentions = getMentionsWithLabel(eeGummy.extractMentions(extractors).toSeq, "Test")
+    val mentions =
+      getMentionsWithLabel(eeGummy.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
     // todo keep fixing from here
     val m = mentions.head.odinsonMatch
@@ -38,7 +39,7 @@ class TestRuleFile extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4),
+      ArgumentOffsets("object", 2, 4)
     )
     testArguments(m, desiredArgs)
     eeGummy.clearState()
@@ -96,7 +97,7 @@ class TestRuleFile extends OdinsonTest {
         |  - import: /testGrammar/testRules.yml
         |
        """.stripMargin
-    assertThrows[OdinsonException]{
+    assertThrows[OdinsonException] {
       ee.compileRuleString(rules)
     }
   }
@@ -106,7 +107,8 @@ class TestRuleFile extends OdinsonTest {
   //  5: test that the hard-coded > import > parent > local
   it should "allow resource file imports with absolute and relative paths and handle variables" in {
     val masterPath = "/testGrammar/testPaths.yml"
-    val extractors = eeNinja.compileRuleResource(masterPath, Map("otherName" -> "HARD_CODED"))
+    val extractors =
+      eeNinja.compileRuleResource(masterPath, Map("otherName" -> "HARD_CODED"))
     val mentions = eeNinja.extractMentions(extractors).toArray
     mentions should have size (3)
     val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
@@ -114,7 +116,8 @@ class TestRuleFile extends OdinsonTest {
     // because import beats both parent (in a.yml) and local (in b.yml)
     leadsMentions.head.foundBy should be("B-IMPORT_FROM_A")
 
-    val machinesMentions = getMentionsWithStringValue(mentions, "machines", eeNinja)
+    val machinesMentions =
+      getMentionsWithStringValue(mentions, "machines", eeNinja)
     assert(machinesMentions.length == 1)
     // because import beats both parent and local
     machinesMentions.head.foundBy should be("A-IMPORT_NAME")
@@ -134,7 +137,8 @@ class TestRuleFile extends OdinsonTest {
     val masterFile = new File(tempDir, "tmpMaster.yml")
     masterFile.deleteOnExit()
 
-    val importDir = Files.createDirectory(new File(tempDir, "imported").toPath).toFile
+    val importDir =
+      Files.createDirectory(new File(tempDir, "imported").toPath).toFile
     importDir.deleteOnExit()
 
     val aFile = new File(importDir, "a.yml")
@@ -184,7 +188,8 @@ class TestRuleFile extends OdinsonTest {
     val leadsMentions = getMentionsWithStringValue(mentions, "leads", eeNinja)
     assert(leadsMentions.length == 1)
 
-    val machinesMentions = getMentionsWithStringValue(mentions, "machines", eeNinja)
+    val machinesMentions =
+      getMentionsWithStringValue(mentions, "machines", eeNinja)
     assert(machinesMentions.length == 1)
     eeNinja.clearState()
   }

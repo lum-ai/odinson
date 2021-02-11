@@ -24,7 +24,7 @@ class TestUnicodeNormalization extends OdinsonTest {
   it should "normalize mu" in {
     val mu1 = "\u00b5"
     val mu2 = "\u03bc"
-    val Mu  = "\u039c"
+    val Mu = "\u039c"
     mu1 should not equal mu2
     mu1 should not equal Mu
     mu2 should not equal Mu
@@ -55,7 +55,8 @@ class TestUnicodeNormalization extends OdinsonTest {
   it should "replace characters" in {
     // example from "Fluent Python"
     val s1 = "“Herr Voß: • ½ cup of Œtker™ caffè latte • bowl of açaí.”"
-    val s2 = "\"Herr Voss: - 1/2 cup of OEtker(TM) caffe latte - bowl of acai.\""
+    val s2 =
+      "\"Herr Voss: - 1/2 cup of OEtker(TM) caffe latte - bowl of acai.\""
     s1 should not equal s2
     s1.normalizeUnicode should not equal s2.normalizeUnicode
     s1.normalizeUnicodeAggressively shouldEqual s2.normalizeUnicodeAggressively

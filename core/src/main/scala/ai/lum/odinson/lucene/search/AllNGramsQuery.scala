@@ -7,9 +7,9 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search.spans._
 
 class AllNGramsQuery(
-    val defaultTokenField: String,
-    val sentenceLengthField: String,
-    val n: Int
+  val defaultTokenField: String,
+  val sentenceLengthField: String,
+  val n: Int
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (defaultTokenField, sentenceLengthField, n).##
@@ -18,13 +18,16 @@ class AllNGramsQuery(
 
   def getField(): String = defaultTokenField
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): OdinsonWeight = {
     new AllNGramsWeight(searcher, null)
   }
 
   class AllNGramsWeight(
-      searcher: IndexSearcher,
-      termContexts: JMap[Term, TermContext]
+    searcher: IndexSearcher,
+    termContexts: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, termContexts) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -33,7 +36,10 @@ class AllNGramsQuery(
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val reader = context.reader()
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
       new AllNGramsSpans(reader, numWordsPerDoc, n)
@@ -44,9 +50,9 @@ class AllNGramsQuery(
 }
 
 class AllNGramsSpans(
-    val reader: IndexReader,
-    val numWordsPerDoc: NumericDocValues,
-    val n: Int
+  val reader: IndexReader,
+  val numWordsPerDoc: NumericDocValues,
+  val n: Int
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._

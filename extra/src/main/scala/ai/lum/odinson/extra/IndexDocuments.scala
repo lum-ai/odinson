@@ -1,15 +1,15 @@
 package ai.lum.odinson.extra
 
 import java.io._
-import scala.util.{Try, Success, Failure}
+import scala.util.{ Try, Success, Failure }
 import com.typesafe.scalalogging.LazyLogging
 
 import ai.lum.common.ConfigFactory
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{Document, OdinsonIndexWriter}
+import ai.lum.odinson.{ Document, OdinsonIndexWriter }
 
 import scala.collection.GenIterable
 
@@ -21,13 +21,16 @@ object IndexDocuments extends App with LazyLogging {
 
     val dirPath = args(0)
     val passedInDataDir = new File(dirPath).getAbsolutePath
-    val passedInIndexDir =  new File(passedInDataDir, "index").getAbsolutePath
+    val passedInIndexDir = new File(passedInDataDir, "index").getAbsolutePath
     val passedInDocsDir = new File(passedInDataDir, "docs").getAbsolutePath
 
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
     config = config
-      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(passedInDataDir))
+      .withValue(
+        "odinson.dataDir",
+        ConfigValueFactory.fromAnyRef(passedInDataDir)
+      )
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",
@@ -40,12 +43,15 @@ object IndexDocuments extends App with LazyLogging {
   }
   //
   val docsDir = config[File]("odinson.docsDir")
+
   val synchronizeOrderWithDocumentId =
     config[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
+
   //
   val writer = OdinsonIndexWriter.fromConfig(config)
   val wildcards = Seq("*.json", "*.json.gz")
   logger.info(s"Gathering documents from $docsDir")
+
   // make this a function
   val documentFiles =
     if (synchronizeOrderWithDocumentId) {
@@ -61,15 +67,17 @@ object IndexDocuments extends App with LazyLogging {
         .listFilesByWildcards(wildcards, recursive = true)
         .par
     }
+
   // ^ this part should be a function
   logger.info("Indexing documents")
   indexDocuments(writer, documentFiles)
   writer.close
+
   // fin
   // Note that documentFiles may or may not be parallel, hence the GenIterable
   def indexDocuments(
-      writer: OdinsonIndexWriter,
-      documentFiles: GenIterable[File]
+    writer: OdinsonIndexWriter,
+    documentFiles: GenIterable[File]
   ): Unit = {
     // index documents
     for (f <- documentFiles) {
@@ -83,4 +91,5 @@ object IndexDocuments extends App with LazyLogging {
       }
     }
   }
+
 }

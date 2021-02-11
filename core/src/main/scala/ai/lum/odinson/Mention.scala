@@ -28,7 +28,15 @@ class Mention(
       luceneSegmentDocBase,
       idGetter,
       foundBy,
-      Mention.mkArguments(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy)
+      Mention.mkArguments(
+        odinsonMatch,
+        label,
+        luceneDocId,
+        luceneSegmentDocId,
+        luceneSegmentDocBase,
+        idGetter,
+        foundBy
+      )
     )
   }
 
@@ -46,12 +54,22 @@ class Mention(
     foundBy: String = this.foundBy,
     arguments: Map[String, Array[Mention]] = this.arguments
   ): Mention = {
-      new Mention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
+    new Mention(
+      odinsonMatch,
+      label,
+      luceneDocId,
+      luceneSegmentDocId,
+      luceneSegmentDocBase,
+      idGetter,
+      foundBy,
+      arguments
+    )
   }
 
 }
 
 object Mention {
+
   /** A map from argument name to a sequence of matches.
     *
     * The value of the map is a sequence because there are events
@@ -59,14 +77,14 @@ object Mention {
     * For example, in the biodomain, Binding may have several themes.
     */
   def mkArguments(
-                   odinsonMatch: OdinsonMatch,
-                   label: Option[String],
-                   luceneDocId: Int,
-                   luceneSegmentDocId: Int,
-                   luceneSegmentDocBase: Int,
-                   idGetter: IdGetter,
-                   foundBy: String,
-                 ): Map[String, Array[Mention]] = {
+    odinsonMatch: OdinsonMatch,
+    label: Option[String],
+    luceneDocId: Int,
+    luceneSegmentDocId: Int,
+    luceneSegmentDocBase: Int,
+    idGetter: IdGetter,
+    foundBy: String
+  ): Map[String, Array[Mention]] = {
     odinsonMatch
       .namedCaptures
       // get all the matches for each name
@@ -84,8 +102,10 @@ object Mention {
             // we mark the captures as matched by the same rule as the whole match
             // todo: FoundBy handler
             // todo: add foundBy info to state somehow
-            foundBy)
+            foundBy
+          )
         }
       }
   }
+
 }

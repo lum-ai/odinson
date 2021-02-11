@@ -7,9 +7,7 @@ import org.apache.lucene.search.highlight.TokenSources
 import ai.lum.odinson._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 
-
-/**
-  * Highlight results
+/** Highlight results
   */
 trait OdinsonHighlighter {
 
@@ -33,20 +31,21 @@ trait OdinsonHighlighter {
     val tvs = reader.getTermVectors(docId)
     val doc = reader.document(docId)
     val sentenceText = doc.getField(field).stringValue
-    val ts: TokenStream = TokenSources.getTokenStream(field, tvs, sentenceText, analyzer, -1)
+    val ts: TokenStream =
+      TokenSources.getTokenStream(field, tvs, sentenceText, analyzer, -1)
     val tokens: Array[String] = TokenStreamUtils.getTokens(ts)
 
     if (captures.nonEmpty) {
       // highlight args
       for (capture <- captures) {
         val start = capture.capturedMatch.start
-        val end   = capture.capturedMatch.end - 1
+        val end = capture.capturedMatch.end - 1
 
-        val startTok  = tokens(start)
+        val startTok = tokens(start)
         tokens(start) = s"$argOpenTag$startTok"
 
-        val endTok    = tokens(end)
-        tokens(end)   = s"$endTok$closeTag"
+        val endTok = tokens(end)
+        tokens(end) = s"$endTok$closeTag"
       }
 
 //      // mark start and end of mention
@@ -68,21 +67,19 @@ trait OdinsonHighlighter {
         val start = span.start
         val end = span.end - 1
 
-        val startTok  = tokens(start)
+        val startTok = tokens(start)
         tokens(start) = s"$openTag$startTok"
 
-        val endTok    = tokens(end)
-        tokens(end)   = s"$endTok$closeTag"
+        val endTok = tokens(end)
+        tokens(end) = s"$endTok$closeTag"
       }
     }
-
 
     tokens.mkString(" ")
 
   }
 
 }
-
 
 object HtmlHighlighter extends OdinsonHighlighter {
 
@@ -94,9 +91,9 @@ object HtmlHighlighter extends OdinsonHighlighter {
 
 object ConsoleHighlighter extends OdinsonHighlighter {
 
-  override val openTag: String =  Console.BLACK + Console.YELLOW_B
+  override val openTag: String = Console.BLACK + Console.YELLOW_B
   override val closeTag: String = Console.RESET
 
-  override val argOpenTag: String =  Console.BLACK + Console.RED_B
+  override val argOpenTag: String = Console.BLACK + Console.RED_B
 
 }

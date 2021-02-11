@@ -8,9 +8,9 @@ import ai.lum.odinson.lucene.search.spans._
 import Spans._
 
 class OdinNotQuery(
-    val include: OdinsonQuery,
-    val exclude: OdinsonQuery,
-    val field: String
+  val include: OdinsonQuery,
+  val exclude: OdinsonQuery,
+  val field: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (include, exclude, field).##
@@ -32,20 +32,22 @@ class OdinNotQuery(
   }
 
   override def createWeight(
-      searcher: IndexSearcher,
-      needsScores: Boolean
+    searcher: IndexSearcher,
+    needsScores: Boolean
   ): OdinsonWeight = {
-    val includeWeight = include.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    val excludeWeight = exclude.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val includeWeight =
+      include.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val excludeWeight =
+      exclude.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val terms = OdinsonQuery.getTermContexts(includeWeight, excludeWeight)
     new OdinNotWeight(searcher, terms, includeWeight, excludeWeight)
   }
 
   class OdinNotWeight(
-      searcher: IndexSearcher,
-      terms: JMap[Term, TermContext],
-      val includeWeight: OdinsonWeight,
-      val excludeWeight: OdinsonWeight
+    searcher: IndexSearcher,
+    terms: JMap[Term, TermContext],
+    val includeWeight: OdinsonWeight,
+    val excludeWeight: OdinsonWeight
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -56,13 +58,17 @@ class OdinNotQuery(
       includeWeight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val includeSpans = includeWeight.getSpans(context, requiredPostings)
       if (includeSpans == null) return null
       val excludeSpans = excludeWeight.getSpans(context, requiredPostings)
       if (excludeSpans == null) return includeSpans
       val excludeTwoPhase = excludeSpans.asTwoPhaseIterator()
-      val excludeApproximation = if (excludeTwoPhase == null) null else excludeTwoPhase.approximation()
+      val excludeApproximation =
+        if (excludeTwoPhase == null) null else excludeTwoPhase.approximation()
       val spans = new FilterSpans(includeSpans) {
         import FilterSpans._
         // last document we have checked matches() against for the exclusion, and failed
@@ -81,12 +87,16 @@ class OdinNotQuery(
             } else {
               excludeSpans.advance(doc)
             }
-          } else if (excludeTwoPhase != null && doc == excludeSpans.docID() && doc != lastApproxDoc) {
+          } else if (
+            excludeTwoPhase != null && doc == excludeSpans.docID() && doc != lastApproxDoc
+          ) {
             // excludeSpans already sitting on our candidate doc, but matches not called yet.
             lastApproxDoc = doc
             lastApproxResult = excludeTwoPhase.matches()
           }
-          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)) {
+          if (
+            doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)
+          ) {
             return AcceptStatus.YES
           }
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed

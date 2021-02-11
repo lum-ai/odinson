@@ -3,7 +3,11 @@ package ai.lum.odinson
 import ai.lum.common.Interval
 import ai.lum.odinson.lucene.search.ArgumentSpans
 
-case class NamedCapture(name: String, label: Option[String], capturedMatch: OdinsonMatch)
+case class NamedCapture(
+  name: String,
+  label: Option[String],
+  capturedMatch: OdinsonMatch
+)
 
 sealed trait OdinsonMatch {
 
@@ -23,7 +27,8 @@ object OdinsonMatch {
   val emptyNamedCaptures: Array[NamedCapture] = Array.empty
 }
 
-case class StateMatch(start: Int, end: Int, namedCaptures: Array[NamedCapture]) extends OdinsonMatch {
+case class StateMatch(start: Int, end: Int, namedCaptures: Array[NamedCapture])
+    extends OdinsonMatch {
 
   override def toString: String = {
     val namedCapturesString = namedCaptures.map { namedCapture =>
@@ -32,39 +37,54 @@ case class StateMatch(start: Int, end: Int, namedCaptures: Array[NamedCapture]) 
 
     (s"StateMatch($start,$end,$namedCapturesString")
   }
+
 }
 
 object StateMatch {
 
   protected def recFromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch = {
-    StateMatch(odinsonMatch.start, odinsonMatch.end, odinsonMatch.namedCaptures.map { namedCapture =>
-      namedCapture.copy(capturedMatch = recFromOdinsonMatch(namedCapture.capturedMatch))
-    })
+    StateMatch(
+      odinsonMatch.start,
+      odinsonMatch.end,
+      odinsonMatch.namedCaptures.map { namedCapture =>
+        namedCapture.copy(capturedMatch =
+          recFromOdinsonMatch(namedCapture.capturedMatch))
+      }
+    )
   }
 
-  def fromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch = recFromOdinsonMatch(odinsonMatch)
+  def fromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch =
+    recFromOdinsonMatch(odinsonMatch)
+
 }
 
 /** helper class to store the metadata related to an EventMention's argument,
- *  like it's name and some information about its quantifiers.
- */
-case class ArgumentMetadata(name: String, min: Int, max: Option[Int], promote: Boolean)
+  *  like it's name and some information about its quantifiers.
+  */
+case class ArgumentMetadata(
+  name: String,
+  min: Int,
+  max: Option[Int],
+  promote: Boolean
+)
 
 class EventMatch(
   val trigger: OdinsonMatch,
   val namedCaptures: Array[NamedCapture],
-  val argumentMetadata: Array[ArgumentMetadata],
+  val argumentMetadata: Array[ArgumentMetadata]
 ) extends OdinsonMatch {
 
   val start: Int = trigger.start
   val end: Int = trigger.end
 
   /** Removes all arguments that overlap with the trigger and returns Some(EventMention)
-   *  if the surviving arguments still satisfy the event specification (e.g. all required arguments survive),
-   *  or None if the surviving arguments are not sufficient to construct a valid EventMention.
-   */
+    *  if the surviving arguments still satisfy the event specification (e.g. all required arguments survive),
+    *  or None if the surviving arguments are not sufficient to construct a valid EventMention.
+    */
   def removeTriggerOverlaps: Option[EventMatch] = {
-    val captures = namedCaptures.filterNot(_.capturedMatch.tokenInterval intersects trigger.tokenInterval)
+    val captures = namedCaptures.filterNot(
+      _.capturedMatch.tokenInterval intersects trigger.tokenInterval
+    )
     val groupedCaptures = captures.groupBy(_.name)
     for (meta <- argumentMetadata) {
       val numMatches = groupedCaptures.get(meta.name).map(_.length).getOrElse(0)
@@ -78,17 +98,18 @@ class EventMatch(
 }
 
 /** This class represents a partial event match
- *  that has to be packaged into actual event mentions.
- *  This class is for internal purposes only and should
- *  never be seen by an end user.
- */
+  *  that has to be packaged into actual event mentions.
+  *  This class is for internal purposes only and should
+  *  never be seen by an end user.
+  */
 class EventSketch(
   val trigger: OdinsonMatch,
-  val argSketches: Array[(ArgumentSpans, OdinsonMatch)],
+  val argSketches: Array[(ArgumentSpans, OdinsonMatch)]
 ) extends OdinsonMatch {
   val start: Int = trigger.start
   val end: Int = trigger.end
   val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
+
   val argumentMetadata: Array[ArgumentMetadata] = {
     val metadata = argSketches.map { a =>
       // If we need to promote
@@ -97,11 +118,12 @@ class EventSketch(
     }
     metadata.distinct
   }
+
 }
 
 class NGramMatch(
   val start: Int,
-  val end: Int,
+  val end: Int
 ) extends OdinsonMatch {
   val namedCaptures: Array[NamedCapture] = OdinsonMatch.emptyNamedCaptures
 }
@@ -109,7 +131,7 @@ class NGramMatch(
 // TODO add traversed path to this match object
 class GraphTraversalMatch(
   val srcMatch: OdinsonMatch,
-  val dstMatch: OdinsonMatch,
+  val dstMatch: OdinsonMatch
 ) extends OdinsonMatch {
 
   val start: Int = dstMatch.start
@@ -132,50 +154,58 @@ class ConcatMatch(
 ) extends OdinsonMatch {
   val start: Int = subMatches(0).start
   val end: Int = subMatches(subMatches.length - 1).end
+
   def namedCaptures: Array[NamedCapture] = {
     subMatches.flatMap(_.namedCaptures)
   }
+
 }
 
 class RepetitionMatch(
   val subMatches: Array[OdinsonMatch],
-  val isGreedy: Boolean,
+  val isGreedy: Boolean
 ) extends OdinsonMatch {
   val start: Int = subMatches(0).start
   val end: Int = subMatches(subMatches.length - 1).end
   val isLazy: Boolean = !isGreedy
+
   def namedCaptures: Array[NamedCapture] = {
     subMatches.flatMap(_.namedCaptures)
   }
+
 }
 
 class OptionalMatch(
   val subMatch: OdinsonMatch,
-  val isGreedy: Boolean,
+  val isGreedy: Boolean
 ) extends OdinsonMatch {
   val start: Int = subMatch.start
   val end: Int = subMatch.end
   val isLazy: Boolean = !isGreedy
+
   def namedCaptures: Array[NamedCapture] = {
     subMatch.namedCaptures
   }
+
 }
 
 class OrMatch(
   val subMatch: OdinsonMatch,
-  val clauseID: Int,
+  val clauseID: Int
 ) extends OdinsonMatch {
   val start: Int = subMatch.start
   val end: Int = subMatch.end
+
   def namedCaptures: Array[NamedCapture] = {
     subMatch.namedCaptures
   }
+
 }
 
 class NamedMatch(
   val subMatch: OdinsonMatch,
   val name: String,
-  val label: Option[String],
+  val label: Option[String]
 ) extends OdinsonMatch {
 
   val start: Int = subMatch.start

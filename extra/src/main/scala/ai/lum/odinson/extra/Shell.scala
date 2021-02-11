@@ -19,7 +19,6 @@ import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
 
-
 object Shell extends App {
 
   // use ListMap to preserve commands order in `printHelp()`
@@ -44,7 +43,7 @@ object Shell extends App {
   sys.addShutdownHook {
     history.flush()
   }
-  
+
   // setup searcher
   val extractorEngine = ExtractorEngine.fromConfig()
 
@@ -57,7 +56,10 @@ object Shell extends App {
 
   // autocomplete
   val autoCompleteOptions = dependencies.toList ++ commands.keys.toList
-  val completer = new ArgumentCompleter(new StringsCompleter(autoCompleteOptions: _*))
+
+  val completer =
+    new ArgumentCompleter(new StringsCompleter(autoCompleteOptions: _*))
+
   completer.setStrict(false)
 
   // setup console
@@ -95,19 +97,21 @@ object Shell extends App {
           running = false
         } else {
           line.trim match {
-            case "" => ()
-            case ":help" => printHelp()
-            case ":exit" => running = false
+            case ""           => ()
+            case ":help"      => printHelp()
+            case ":exit"      => running = false
             case ":buildinfo" => printBuildInfo()
-            case ":settings" => printSettings()
-            case ":more" => printMore(maxMatchesDisplay)
+            case ":settings"  => printSettings()
+            case ":more"      => printMore(maxMatchesDisplay)
             case ":corpus" =>
               println("Number of sentences: " + extractorEngine.numDocs.display)
-              // TODO maybe print some more stuff?
+            // TODO maybe print some more stuff?
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
               maxMatchesDisplay = n.toInt
-              println(s"will now display a maximum of $maxMatchesDisplay matches ...")
+              println(
+                s"will now display a maximum of $maxMatchesDisplay matches ..."
+              )
             case s if s startsWith ":" =>
               println(s"Unrecognized command $s")
               println("Type :help for a list of commands")
@@ -193,7 +197,12 @@ object Shell extends App {
   }
 
   /** prints a group of results */
-  def printResultsPage(results: OdinResults, start: Int, total: Int, duration: Float): Unit = {
+  def printResultsPage(
+    results: OdinResults,
+    start: Int,
+    total: Int,
+    duration: Float
+  ): Unit = {
     if (total == 0) {
       println("no matches")
       return

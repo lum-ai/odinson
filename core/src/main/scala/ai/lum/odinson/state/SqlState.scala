@@ -10,9 +10,16 @@ import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{
+  IdGetter,
+  LazyIdGetter,
+  Mention,
+  NamedCapture,
+  OdinsonMatch,
+  StateMatch
+}
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.apache.lucene.search.IndexSearcher
 
 class IdProvider(protected var id: Int = 0) {
@@ -23,14 +30,25 @@ class IdProvider(protected var id: Int = 0) {
     id += 1
     result
   }
+
 }
 
-abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider) {
+abstract class WriteNode(
+  val odinsonMatch: OdinsonMatch,
+  idProvider: IdProvider
+) {
+
   val childNodes: Array[WriteNode] = {
     odinsonMatch.namedCaptures.map { namedCapture =>
-      new OdinsonMatchWriteNode(namedCapture.capturedMatch, this, namedCapture, idProvider)
+      new OdinsonMatchWriteNode(
+        namedCapture.capturedMatch,
+        this,
+        namedCapture,
+        idProvider
+      )
     }
   }
+
   val id: Int = idProvider.next
 
   def label: String
@@ -48,10 +66,13 @@ abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider)
 
   def end: Int = odinsonMatch.end
 
-  override def toString(): String = s"""${getClass.getSimpleName}(name = "$name", id = $id, parentId = $parentId, length = ${childNodes.length}, label = "$label", start = $start, end = $end)"""
+  override def toString(): String =
+    s"""${getClass.getSimpleName}(name = "$name", id = $id, parentId = $parentId, length = ${childNodes.length}, label = "$label", start = $start, end = $end)"""
+
 }
 
-class MentionWriteNode(val mention: Mention, idProvider: IdProvider) extends WriteNode(mention.odinsonMatch, idProvider) {
+class MentionWriteNode(val mention: Mention, idProvider: IdProvider)
+    extends WriteNode(mention.odinsonMatch, idProvider) {
 
   def label: String = mention.label.getOrElse("")
 
@@ -60,7 +81,12 @@ class MentionWriteNode(val mention: Mention, idProvider: IdProvider) extends Wri
   def parentNodeOpt: Option[WriteNode] = None
 }
 
-class OdinsonMatchWriteNode(odinsonMatch: OdinsonMatch, parentNode: WriteNode, val namedCapture: NamedCapture, idProvider: IdProvider) extends WriteNode(odinsonMatch, idProvider) {
+class OdinsonMatchWriteNode(
+  odinsonMatch: OdinsonMatch,
+  parentNode: WriteNode,
+  val namedCapture: NamedCapture,
+  idProvider: IdProvider
+) extends WriteNode(odinsonMatch, idProvider) {
 
   def label: String = namedCapture.label.getOrElse("")
 
@@ -69,23 +95,43 @@ class OdinsonMatchWriteNode(odinsonMatch: OdinsonMatch, parentNode: WriteNode, v
   val parentNodeOpt: Option[WriteNode] = Some(parentNode)
 }
 
-case class ReadNode(docIndex: Int, name: String, id: Int, parentId: Int, childCount: Int, childLabel: String, start: Int, end: Int)
+case class ReadNode(
+  docIndex: Int,
+  name: String,
+  id: Int,
+  parentId: Int,
+  childCount: Int,
+  childLabel: String,
+  start: Int,
+  end: Int
+)
 
 object SqlResultItem {
 
-  def toWriteNodes(mention: Mention, idProvider: IdProvider): IndexedSeq[WriteNode] = {
+  def toWriteNodes(
+    mention: Mention,
+    idProvider: IdProvider
+  ): IndexedSeq[WriteNode] = {
     val arrayBuffer = new ArrayBuffer[WriteNode]()
 
     new MentionWriteNode(mention, idProvider).flatten(arrayBuffer)
     arrayBuffer.toIndexedSeq
   }
 
-  def fromReadNodes(docBase: Int, docId: Int, label: Option[String], readItems: ArrayBuffer[ReadNode], idGetter: IdGetter): Mention = {
+  def fromReadNodes(
+    docBase: Int,
+    docId: Int,
+    label: Option[String],
+    readItems: ArrayBuffer[ReadNode],
+    idGetter: IdGetter
+  ): Mention = {
     val iterator = readItems.reverseIterator
     val first = iterator.next
 
     def findNamedCaptures(childCount: Int): Array[NamedCapture] = {
-      val namedCaptures = if (childCount == 0) Array.empty[NamedCapture] else new Array[NamedCapture](childCount)
+      val namedCaptures =
+        if (childCount == 0) Array.empty[NamedCapture]
+        else new Array[NamedCapture](childCount)
       var count = 0
 
       while (count < childCount) {
@@ -96,7 +142,12 @@ object SqlResultItem {
         namedCaptures(childCount - count) = NamedCapture(
           readNode.name,
           if (readNode.childLabel.nonEmpty) Some(readNode.childLabel) else None,
-          StateMatch(readNode.start, readNode.end, findNamedCaptures(readNode.childCount)))
+          StateMatch(
+            readNode.start,
+            readNode.end,
+            findNamedCaptures(readNode.childCount)
+          )
+        )
       }
       namedCaptures
     }
@@ -105,16 +156,24 @@ object SqlResultItem {
       StateMatch(first.start, first.end, findNamedCaptures(first.childCount)),
       label,
       first.docIndex, // luceneDocId
-      docId,          // luceneSegmentDocId
-      docBase,        // luceneSegmentDocBase
+      docId, // luceneSegmentDocId
+      docBase, // luceneSegmentDocBase
       idGetter,
-      first.name,     // foundBy
-      )
+      first.name // foundBy
+    )
   }
+
 }
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
-class SqlState protected (val connection: Connection, protected val factoryIndex: Long, protected val stateIndex: Long, val persistOnClose: Boolean = false, val persistFile: Option[File] = None, indexSearcher: OdinsonIndexSearcher) extends State {
+class SqlState protected (
+  val connection: Connection,
+  protected val factoryIndex: Long,
+  protected val stateIndex: Long,
+  val persistOnClose: Boolean = false,
+  val persistFile: Option[File] = None,
+  indexSearcher: OdinsonIndexSearcher
+) extends State {
 
   if (persistOnClose) require(persistFile.isDefined)
 
@@ -196,19 +255,19 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
         stateNodes.foreach { stateNode =>
 //          println(stateNode) // debugging
           dbSetter
-              .setNext(mention.luceneSegmentDocBase)
-              .setNext(mention.luceneSegmentDocId)
-              .setNext(mention.luceneDocId)
-              .setNext(mention.label.getOrElse(""))
-              .setNext(stateNode.name)
-              .setNext(stateNode.id)
-              .setNext(stateNode.parentId)
-              .setNext(stateNode.childNodes.length)
-              .setNext(stateNode.label)
-              .setNext(stateNode.start)
-              .setNext(stateNode.end)
-              .get
-              .executeUpdate()
+            .setNext(mention.luceneSegmentDocBase)
+            .setNext(mention.luceneSegmentDocId)
+            .setNext(mention.luceneDocId)
+            .setNext(mention.label.getOrElse(""))
+            .setNext(stateNode.name)
+            .setNext(stateNode.id)
+            .setNext(stateNode.parentId)
+            .setNext(stateNode.childNodes.length)
+            .setNext(stateNode.label)
+            .setNext(stateNode.start)
+            .setNext(stateNode.end)
+            .get
+            .executeUpdate()
         }
       }
     }
@@ -219,9 +278,9 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
   // See MemoryState for guidance.
 
   /** Returns the segment-specific doc-ids that correspond
-   *  to lucene documents that contain a mention with the
-   *  specified label
-   */
+    *  to lucene documents that contain a mention with the
+    *  specified label
+    */
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
     val sql = s"""
       SELECT DISTINCT doc_id
@@ -232,10 +291,10 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
       val resultSet = DbSetter(preparedStatement)
-          .setNext(docBase)
-          .setNext(label)
-          .get
-          .executeQuery()
+        .setNext(docBase)
+        .setNext(label)
+        .get
+        .executeQuery()
 
       DbGetter(resultSet).map { dbGetter =>
         dbGetter.getInt
@@ -243,7 +302,11 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
     }
   }
 
-  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
+  override def getMentions(
+    docBase: Int,
+    docId: Int,
+    label: String
+  ): Array[Mention] = {
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
@@ -253,11 +316,11 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
     """
     using(connection.prepareStatement(sql)) { preparedStatement =>
       val mentionSet = new DbSetter(preparedStatement)
-          .setNext(docBase)
-          .setNext(docId)
-          .setNext(label)
-          .get
-          .executeQuery()
+        .setNext(docBase)
+        .setNext(docId)
+        .setNext(label)
+        .get
+        .executeQuery()
       val readNodes = ArrayBuffer.empty[ReadNode]
       val mentions = ArrayBuffer.empty[Mention]
 
@@ -271,10 +334,25 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
         val start = dbGetter.getInt
         val end = dbGetter.getInt
 
-        readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
+        readNodes += ReadNode(
+          docIndex,
+          name,
+          id,
+          parentId,
+          childCount,
+          childLabel,
+          start,
+          end
+        )
         if (parentId == -1) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
-          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, idGetter)
+          mentions += SqlResultItem.fromReadNodes(
+            docBase,
+            docId,
+            Some(label),
+            readNodes,
+            idGetter
+          )
           readNodes.clear()
         }
       }
@@ -310,8 +388,7 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
     if (!closed) {
       try {
         drop()
-      }
-      finally {
+      } finally {
         closed = true
         connection.close()
       }
@@ -331,8 +408,8 @@ class SqlState protected (val connection: Connection, protected val factoryIndex
       statement.executeUpdate(sql)
     }
   }
-}
 
+}
 
 object SqlState {
   protected var count: AtomicLong = new AtomicLong
@@ -355,7 +432,14 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    new SqlState(dataSource.getConnection, count.getAndIncrement, count.getAndIncrement, persistOnClose, stateFile, indexSearcher)
+    new SqlState(
+      dataSource.getConnection,
+      count.getAndIncrement,
+      count.getAndIncrement,
+      persistOnClose,
+      stateFile,
+      indexSearcher
+    )
   }
 
 }

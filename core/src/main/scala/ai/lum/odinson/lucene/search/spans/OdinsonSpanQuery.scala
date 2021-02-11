@@ -14,13 +14,15 @@ class OdinsonSpanQuery(val query: OdinsonQuery) extends SpanQuery {
   def canEqual(a: Any): Boolean = a.isInstanceOf[OdinsonSpanQuery]
 
   override def equals(that: Any): Boolean = that match {
-    case that: OdinsonSpanQuery => that.canEqual(this) && this.hashCode == that.hashCode
+    case that: OdinsonSpanQuery =>
+      that.canEqual(this) && this.hashCode == that.hashCode
     case _ => false
   }
 
   def getField(): String = query.getField()
 
-  def toString(field: String): String = s"OdinSpanQuery(${query.toString(field)})"
+  def toString(field: String): String =
+    s"OdinSpanQuery(${query.toString(field)})"
 
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = query.rewrite(reader).asInstanceOf[OdinsonQuery]
@@ -31,8 +33,12 @@ class OdinsonSpanQuery(val query: OdinsonQuery) extends SpanQuery {
     }
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): SpanWeight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): SpanWeight = {
+    val weight =
+      query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
     new OdinsonSpanWeight(this, searcher, termContexts, weight)
   }
@@ -52,7 +58,10 @@ class OdinsonSpanWeight(
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): Spans = {
+  def getSpans(
+    context: LeafReaderContext,
+    requiredPostings: SpanWeight.Postings
+  ): Spans = {
     weight.getSpans(context, requiredPostings)
   }
 

@@ -1,8 +1,9 @@
 package ai.lum.odinson.utils
 
-import ai.lum.odinson.{EventMatch, ExtractorEngine, Mention}
+import ai.lum.odinson.{ EventMatch, ExtractorEngine, Mention }
 
 object DisplayUtils {
+
   def displayMention(mention: Mention, ee: ExtractorEngine): Unit = {
     // Get the OdinsonMatch
     val odinsonMatch = mention.odinsonMatch
@@ -25,7 +26,9 @@ object DisplayUtils {
     // If there are args, print them too
     if (mention.arguments.nonEmpty) {
       println("  Args:")
-      val stringified = mention.arguments.mapValues(ms => ms.map(m => (ee.getStringForSpan(luceneDocID, m.odinsonMatch), m.label)))
+      val stringified = mention.arguments.mapValues(ms =>
+        ms.map(m => (ee.getStringForSpan(luceneDocID, m.odinsonMatch), m.label))
+      )
       stringified foreach { case (argName, matched) =>
         matched foreach { case (s, label) =>
           println(s"    * $argName [${label.getOrElse("no label")}]: $s")
@@ -33,6 +36,5 @@ object DisplayUtils {
       }
     }
   }
-
 
 }

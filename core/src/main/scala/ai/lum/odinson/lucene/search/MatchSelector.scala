@@ -13,20 +13,26 @@ object MatchSelector {
   def pickMatches(matches: Seq[OdinsonMatch]): List[OdinsonMatch] = {
     val selectedMatches = matches.foldRight(List.empty[OdinsonMatch]) {
       case (m1, m2 :: ms) => pickMatchFromPair(m1, m2) ::: ms
-      case (m, ms) => m :: ms
+      case (m, ms)        => m :: ms
     }
     selectedMatches.flatMap {
       case m: EventSketch => packageEvents(m)
-      case m => List(m)
+      case m              => List(m)
     }
   }
 
-  private def pickMatchFromPair(lhs: OdinsonMatch, rhs: OdinsonMatch): List[OdinsonMatch] = {
+  private def pickMatchFromPair(
+    lhs: OdinsonMatch,
+    rhs: OdinsonMatch
+  ): List[OdinsonMatch] = {
     @tailrec
-    def traverse(left: List[OdinsonMatch], right: List[OdinsonMatch]): List[OdinsonMatch] = {
+    def traverse(
+      left: List[OdinsonMatch],
+      right: List[OdinsonMatch]
+    ): List[OdinsonMatch] = {
       (left, right) match {
         // left and right are both OR matches
-        case ((l:OrMatch) :: lTail, (r:OrMatch) :: rTail) =>
+        case ((l: OrMatch) :: lTail, (r: OrMatch) :: rTail) =>
           // if left is the leftmost clause then return lhs
           if (l.clauseID < r.clauseID) List(lhs)
           // if right is the leftmost clause then return rhs
@@ -35,7 +41,7 @@ object MatchSelector {
           else traverse(l.subMatch :: lTail, r.subMatch :: rTail)
 
         // left and right are both optional
-        case ((l:OptionalMatch) :: lTail, (r:OptionalMatch) :: rTail) =>
+        case ((l: OptionalMatch) :: lTail, (r: OptionalMatch) :: rTail) =>
           if (l.isGreedy && r.isGreedy) {
             // if both are greedy return the longest
             if (l.length > r.length) List(lhs)
@@ -54,25 +60,32 @@ object MatchSelector {
           }
 
         // left and right are both repetitions
-        case ((l:RepetitionMatch) :: lTail, (r: RepetitionMatch) :: rTail) =>
+        case ((l: RepetitionMatch) :: lTail, (r: RepetitionMatch) :: rTail) =>
           if (l.isGreedy && r.isGreedy) {
             // if both are greedy return the longest
             if (l.length > r.length) List(lhs)
             else if (l.length < r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
+            else traverse(
+              l.subMatches.toList ::: lTail,
+              r.subMatches.toList ::: rTail
+            )
           } else if (l.isLazy && r.isLazy) {
             // if both are lazy return the shortest
             if (l.length < r.length) List(lhs)
             else if (l.length > r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
+            else traverse(
+              l.subMatches.toList ::: lTail,
+              r.subMatches.toList ::: rTail
+            )
           } else {
             // something is wrong
             ???
           }
 
-        case (leftMatches, rightMatches) if leftMatches.nonEmpty && rightMatches.nonEmpty =>
+        case (leftMatches, rightMatches)
+            if leftMatches.nonEmpty && rightMatches.nonEmpty =>
           val left = expandFirstMatch(leftMatches)
           val right = expandFirstMatch(rightMatches)
           traverse(left, right)
@@ -108,23 +121,23 @@ object MatchSelector {
     ms match {
       case Nil => Nil
       case head :: tail => head match {
-        case m: NGramMatch  => tail
-        case m: EventMatch  => ???
-        case m: EventSketch => m.trigger :: tail
-        case m: OrMatch       => m.subMatch :: tail
-        case m: NamedMatch    => m.subMatch :: tail
-        case m: OptionalMatch => m.subMatch :: tail
-        case m: ConcatMatch     => m.subMatches.toList ::: tail
-        case m: RepetitionMatch => m.subMatches.toList ::: tail
-        case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
-        // what is a StateMatch? it may be a TextBound Mention or an Event Mention
-        // if it's a TBMention, it should have same behavior as NGram
-        case m: StateMatch if m.namedCaptures.isEmpty => tail
-        // else, if an EventMention should have same behavior as EventSketch
-        // the EventSketch returns it's trigger, here since it's an Event Mention,
-        // we know that the start and end correspond to the trigger start and end
-        case m: StateMatch => new NGramMatch(m.start, m.end) :: tail
-      }
+          case m: NGramMatch          => tail
+          case m: EventMatch          => ???
+          case m: EventSketch         => m.trigger :: tail
+          case m: OrMatch             => m.subMatch :: tail
+          case m: NamedMatch          => m.subMatch :: tail
+          case m: OptionalMatch       => m.subMatch :: tail
+          case m: ConcatMatch         => m.subMatches.toList ::: tail
+          case m: RepetitionMatch     => m.subMatches.toList ::: tail
+          case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
+          // what is a StateMatch? it may be a TextBound Mention or an Event Mention
+          // if it's a TBMention, it should have same behavior as NGram
+          case m: StateMatch if m.namedCaptures.isEmpty => tail
+          // else, if an EventMention should have same behavior as EventSketch
+          // the EventSketch returns it's trigger, here since it's an Event Mention,
+          // we know that the start and end correspond to the trigger start and end
+          case m: StateMatch => new NGramMatch(m.start, m.end) :: tail
+        }
     }
   }
 
@@ -132,7 +145,9 @@ object MatchSelector {
   private def packageEvents(sketch: EventSketch): List[EventMatch] = {
     val trigger = sketch.trigger
     val argumentPackages = packageArguments(sketch.argSketches)
-    argumentPackages.map(args => new EventMatch(trigger, args, sketch.argumentMetadata))
+    argumentPackages.map(args =>
+      new EventMatch(trigger, args, sketch.argumentMetadata)
+    )
   }
 
   private def packageArguments(
@@ -149,7 +164,7 @@ object MatchSelector {
 
   private def packageArgument(
     arg: ArgumentSpans,
-    allMatches: Seq[OdinsonMatch],
+    allMatches: Seq[OdinsonMatch]
   ): Seq[Seq[NamedCapture]] = {
     val matches = for {
       g <- groupMatches(allMatches)
@@ -164,7 +179,7 @@ object MatchSelector {
         if (matches.size < min) Nil
         else if (matches.size > max) matches.combinations(max).toList
         else Seq(matches)
-      case ArgumentSpans(name, label, min, None ,_, _) =>
+      case ArgumentSpans(name, label, min, None, _, _) =>
         // at least min
         if (matches.size < min) Nil
         else Seq(matches)
@@ -174,7 +189,8 @@ object MatchSelector {
     }
   }
 
-  private def groupMatches(matches: Seq[OdinsonMatch]): Seq[Seq[OdinsonMatch]] = {
+  private def groupMatches(matches: Seq[OdinsonMatch])
+    : Seq[Seq[OdinsonMatch]] = {
     val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
     for (m <- matches) {
       var found = false

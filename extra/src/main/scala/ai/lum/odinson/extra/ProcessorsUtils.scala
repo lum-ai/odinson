@@ -15,7 +15,7 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import edu.cmu.dynet.Initialize
 import org.clulab.dynet.DyNetSync
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.collection.mutable
 
@@ -25,13 +25,13 @@ object ProcessorsUtils {
 
   // load field names from config
   val config = ConfigFactory.load()
-  val documentIdField   = config[String]("odinson.index.documentIdField")
-  val rawTokenField     = config[String]("odinson.index.rawTokenField")
-  val wordTokenField    = config[String]("odinson.index.wordTokenField")
-  val lemmaTokenField   = config[String]("odinson.index.lemmaTokenField")
-  val posTagTokenField  = config[String]("odinson.index.posTagTokenField")
-  val chunkTokenField   = config[String]("odinson.index.chunkTokenField")
-  val entityTokenField  = config[String]("odinson.index.entityTokenField")
+  val documentIdField = config[String]("odinson.index.documentIdField")
+  val rawTokenField = config[String]("odinson.index.rawTokenField")
+  val wordTokenField = config[String]("odinson.index.wordTokenField")
+  val lemmaTokenField = config[String]("odinson.index.lemmaTokenField")
+  val posTagTokenField = config[String]("odinson.index.posTagTokenField")
+  val chunkTokenField = config[String]("odinson.index.chunkTokenField")
+  val entityTokenField = config[String]("odinson.index.entityTokenField")
   val dependenciesField = config[String]("odinson.index.dependenciesField")
 
   /** convert processors document to odinson document */
@@ -58,17 +58,29 @@ object ProcessorsUtils {
     val raw = TokensField(rawTokenField, s.raw)
     val word = TokensField(wordTokenField, s.words)
     val maybeTag = s.tags.map(tags => TokensField(posTagTokenField, tags))
-    val maybeLemma = s.lemmas.map(lemmas => TokensField(lemmaTokenField, lemmas))
-    val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
-    val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
-    val maybeDeps = s.dependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
-    val fields = Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
+    val maybeLemma =
+      s.lemmas.map(lemmas => TokensField(lemmaTokenField, lemmas))
+    val maybeEntity =
+      s.entities.map(entities => TokensField(entityTokenField, entities))
+    val maybeChunk =
+      s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
+    val maybeDeps = s.dependencies.map(g =>
+      GraphField(dependenciesField, g.allEdges, g.roots)
+    )
+    val fields = Some(raw) :: Some(word) :: List(
+      maybeTag,
+      maybeLemma,
+      maybeEntity,
+      maybeChunk,
+      maybeDeps
+    )
     OdinsonSentence(s.size, fields.flatten)
   }
 
   // CluLab processors now uses dynet models, which need to be initialized at first
   // loading.  These variables and initialization method are for that process.
-  val RANDOM_SEED = 2522620396L // used for both DyNet, and the JVM seed for shuffling data
+  val RANDOM_SEED =
+    2522620396L // used for both DyNet, and the JVM seed for shuffling data
   val WEIGHT_DECAY = 1e-5f
 
   private var IS_DYNET_INITIALIZED = false

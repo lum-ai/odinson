@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{Map => JMap, Set => JSet}
+import java.util.{ Map => JMap, Set => JSet }
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -25,8 +25,12 @@ class ExpandQuery(val query: OdinsonQuery) extends OdinsonQuery {
     s"ExpandQuery(${query.toString(field)})"
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): Weight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): Weight = {
+    val weight =
+      query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
     new ExpandWeight(this, searcher, termContexts, weight)
   }
@@ -46,18 +50,21 @@ class ExpandWeight(
   query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
-  val weight: OdinsonWeight,
+  val weight: OdinsonWeight
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = {
     weight.extractTerms(terms)
   }
 
-  def extractTermContexts(contexts: JMap[Term,TermContext]): Unit = {
+  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = {
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(ctx: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+  def getSpans(
+    ctx: LeafReaderContext,
+    requiredPostings: SpanWeight.Postings
+  ): OdinsonSpans = {
     val spans = weight.getSpans(ctx, requiredPostings)
     if (spans == null) null else new ExpandSpans(spans)
   }
@@ -126,7 +133,7 @@ class ExpandSpans(val spans: OdinsonSpans) extends OdinsonSpans {
     val allMatches = spans.getAllMatches()
     val (graphMatches, otherMatches) = allMatches.partition {
       case m: GraphTraversalMatch => true
-      case _ => false
+      case _                      => false
     }
     if (graphMatches.isEmpty) {
       otherMatches
@@ -183,7 +190,8 @@ class ExpandSpans(val spans: OdinsonSpans) extends OdinsonSpans {
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
     val tpi = spans.asTwoPhaseIterator()
-    val totalMatchCost = if (tpi != null) tpi.matchCost() else spans.positionsCost()
+    val totalMatchCost =
+      if (tpi != null) tpi.matchCost() else spans.positionsCost()
     new TwoPhaseIterator(spans) {
       def matches(): Boolean = twoPhaseCurrentDocMatches()
       def matchCost(): Float = totalMatchCost

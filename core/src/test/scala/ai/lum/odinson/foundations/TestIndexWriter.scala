@@ -4,9 +4,9 @@ package ai.lum.odinson.foundations
 import java.nio.file.Files
 
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 // lum imports
-import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
+import ai.lum.odinson.{ OdinsonIndexWriter, DateField, StringField }
 import ai.lum.common.ConfigFactory
 // file imports
 import scala.reflect.io.Directory
@@ -22,9 +22,9 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     defaultConfig
       // re-compute the index and docs path's
       .withValue(
-      "odinson.indexDir",
-      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
-    )
+        "odinson.indexDir",
+        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
+      )
   }
 
   def deleteIndex = {
@@ -36,7 +36,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     deleteIndex
     OdinsonIndexWriter.fromConfig(testConfig)
   }
-  
+
   "OdinsonIndexWriter" should "object should return index from config correctly" in {
     // get index writer
     val indexWriter = getOdinsonIndexWriter
@@ -44,7 +44,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close
   }
-  
+
   it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
     val indexWriter = getOdinsonIndexWriter
     // Initialize fild of type DateField
@@ -75,7 +75,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
 
     val query = ee.compiler.mkQuery(pattern)
     val results = ee.query(query, 1)
-    results.totalHits should equal (1)
+    results.totalHits should equal(1)
 
     val matches = results.scoreDocs.head.matches
     val docId = results.scoreDocs.head.doc

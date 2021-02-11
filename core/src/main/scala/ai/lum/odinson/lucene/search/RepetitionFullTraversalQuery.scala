@@ -13,7 +13,7 @@ import ai.lum.odinson.lucene.search.spans._
 case class RepetitionFullTraversalQuery(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalQuery,
+  fullTraversal: FullTraversalQuery
 ) extends FullTraversalQuery {
 
   def toString(field: String): String = {
@@ -28,7 +28,11 @@ case class RepetitionFullTraversalQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): FullTraversalWeight = {
-    RepetitionFullTraversalWeight(min, max, fullTraversal.createWeight(searcher, needsScores))
+    RepetitionFullTraversalWeight(
+      min,
+      max,
+      fullTraversal.createWeight(searcher, needsScores)
+    )
   }
 
   def rewrite(reader: IndexReader): FullTraversalQuery = {
@@ -53,14 +57,18 @@ case class RepetitionFullTraversalQuery(
 case class RepetitionFullTraversalWeight(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalWeight,
+  fullTraversal: FullTraversalWeight
 ) extends FullTraversalWeight {
 
   def getSpans(
     context: LeafReaderContext,
     requiredPostings: SpanWeight.Postings
   ): FullTraversalSpans = {
-    RepetitionFullTraversalSpans(min, max, fullTraversal.getSpans(context, requiredPostings))
+    RepetitionFullTraversalSpans(
+      min,
+      max,
+      fullTraversal.getSpans(context, requiredPostings)
+    )
   }
 
   def subWeights: List[OdinsonWeight] = {
@@ -80,7 +88,7 @@ case class RepetitionFullTraversalWeight(
 case class RepetitionFullTraversalSpans(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalSpans,
+  fullTraversal: FullTraversalSpans
 ) extends FullTraversalSpans {
 
   def subSpans: List[OdinsonSpans] = {
@@ -95,7 +103,7 @@ case class RepetitionFullTraversalSpans(
   def matchFullTraversal(
     graph: DirectedGraph,
     maxToken: Int,
-    srcMatches: Array[OdinsonMatch],
+    srcMatches: Array[OdinsonMatch]
   ): Array[OdinsonMatch] = {
     var currentMatches = srcMatches
 
@@ -103,7 +111,8 @@ case class RepetitionFullTraversalSpans(
     var i = 0
     while (i < min && !currentMatches.isEmpty) {
       i += 1
-      currentMatches = fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
+      currentMatches =
+        fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
     }
 
     // if no current matches then we failed
@@ -115,7 +124,8 @@ case class RepetitionFullTraversalSpans(
 
     while (i < max && !currentMatches.isEmpty) {
       i += 1
-      currentMatches = fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
+      currentMatches =
+        fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
       results ++= currentMatches
     }
 

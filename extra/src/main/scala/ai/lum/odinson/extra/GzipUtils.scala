@@ -5,7 +5,6 @@ import java.io._
 import java.util.zip._
 import java.nio.charset.StandardCharsets
 
-
 object GzipUtils {
 
   def compress(data: String): Array[Byte] = {
@@ -32,7 +31,8 @@ object GzipUtils {
 
   def uncompress(input: InputStream): String = {
     val gzip = new GZIPInputStream(input)
-    val br = new BufferedReader(new InputStreamReader(gzip, StandardCharsets.UTF_8))
+    val br =
+      new BufferedReader(new InputStreamReader(gzip, StandardCharsets.UTF_8))
     val sb = new StringBuilder()
     var line: String = br.readLine()
     while (line != null) {

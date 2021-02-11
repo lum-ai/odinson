@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{List => JList, Map => JMap, Set => JSet}
+import java.util.{ List => JList, Map => JMap, Set => JSet }
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuilder
@@ -14,8 +14,8 @@ import ai.lum.odinson.lucene.util._
 import ai.lum.odinson.state.State
 
 class OdinOrQuery(
-    val clauses: List[OdinsonQuery],
-    val field: String
+  val clauses: List[OdinsonQuery],
+  val field: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (clauses, field).##
@@ -27,7 +27,8 @@ class OdinOrQuery(
 
   def getField(): String = field
 
-  override def setState(stateOpt: Option[State]): Unit = clauses.foreach(_.setState(stateOpt))
+  override def setState(stateOpt: Option[State]): Unit =
+    clauses.foreach(_.setState(stateOpt))
 
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinsonQuery])
@@ -39,18 +40,21 @@ class OdinOrQuery(
   }
 
   override def createWeight(
-      searcher: IndexSearcher,
-      needsScores: Boolean
+    searcher: IndexSearcher,
+    needsScores: Boolean
   ): OdinsonWeight = {
-    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
-    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
+    val subWeights = clauses.map(
+      _.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    ).asJava
+    val terms =
+      if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinOrWeight(subWeights, searcher, terms)
   }
 
   class OdinOrWeight(
-      val subWeights: JList[OdinsonWeight],
-      searcher: IndexSearcher,
-      terms: JMap[Term, TermContext]
+    val subWeights: JList[OdinsonWeight],
+    searcher: IndexSearcher,
+    terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -61,7 +65,10 @@ class OdinOrQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val terms = context.reader().terms(field)
       if (terms == null) {
         return null // field does not exist
@@ -69,15 +76,19 @@ class OdinOrQuery(
       val builder = new ArrayBuilder.ofRef[OdinsonSpans]
       builder.sizeHint(clauses.size)
       for (weight <- subWeights) {
-        val subSpan = weight.getSpans(context, requiredPostings)//.asInstanceOf[OdinsonSpans]
+        val subSpan =
+          weight.getSpans(
+            context,
+            requiredPostings
+          ) //.asInstanceOf[OdinsonSpans]
         if (subSpan != null) {
           builder += subSpan
         }
       }
       builder.result() match {
-        case Array() => null
+        case Array()                => null
         case Array(s: OdinsonSpans) => s
-        case subSpans => new OdinOrSpans(subSpans)
+        case subSpans               => new OdinOrSpans(subSpans)
       }
     }
 
@@ -124,7 +135,8 @@ class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
   def cost(): Long = subSpans.map(_.cost()).sum
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
-    var sumMatchCost: Float = 0 // See also DisjunctionScorer.asTwoPhaseIterator()
+    var sumMatchCost: Float =
+      0 // See also DisjunctionScorer.asTwoPhaseIterator()
     var sumApproxCost: Long = 0
 
     for (w <- byDocQueue.iterator().asScala) {

@@ -12,7 +12,7 @@ import Spans._
 
 class OdinsonFilteredQuery(
   val query: OdinsonQuery,
-  val filter: Query,
+  val filter: Query
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (query, filter).##
@@ -35,7 +35,8 @@ class OdinsonFilteredQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+    val weight =
+      query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val filterWeight = filter.createWeight(searcher, needsScores)
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinsonFilteredWeight(weight, filterWeight, searcher, terms)
@@ -56,7 +57,10 @@ class OdinsonFilteredQuery(
       weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val terms = context.reader().terms(getField())
       if (terms == null) {
         return null // field does not exist
@@ -91,8 +95,11 @@ class OdinsonFilteredQuery(
     // a first start position is available in current doc for nextStartPosition
     protected var atFirstInCurrentDoc: Boolean = true
 
-    def startPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.startPosition()
-    def endPosition(): Int = if (atFirstInCurrentDoc) -1 else spans.endPosition()
+    def startPosition(): Int =
+      if (atFirstInCurrentDoc) -1 else spans.startPosition()
+
+    def endPosition(): Int =
+      if (atFirstInCurrentDoc) -1 else spans.endPosition()
 
     override def odinsonMatch: OdinsonMatch = {
       // FIXME do we need an OdinsonMatch specifically for filtered queries?

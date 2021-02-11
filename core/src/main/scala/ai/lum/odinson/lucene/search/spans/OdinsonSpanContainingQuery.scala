@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search.spans
 
-import java.util.{Map => JMap, Set => JSet}
+import java.util.{ Map => JMap, Set => JSet }
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -10,8 +10,8 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 
 class OdinsonSpanContainingQuery(
-    val big: OdinsonQuery,   // the main query
-    val little: OdinsonQuery // the filter
+  val big: OdinsonQuery, // the main query
+  val little: OdinsonQuery // the filter
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (big, little).##
@@ -29,11 +29,24 @@ class OdinsonSpanContainingQuery(
     s"$b containing $l"
   }
 
-  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
-    val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    val termContexts = if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
-    new OdinsonSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
+  override def createWeight(
+    searcher: IndexSearcher,
+    needsScores: Boolean
+  ): OdinsonWeight = {
+    val bigWeight =
+      big.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val littleWeight =
+      little.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val termContexts =
+      if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight)
+      else null
+    new OdinsonSpanContainingWeight(
+      this,
+      searcher,
+      termContexts,
+      bigWeight,
+      littleWeight
+    )
   }
 
   override def rewrite(reader: IndexReader): Query = {
@@ -66,10 +79,17 @@ class OdinsonSpanContainingWeight(
     littleWeight.extractTermContexts(contexts)
   }
 
-  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
-    val bigSpans = bigWeight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
+  def getSpans(
+    context: LeafReaderContext,
+    requiredPostings: SpanWeight.Postings
+  ): OdinsonSpans = {
+    val bigSpans =
+      bigWeight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
     if (bigSpans == null) return null
-    val littleSpans = littleWeight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
+    val littleSpans = littleWeight.getSpans(
+      context,
+      requiredPostings
+    ).asInstanceOf[OdinsonSpans]
     if (littleSpans == null) return null
     new OdinsonSpanContainingSpans(Array(bigSpans, littleSpans))
   }

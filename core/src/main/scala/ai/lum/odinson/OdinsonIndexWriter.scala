@@ -5,21 +5,26 @@ import java.util.Collection
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
-import org.apache.lucene.{document => lucenedoc}
+import org.apache.lucene.{ document => lucenedoc }
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.index.{IndexWriter, IndexWriterConfig}
+import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
+import org.apache.lucene.store.{
+  Directory,
+  FSDirectory,
+  IOContext,
+  RAMDirectory
+}
 import com.typesafe.scalalogging.LazyLogging
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.common.DisplayUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
-import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
+import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 
 class OdinsonIndexWriter(
@@ -36,7 +41,7 @@ class OdinsonIndexWriter(
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
   val storeAllFields: Boolean,
-  val displayField: String,
+  val displayField: String
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
@@ -54,26 +59,26 @@ class OdinsonIndexWriter(
     writer.addDocuments(block)
   }
 
-  /**
-    * Add an Odinson Document to the index, where the Document is stored in a File.
+  /** Add an Odinson Document to the index, where the Document is stored in a File.
     * @param f File with the Document
     * @param storeName whether to store the name of the file for retrieving later
     */
   def addFile(f: File, storeName: Boolean = true): Unit = {
     val origDoc = Document.fromJson(f)
-    val block = if (storeName) {
-      // keep track of file name to retrieve sentence JSON,
-      // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
-      // NOTE: this assumes all files are located immediately under `odinson.docsDir`
-      // With large document collections, it may be necessary to split documents across many subdirectories
-      // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
-      val fileField: Field =
-      StringField(name = "fileName", string = f.getName)
-      val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
-      mkDocumentBlock(doc)
-    } else {
-      mkDocumentBlock(origDoc)
-    }
+    val block =
+      if (storeName) {
+        // keep track of file name to retrieve sentence JSON,
+        // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
+        // NOTE: this assumes all files are located immediately under `odinson.docsDir`
+        // With large document collections, it may be necessary to split documents across many subdirectories
+        // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
+        val fileField: Field =
+          StringField(name = "fileName", string = f.getName)
+        val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
+        mkDocumentBlock(doc)
+      } else {
+        mkDocumentBlock(origDoc)
+      }
     // Add the document block
     addDocuments(block)
   }
@@ -82,10 +87,11 @@ class OdinsonIndexWriter(
 
   def close(): Unit = {
     // FIXME: is this the correct instantiation of IOContext?
-    using (directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
-      stream.writeString(vocabulary.dump)
+    using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) {
+      stream =>
+        stream.writeString(vocabulary.dump)
     }
-    using (directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
+    using(directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
       stream.writeString(BuildInfo.toJson)
     }
     writer.close()
@@ -116,12 +122,22 @@ class OdinsonIndexWriter(
     metadata
   }
 
-  def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
+  def mkSentenceDoc(
+    s: Sentence,
+    docId: String,
+    sentId: String
+  ): lucenedoc.Document = {
     val sent = new lucenedoc.Document
     // add sentence metadata
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
-    sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
-    sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
+    sent.add(new lucenedoc.StoredField(
+      sentenceIdField,
+      sentId
+    )) // FIXME should this be a number?
+    sent.add(new lucenedoc.NumericDocValuesField(
+      sentenceLengthField,
+      s.numTokens
+    ))
     // add fields
     for {
       odinsonField <- s.fields
@@ -148,14 +164,27 @@ class OdinsonIndexWriter(
         val incomingEdges = f.mkIncomingEdges(s.numTokens)
         val outgoingEdges = f.mkOutgoingEdges(s.numTokens)
         val roots = f.roots.toArray
-        val in  = new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(incomingEdges))
-        val out = new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(outgoingEdges))
-        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(incomingEdges, outgoingEdges, roots))
+        val in = new lucenedoc.TextField(
+          incomingTokenField,
+          new DependencyTokenStream(incomingEdges)
+        )
+        val out = new lucenedoc.TextField(
+          outgoingTokenField,
+          new DependencyTokenStream(outgoingEdges)
+        )
+        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(
+          incomingEdges,
+          outgoingEdges,
+          roots
+        ))
         if (bytes.length <= sortedDocValuesFieldMaxSize) {
-          val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
+          val graph =
+            new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
           Seq(graph, in, out)
         } else {
-          logger.warn(s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes")
+          logger.warn(
+            s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes"
+          )
           Seq.empty
         }
       case f =>
@@ -214,9 +243,8 @@ class OdinsonIndexWriter(
   //         Helper Methods
   // ---------------------------------
 
-  /**
-    * Validate a string, replacing it if invalid.
-     * @param s: String to be validated
+  /** Validate a string, replacing it if invalid.
+    * @param s: String to be validated
     * @return valid String (original or replaced)
     */
   private def validate(s: String): String = {
@@ -224,6 +252,7 @@ class OdinsonIndexWriter(
     // characters that are problematic for Lucene
     replaceControlCharacterString(s)
   }
+
   // Helper method to apply the validation to each String in a sequence
   private def validate(ss: Seq[String]): Seq[String] = ss.map(validate)
 
@@ -234,7 +263,6 @@ class OdinsonIndexWriter(
   }
 
 }
-
 
 object OdinsonIndexWriter {
 
@@ -249,16 +277,22 @@ object OdinsonIndexWriter {
     val indexDir = config[String]("odinson.indexDir")
     val documentIdField = config[String]("odinson.index.documentIdField")
     val sentenceIdField = config[String]("odinson.index.sentenceIdField")
-    val sentenceLengthField  = config[String]("odinson.index.sentenceLengthField")
-    val normalizedTokenField = config[String]("odinson.index.normalizedTokenField")
-    val addToNormalizedField = config[List[String]]("odinson.index.addToNormalizedField")
-    val incomingTokenField   = config[String]("odinson.index.incomingTokenField")
-    val outgoingTokenField   = config[String]("odinson.index.outgoingTokenField")
-    val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
-    val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
-    val invalidCharacterReplacement  = config[String]("odinson.index.invalidCharacterReplacement")
+    val sentenceLengthField =
+      config[String]("odinson.index.sentenceLengthField")
+    val normalizedTokenField =
+      config[String]("odinson.index.normalizedTokenField")
+    val addToNormalizedField =
+      config[List[String]]("odinson.index.addToNormalizedField")
+    val incomingTokenField = config[String]("odinson.index.incomingTokenField")
+    val outgoingTokenField = config[String]("odinson.index.outgoingTokenField")
+    val sortedDocValuesFieldMaxSize =
+      config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
+    val maxNumberOfTokensPerSentence =
+      config[Int]("odinson.index.maxNumberOfTokensPerSentence")
+    val invalidCharacterReplacement =
+      config[String]("odinson.index.invalidCharacterReplacement")
     val storeAllFields = config[Boolean]("odinson.index.storeAllFields")
-    val displayField   = config[String]("odinson.displayField")
+    val displayField = config[String]("odinson.displayField")
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
@@ -271,7 +305,8 @@ object OdinsonIndexWriter {
         (dir, vocab)
     }
     new OdinsonIndexWriter(
-      directory, vocabulary,
+      directory,
+      vocabulary,
       documentIdField,
       sentenceIdField,
       sentenceLengthField,
@@ -294,7 +329,10 @@ object OdinsonIndexWriter {
 
   def inMemory(config: Config): OdinsonIndexWriter = {
     // if the user wants the index to live in memory then we override the configuration
-    val newConfig = config.withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(":memory:"))
+    val newConfig = config.withValue(
+      "odinson.indexDir",
+      ConfigValueFactory.fromAnyRef(":memory:")
+    )
     fromConfig(newConfig)
   }
 

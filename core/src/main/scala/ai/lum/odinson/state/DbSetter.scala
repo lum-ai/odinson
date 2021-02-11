@@ -3,7 +3,10 @@ package ai.lum.odinson.state
 import java.sql.PreparedStatement
 
 class DbSetter(preparedStatement: PreparedStatement) {
-  val parameterCount = preparedStatement.getParameterMetaData.getParameterCount()
+
+  val parameterCount =
+    preparedStatement.getParameterMetaData.getParameterCount()
+
   protected var parameterIndex = parameterCount
 
   protected def incParameterIndex(): Unit =
@@ -26,5 +29,7 @@ class DbSetter(preparedStatement: PreparedStatement) {
 
 object DbSetter {
 
-  def apply(preparedStatement: PreparedStatement): DbSetter = new DbSetter(preparedStatement)
+  def apply(preparedStatement: PreparedStatement): DbSetter =
+    new DbSetter(preparedStatement)
+
 }

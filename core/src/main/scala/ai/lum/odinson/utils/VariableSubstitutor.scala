@@ -37,7 +37,8 @@ class VariableSubstitutor(private var variables: Map[String, String]) {
 
 object VariableSubstitutor {
 
-  private def mkStringSubstitutor(variables: Map[String, String]): StringSubstitutor = {
+  private def mkStringSubstitutor(variables: Map[String, String])
+    : StringSubstitutor = {
     new StringSubstitutor(variables.asJava)
       .setEnableSubstitutionInVariables(true)
       .setEnableUndefinedVariableException(true)

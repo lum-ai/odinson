@@ -9,14 +9,15 @@ class TestExceptions extends OdinsonTest {
 
     def exceptionThrower(bool: Boolean) = {
       bool match {
-        case true => throw new OdinsonException("we threw an odinson exception!")
+        case true =>
+          throw new OdinsonException("we threw an odinson exception!")
         case false => ()
       }
     }
 
     noException should be thrownBy exceptionThrower(false)
-    an [OdinsonException] should be thrownBy exceptionThrower(true)
-    an [Exception] should be thrownBy exceptionThrower(true)
+    an[OdinsonException] should be thrownBy exceptionThrower(true)
+    an[Exception] should be thrownBy exceptionThrower(true)
   }
 
 }
