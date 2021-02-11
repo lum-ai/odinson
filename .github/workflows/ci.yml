@@ -15,8 +15,6 @@ jobs:
           fetch-depth: 1
       - name: Lint check via scalafmt
         uses: openlawteam/scalafmt-ci@v2
-        with:
-          args: "--exclude=third_party --list"
   build:
     runs-on: ubuntu-latest
 
