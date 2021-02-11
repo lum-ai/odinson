@@ -12,17 +12,17 @@ class TestOdinsonDocument extends OdinsonTest {
   "OdinsonDocument Document" should "handle a json File correctly" in {
     // Check my code to see how to open a file like this
     val jsonFile =
-      new File(getClass.getResource("/odinsonDocTest.json").getPath)
+      new File(getClass.getResource("/docs/odinson-doc-test.json").getPath)
     // Open the one life file
     val docObj = Document.fromJson(jsonFile)
     // check if toJson is working
     docObj.toJson shouldEqual (Source
-      .fromResource("odinsonDocTest.json")
+      .fromResource("docs/odinson-doc-test.json")
       .getLines
       .mkString)
     // check if toPrettyJson is working
     docObj.toPrettyJson shouldEqual (Source
-      .fromResource("odinsonDocTestPretty.json")
+      .fromResource("docs/odinson-doc-test-pretty.json")
       .getLines
       .mkString("\n"))
     // check if the fields are being loaded correctly
