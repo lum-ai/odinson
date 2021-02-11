@@ -194,8 +194,7 @@ class QueryParser(
   // this production handles arguments without label, with full traversal, and with optional half step
   def untypedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ quantifier(includeLazy =
-      false
-    ).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
+      false).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
         val fullTraversal = lastTraversal match {
           case None    => traversalsWithSurface
@@ -221,8 +220,7 @@ class QueryParser(
   def untypedArgumentPatternWithoutFullTraversal[_: P]
     : P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ quantifier(includeLazy =
-      false
-    ).? ~ "=" ~ disjunctiveTraversal).map {
+      false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, quant, lastTraversal) =>
         // if we don't have a final token pattern then assume a wildcard
         val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
@@ -530,8 +528,7 @@ class QueryParser(
     // a negative lookahead is required to ensure that this constraint
     // is not followed by a colon or an equals, or else it is an argument name
     P(Literals.string ~ !(":" | quantifier(includeLazy =
-      false
-    ).? ~ "=") ~ "~".!.?).map {
+      false).? ~ "=") ~ "~".!.?).map {
       case (string, None) =>
         Ast.FieldConstraint(defaultTokenField, Ast.StringMatcher(string))
       case (string, Some(_)) =>
