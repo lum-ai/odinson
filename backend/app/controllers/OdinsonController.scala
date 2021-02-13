@@ -47,11 +47,13 @@ class OdinsonController @Inject() (
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
   val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
-  val docsDir = config[File]("odinson.docsDir")
-  val DOC_ID_FIELD = config[String]("odinson.index.documentIdField")
+  // format: off
+  val docsDir           = config[File]  ("odinson.docsDir")
+  val DOC_ID_FIELD      = config[String]("odinson.index.documentIdField")
   val SENTENCE_ID_FIELD = config[String]("odinson.index.sentenceIdField")
-  val WORD_TOKEN_FIELD = config[String]("odinson.displayField")
-  val pageSize = config[Int]("odinson.pageSize")
+  val WORD_TOKEN_FIELD  = config[String]("odinson.displayField")
+  val pageSize          = config[Int]   ("odinson.pageSize")
+  // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
