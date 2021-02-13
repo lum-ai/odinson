@@ -389,13 +389,13 @@ class QueryParser(
         "}",
         "}?"
       ).!).flatMap {
+        // format: off
         case (Some(min), Some(max), _) if min > max => Fail
-        case (None, maxOption, "}")                 => Pass(GreedyQuantifier(0, maxOption))
-        case (Some(min), maxOption, "}") =>
-          Pass(GreedyQuantifier(min, maxOption))
-        case (None, maxOption, "}?") => Pass(LazyQuantifier(0, maxOption))
-        case (Some(min), maxOption, "}?") =>
-          Pass(LazyQuantifier(min, maxOption))
+        case (None,      maxOption, "}")  => Pass(GreedyQuantifier(  0, maxOption))
+        case (Some(min), maxOption, "}")  => Pass(GreedyQuantifier(min, maxOption))
+        case (None,      maxOption, "}?") => Pass(LazyQuantifier  (  0, maxOption))
+        case (Some(min), maxOption, "}?") => Pass(LazyQuantifier  (min, maxOption))
+        // format: on
       }
     } else {
       P(
