@@ -9,7 +9,7 @@
 		</layout>
 	</appender>
 
-	<logger name="ai.lum.odinson" level="debug" additivity="false">
+	<logger name="ai.lum.odinson" level="debug" additivity="true">
 		<appender-ref ref="STDOUT" />
 	</logger>
 

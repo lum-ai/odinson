@@ -3,8 +3,12 @@ package ai.lum.odinson.foundations
 // test imports
 import java.nio.file.Files
 
+import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.{Config, ConfigValueFactory}
+import org.apache.lucene.store.FSDirectory
+
+import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
 import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
 import ai.lum.common.ConfigFactory
@@ -82,5 +86,27 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val foundStrings = matches.map(m => ee.getStringForSpan(docId, m))
 
     foundStrings shouldEqual expectedMatches
+  }
+
+  it should "properly dump and load relevant settings" in {
+    val indexFile = new File(tmpFolder, "index2")
+    val customConfig: Config = {
+      testConfig
+        // re-compute the index and docs path's
+        .withValue(
+          "odinson.indexDir",
+          ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath)
+        )
+        .withValue(
+          "odinson.index.storedFields",
+          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
+        )
+    }
+
+    val indexWriter = OdinsonIndexWriter.fromConfig(customConfig)
+    // close and write the settings file
+    indexWriter.close()
+    val settings = IndexSettings.fromDirectory(FSDirectory.open(indexFile.toPath))
+    settings.storedFields should contain theSameElementsAs Seq("apple", "banana", "kiwi", indexWriter.displayField)
   }
 }
