@@ -5,6 +5,7 @@ import java.nio.file.Files
 
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.lucene.store.FSDirectory
 
@@ -93,14 +94,8 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val customConfig: Config = {
       testConfig
         // re-compute the index and docs path's
-        .withValue(
-          "odinson.indexDir",
-          ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath)
-        )
-        .withValue(
-          "odinson.index.storedFields",
-          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
-        )
+        .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
+        .withValue("odinson.index.storedFields", ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava))
     }
 
     val indexWriter = OdinsonIndexWriter.fromConfig(customConfig)
@@ -108,5 +103,20 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     indexWriter.close()
     val settings = IndexSettings.fromDirectory(FSDirectory.open(indexFile.toPath))
     settings.storedFields should contain theSameElementsAs Seq("apple", "banana", "kiwi", indexWriter.displayField)
+  }
+
+  it should "store stored fields and not others" in {
+
+    val doc = getDocument("rainbows")
+    val customConfig: Config = defaultConfig
+      .withValue("odinson.index.storedFields", ConfigValueFactory.fromAnyRef(Seq("tag").asJava))
+    def ee = mkExtractorEngine(customConfig, doc)
+
+    // we asked it to store `tag` so the extractor engine should be able to access the content
+    ee.getTokensForSpan(0, "tag", 0, 1) should contain only "NNS"
+    // though `entity` is a field in the Document, it wasn't stored, so the extractor engine shouldn't
+    // be able to retrieve the content
+    an [OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
+
   }
 }
