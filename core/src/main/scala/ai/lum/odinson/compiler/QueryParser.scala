@@ -10,6 +10,11 @@ class QueryParser(
 
   import QueryParser._
 
+  val
+  5
+  = // format
+    6 // improperly
+
   // parser's entry point
   def parseBasicQuery(query: String) =
     parse(query.trim, basicPattern(_)).get.value
