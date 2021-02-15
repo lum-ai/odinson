@@ -16,7 +16,7 @@ The configurations are specified in `extra/src/main/resources/application.conf`.
 - First, decide what Processor you'd like to use to annotate the text by specifying a value for `odinson.extra.processorType`.  Available options are `FastNLPProcessor`, and `CluProcessor`. For more information about these, see [clulab Processors](https://github.com/clulab/processors).  
   
 - Ensure `odinson.textDir` and `odinson.docDir` are set as intended.  Text will be read from `odinson.textDir`, annotated, and serialized to `odinson.docDir`.    
-**NOTE**: We recommend a directory  structure where you will have a data folder with subdirs `text`, `docs`, and `index`.  If you do this, you can simply specify `odinson.dataDir = path/to/your/dataDir`, and the subfolders will be handled.  
+**NOTE**: We recommend a directory structure where you will have a data folder with subdirs `text`, `docs`, and `index`.  If you do this, you can simply specify `odinson.dataDir = path/to/your/dataDir`, and the subfolders will be handled.  
   
   
 ### Memory Usage  

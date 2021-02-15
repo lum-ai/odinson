@@ -28,7 +28,7 @@ Error message:
 
 Make sure you have java 11 installed (e.g., OpenJDK 11).
 
-# Acess Denied Exception while indexing with a docker image
+# Access Denied Exception while indexing with a docker image
 
 Error message:
 
@@ -57,4 +57,4 @@ repository:         'lum-ai/odinson.git'
 
 # `/favicon.ico' not found while running offline documentation via docker
 
-When running locally, this error can likely be ignored as expained [here](https://talk.jekyllrb.com/t/favicon-ico-not-found/2571/5)
+When running locally, this error can likely be ignored as explained [here](https://talk.jekyllrb.com/t/favicon-ico-not-found/2571/5)
