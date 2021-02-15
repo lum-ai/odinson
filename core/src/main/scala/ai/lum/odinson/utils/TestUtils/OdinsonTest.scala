@@ -10,6 +10,8 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest._
 
+import scala.collection.JavaConverters.asJavaIterableConverter
+
 class OdinsonTest extends FlatSpec with Matchers {
 
 
@@ -64,6 +66,11 @@ class OdinsonTest extends FlatSpec with Matchers {
     */
   def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
     val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
+    mkExtractorEngine(newConfig, doc)
+  }
+
+  def extractorEngineWithConfigValue(doc: Document, key: String, value: Seq[String]): ExtractorEngine = {
+    val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value.asJava))
     mkExtractorEngine(newConfig, doc)
   }
 

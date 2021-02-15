@@ -2,6 +2,7 @@ package ai.lum.odinson
 
 import java.io.File
 import java.util.Collection
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
@@ -21,10 +22,12 @@ import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.utils.IndexSettings
 
 class OdinsonIndexWriter(
   val directory: Directory,
   val vocabulary: Vocabulary,
+  val settings: IndexSettings,
   val documentIdField: String,
   val sentenceIdField: String,
   val sentenceLengthField: String,
@@ -35,7 +38,6 @@ class OdinsonIndexWriter(
   val sortedDocValuesFieldMaxSize: Int,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
-  val storeAllFields: Boolean,
   val displayField: String,
 ) extends LazyLogging {
 
@@ -87,6 +89,9 @@ class OdinsonIndexWriter(
     }
     using (directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
       stream.writeString(BuildInfo.toJson)
+    }
+    using (directory.createOutput(SETTINGSINFO_FILENAME, new IOContext)) { stream =>
+      stream.writeString(settings.dump)
     }
     writer.close()
   }
@@ -166,7 +171,7 @@ class OdinsonIndexWriter(
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
   def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
-    val mustStore = storeAllFields || f.name == displayField
+    val mustStore = settings.storedFields.contains(f.name)
     f match {
       case f: DateField =>
         val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
@@ -240,6 +245,7 @@ object OdinsonIndexWriter {
 
   val VOCABULARY_FILENAME = "dependencies.txt"
   val BUILDINFO_FILENAME = "buildinfo.json"
+  val SETTINGSINFO_FILENAME = "settingsinfo.json"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
@@ -257,7 +263,7 @@ object OdinsonIndexWriter {
     val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
     val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
     val invalidCharacterReplacement  = config[String]("odinson.index.invalidCharacterReplacement")
-    val storeAllFields = config[Boolean]("odinson.index.storeAllFields")
+    val storedFields   = config[List[String]]("odinson.index.storedFields")
     val displayField   = config[String]("odinson.displayField")
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
@@ -270,8 +276,10 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
+    // Always store the display field, also store these additional fields
+    val settings = IndexSettings(Seq(displayField) ++ storedFields)
     new OdinsonIndexWriter(
-      directory, vocabulary,
+      directory, vocabulary, settings,
       documentIdField,
       sentenceIdField,
       sentenceLengthField,
@@ -282,7 +290,6 @@ object OdinsonIndexWriter {
       sortedDocValuesFieldMaxSize,
       maxNumberOfTokensPerSentence,
       invalidCharacterReplacement,
-      storeAllFields,
       displayField
     )
   }
