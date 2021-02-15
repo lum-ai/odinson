@@ -38,10 +38,7 @@ class TestTraversals extends OdinsonTest {
   }
 
   // A little helper method to reduce code duplication for the following tests
-  def testHedgehogQuantifier(
-    quantifier: String,
-    expectedMatches: Array[String]
-  ) = {
+  def testHedgehogQuantifier(quantifier: String, expectedMatches: Array[String]) = {
     val pattern = s"[word=animals] (>nmod_such_as [])${quantifier}"
     val query = eeHedgehogs.compiler.mkQuery(pattern)
     val results = eeHedgehogs.query(query, 1)
@@ -54,10 +51,7 @@ class TestTraversals extends OdinsonTest {
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- optional" in {
-    testHedgehogQuantifier(
-      "?",
-      Array("animals", "hedgehogs", "coypu", "yyymals")
-    )
+    testHedgehogQuantifier("?", Array("animals", "hedgehogs", "coypu", "yyymals"))
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- ranges {1}" in {
@@ -69,17 +63,11 @@ class TestTraversals extends OdinsonTest {
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- ranges {1,2}" in {
-    testHedgehogQuantifier(
-      "{1,2}",
-      Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals")
-    )
+    testHedgehogQuantifier("{1,2}", Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene plus" in {
-    testHedgehogQuantifier(
-      "+",
-      Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals")
-    )
+    testHedgehogQuantifier("+", Array("hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene star" in {

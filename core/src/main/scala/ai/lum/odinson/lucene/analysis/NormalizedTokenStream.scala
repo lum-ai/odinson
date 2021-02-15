@@ -1,10 +1,7 @@
 package ai.lum.odinson.lucene.analysis
 
 import org.apache.lucene.analysis.TokenStream
-import org.apache.lucene.analysis.tokenattributes.{
-  CharTermAttribute,
-  PositionIncrementAttribute
-}
+import org.apache.lucene.analysis.tokenattributes.{ CharTermAttribute, PositionIncrementAttribute }
 import ai.lum.common.StringUtils._
 
 class NormalizedTokenStream(
@@ -24,13 +21,11 @@ class NormalizedTokenStream(
     *  and groups them by position into collections of distinct normalized strings.
     *  The members of each of these collections will be considered synonyms.
     */
-  private def mkSynonyms(tokenSeqs: Seq[Seq[String]])
-    : Vector[Vector[String]] = {
+  private def mkSynonyms(tokenSeqs: Seq[Seq[String]]): Vector[Vector[String]] = {
     val synonyms = for (i <- tokenSeqs.head.indices) yield {
       tokenSeqs
         .map(tokens =>
-          if (aggressive) tokens(i).normalizeUnicodeAggressively
-          else tokens(i).normalizeUnicode
+          if (aggressive) tokens(i).normalizeUnicodeAggressively else tokens(i).normalizeUnicode
         )
         .distinct
         .toVector

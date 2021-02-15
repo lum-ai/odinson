@@ -16,12 +16,8 @@ class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 
   def toString(field: String): String = s"Wrapped(${query.toString(field)})"
 
-  override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): OdinsonWeight = {
-    val weight =
-      query.createWeight(searcher, needsScores).asInstanceOf[SpanWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[SpanWeight]
     val termContexts = SpanQuery.getTermContexts(weight)
     new OdinWeightWrapper(this, searcher, termContexts, weight)
   }
@@ -50,10 +46,7 @@ class OdinWeightWrapper(
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(
-    context: LeafReaderContext,
-    requiredPostings: SpanWeight.Postings
-  ): OdinsonSpans = {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
     if (spans == null) null else new OdinSpansWrapper(spans)
   }
@@ -70,9 +63,6 @@ class OdinSpansWrapper(val spans: Spans) extends OdinsonSpans {
   def cost(): Long = spans.cost()
   def collect(collector: SpanCollector): Unit = spans.collect(collector)
   def positionsCost(): Float = spans.positionsCost()
-
-  override def asTwoPhaseIterator(): TwoPhaseIterator =
-    spans.asTwoPhaseIterator()
-
+  override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
 }

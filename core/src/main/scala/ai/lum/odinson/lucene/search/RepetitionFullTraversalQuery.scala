@@ -28,11 +28,7 @@ case class RepetitionFullTraversalQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): FullTraversalWeight = {
-    RepetitionFullTraversalWeight(
-      min,
-      max,
-      fullTraversal.createWeight(searcher, needsScores)
-    )
+    RepetitionFullTraversalWeight(min, max, fullTraversal.createWeight(searcher, needsScores))
   }
 
   def rewrite(reader: IndexReader): FullTraversalQuery = {
@@ -64,11 +60,7 @@ case class RepetitionFullTraversalWeight(
     context: LeafReaderContext,
     requiredPostings: SpanWeight.Postings
   ): FullTraversalSpans = {
-    RepetitionFullTraversalSpans(
-      min,
-      max,
-      fullTraversal.getSpans(context, requiredPostings)
-    )
+    RepetitionFullTraversalSpans(min, max, fullTraversal.getSpans(context, requiredPostings))
   }
 
   def subWeights: List[OdinsonWeight] = {
@@ -111,8 +103,7 @@ case class RepetitionFullTraversalSpans(
     var i = 0
     while (i < min && !currentMatches.isEmpty) {
       i += 1
-      currentMatches =
-        fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
+      currentMatches = fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
     }
 
     // if no current matches then we failed
@@ -124,8 +115,7 @@ case class RepetitionFullTraversalSpans(
 
     while (i < max && !currentMatches.isEmpty) {
       i += 1
-      currentMatches =
-        fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
+      currentMatches = fullTraversal.matchFullTraversal(graph, maxToken, currentMatches)
       results ++= currentMatches
     }
 

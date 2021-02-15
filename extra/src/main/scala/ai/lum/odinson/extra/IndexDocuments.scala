@@ -27,10 +27,7 @@ object IndexDocuments extends App with LazyLogging {
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
     config = config
-      .withValue(
-        "odinson.dataDir",
-        ConfigValueFactory.fromAnyRef(passedInDataDir)
-      )
+      .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(passedInDataDir))
       // re-compute the index and docs path's
       .withValue(
         "odinson.indexDir",

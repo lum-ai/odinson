@@ -87,8 +87,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
       // fixme: may need recursion for nested maps
       val dir = FSDirectory.open(directory.toPath)
       val inputStream = dir.openInput(jsonFileName, new IOContext).readString()
-      val jsonAsMap =
-        JSON.parseFull(inputStream).get.asInstanceOf[Map[String, Any]]
+      val jsonAsMap = JSON.parseFull(inputStream).get.asInstanceOf[Map[String, Any]]
       jsonAsMap
     }
 

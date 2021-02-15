@@ -39,11 +39,9 @@ import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
 
 @Singleton
-class OdinsonController @Inject() (
-  config: Config = ConfigFactory.load(),
-  cc: ControllerComponents
-)(implicit ec: ExecutionContext)
-    extends AbstractController(cc) {
+class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
+  implicit ec: ExecutionContext
+) extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
   val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
@@ -110,13 +108,9 @@ class OdinsonController @Inject() (
         // order the resulting frequencies as requested
         val ordered = order match {
           // alphabetical
-          case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) =>
-              term
-            }
+          case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
           // alphabetical
-          case _ => termFreqs.toSeq.sortBy { case (term, freq) =>
-              (-freq, term)
-            }
+          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
         }
 
         // reverse if necessary
@@ -127,23 +121,17 @@ class OdinsonController @Inject() (
 
         // transform the frequencies as requested
         val scaled: Seq[(String, Double)] = scale match {
-          case Some("log10") => reversed map { case (term, freq) =>
-              (term, math.log10(freq))
-            }
+          case Some("log10") => reversed map { case (term, freq) => (term, math.log10(freq)) }
           case Some("percent") =>
-            val countTotal =
-              reversed.foldLeft(0.toLong)((s, term) => s + term._2)
-            reversed map { case (term, freq) =>
-              (term, freq.toDouble / countTotal)
-            }
+            val countTotal = reversed.foldLeft(0.toLong)((s, term) => s + term._2)
+            reversed map { case (term, freq) => (term, freq.toDouble / countTotal) }
           case _ => reversed.map { case (term, freq) => (term, freq.toDouble) }
         }
 
         // cutoff the results to the requested ranks
         val defaultMin = 0
         val defaultMax = 9
-        val res =
-          scaled.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1)
+        val res = scaled.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1)
 
         Json.toJson(res.toMap).format(pretty)
       } else {
@@ -207,14 +195,13 @@ class OdinsonController @Inject() (
   /** Retrieves JSON for given sentence ID. <br>
     * Used to visualize parse and token attributes.
     */
-  def sentenceJsonForSentId(sentenceId: Int, pretty: Option[Boolean]) =
-    Action.async {
-      Future {
-        // ensure doc id is correct
-        val json = mkAbridgedSentence(sentenceId)
-        json.format(pretty)
-      }
+  def sentenceJsonForSentId(sentenceId: Int, pretty: Option[Boolean]) = Action.async {
+    Future {
+      // ensure doc id is correct
+      val json = mkAbridgedSentence(sentenceId)
+      json.format(pretty)
     }
+  }
 
   /** Stores query results in state.
     *
@@ -298,9 +285,7 @@ class OdinsonController @Inject() (
       val composedExtractors = parentQuery match {
         case Some(pq) =>
           val cpq = extractorEngine.compiler.mkParentQuery(pq)
-          baseExtractors.map(be =>
-            be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq))
-          )
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
         case None => baseExtractors
       }
       val start = System.currentTimeMillis()
@@ -321,15 +306,9 @@ class OdinsonController @Inject() (
         iterator.toVector
       }
 
-      val duration =
-        (System.currentTimeMillis() - start) / 1000f // duration in seconds
+      val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-      val json = Json.toJson(mkJson(
-        parentQuery,
-        duration,
-        allowTriggerOverlaps,
-        mentions
-      ))
+      val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
       json.format(pretty)
     } catch {
       case NonFatal(e) =>
@@ -350,12 +329,8 @@ class OdinsonController @Inject() (
   def runQuery(
     odinsonQuery: String,
     parentQuery: Option[String],
-    label: Option[
-      String
-    ], // FIXME: in the future, this will be decided in the grammar
-    commit: Option[
-      Boolean
-    ], // FIXME: in the future, this will be decided in the grammar
+    label: Option[String], // FIXME: in the future, this will be decided in the grammar
+    commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
     prevDoc: Option[Int],
     prevScore: Option[Float],
     enriched: Boolean,
@@ -371,8 +346,7 @@ class OdinsonController @Inject() (
         }
         val start = System.currentTimeMillis()
         val results: OdinResults = retrieveResults(oq, prevDoc, prevScore)
-        val duration =
-          (System.currentTimeMillis() - start) / 1000f // duration in seconds
+        val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
         // should the results be added to the state?
         if (commit.getOrElse(false)) {
@@ -384,13 +358,7 @@ class OdinsonController @Inject() (
           )
         }
 
-        val json = Json.toJson(mkJson(
-          odinsonQuery,
-          parentQuery,
-          duration,
-          results,
-          enriched
-        ))
+        val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
         json.format(pretty)
       } catch {
         case NonFatal(e) =>
@@ -425,8 +393,7 @@ class OdinsonController @Inject() (
   ) = Action.async {
     Future {
       try {
-        val luceneDoc: LuceneDocument =
-          extractorEngine.indexReader.document(sentenceId)
+        val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(od.toJson)("metadata")
@@ -446,8 +413,7 @@ class OdinsonController @Inject() (
   ) = Action.async {
     Future {
       try {
-        val luceneDoc: LuceneDocument =
-          extractorEngine.indexReader.document(sentenceId)
+        val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(od.toJson)
@@ -488,8 +454,7 @@ class OdinsonController @Inject() (
   ): JsValue = {
 
     val scoreDocs: JsValue = enriched match {
-      case true =>
-        Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse): _*)
+      case true  => Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse): _*)
       case false => Json.arr(results.scoreDocs.map(mkJson): _*)
     }
 
@@ -523,8 +488,7 @@ class OdinsonController @Inject() (
   def mkJson(mention: Mention): Json.JsValueWrapper = {
     //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
     // We want **all** tokens for the sentence
-    val tokens =
-      extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
     // odinsonMatch: OdinsonMatch,
     Json.obj(
       "sentenceId" -> mention.luceneDocId,
@@ -541,8 +505,7 @@ class OdinsonController @Inject() (
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
-    val tokens =
-      extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
     Json.obj(
       "sentenceId" -> odinsonScoreDoc.doc,
       "score" -> odinsonScoreDoc.score,
@@ -564,8 +527,7 @@ class OdinsonController @Inject() (
     Json.obj(namedCapture.name -> mkJson(namedCapture.capturedMatch))
   }
 
-  def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc)
-    : Json.JsValueWrapper = {
+  def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
     Json.obj(
       "sentenceId" -> odinsonScoreDoc.doc,
       "score" -> odinsonScoreDoc.score,
@@ -581,8 +543,7 @@ class OdinsonController @Inject() (
     //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
-    val odinsonDocFile =
-      new File(docsDir, parentDoc.getField("fileName").stringValue)
+    val odinsonDocFile = new File(docsDir, parentDoc.getField("fileName").stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }
 

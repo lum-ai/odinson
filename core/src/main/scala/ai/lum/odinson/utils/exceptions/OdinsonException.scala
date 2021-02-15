@@ -6,10 +6,7 @@ package ai.lum.odinson.utils.exceptions
   * @param cause
   */
 class OdinsonException(message: String = null, cause: Throwable = null)
-    extends RuntimeException(
-      OdinsonException.defaultMessage(message, cause),
-      cause
-    ) {}
+    extends RuntimeException(OdinsonException.defaultMessage(message, cause), cause) {}
 
 object OdinsonException {
 

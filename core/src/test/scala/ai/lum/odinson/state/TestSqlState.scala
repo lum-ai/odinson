@@ -27,12 +27,10 @@ class TestSqlState extends OdinsonTest {
 
   def newOdinsonMatch(): StateMatch = {
     val odinsonMatch_0_0 = StateMatch(0, 1, Array.empty)
-    val namedCapture_0 =
-      NamedCapture("name_0", Some("label_0"), odinsonMatch_0_0)
+    val namedCapture_0 = NamedCapture("name_0", Some("label_0"), odinsonMatch_0_0)
 
     val odinsonMatch_1_0 = StateMatch(1, 2, Array.empty)
-    val namedCapture_1 =
-      NamedCapture("name_1", Some("label_1"), odinsonMatch_1_0)
+    val namedCapture_1 = NamedCapture("name_1", Some("label_1"), odinsonMatch_1_0)
 
     val stateMatch = StateMatch(0, 2, Array(namedCapture_0, namedCapture_1))
 
@@ -116,10 +114,7 @@ class TestSqlState extends OdinsonTest {
     left.luceneDocId == right.luceneDocId &&
     left.label == right.label &&
     left.foundBy == right.foundBy &&
-    equals(
-      left.odinsonMatch.asInstanceOf[StateMatch],
-      right.odinsonMatch.asInstanceOf[StateMatch]
-    )
+    equals(left.odinsonMatch.asInstanceOf[StateMatch], right.odinsonMatch.asInstanceOf[StateMatch])
   }
 
   it should "compare properly" in {
@@ -146,12 +141,8 @@ class TestSqlState extends OdinsonTest {
       )
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
-    val mentionsIterator = new MentionsIterator(
-      Some(resultLabel),
-      Some(resultName),
-      odinResults1,
-      mruIdGetter
-    )
+    val mentionsIterator =
+      new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
     val resultItems2 = {
       state.addMentions(mentionsIterator)
       state.getMentions(docBase, docId, resultLabel)
@@ -192,27 +183,16 @@ class TestSqlState extends OdinsonTest {
     stateMatch
   }
 
-  def newRandomOdinsonScoreDoc(
-    random: Random,
-    docId: Int,
-    docBase: Int
-  ): OdinsonScoreDoc = {
+  def newRandomOdinsonScoreDoc(random: Random, docId: Int, docBase: Int): OdinsonScoreDoc = {
     val docIndex = random.nextInt()
     val count = random.nextInt(20) + 1
-    val odinsonMatches = 1.to(count).map { _ =>
-      newRandomOdinsonMatch(random)
-    }.toArray
-    val odinsonScoreDoc =
-      new OdinsonScoreDoc(docIndex, 0.0f, -1, odinsonMatches, docId, docBase)
+    val odinsonMatches = 1.to(count).map { _ => newRandomOdinsonMatch(random) }.toArray
+    val odinsonScoreDoc = new OdinsonScoreDoc(docIndex, 0.0f, -1, odinsonMatches, docId, docBase)
 
     odinsonScoreDoc
   }
 
-  def newRandomOdinResults(
-    random: Random,
-    docId: Int,
-    docBase: Int
-  ): OdinResults = {
+  def newRandomOdinResults(random: Random, docId: Int, docBase: Int): OdinResults = {
     val count = random.nextInt(20) + 1
     val odinsonScoreDocs = 1.to(count).map { _ =>
       newRandomOdinsonScoreDoc(random, docId, docBase)
@@ -247,30 +227,24 @@ class TestSqlState extends OdinsonTest {
             )
           }
         }
-      val mentionsIterator = new MentionsIterator(
-        Some(resultLabel),
-        Some(resultName),
-        odinResults,
-        mruIdGetter
-      )
+      val mentionsIterator =
+        new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
       val resultItems2 = {
         state.addMentions(mentionsIterator)
         state.getMentions(docBase, docId, resultLabel)
       }
 
       resultItems1.length should be(resultItems2.length)
-      resultItems1.zip(resultItems2).foreach {
-        case (leftResultItem, rightResultItem) =>
-          if (!equals(leftResultItem, rightResultItem))
-            println(s"left: $leftResultItem != right: $rightResultItem")
-          equals(leftResultItem, rightResultItem) should be(true)
+      resultItems1.zip(resultItems2).foreach { case (leftResultItem, rightResultItem) =>
+        if (!equals(leftResultItem, rightResultItem))
+          println(s"left: $leftResultItem != right: $rightResultItem")
+        equals(leftResultItem, rightResultItem) should be(true)
       }
       state.clear()
     }
   }
 
-  def newRandomDocBasesAndIdsAndLabels(random: Random)
-    : Array[(Int, Int, String)] = {
+  def newRandomDocBasesAndIdsAndLabels(random: Random): Array[(Int, Int, String)] = {
     val count = random.nextInt(5) + 4
     val docBasesAndIdsAndLabels = 1.to(count).map { _ =>
       val docId = random.nextInt()
@@ -290,12 +264,11 @@ class TestSqlState extends OdinsonTest {
 
     1.to(20).foreach { index => // Do this many tests.
       val docBasesAndIdsAndLabels = newRandomDocBasesAndIdsAndLabels(random)
-      val odinResultses =
-        docBasesAndIdsAndLabels.map { case (docBase, docId, label) =>
-          newRandomOdinResults(random, docId, docBase)
-        }
-      val resultItems1 = odinResultses.zip(docBasesAndIdsAndLabels).flatMap {
-        case (odinResults, (_, _, label)) =>
+      val odinResultses = docBasesAndIdsAndLabels.map { case (docBase, docId, label) =>
+        newRandomOdinResults(random, docId, docBase)
+      }
+      val resultItems1 =
+        odinResultses.zip(docBasesAndIdsAndLabels).flatMap { case (odinResults, (_, _, label)) =>
           odinResults.scoreDocs.flatMap { scoreDoc =>
             scoreDoc.matches.map { odinsonMatch =>
               new Mention(
@@ -309,36 +282,29 @@ class TestSqlState extends OdinsonTest {
               )
             }
           }
-      }
+        }
       val resultItems2 = {
-        odinResultses.zip(docBasesAndIdsAndLabels) foreach {
-          case (odinResults, (_, _, label)) =>
-            val mentionsIterator = new MentionsIterator(
-              Some(label),
-              Some(resultName),
-              odinResults,
-              mruIdGetter
-            )
+        odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
+          val mentionsIterator =
+            new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
 
-            state.addMentions(mentionsIterator)
+          state.addMentions(mentionsIterator)
         }
 
-        docBasesAndIdsAndLabels.flatMap {
-          docBaseAndIdAndLabel: (Int, Int, String) =>
-            val (docBase, docId, label) = docBaseAndIdAndLabel
-            val mentions = state.getMentions(docBase, docId, label)
+        docBasesAndIdsAndLabels.flatMap { docBaseAndIdAndLabel: (Int, Int, String) =>
+          val (docBase, docId, label) = docBaseAndIdAndLabel
+          val mentions = state.getMentions(docBase, docId, label)
 
-            mentions
+          mentions
         }
       }
 
       resultItems1.length should be(resultItems2.length)
       // Sort both of them.
-      resultItems1.zip(resultItems2).foreach {
-        case (leftResultItem, rightResultItem) =>
-          if (!equals(leftResultItem, rightResultItem))
-            println(s"left: $leftResultItem != right: $rightResultItem")
-          equals(leftResultItem, rightResultItem) should be(true)
+      resultItems1.zip(resultItems2).foreach { case (leftResultItem, rightResultItem) =>
+        if (!equals(leftResultItem, rightResultItem))
+          println(s"left: $leftResultItem != right: $rightResultItem")
+        equals(leftResultItem, rightResultItem) should be(true)
       }
     }
   }
@@ -350,14 +316,8 @@ class TestSqlState extends OdinsonTest {
     val filename = "../test.sql"
     val file = new File(filename)
     val config = ExtractorEngine.defaultConfig
-      .withValue(
-        "odinson.state.sql.persistOnClose",
-        ConfigValueFactory.fromAnyRef(true)
-      )
-      .withValue(
-        "odinson.state.sql.persistFile",
-        ConfigValueFactory.fromAnyRef(filename)
-      )
+      .withValue("odinson.state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
+      .withValue("odinson.state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
 
     file.delete()
     file.exists should be(false)

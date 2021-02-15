@@ -25,39 +25,22 @@ trait GraphTraversal {
 /** a no-op traversal */
 case object NoTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
+  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Seq(startNode)
 
-  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] =
-    Seq(startNode)
+  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] =
+    startNodes.distinct
 
-  override def traverseFrom(
-    graph: DirectedGraph,
-    startNodes: Seq[Int]
-  ): Seq[Int] = startNodes.distinct
-
-  override def traverseFrom(
-    graph: DirectedGraph,
-    odinsonMatch: OdinsonMatch
-  ): Seq[Int] = odinsonMatch.tokenInterval
+  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] =
+    odinsonMatch.tokenInterval
 
 }
 
 /** a traversal that always fails */
 case object FailTraversal extends GraphTraversal {
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
-
-  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] =
-    Nil
-
-  override def traverseFrom(
-    graph: DirectedGraph,
-    startNodes: Seq[Int]
-  ): Seq[Int] = Nil
-
-  override def traverseFrom(
-    graph: DirectedGraph,
-    odinsonMatch: OdinsonMatch
-  ): Seq[Int] = Nil
-
+  override def traverseFrom(graph: DirectedGraph, startNode: Int): Seq[Int] = Nil
+  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = Nil
+  override def traverseFrom(graph: DirectedGraph, odinsonMatch: OdinsonMatch): Seq[Int] = Nil
 }
 
 /** traverse all incoming edges */
@@ -155,8 +138,7 @@ case class Outgoing(matcher: LabelMatcher) extends GraphTraversal {
 }
 
 /** execute a series of traversals where each one starts at the result of the previous one */
-case class Concatenation(traversals: List[GraphTraversal])
-    extends GraphTraversal {
+case class Concatenation(traversals: List[GraphTraversal]) extends GraphTraversal {
 
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (traversals.isEmpty) return Nil
@@ -194,23 +176,16 @@ case class KleeneStar(traversal: GraphTraversal) extends GraphTraversal {
     collect(graph, Seq(startNode), Set.empty)
   }
 
-  override def traverseFrom(
-    graph: DirectedGraph,
-    startNodes: Seq[Int]
-  ): Seq[Int] = {
+  override def traverseFrom(graph: DirectedGraph, startNodes: Seq[Int]): Seq[Int] = {
     collect(graph, startNodes, Set.empty)
   }
 
   @tailrec
-  private def collect(
-    graph: DirectedGraph,
-    remaining: Seq[Int],
-    seen: Set[Int]
-  ): Seq[Int] = remaining match {
-    case Seq()                              => seen.toSeq
-    case node +: rest if seen contains node => collect(graph, rest, seen)
-    case node +: rest =>
-      collect(graph, traversal.traverseFrom(graph, node) ++ rest, seen + node)
-  }
+  private def collect(graph: DirectedGraph, remaining: Seq[Int], seen: Set[Int]): Seq[Int] =
+    remaining match {
+      case Seq()                              => seen.toSeq
+      case node +: rest if seen contains node => collect(graph, rest, seen)
+      case node +: rest                       => collect(graph, traversal.traverseFrom(graph, node) ++ rest, seen + node)
+    }
 
 }

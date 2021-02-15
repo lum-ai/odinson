@@ -23,11 +23,8 @@ class ExactLabelMatcher(val string: String, val id: Int) extends LabelMatcher {
 /** Matches a string using a regex.
   *  Anchors regex so that it behaves closer to lucene regex.
   */
-class RegexLabelMatcher(val regex: Regex, val vocabulary: Vocabulary)
-    extends LabelMatcher {
-
-  override def toString: String =
-    s"/${regex.pattern.pattern.replaceAllLiterally("/", "\\/")}/"
+class RegexLabelMatcher(val regex: Regex, val vocabulary: Vocabulary) extends LabelMatcher {
+  override def toString: String = s"/${regex.pattern.pattern.replaceAllLiterally("/", "\\/")}/"
 
   // mimic lucene regex behavior (i.e., regex must match the whole string)
   def matches(labelId: Int): Boolean = vocabulary.getTerm(labelId) match {

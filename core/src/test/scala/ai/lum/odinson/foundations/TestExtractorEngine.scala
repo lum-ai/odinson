@@ -1,12 +1,6 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.{
-  Document,
-  ExtractorEngine,
-  Sentence,
-  TokensField,
-  utils
-}
+import ai.lum.odinson.{ Document, ExtractorEngine, Sentence, TokensField, utils }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
 class TestExtractorEngine extends OdinsonTest {
@@ -37,11 +31,7 @@ class TestExtractorEngine extends OdinsonTest {
   it should "getTokensFromSpan correctly from existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(
-      doc,
-      "odinson.index.storeAllFields",
-      "true"
-    )
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
     val rules = """
         |rules:
         |  - name: testrule
@@ -53,8 +43,7 @@ class TestExtractorEngine extends OdinsonTest {
         |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
 
     val mention = mentions.head
@@ -73,11 +62,7 @@ class TestExtractorEngine extends OdinsonTest {
   it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(
-      doc,
-      "odinson.index.storeAllFields",
-      "true"
-    )
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
     val rules = """
       |rules:
       |  - name: testrule
@@ -89,15 +74,12 @@ class TestExtractorEngine extends OdinsonTest {
       |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
     mentions should have size (1)
 
     val mention = mentions.head
 
-    an[
-      utils.exceptions.OdinsonException
-    ] should be thrownBy ee.getTokensForSpan(
+    an[utils.exceptions.OdinsonException] should be thrownBy ee.getTokensForSpan(
       mention.luceneSegmentDocId,
       mention.odinsonMatch,
       fieldName = "notAField"

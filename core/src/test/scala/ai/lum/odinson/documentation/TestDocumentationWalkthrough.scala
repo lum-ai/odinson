@@ -47,8 +47,7 @@ class TestDocumentationWalkthrough extends OdinsonTest {
   }
 
   it should "find the adoption event" in {
-    val adoptions =
-      getMentionsWithStringValue(mentions, "adopted", extractorEngine)
+    val adoptions = getMentionsWithStringValue(mentions, "adopted", extractorEngine)
     adoptions should have size (1)
     testMention(
       adoptions.head,

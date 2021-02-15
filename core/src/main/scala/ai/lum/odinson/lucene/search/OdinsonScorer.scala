@@ -13,10 +13,8 @@ class OdinsonScorer(
   val docScorer: SimScorer
 ) extends Scorer(weight) {
 
-  private var accSloppyFreq: Float =
-    0 // accumulated sloppy freq (computed in setFreqCurrentDoc)
-  private var lastScoredDoc: Int =
-    -1 // last doc we called setFreqCurrentDoc() for
+  private var accSloppyFreq: Float = 0 // accumulated sloppy freq (computed in setFreqCurrentDoc)
+  private var lastScoredDoc: Int = -1 // last doc we called setFreqCurrentDoc() for
 
   // stores the matcher found in the current document
   private val collectedMatches: ArrayBuffer[OdinsonMatch] = ArrayBuffer.empty
@@ -49,17 +47,13 @@ class OdinsonScorer(
       spans.startPosition() == Spans.NO_MORE_POSITIONS,
       "incorrect final start position, " + spans
     )
-    assert(
-      spans.endPosition() == Spans.NO_MORE_POSITIONS,
-      "incorrect final end position, " + spans
-    )
+    assert(spans.endPosition() == Spans.NO_MORE_POSITIONS, "incorrect final end position, " + spans)
   }
 
   // - consumes all matches with the same start position
   // - selects the span to return
   // - leaves the spans iterator at the next start position
-  private def getCurrentMatchesAndAdvance(spans: OdinsonSpans)
-    : Seq[OdinsonMatch] = {
+  private def getCurrentMatchesAndAdvance(spans: OdinsonSpans): Seq[OdinsonMatch] = {
     val startPosition = spans.startPosition()
     if (startPosition == Spans.NO_MORE_POSITIONS) {
       return Nil
@@ -74,9 +68,7 @@ class OdinsonScorer(
     // select final match
     val finalMatches = MatchSelector.pickMatches(currentMatches)
     // advance to next match that doesn't overlap with current result
-    while (
-      nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatches.last.end
-    ) {
+    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatches.last.end) {
       nextStart = spans.nextStartPosition()
     }
     // return results

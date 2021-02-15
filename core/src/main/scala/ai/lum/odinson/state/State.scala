@@ -14,16 +14,9 @@ trait State {
 
   // todo: deleteResultItems ?  What would be the semantics
 
-  def getDocIds(
-    docBase: Int,
-    label: String
-  ): Array[Int] // TODO: Return iterator
+  def getDocIds(docBase: Int, label: String): Array[Int] // TODO: Return iterator
 
-  def getMentions(
-    docBase: Int,
-    docId: Int,
-    label: String
-  ): Array[Mention] // TODO: Return iterator
+  def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] // TODO: Return iterator
 
   // Note: may not be thread-safe
   def getAllMentions(): Iterator[Mention]

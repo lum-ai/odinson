@@ -15,25 +15,11 @@ class OdinsonCollector(
   private val disableMatchSelector: Boolean
 ) extends Collector {
 
-  def this(
-    numHits: Int,
-    after: Int,
-    computeTotalHits: Boolean,
-    disableMatchSelector: Boolean
-  ) = {
-    this(
-      new Array[OdinsonScoreDoc](numHits),
-      after,
-      computeTotalHits,
-      disableMatchSelector
-    )
+  def this(numHits: Int, after: Int, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
+    this(new Array[OdinsonScoreDoc](numHits), after, computeTotalHits, disableMatchSelector)
   }
 
-  def this(
-    numHits: Int,
-    computeTotalHits: Boolean,
-    disableMatchSelector: Boolean
-  ) = {
+  def this(numHits: Int, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
     this(numHits, -1, computeTotalHits, disableMatchSelector)
   }
 
@@ -65,8 +51,7 @@ class OdinsonCollector(
       return OdinResults.empty
     }
     val fixedHowMany = math.min(collectedHits - start, howMany)
-    val results =
-      Arrays.copyOfRange(collectedResults, start, start + fixedHowMany)
+    val results = Arrays.copyOfRange(collectedResults, start, start + fixedHowMany)
     new OdinResults(totalHits, results)
   }
 
@@ -93,8 +78,7 @@ class OdinsonCollector(
         return
       }
       val matches =
-        if (disableMatchSelector) scorer.getAllPossibleMatches()
-        else scorer.getMatches()
+        if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
@@ -122,8 +106,7 @@ class OdinsonCollector(
         return
       }
       val matches =
-        if (disableMatchSelector) scorer.getAllPossibleMatches()
-        else scorer.getMatches()
+        if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
@@ -155,11 +138,8 @@ class OdinsonCollector(
 
       // based on the docBase of the next reader in line, we might want to skip this entire reader
       // if all the indexes here are before the specified 'after' value
-      if (
-        context.parent.isTopLevel && context.parent.leaves().size() > context.ordInParent + 1
-      ) {
-        val nextLeafContext =
-          context.parent.leaves().get(context.ordInParent + 1)
+      if (context.parent.isTopLevel && context.parent.leaves().size() > context.ordInParent + 1) {
+        val nextLeafContext = context.parent.leaves().get(context.ordInParent + 1)
         if (nextLeafContext.docBase <= after + 1) {
           skipEntireSegment = true
         }

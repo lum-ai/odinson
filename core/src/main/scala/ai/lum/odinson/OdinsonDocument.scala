@@ -147,11 +147,7 @@ object DateField {
     fromLocalDate(name, localDate)
   }
 
-  def fromLocalDate(
-    name: String,
-    date: LocalDate,
-    store: Boolean = false
-  ): DateField = {
+  def fromLocalDate(name: String, date: LocalDate, store: Boolean = false): DateField = {
     DateField(name, date.toString)
   }
 

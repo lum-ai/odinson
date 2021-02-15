@@ -10,8 +10,7 @@ object MockState extends State {
 
   def getDocIds(docBase: Int, label: String): Array[Int] = Array.emptyIntArray
 
-  def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] =
-    emptyMentionArray
+  def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = emptyMentionArray
 
   override def getAllMentions(): Iterator[Mention] = emptyMentionIterator
 

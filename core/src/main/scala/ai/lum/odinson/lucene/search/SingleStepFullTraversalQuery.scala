@@ -27,8 +27,7 @@ case class SingleStepFullTraversalQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): FullTraversalWeight = {
-    val weight =
-      surface.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+    val weight = surface.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     SingleStepFullTraversalWeight(traversal, weight)
   }
 
@@ -67,8 +66,7 @@ case class SingleStepFullTraversalWeight(
     context: LeafReaderContext,
     requiredPostings: SpanWeight.Postings
   ): FullTraversalSpans = {
-    val spans =
-      weight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
+    val spans = weight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
     if (spans == null) return null
     SingleStepFullTraversalSpans(traversal, spans)
   }

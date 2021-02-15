@@ -35,11 +35,8 @@ class OdinTermAndQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val subWeights = clauses.map(
-      _.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    ).asJava
-    val terms =
-      if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
+    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinTermAndWeight(subWeights, searcher, terms)
   }
 
@@ -81,18 +78,13 @@ class OdinTermAndQuery(
 
   }
 
-  class OdinTermAndSpans(val subSpans: Array[OdinsonSpans])
-      extends ConjunctionSpans {
+  class OdinTermAndSpans(val subSpans: Array[OdinsonSpans]) extends ConjunctionSpans {
 
     import Spans._
 
     def twoPhaseCurrentDocMatches(): Boolean = {
       oneExhaustedInCurrentDoc = false
-      while (
-        subSpans(
-          0
-        ).nextStartPosition() != NO_MORE_POSITIONS && !oneExhaustedInCurrentDoc
-      ) {
+      while (subSpans(0).nextStartPosition() != NO_MORE_POSITIONS && !oneExhaustedInCurrentDoc) {
         if (ensureConjunction()) {
           atFirstInCurrentDoc = true
           return true
@@ -132,11 +124,7 @@ class OdinTermAndQuery(
         return matchStart
       }
       oneExhaustedInCurrentDoc = false
-      while (
-        subSpans(
-          0
-        ).nextStartPosition() != NO_MORE_POSITIONS && !oneExhaustedInCurrentDoc
-      ) {
+      while (subSpans(0).nextStartPosition() != NO_MORE_POSITIONS && !oneExhaustedInCurrentDoc) {
         if (ensureConjunction()) return matchStart
       }
       matchStart = NO_MORE_POSITIONS

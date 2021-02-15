@@ -11,20 +11,17 @@ import com.typesafe.config.Config
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
-    extends State {
+class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None) extends State {
   import MemoryState._
 
   if (persistOnClose) require(outfile.isDefined)
 
-  implicit val resultItemOrdering: MemoryState.MentionOrdering.type =
-    MemoryState.MentionOrdering
+  implicit val resultItemOrdering: MemoryState.MentionOrdering.type = MemoryState.MentionOrdering
 
-  protected val baseIdLabelToMentions
-    : mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] = mutable.Map.empty
-
-  protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] =
+  protected val baseIdLabelToMentions: mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] =
     mutable.Map.empty
+
+  protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
 
   protected def addMention(mention: Mention): Unit = {
     val baseIdLabel = BaseIdLabel(
@@ -32,17 +29,13 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
       mention.luceneSegmentDocId,
       mention.label.getOrElse("")
     )
-    val mentions = baseIdLabelToMentions.getOrElseUpdate(
-      baseIdLabel,
-      mutable.SortedSet.empty[Mention]
-    )
+    val mentions =
+      baseIdLabelToMentions.getOrElseUpdate(baseIdLabel, mutable.SortedSet.empty[Mention])
 
     mentions.add(mention)
 
-    val baseLabel =
-      BaseLabel(mention.luceneSegmentDocBase, mention.label.getOrElse(""))
-    val ids =
-      baseLabelToIds.getOrElseUpdate(baseLabel, mutable.SortedSet.empty[Int])
+    val baseLabel = BaseLabel(mention.luceneSegmentDocBase, mention.label.getOrElse(""))
+    val ids = baseLabelToIds.getOrElseUpdate(baseLabel, mutable.SortedSet.empty[Int])
 
     ids.add(mention.luceneSegmentDocId)
   }
@@ -86,11 +79,7 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
     None
   }
 
-  override def getMentions(
-    docBase: Int,
-    docId: Int,
-    label: String
-  ): Array[Mention] = {
+  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
     val baseIdLabel = BaseIdLabel(docBase, docId, label)
     val mentionsOpt = baseIdLabelToMentions.get(baseIdLabel)
     mentionsOpt.map(_.toArray).getOrElse(Array.empty)
@@ -134,21 +123,17 @@ object MemoryState {
 
     def compare(left: Mention, right: Mention): Int = {
       right match {
-        case equal if left == right                             => 0
-        case earlierDoc if left.luceneDocId < right.luceneDocId => -1
-        case laterDoc if left.luceneDocId > right.luceneDocId   => 1
-        case sameDocComesFirst
-            if left.odinsonMatch.start < right.odinsonMatch.start => -1
-        case sameDocComesAfter
-            if left.odinsonMatch.start > right.odinsonMatch.start => 1
-        case sameDocSameStart
-            if left.odinsonMatch.start == right.odinsonMatch.start =>
+        case equal if left == right                                                  => 0
+        case earlierDoc if left.luceneDocId < right.luceneDocId                      => -1
+        case laterDoc if left.luceneDocId > right.luceneDocId                        => 1
+        case sameDocComesFirst if left.odinsonMatch.start < right.odinsonMatch.start => -1
+        case sameDocComesAfter if left.odinsonMatch.start > right.odinsonMatch.start => 1
+        case sameDocSameStart if left.odinsonMatch.start == right.odinsonMatch.start =>
           val leftStart =
             if (left.odinsonMatch.namedCaptures.isEmpty) left.odinsonMatch.start
             else left.odinsonMatch.namedCaptures.map(_.capturedMatch.start).min
           val rightStart =
-            if (right.odinsonMatch.namedCaptures.isEmpty)
-              right.odinsonMatch.start
+            if (right.odinsonMatch.namedCaptures.isEmpty) right.odinsonMatch.start
             else right.odinsonMatch.namedCaptures.map(_.capturedMatch.start).min
           if (leftStart < rightStart) -1
           else if (rightStart < leftStart) 1

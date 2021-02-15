@@ -23,13 +23,8 @@ class GraphTraversalQuery(
 ) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
-  override def hashCode: Int = (
-    defaultTokenField,
-    dependenciesField,
-    sentenceLengthField,
-    src,
-    fullTraversal
-  ).##
+  override def hashCode: Int =
+    (defaultTokenField, dependenciesField, sentenceLengthField, src, fullTraversal).##
 
   override def setState(stateOpt: Option[State]): Unit = {
     src.setState(stateOpt)
@@ -60,16 +55,11 @@ class GraphTraversalQuery(
     }
   }
 
-  override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): OdinsonWeight = {
-    val srcWeight =
-      src.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val srcWeight = src.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val traversalWeight = fullTraversal.createWeight(searcher, needsScores)
     val subWeights = srcWeight :: traversalWeight.subWeights
-    val terms =
-      if (needsScores) OdinsonQuery.getTermContexts(subWeights: _*) else null
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights: _*) else null
     new GraphTraversalWeight(srcWeight, traversalWeight, searcher, terms)
   }
 

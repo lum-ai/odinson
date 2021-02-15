@@ -10,14 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{
-  IdGetter,
-  LazyIdGetter,
-  Mention,
-  NamedCapture,
-  OdinsonMatch,
-  StateMatch
-}
+import ai.lum.odinson.{ IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch }
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.apache.lucene.search.IndexSearcher
@@ -33,19 +26,11 @@ class IdProvider(protected var id: Int = 0) {
 
 }
 
-abstract class WriteNode(
-  val odinsonMatch: OdinsonMatch,
-  idProvider: IdProvider
-) {
+abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider) {
 
   val childNodes: Array[WriteNode] = {
     odinsonMatch.namedCaptures.map { namedCapture =>
-      new OdinsonMatchWriteNode(
-        namedCapture.capturedMatch,
-        this,
-        namedCapture,
-        idProvider
-      )
+      new OdinsonMatchWriteNode(namedCapture.capturedMatch, this, namedCapture, idProvider)
     }
   }
 
@@ -108,10 +93,7 @@ case class ReadNode(
 
 object SqlResultItem {
 
-  def toWriteNodes(
-    mention: Mention,
-    idProvider: IdProvider
-  ): IndexedSeq[WriteNode] = {
+  def toWriteNodes(mention: Mention, idProvider: IdProvider): IndexedSeq[WriteNode] = {
     val arrayBuffer = new ArrayBuffer[WriteNode]()
 
     new MentionWriteNode(mention, idProvider).flatten(arrayBuffer)
@@ -130,8 +112,7 @@ object SqlResultItem {
 
     def findNamedCaptures(childCount: Int): Array[NamedCapture] = {
       val namedCaptures =
-        if (childCount == 0) Array.empty[NamedCapture]
-        else new Array[NamedCapture](childCount)
+        if (childCount == 0) Array.empty[NamedCapture] else new Array[NamedCapture](childCount)
       var count = 0
 
       while (count < childCount) {
@@ -142,11 +123,7 @@ object SqlResultItem {
         namedCaptures(childCount - count) = NamedCapture(
           readNode.name,
           if (readNode.childLabel.nonEmpty) Some(readNode.childLabel) else None,
-          StateMatch(
-            readNode.start,
-            readNode.end,
-            findNamedCaptures(readNode.childCount)
-          )
+          StateMatch(readNode.start, readNode.end, findNamedCaptures(readNode.childCount))
         )
       }
       namedCaptures
@@ -302,11 +279,7 @@ class SqlState protected (
     }
   }
 
-  override def getMentions(
-    docBase: Int,
-    docId: Int,
-    label: String
-  ): Array[Mention] = {
+  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
     val sql = s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
@@ -334,25 +307,10 @@ class SqlState protected (
         val start = dbGetter.getInt
         val end = dbGetter.getInt
 
-        readNodes += ReadNode(
-          docIndex,
-          name,
-          id,
-          parentId,
-          childCount,
-          childLabel,
-          start,
-          end
-        )
+        readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
-          mentions += SqlResultItem.fromReadNodes(
-            docBase,
-            docId,
-            Some(label),
-            readNodes,
-            idGetter
-          )
+          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, idGetter)
           readNodes.clear()
         }
       }

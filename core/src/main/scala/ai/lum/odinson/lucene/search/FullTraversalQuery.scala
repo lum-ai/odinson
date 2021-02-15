@@ -12,12 +12,7 @@ import ai.lum.odinson.lucene.search.spans._
 trait FullTraversalQuery {
   def toString(field: String): String
   def setState(stateOpt: Option[State]): Unit
-
-  def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): FullTraversalWeight
-
+  def createWeight(searcher: IndexSearcher, needsScores: Boolean): FullTraversalWeight
   def rewrite(reader: IndexReader): FullTraversalQuery
   def firstGraphTraversal: Option[GraphTraversal]
   def lastGraphTraversalStep: Option[(GraphTraversal, OdinsonQuery)]

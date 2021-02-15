@@ -17,8 +17,7 @@ class TestAnnotateDocuments extends FlatSpec with Matchers {
   val srcTextDir = new File(resourcesFolder, "text")
 
   // create the temporary test directory
-  val tmpFolder =
-    Files.createTempDirectory("odinson-test").toFile().getAbsolutePath
+  val tmpFolder = Files.createTempDirectory("odinson-test").toFile().getAbsolutePath
 
   // create directories and files that will be used during the test
   val dataDir = tmpFolder

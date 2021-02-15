@@ -17,8 +17,7 @@ class OdinConcatQuery(
   val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
-  override def hashCode: Int =
-    (clauses, defaultTokenField, sentenceLengthField).##
+  override def hashCode: Int = (clauses, defaultTokenField, sentenceLengthField).##
 
   def toString(field: String): String = {
     val clausesStr = clauses.map(_.toString(field)).mkString(",")
@@ -165,9 +164,7 @@ class OdinConcatQuery(
           val pos = left.end
           // one after the last left span with end == pos
           var iStop = i
-          while (
-            iStop < leftSpansSorted.length && leftSpansSorted(iStop).end == pos
-          ) {
+          while (iStop < leftSpansSorted.length && leftSpansSorted(iStop).end == pos) {
             iStop += 1
           }
           // one after the last right span with start == pos
@@ -192,16 +189,8 @@ class OdinConcatQuery(
     def concatMatches(lhs: OdinsonMatch, rhs: OdinsonMatch): OdinsonMatch = {
       (lhs, rhs) match {
         case (lhs: ConcatMatch, rhs: ConcatMatch) =>
-          val subMatches = new Array[OdinsonMatch](
-            lhs.subMatches.length + rhs.subMatches.length
-          )
-          System.arraycopy(
-            lhs.subMatches,
-            0,
-            subMatches,
-            0,
-            lhs.subMatches.length
-          )
+          val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + rhs.subMatches.length)
+          System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
           System.arraycopy(
             rhs.subMatches,
             0,
@@ -212,25 +201,13 @@ class OdinConcatQuery(
           new ConcatMatch(subMatches)
         case (lhs: ConcatMatch, rhs) =>
           val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + 1)
-          System.arraycopy(
-            lhs.subMatches,
-            0,
-            subMatches,
-            0,
-            lhs.subMatches.length
-          )
+          System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
           subMatches(lhs.subMatches.length) = rhs
           new ConcatMatch(subMatches)
         case (lhs, rhs: ConcatMatch) =>
           val subMatches = new Array[OdinsonMatch](rhs.subMatches.length + 1)
           subMatches(0) = lhs
-          System.arraycopy(
-            rhs.subMatches,
-            0,
-            subMatches,
-            1,
-            rhs.subMatches.length
-          )
+          System.arraycopy(rhs.subMatches, 0, subMatches, 1, rhs.subMatches.length)
           new ConcatMatch(subMatches)
         case (lhs, rhs) =>
           new ConcatMatch(Array(lhs, rhs))

@@ -18,8 +18,7 @@ class StateQuery(
 
   var stateOpt: Option[State] = None
 
-  override def setState(stateOpt: Option[State]): Unit =
-    this.stateOpt = stateOpt
+  override def setState(stateOpt: Option[State]): Unit = this.stateOpt = stateOpt
 
   override def hashCode: Int = (field, label).##
 

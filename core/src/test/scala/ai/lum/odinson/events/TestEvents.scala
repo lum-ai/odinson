@@ -77,9 +77,7 @@ class TestEvents extends OdinsonTest {
     // the main event and the two args
     mentions.length should equal(3)
 
-    val em = mentions.map(_.odinsonMatch).collect { case m: EventMatch =>
-      m
-    }.head
+    val em = mentions.map(_.odinsonMatch).collect { case m: EventMatch => m }.head
     val argMetadataNames = em.argumentMetadata.toSeq.map(_.name)
     // the length of this list should not change if it goes to a set
     argMetadataNames.length should be(argMetadataNames.toSet.size)
@@ -204,8 +202,7 @@ class TestEvents extends OdinsonTest {
       disableMatchSelector: Boolean
     ): OdinResults = {
       val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
-      val odinMentionsIterator =
-        new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
+      val odinMentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
       ee.state.addMentions(odinMentionsIterator)
       odinResults
@@ -311,9 +308,7 @@ class TestEvents extends OdinsonTest {
         |      ARG = <dobj []
      """.stripMargin
 
-    a[OdinsonException] should be thrownBy ee.ruleReader.compileRuleString(
-      rules
-    )
+    a[OdinsonException] should be thrownBy ee.ruleReader.compileRuleString(rules)
 
   }
 

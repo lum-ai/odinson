@@ -17,24 +17,17 @@ class OdinsonTest extends FlatSpec with Matchers {
   lazy val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](NullIdGetter.apply)
 
   val defaultConfig = ConfigFactory.load()
-
-  val rawTokenField: String =
-    defaultConfig[String]("odinson.index.rawTokenField")
+  val rawTokenField: String = defaultConfig[String]("odinson.index.rawTokenField")
 
   def getDocumentFromJson(json: String): Document = Document.fromJson(json)
-
-  def getDocument(id: String): Document =
-    getDocumentFromJson(ExampleDocs.json(id))
+  def getDocument(id: String): Document = getDocumentFromJson(ExampleDocs.json(id))
 
   /** Get a list of strings, one for each match in the results.
     * @param results
     * @param engine
     * @return
     */
-  def mkStrings(
-    results: OdinResults,
-    engine: ExtractorEngine
-  ): Array[String] = {
+  def mkStrings(results: OdinResults, engine: ExtractorEngine): Array[String] = {
     for {
       scoreDoc <- results.scoreDocs
       doc = scoreDoc.doc
@@ -52,10 +45,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param provider the config value corresponding to the desired state
     * @return
     */
-  def extractorEngineWithSpecificState(
-    doc: Document,
-    provider: String
-  ): ExtractorEngine = {
+  def extractorEngineWithSpecificState(doc: Document, provider: String): ExtractorEngine = {
     extractorEngineWithConfigValue(doc, "odinson.state.provider", provider)
   }
 
@@ -66,13 +56,8 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param value config value to replace the default value or serve as value to new key
     * @return
     */
-  def extractorEngineWithConfigValue(
-    doc: Document,
-    key: String,
-    value: String
-  ): ExtractorEngine = {
-    val newConfig =
-      defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
+  def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
+    val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
     mkExtractorEngine(newConfig, doc)
   }
 
@@ -124,8 +109,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   // Methods for checking query results (not Mentions)
 
-  def numMatches(odinResults: OdinResults): Int =
-    getAllMatches(odinResults).length
+  def numMatches(odinResults: OdinResults): Int = getAllMatches(odinResults).length
 
   def getAllMatches(odinResults: OdinResults): Array[(Int, OdinsonMatch)] = {
     for {
@@ -140,17 +124,10 @@ class OdinsonTest extends FlatSpec with Matchers {
     matches.head._2
   }
 
-  def existsMatchWithSpan(
-    odinResults: OdinResults,
-    doc: Int,
-    start: Int,
-    end: Int
-  ): Boolean = {
+  def existsMatchWithSpan(odinResults: OdinResults, doc: Int, start: Int, end: Int): Boolean = {
     getAllMatches(odinResults)
       .collect {
-        case (mDoc, mMatch)
-            if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
-          mMatch
+        case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) => mMatch
       }
       .nonEmpty
   }
@@ -169,9 +146,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
     captured
       .collect {
-        case (mDoc, mMatch)
-            if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
-          mMatch
+        case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) => mMatch
       }
       .nonEmpty
   }
@@ -216,10 +191,8 @@ class OdinsonTest extends FlatSpec with Matchers {
     b.luceneSegmentDocBase should be(a.luceneSegmentDocBase)
     b.arguments.keySet should contain theSameElementsAs (a.arguments.keySet)
     for (arg <- b.arguments.keySet) {
-      val bArgs =
-        b.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
-      val aArgs =
-        a.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
+      val bArgs = b.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
+      val aArgs = a.arguments(arg).sortBy(m => (m.odinsonMatch.start, m.odinsonMatch.end))
       for (i <- aArgs.indices) {
         mentionsShouldBeEqual(aArgs(i), bArgs(i))
       }
@@ -250,35 +223,20 @@ class OdinsonTest extends FlatSpec with Matchers {
         b shouldBe an[EventMatch]
         matchesShouldBeEqual(a.trigger, b.asInstanceOf[EventMatch].trigger)
         namedCapturesShouldBeEqual(a.namedCaptures, b.namedCaptures)
-        argMetaDataShouldBeEqual(
-          a.argumentMetadata,
-          b.asInstanceOf[EventMatch].argumentMetadata
-        )
+        argMetaDataShouldBeEqual(a.argumentMetadata, b.asInstanceOf[EventMatch].argumentMetadata)
 
       case a: GraphTraversalMatch =>
         b shouldBe an[GraphTraversalMatch]
-        matchesShouldBeEqual(
-          a.srcMatch,
-          b.asInstanceOf[GraphTraversalMatch].srcMatch
-        )
-        matchesShouldBeEqual(
-          a.dstMatch,
-          b.asInstanceOf[GraphTraversalMatch].dstMatch
-        )
+        matchesShouldBeEqual(a.srcMatch, b.asInstanceOf[GraphTraversalMatch].srcMatch)
+        matchesShouldBeEqual(a.dstMatch, b.asInstanceOf[GraphTraversalMatch].dstMatch)
 
       case a: ConcatMatch =>
         b shouldBe an[ConcatMatch]
-        matchesShouldBeEqual(
-          a.subMatches,
-          b.asInstanceOf[ConcatMatch].subMatches
-        )
+        matchesShouldBeEqual(a.subMatches, b.asInstanceOf[ConcatMatch].subMatches)
 
       case a: RepetitionMatch =>
         b shouldBe an[RepetitionMatch]
-        matchesShouldBeEqual(
-          a.subMatches,
-          b.asInstanceOf[RepetitionMatch].subMatches
-        )
+        matchesShouldBeEqual(a.subMatches, b.asInstanceOf[RepetitionMatch].subMatches)
         a.isGreedy should be(b.asInstanceOf[RepetitionMatch].isGreedy)
 
       case a: OptionalMatch =>
@@ -308,10 +266,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param a
     * @param b
     */
-  def matchesShouldBeEqual(
-    a: Array[OdinsonMatch],
-    b: Array[OdinsonMatch]
-  ): Unit = {
+  def matchesShouldBeEqual(a: Array[OdinsonMatch], b: Array[OdinsonMatch]): Unit = {
     for (i <- a.indices) {
       matchesShouldBeEqual(a(i), b(i)) should be(true)
     }
@@ -321,10 +276,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param a
     * @param b
     */
-  def namedCapturesShouldBeEqual(
-    a: Array[NamedCapture],
-    b: Array[NamedCapture]
-  ): Unit = {
+  def namedCapturesShouldBeEqual(a: Array[NamedCapture], b: Array[NamedCapture]): Unit = {
     def ncEqual(a1: NamedCapture, b1: NamedCapture): Boolean = {
       b1.label should be(a1.label)
       b1.name should be(a1.name)
@@ -339,10 +291,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param a
     * @param b
     */
-  def argMetaDataShouldBeEqual(
-    a: Array[ArgumentMetadata],
-    b: Array[ArgumentMetadata]
-  ): Unit = {
+  def argMetaDataShouldBeEqual(a: Array[ArgumentMetadata], b: Array[ArgumentMetadata]): Unit = {
     def mdEqual(a1: ArgumentMetadata, b1: ArgumentMetadata): Boolean = {
       b1.min should be(a1.min)
       b1.max should be(a1.max)
@@ -373,10 +322,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     engine: ExtractorEngine
   ): Unit = {
     // Check that the trigger is as desired
-    engine.getStringForSpan(
-      m.luceneDocId,
-      m.odinsonMatch
-    ) shouldEqual (desiredMentionText)
+    engine.getStringForSpan(m.luceneDocId, m.odinsonMatch) shouldEqual (desiredMentionText)
 
     // extract match arguments from the mathing objects
     val matchArgs = for {
@@ -428,12 +374,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param engine ExtractorEngine
     * @param text   the text value that the trigger should have
     */
-  def testEventTrigger(
-    docID: Int,
-    m: OdinsonMatch,
-    engine: ExtractorEngine,
-    text: String
-  ): Unit = {
+  def testEventTrigger(docID: Int, m: OdinsonMatch, engine: ExtractorEngine, text: String): Unit = {
     val trigger = m match {
       case e: EventMatch => e.trigger
       case s: StateMatch => s
@@ -447,10 +388,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param m
     * @param desiredArgs
     */
-  def testArguments(
-    m: OdinsonMatch,
-    desiredArgs: Seq[ArgumentOffsets]
-  ): Unit = {
+  def testArguments(m: OdinsonMatch, desiredArgs: Seq[ArgumentOffsets]): Unit = {
     // extract match arguments from the mathing objects
     val matchArgs = for (nc <- m.namedCaptures)
       yield ArgumentOffsets(nc.name, nc.capturedMatch.start, nc.capturedMatch.end)

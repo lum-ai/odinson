@@ -39,8 +39,7 @@ class OdinRepetitionQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val weight =
-      query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val terms = if (needsScores) OdinsonQuery.getTermContexts(weight) else null
     new OdinRepetitionWeight(weight, searcher, terms)
   }
@@ -142,9 +141,9 @@ class OdinRepetitionSpans(
       if (numReps == 0) {
         numReps += 1
       } else if (
-        startIndex + numReps < matches.length && matches(
-          startIndex + numReps - 1
-        ).end == matches(startIndex + numReps).start
+        startIndex + numReps < matches.length && matches(startIndex + numReps - 1).end == matches(
+          startIndex + numReps
+        ).start
       ) {
         numReps += 1
       } else {
@@ -178,8 +177,7 @@ class OdinRepetitionSpans(
   }
 
   override def odinsonMatch: OdinsonMatch = {
-    val subMatches =
-      Arrays.copyOfRange(matches, startIndex, startIndex + numReps)
+    val subMatches = Arrays.copyOfRange(matches, startIndex, startIndex + numReps)
     new RepetitionMatch(subMatches, isGreedy)
   }
 

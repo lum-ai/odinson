@@ -36,7 +36,5 @@ class MostRecentlyUsed[K, V](constructor: K => V) {
 
 object MostRecentlyUsed {
 
-  def apply[K, V](constructor: K => V): MostRecentlyUsed[K, V] =
-    new MostRecentlyUsed(constructor)
-
+  def apply[K, V](constructor: K => V): MostRecentlyUsed[K, V] = new MostRecentlyUsed(constructor)
 }

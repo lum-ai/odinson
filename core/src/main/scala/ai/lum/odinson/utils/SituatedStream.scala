@@ -7,11 +7,7 @@ import ai.lum.common.FileUtils._
 import ai.lum.odinson.utils.RuleSources.RuleSources
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
-case class SituatedStream(
-  stream: InputStream,
-  canonicalPath: String,
-  from: RuleSources
-) {
+case class SituatedStream(stream: InputStream, canonicalPath: String, from: RuleSources) {
 
   def relativePathStream(path: String): SituatedStream = {
     val newPath = resolveRelativePath(path)
@@ -39,9 +35,8 @@ case class SituatedStream(
       case RuleSources.file =>
         val parent = new File(canonicalPath).getParentFile.getCanonicalPath
         new File(parent, path).getCanonicalPath
-      case RuleSources.string => throw new OdinsonException(
-          "Strings don't support imports and relative paths"
-        )
+      case RuleSources.string =>
+        throw new OdinsonException("Strings don't support imports and relative paths")
     }
   }
 
@@ -57,11 +52,7 @@ object SituatedStream {
   val NO_PATH = "NO_PATH"
 
   def fromFile(canonicalPath: String): SituatedStream = {
-    new SituatedStream(
-      new File(canonicalPath).toInputStream,
-      canonicalPath,
-      RuleSources.file
-    )
+    new SituatedStream(new File(canonicalPath).toInputStream, canonicalPath, RuleSources.file)
   }
 
   def fromResource(resourcePath: String): SituatedStream = {

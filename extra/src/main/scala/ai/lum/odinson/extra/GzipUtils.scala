@@ -31,8 +31,7 @@ object GzipUtils {
 
   def uncompress(input: InputStream): String = {
     val gzip = new GZIPInputStream(input)
-    val br =
-      new BufferedReader(new InputStreamReader(gzip, StandardCharsets.UTF_8))
+    val br = new BufferedReader(new InputStreamReader(gzip, StandardCharsets.UTF_8))
     val sb = new StringBuilder()
     var line: String = br.readLine()
     while (line != null) {

@@ -20,9 +20,8 @@ abstract class OdinsonQuery extends Query {
   def canEqual(a: Any): Boolean = a.isInstanceOf[OdinsonQuery]
 
   override def equals(that: Any): Boolean = that match {
-    case that: OdinsonQuery =>
-      that.canEqual(this) && this.hashCode == that.hashCode
-    case _ => false
+    case that: OdinsonQuery => that.canEqual(this) && this.hashCode == that.hashCode
+    case _                  => false
   }
 
   def getField(): String
@@ -40,8 +39,7 @@ object OdinsonQuery {
     terms
   }
 
-  def getTermContexts(weights: Collection[OdinsonWeight])
-    : JMap[Term, TermContext] = {
+  def getTermContexts(weights: Collection[OdinsonWeight]): JMap[Term, TermContext] = {
     val terms = new TreeMap[Term, TermContext]()
     for (w <- weights.iterator().asScala) {
       w.extractTermContexts(terms)

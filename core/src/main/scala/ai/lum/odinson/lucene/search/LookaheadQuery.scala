@@ -16,12 +16,8 @@ class LookaheadQuery(
 
   def toString(field: String): String = s"Lookahead(${query.toString(field)})"
 
-  override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): OdinsonWeight = {
-    val weight =
-      query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
+    val weight = query.createWeight(searcher, needsScores).asInstanceOf[OdinsonWeight]
     val termContexts = OdinsonQuery.getTermContexts(weight)
     new LookaheadWeight(this, searcher, termContexts, weight)
   }
@@ -52,10 +48,7 @@ class LookaheadWeight(
     weight.extractTermContexts(contexts)
   }
 
-  def getSpans(
-    context: LeafReaderContext,
-    requiredPostings: SpanWeight.Postings
-  ): OdinsonSpans = {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
     val spans = weight.getSpans(context, requiredPostings)
     if (spans == null) null else new LookaheadSpans(spans)
   }
@@ -74,9 +67,6 @@ class LookaheadSpans(
   def cost(): Long = spans.cost()
   def collect(collector: SpanCollector): Unit = spans.collect(collector)
   def positionsCost(): Float = spans.positionsCost()
-
-  override def asTwoPhaseIterator(): TwoPhaseIterator =
-    spans.asTwoPhaseIterator()
-
+  override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
 }

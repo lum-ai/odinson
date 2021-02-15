@@ -56,10 +56,7 @@ object Shell extends App {
 
   // autocomplete
   val autoCompleteOptions = dependencies.toList ++ commands.keys.toList
-
-  val completer =
-    new ArgumentCompleter(new StringsCompleter(autoCompleteOptions: _*))
-
+  val completer = new ArgumentCompleter(new StringsCompleter(autoCompleteOptions: _*))
   completer.setStrict(false)
 
   // setup console
@@ -109,9 +106,7 @@ object Shell extends App {
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
               maxMatchesDisplay = n.toInt
-              println(
-                s"will now display a maximum of $maxMatchesDisplay matches ..."
-              )
+              println(s"will now display a maximum of $maxMatchesDisplay matches ...")
             case s if s startsWith ":" =>
               println(s"Unrecognized command $s")
               println("Type :help for a list of commands")
@@ -197,12 +192,7 @@ object Shell extends App {
   }
 
   /** prints a group of results */
-  def printResultsPage(
-    results: OdinResults,
-    start: Int,
-    total: Int,
-    duration: Float
-  ): Unit = {
+  def printResultsPage(results: OdinResults, start: Int, total: Int, duration: Float): Unit = {
     if (total == 0) {
       println("no matches")
       return

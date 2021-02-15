@@ -48,25 +48,15 @@ class TestEventTriggers extends OdinsonTest {
 
     val rules = applyRuleTemplate(
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})",
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     val mentions = ee.extractMentions(extractors).toArray
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedResults = List(
-      "hedgehogs",
-      "coypu",
-      "wild cloven-footed animals",
-      "deer",
-      "zoo animals"
-    )
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedResults =
+      List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
     ee.close()
   }
@@ -75,29 +65,18 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedResults = List(
-      "hedgehogs",
-      "coypu",
-      "wild cloven-footed animals",
-      "deer",
-      "zoo animals"
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedResults =
+      List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
     ee.close()
   }
@@ -106,29 +85,18 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "wild? animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedResults = List(
-      "hedgehogs",
-      "coypu",
-      "wild cloven-footed animals",
-      "deer",
-      "zoo animals"
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedResults =
+      List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     animals should contain theSameElementsInOrderAs expectedResults
     ee.close()
   }
@@ -137,24 +105,17 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "[tag=JJ]* ([tag=NNS] [tag=JJ])?",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val triggers =
-      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List(
       "wild animals such",
       "wild animals such",
@@ -162,13 +123,8 @@ class TestEventTriggers extends OdinsonTest {
       "wild cloven-footed animals such",
       "wild cloven-footed animals such"
     )
-    val expectedResults = List(
-      "hedgehogs",
-      "coypu",
-      "wild cloven-footed animals",
-      "deer",
-      "zoo animals"
-    )
+    val expectedResults =
+      List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
 
@@ -179,24 +135,17 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "[tag=DT | tag=JJ] [tag=JJ]",
       rulesPatternResult = "<amod [lemma=animal]"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val triggers =
-      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List("Some wild", "any wild")
     val expectedResults = List("animals", "animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
@@ -209,24 +158,16 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []* animals",
-      rulesPatternResult =
-        "(<nmod_such_as | >nmod_including) >/conj.*/? ${result}"
+      rulesPatternResult = "(<nmod_such_as | >nmod_including) >/conj.*/? ${result}"
     )
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val triggers =
-      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers = List(
       "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals"
     )
@@ -241,11 +182,9 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []* animals",
-      rulesPatternResult =
-        "(>nmod_such_as | >nmod_including) >/conj.*/? ${result}"
+      rulesPatternResult = "(>nmod_such_as | >nmod_including) >/conj.*/? ${result}"
     )
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
@@ -253,26 +192,15 @@ class TestEventTriggers extends OdinsonTest {
       ee.extractMentions(extractors, allowTriggerOverlaps = true).toSeq,
       "MainEvent"
     )
-    val triggers =
-      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
+    val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
     val expectedTriggers: List[String] = (1 to 6).map((m) =>
       "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals"
     ).toList
 
-    val expectedResults = List(
-      "hedgehogs",
-      "coypu",
-      "wild cloven-footed animals",
-      "deer",
-      "zoo animals",
-      "elephants"
-    )
+    val expectedResults =
+      List("hedgehogs", "coypu", "wild cloven-footed animals", "deer", "zoo animals", "elephants")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
 
@@ -283,27 +211,18 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("hedgehogs-coypy")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "some []*? animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}"
     )
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val triggers =
-      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedTriggers =
-      List("Some wild animals", "Some wild animals", "Some wild animals")
-    val expectedResults =
-      List("hedgehogs", "coypu", "wild cloven-footed animals")
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val triggers = mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.odinsonMatch))
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedTriggers = List("Some wild animals", "Some wild animals", "Some wild animals")
+    val expectedResults = List("hedgehogs", "coypu", "wild cloven-footed animals")
     triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
 
@@ -314,29 +233,16 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("pre-european-diet")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPattern = "animals >nmod_such_as >/conj.*/? (?<result>${result})"
     )
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedResults = List(
-      "rabbit",
-      "possum",
-      "quail",
-      "badger",
-      "iguana",
-      "armadillo",
-      "variety of river fish"
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedResults =
+      List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
 
     ee.close()
@@ -346,31 +252,18 @@ class TestEventTriggers extends OdinsonTest {
     val ee = mkExtractorEngine("pre-european-diet")
 
     val rules = applyRuleTemplate(
-      varsResult =
-        "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
+      varsResult = "([tag=/J.*/]{,3} [tag=/N.*/]+ (of [tag=DT]? [tag=/J.*/]{,3} [tag=/N.*/]+)?)",
       rulesPatternTrigger = "animals",
       rulesPatternResult = ">nmod_such_as >/conj.*/? ${result}"
     )
 
     val extractors = ee.ruleReader.compileRuleString(rules)
     // the label is defined for the event mentions, not for the results
-    val mentions =
-      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
-    val animals = mentions.map(m =>
-      ee.getStringForSpan(
-        m.luceneDocId,
-        m.arguments("result").head.odinsonMatch
-      )
-    )
-    val expectedResults = List(
-      "rabbit",
-      "possum",
-      "quail",
-      "badger",
-      "iguana",
-      "armadillo",
-      "variety of river fish"
-    )
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "MainEvent")
+    val animals =
+      mentions.map(m => ee.getStringForSpan(m.luceneDocId, m.arguments("result").head.odinsonMatch))
+    val expectedResults =
+      List("rabbit", "possum", "quail", "badger", "iguana", "armadillo", "variety of river fish")
     animals should contain theSameElementsInOrderAs expectedResults
 
     ee.close()

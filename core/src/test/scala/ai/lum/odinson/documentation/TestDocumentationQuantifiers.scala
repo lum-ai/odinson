@@ -23,19 +23,9 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     // since the arg is optional, we can match only the trigger or the arg
     numMatches(results) shouldEqual (2)
     // trigger
-    existsMatchWithCapturedMatchSpan(
-      results,
-      doc = 0,
-      start = 3,
-      end = 4
-    ) should be(true)
+    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 3, end = 4) should be(true)
     // argument
-    existsMatchWithCapturedMatchSpan(
-      results,
-      doc = 0,
-      start = 2,
-      end = 3
-    ) should be(true)
+    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 2, end = 3) should be(true)
 
     val pattern1 = """
       trigger = [lemma=bar]

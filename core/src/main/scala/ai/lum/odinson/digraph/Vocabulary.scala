@@ -67,10 +67,7 @@ object Vocabulary {
   def fromDirectory(directory: Directory): Vocabulary =
     try {
       // FIXME: is this the correct instantiation of IOContext?
-      val stream = directory.openInput(
-        OdinsonIndexWriter.VOCABULARY_FILENAME,
-        new IOContext
-      )
+      val stream = directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)
       Vocabulary.load(stream.readString())
     } catch {
       case e: IOException => Vocabulary.empty

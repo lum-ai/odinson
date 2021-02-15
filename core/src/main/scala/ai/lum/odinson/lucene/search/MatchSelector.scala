@@ -21,15 +21,9 @@ object MatchSelector {
     }
   }
 
-  private def pickMatchFromPair(
-    lhs: OdinsonMatch,
-    rhs: OdinsonMatch
-  ): List[OdinsonMatch] = {
+  private def pickMatchFromPair(lhs: OdinsonMatch, rhs: OdinsonMatch): List[OdinsonMatch] = {
     @tailrec
-    def traverse(
-      left: List[OdinsonMatch],
-      right: List[OdinsonMatch]
-    ): List[OdinsonMatch] = {
+    def traverse(left: List[OdinsonMatch], right: List[OdinsonMatch]): List[OdinsonMatch] = {
       (left, right) match {
         // left and right are both OR matches
         case ((l: OrMatch) :: lTail, (r: OrMatch) :: rTail) =>
@@ -66,26 +60,19 @@ object MatchSelector {
             if (l.length > r.length) List(lhs)
             else if (l.length < r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(
-              l.subMatches.toList ::: lTail,
-              r.subMatches.toList ::: rTail
-            )
+            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
           } else if (l.isLazy && r.isLazy) {
             // if both are lazy return the shortest
             if (l.length < r.length) List(lhs)
             else if (l.length > r.length) List(rhs)
             // if they are both the same length then keep going
-            else traverse(
-              l.subMatches.toList ::: lTail,
-              r.subMatches.toList ::: rTail
-            )
+            else traverse(l.subMatches.toList ::: lTail, r.subMatches.toList ::: rTail)
           } else {
             // something is wrong
             ???
           }
 
-        case (leftMatches, rightMatches)
-            if leftMatches.nonEmpty && rightMatches.nonEmpty =>
+        case (leftMatches, rightMatches) if leftMatches.nonEmpty && rightMatches.nonEmpty =>
           val left = expandFirstMatch(leftMatches)
           val right = expandFirstMatch(rightMatches)
           traverse(left, right)
@@ -145,9 +132,7 @@ object MatchSelector {
   private def packageEvents(sketch: EventSketch): List[EventMatch] = {
     val trigger = sketch.trigger
     val argumentPackages = packageArguments(sketch.argSketches)
-    argumentPackages.map(args =>
-      new EventMatch(trigger, args, sketch.argumentMetadata)
-    )
+    argumentPackages.map(args => new EventMatch(trigger, args, sketch.argumentMetadata))
   }
 
   private def packageArguments(
@@ -189,8 +174,7 @@ object MatchSelector {
     }
   }
 
-  private def groupMatches(matches: Seq[OdinsonMatch])
-    : Seq[Seq[OdinsonMatch]] = {
+  private def groupMatches(matches: Seq[OdinsonMatch]): Seq[Seq[OdinsonMatch]] = {
     val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
     for (m <- matches) {
       var found = false

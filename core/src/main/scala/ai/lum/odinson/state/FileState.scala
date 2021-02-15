@@ -12,11 +12,7 @@ class FileState extends State {
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = ???
 
-  override def getMentions(
-    docBase: Int,
-    docId: Int,
-    label: String
-  ): Array[Mention] = ???
+  override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = ???
 
   override def getAllMentions(): Iterator[Mention] = ???
 

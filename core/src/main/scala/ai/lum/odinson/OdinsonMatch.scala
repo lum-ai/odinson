@@ -3,11 +3,7 @@ package ai.lum.odinson
 import ai.lum.common.Interval
 import ai.lum.odinson.lucene.search.ArgumentSpans
 
-case class NamedCapture(
-  name: String,
-  label: Option[String],
-  capturedMatch: OdinsonMatch
-)
+case class NamedCapture(name: String, label: Option[String], capturedMatch: OdinsonMatch)
 
 sealed trait OdinsonMatch {
 
@@ -47,26 +43,18 @@ object StateMatch {
       odinsonMatch.start,
       odinsonMatch.end,
       odinsonMatch.namedCaptures.map { namedCapture =>
-        namedCapture.copy(capturedMatch =
-          recFromOdinsonMatch(namedCapture.capturedMatch))
+        namedCapture.copy(capturedMatch = recFromOdinsonMatch(namedCapture.capturedMatch))
       }
     )
   }
 
-  def fromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch =
-    recFromOdinsonMatch(odinsonMatch)
-
+  def fromOdinsonMatch(odinsonMatch: OdinsonMatch): StateMatch = recFromOdinsonMatch(odinsonMatch)
 }
 
 /** helper class to store the metadata related to an EventMention's argument,
   *  like it's name and some information about its quantifiers.
   */
-case class ArgumentMetadata(
-  name: String,
-  min: Int,
-  max: Option[Int],
-  promote: Boolean
-)
+case class ArgumentMetadata(name: String, min: Int, max: Option[Int], promote: Boolean)
 
 class EventMatch(
   val trigger: OdinsonMatch,
@@ -82,9 +70,8 @@ class EventMatch(
     *  or None if the surviving arguments are not sufficient to construct a valid EventMention.
     */
   def removeTriggerOverlaps: Option[EventMatch] = {
-    val captures = namedCaptures.filterNot(
-      _.capturedMatch.tokenInterval intersects trigger.tokenInterval
-    )
+    val captures =
+      namedCaptures.filterNot(_.capturedMatch.tokenInterval intersects trigger.tokenInterval)
     val groupedCaptures = captures.groupBy(_.name)
     for (meta <- argumentMetadata) {
       val numMatches = groupedCaptures.get(meta.name).map(_.length).getOrElse(0)

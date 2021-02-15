@@ -21,11 +21,7 @@ class OdinsonIndexSearcher(
   }
 
   def this(r: IndexReader, e: ExecutionContext, computeTotalHits: Boolean) = {
-    this(
-      r.getContext(),
-      ExecutionContextExecutorServiceBridge(e),
-      computeTotalHits
-    )
+    this(r.getContext(), ExecutionContextExecutorServiceBridge(e), computeTotalHits)
   }
 
   def this(r: IndexReader, computeTotalHits: Boolean) = {
@@ -41,11 +37,7 @@ class OdinsonIndexSearcher(
     odinSearch(null, query, n)
   }
 
-  def odinSearch(
-    after: OdinsonScoreDoc,
-    query: OdinsonQuery,
-    numHits: Int
-  ): OdinResults = {
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int): OdinResults = {
     odinSearch(after, query, numHits, false)
   }
 
@@ -55,18 +47,12 @@ class OdinsonIndexSearcher(
     disableMatchSelector: Boolean
   ) extends CollectorManager[OdinsonCollector, OdinResults] {
 
-    def newCollector() = new OdinsonCollector(
-      cappedNumHits,
-      after,
-      computeTotalHits,
-      disableMatchSelector
-    )
+    def newCollector() =
+      new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
 
     def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
-      val collectedResults =
-        collectors.iterator.asScala.map(_.odinResults).toArray
-      val mergedResults =
-        OdinResults.merge(0, cappedNumHits, collectedResults, true)
+      val collectedResults = collectors.iterator.asScala.map(_.odinResults).toArray
+      val mergedResults = OdinResults.merge(0, cappedNumHits, collectedResults, true)
 
       mergedResults
     }
@@ -85,8 +71,7 @@ class OdinsonIndexSearcher(
       s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
     )
     val cappedNumHits = math.min(numHits, limit)
-    val manager =
-      new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
+    val manager = new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
 
     search(query, manager)
   }

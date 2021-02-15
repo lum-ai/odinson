@@ -29,8 +29,7 @@ object OdinResults {
     setShardIndex: Boolean
   ): OdinResults = {
     var totalHitCount = 0
-    val availHitCount =
-      shardHits.map(s => if (s == null) 0 else s.scoreDocs.length).sum
+    val availHitCount = shardHits.map(s => if (s == null) 0 else s.scoreDocs.length).sum
     val allHits = new Array[OdinsonScoreDoc](availHitCount)
     var currentStart = 0
     for (shardIdx <- shardHits.indices) {
@@ -44,13 +43,7 @@ object OdinResults {
           shard.scoreDocs.foreach(_.shardIndex = shardIdx)
         }
         // collect documents
-        System.arraycopy(
-          shard.scoreDocs,
-          0,
-          allHits,
-          currentStart,
-          shard.scoreDocs.length
-        )
+        System.arraycopy(shard.scoreDocs, 0, allHits, currentStart, shard.scoreDocs.length)
         currentStart += shard.scoreDocs.length
       }
     }

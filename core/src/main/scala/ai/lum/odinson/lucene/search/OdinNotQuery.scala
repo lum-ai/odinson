@@ -35,10 +35,8 @@ class OdinNotQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val includeWeight =
-      include.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    val excludeWeight =
-      exclude.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val includeWeight = include.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
+    val excludeWeight = exclude.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val terms = OdinsonQuery.getTermContexts(includeWeight, excludeWeight)
     new OdinNotWeight(searcher, terms, includeWeight, excludeWeight)
   }
@@ -94,9 +92,7 @@ class OdinNotQuery(
             lastApproxDoc = doc
             lastApproxResult = excludeTwoPhase.matches()
           }
-          if (
-            doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)
-          ) {
+          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)) {
             return AcceptStatus.YES
           }
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed

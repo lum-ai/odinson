@@ -111,9 +111,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   }
 
   it should "work for Julio graph traversal with optional" in {
-    val engine = mkExtractorEngine(
-      getDocumentFromJson(DocumentationDocs.json("me_and_julio"))
-    )
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
     val pattern = "She saw >dobj [] (>conj_and [])?"
     val query = engine.compiler.compile(pattern)
     val results = engine.query(query)
@@ -128,9 +126,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   }
 
   it should "work for Julio graph traversal with ranged quantifier" in {
-    val engine = mkExtractorEngine(
-      getDocumentFromJson(DocumentationDocs.json("me_and_julio"))
-    )
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
     val pattern = "She saw >dobj [] (>conj_and []){,2}"
     val query = engine.compiler.compile(pattern)
     val results = engine.query(query)
@@ -145,9 +141,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   }
 
   it should "work for Julio graph traversal with optional expansion" in {
-    val engine = mkExtractorEngine(
-      getDocumentFromJson(DocumentationDocs.json("me_and_julio"))
-    )
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
     val pattern = "She saw >dobj (?^ [] >conj_and [])?"
     val query = engine.compiler.compile(pattern)
     val results = engine.query(query)
@@ -160,9 +154,7 @@ class TestDocumentationGraphTraversals extends OdinsonTest {
   }
 
   it should "work for Julio graph traversal with ranged expansion" in {
-    val engine = mkExtractorEngine(
-      getDocumentFromJson(DocumentationDocs.json("me_and_julio"))
-    )
+    val engine = mkExtractorEngine(getDocumentFromJson(DocumentationDocs.json("me_and_julio")))
     val pattern = "She saw >dobj (?^ [] >conj_and []){,2}"
     val query = engine.compiler.compile(pattern)
     val results = engine.query(query)

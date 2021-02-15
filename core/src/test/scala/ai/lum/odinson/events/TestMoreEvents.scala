@@ -21,10 +21,8 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
-    val desiredArgs2 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
+    val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
+    val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
     testArguments(m1, desiredArgs1)
     testArguments(m2, desiredArgs2)
     ee.clearState()
@@ -98,10 +96,8 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
-    val desiredArgs2 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
+    val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
+    val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
     testArguments(m1, desiredArgs1)
     testArguments(m2, desiredArgs2)
     ee.clearState()
@@ -137,10 +133,8 @@ class TestMoreEvents extends OdinsonTest {
     testEventTrigger(m1, start = 1, end = 2)
     testEventTrigger(m2, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
-    val desiredArgs2 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
+    val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 4, 5))
+    val desiredArgs2 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("tool", 7, 8))
     testArguments(m1, desiredArgs1)
     testArguments(m2, desiredArgs2)
     // sentence 2
@@ -149,8 +143,7 @@ class TestMoreEvents extends OdinsonTest {
     // test trigger
     testEventTrigger(m3, start = 1, end = 2)
     // test arguments
-    val desiredArgs3 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
+    val desiredArgs3 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
     testArguments(m3, desiredArgs3)
     ee.clearState()
   }
@@ -170,8 +163,7 @@ class TestMoreEvents extends OdinsonTest {
     // test trigger
     testEventTrigger(m1, start = 1, end = 2)
     // test arguments
-    val desiredArgs1 =
-      Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
+    val desiredArgs1 = Seq(ArgumentOffsets("theme", 2, 3), ArgumentOffsets("location", 5, 6))
     testArguments(m1, desiredArgs1)
     ee.clearState()
   }

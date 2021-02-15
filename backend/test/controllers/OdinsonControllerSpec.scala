@@ -25,15 +25,11 @@ import scala.reflect.io.Directory
   * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
   */
 
-class OdinsonControllerSpec
-    extends PlaySpec
-    with GuiceOneAppPerTest
-    with Injecting {
+class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
   val defaultconfig = ConfigFactory.load()
 
-  implicit val ec: scala.concurrent.ExecutionContext =
-    scala.concurrent.ExecutionContext.global
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
   val srcDir: File = new File(getClass.getResource("/").getFile)
@@ -76,23 +72,17 @@ class OdinsonControllerSpec
   implicit override def newAppForTest(testData: TestData): Application =
     new GuiceApplicationBuilder()
       .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
-      .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(
-        indexDir.getAbsolutePath
-      ))
+      .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
       .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
       .build()
 
-  val controller =
-    new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
+  val controller = new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
 
   "OdinsonController" should {
 
     "access the /buildinfo endpoint from a new instance of controller" in {
 
-      val buildinfo = controller.buildInfo(pretty = None).apply(FakeRequest(
-        GET,
-        "/buildinfo"
-      ))
+      val buildinfo = controller.buildInfo(pretty = None).apply(FakeRequest(GET, "/buildinfo"))
 
       status(buildinfo) mustBe OK
       contentType(buildinfo) mustBe Some("application/json")
@@ -123,10 +113,7 @@ class OdinsonControllerSpec
       // the pattern used in this test: "[lemma=be] []"
       val result = route(
         app,
-        FakeRequest(
-          GET,
-          "/api/execute/pattern?odinsonQuery=%5Blemma%3Dbe%5D%20%5B%5D"
-        )
+        FakeRequest(GET, "/api/execute/pattern?odinsonQuery=%5Blemma%3Dbe%5D%20%5B%5D")
       ).get
 
       status(result) mustBe OK
@@ -149,16 +136,11 @@ class OdinsonControllerSpec
            |
         """.stripMargin
 
-      val body = Json.obj(
-        "grammar" -> ruleString,
-        "pageSize" -> 10,
-        "allowTriggerOverlaps" -> false
-      )
+      val body =
+        Json.obj("grammar" -> ruleString, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
 
-      val response = controller.executeGrammar().apply(FakeRequest(
-        POST,
-        "/grammar"
-      ).withJsonBody(body))
+      val response =
+        controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
       Helpers.contentAsString(response) must include("adults")
@@ -179,16 +161,10 @@ class OdinsonControllerSpec
            |
         """.stripMargin
 
-      val body = Json.obj(
-        "grammar" -> ruleString,
-        "pageSize" -> 10,
-        "allowTriggerOverlaps" -> false
-      )
+      val body =
+        Json.obj("grammar" -> ruleString, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
 
-      val response = route(
-        app,
-        FakeRequest(POST, "/api/execute/grammar").withJsonBody(body)
-      ).get
+      val response = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body)).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -199,10 +175,8 @@ class OdinsonControllerSpec
     "respond with token-based frequencies using the /term-freq endpoint" in {
       val body = Json.obj("field" -> "word")
 
-      val response = route(
-        app,
-        FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)
-      ).get
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")

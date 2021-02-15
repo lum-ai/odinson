@@ -21,9 +21,7 @@ object AnnotateText extends App with LazyLogging {
   if (args.length > 0) {
     val dirPath = args(0)
 
-    val processor =
-      if (args.length == 2) args(1)
-      else config[String]("odinson.extra.processorType")
+    val processor = if (args.length == 2) args(1) else config[String]("odinson.extra.processorType")
 
     logger.info(s"Received dataDir as a parameter <${dirPath}>")
     // receive the path from the arguments
@@ -75,13 +73,7 @@ object AnnotateText extends App with LazyLogging {
   }
 
   // NOTE parses the documents in parallel
-  for (
-    f <- textDir.listFilesByWildcard(
-      "*.txt",
-      caseInsensitive = true,
-      recursive = true
-    ).par
-  ) {
+  for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
     val docFile = new File(docsDir, f.getBaseName() + ".json.gz")
 
     if (docFile.exists) {

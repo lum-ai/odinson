@@ -4,9 +4,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
-import org.apache.lucene.queryparser.classic.{
-  QueryParser => LuceneQueryParser
-}
+import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
@@ -49,8 +47,7 @@ class QueryCompiler(
     compile(pattern)
   }
 
-  def mkParentQuery(parentPattern: String): Query =
-    queryParser.parse(parentPattern)
+  def mkParentQuery(parentPattern: String): Query = queryParser.parse(parentPattern)
 
   def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
     val query = compile(pattern)
@@ -104,20 +101,14 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
 
     case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) =>
-      val include =
-        new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
       val lookahead = mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
-      lookahead.map(exclude =>
-        new OdinNotQuery(include, exclude, defaultTokenField)
-      )
+      lookahead.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) =>
-      val include =
-        new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
       val lookbehind = mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
-      lookbehind.map(exclude =>
-        new OdinNotQuery(include, exclude, defaultTokenField)
-      )
+      lookbehind.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     // token constraints
 
@@ -136,9 +127,7 @@ class QueryCompiler(
       val reqArgQueries = required.flatMap(mkArgumentQuery)
       val optArgQueries = optional.flatMap(mkArgumentQuery)
       // all arguments should survive the transformation
-      if (
-        reqArgQueries.length != required.length || optArgQueries.length != optional.length
-      ) {
+      if (reqArgQueries.length != required.length || optArgQueries.length != optional.length) {
         ???
       }
       // add start-constraints of required args to trigger
@@ -180,22 +169,14 @@ class QueryCompiler(
           val newClauses = clauses.foldRight(List.empty[OdinsonQuery]) {
             case (c1: AllNGramsQuery, (c2: AllNGramsQuery) :: cs) =>
               // merge consecutive wildcards
-              val c = new AllNGramsQuery(
-                defaultTokenField,
-                sentenceLengthField,
-                c1.n + c2.n
-              )
+              val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
               c :: cs
             case (concat: OdinConcatQuery, cs) =>
               // expand nested concatenations
               (concat.clauses.last, cs.head) match {
                 case (c1: AllNGramsQuery, c2: AllNGramsQuery) =>
                   // take care of consecutive wildcards when expanding
-                  val c = new AllNGramsQuery(
-                    defaultTokenField,
-                    sentenceLengthField,
-                    c1.n + c2.n
-                  )
+                  val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
                   concat.clauses.init ::: List(c) ::: cs.tail
                 case _ => concat.clauses ::: cs
               }
@@ -204,8 +185,7 @@ class QueryCompiler(
           // if collapsed into a single query then don't concatenate
           val query = newClauses match {
             case List(q) => q
-            case qs =>
-              new OdinConcatQuery(qs, defaultTokenField, sentenceLengthField)
+            case qs      => new OdinConcatQuery(qs, defaultTokenField, sentenceLengthField)
           }
           // return resulting query
           Some(query)
@@ -214,9 +194,7 @@ class QueryCompiler(
     // named captures
 
     case Ast.NamedCapturePattern(name, label, pattern) =>
-      mkOdinsonQuery(pattern).map(q =>
-        new OdinQueryNamedCapture(q, name, label)
-      )
+      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name, label))
 
     // mentions
 
@@ -259,21 +237,15 @@ class QueryCompiler(
     case Ast.LazyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q =>
-          new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = false)
+        case q                             => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = false)
       }
 
     case Ast.LazyRepetitionPattern(pattern, 0, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val oneOrMore =
-            new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = false)
-          new OdinsonOptionalQuery(
-            oneOrMore,
-            sentenceLengthField,
-            isGreedy = false
-          )
+          val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = false)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
       }
 
     case Ast.LazyRepetitionPattern(pattern, 1, Some(1)) =>
@@ -282,8 +254,7 @@ class QueryCompiler(
     case Ast.LazyRepetitionPattern(pattern, min, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q =>
-          new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = false)
+        case q                             => new OdinRepetitionQuery(q, min, Int.MaxValue, isGreedy = false)
       }
 
     case Ast.LazyRepetitionPattern(pattern, n, Some(m)) if n == m =>
@@ -304,11 +275,7 @@ class QueryCompiler(
           new OdinOrQuery(clauses.toList, defaultTokenField)
         case q if min == 0 =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = false)
-          new OdinsonOptionalQuery(
-            oneOrMore,
-            sentenceLengthField,
-            isGreedy = false
-          )
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = false)
       }
 
@@ -319,21 +286,15 @@ class QueryCompiler(
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q =>
-          new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = true)
+        case q                             => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
-          val oneOrMore =
-            new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = true)
-          new OdinsonOptionalQuery(
-            oneOrMore,
-            sentenceLengthField,
-            isGreedy = true
-          )
+          val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
@@ -363,18 +324,13 @@ class QueryCompiler(
           new OdinOrQuery(clauses.toList, defaultTokenField)
         case q if min == 0 =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = true)
-          new OdinsonOptionalQuery(
-            oneOrMore,
-            sentenceLengthField,
-            isGreedy = true
-          )
+          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = true)
       }
 
   }
 
-  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern)
-    : Option[FullTraversalQuery] = tr match {
+  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = tr match {
 
     case t: Ast.SingleStepFullTraversalPattern =>
       mkOdinsonQuery(t.surface).map { q =>
@@ -433,10 +389,7 @@ class QueryCompiler(
     }
   }
 
-  def addConstraint(
-    query: OdinsonQuery,
-    constraint: Option[OdinsonQuery]
-  ): OdinsonQuery = {
+  def addConstraint(query: OdinsonQuery, constraint: Option[OdinsonQuery]): OdinsonQuery = {
     (query, constraint) match {
       case (q, None)                                => q
       case (q: AllNGramsQuery, Some(c)) if q.n == 1 => c
@@ -490,8 +443,7 @@ class QueryCompiler(
       new FailQuery(defaultTokenField)
 
     case Ast.NegatedConstraint(constraint) =>
-      val include =
-        new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
+      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
       val exclude = mkConstraintQuery(constraint)
       new OdinNotQuery(include, exclude, defaultTokenField)
 
@@ -524,9 +476,7 @@ class QueryCompiler(
       }
 
     case Ast.DisjunctiveTraversal(traversals) =>
-      traversals.map(mkGraphTraversal).distinct.partition(
-        _ == NoTraversal
-      ) match {
+      traversals.map(mkGraphTraversal).distinct.partition(_ == NoTraversal) match {
         case (Seq(), Seq()) => throw new OdinsonException("OR without clauses")
         case (Seq(), gts) =>
           gts.filter(_ != FailTraversal) match {
@@ -584,25 +534,21 @@ class QueryCompiler(
     case OutgoingWildcard           => None
     case Incoming(FailLabelMatcher) => Some(new FailQuery(defaultTokenField))
     case Incoming(matcher: ExactLabelMatcher) =>
-      val spanTermQuery =
-        new SpanTermQuery(new Term(incomingTokenField, matcher.string))
+      val spanTermQuery = new SpanTermQuery(new Term(incomingTokenField, matcher.string))
       val odinQuery = new OdinQueryWrapper(maybeMask(spanTermQuery))
       Some(odinQuery)
     case Incoming(matcher: RegexLabelMatcher) =>
-      val regexpQuery =
-        new RegexpQuery(new Term(incomingTokenField, matcher.regex.regex))
+      val regexpQuery = new RegexpQuery(new Term(incomingTokenField, matcher.regex.regex))
       val spanQuery = new SpanMultiTermQueryWrapper(regexpQuery)
       val odinQuery = new OdinQueryWrapper(maybeMask(spanQuery))
       Some(odinQuery)
     case Outgoing(FailLabelMatcher) => Some(new FailQuery(defaultTokenField))
     case Outgoing(matcher: ExactLabelMatcher) =>
-      val spanTermQuery =
-        new SpanTermQuery(new Term(outgoingTokenField, matcher.string))
+      val spanTermQuery = new SpanTermQuery(new Term(outgoingTokenField, matcher.string))
       val odinQuery = new OdinQueryWrapper(maybeMask(spanTermQuery))
       Some(odinQuery)
     case Outgoing(matcher: RegexLabelMatcher) =>
-      val regexpQuery =
-        new RegexpQuery(new Term(outgoingTokenField, matcher.regex.regex))
+      val regexpQuery = new RegexpQuery(new Term(outgoingTokenField, matcher.regex.regex))
       val spanQuery = new SpanMultiTermQueryWrapper(regexpQuery)
       val odinQuery = new OdinQueryWrapper(maybeMask(spanQuery))
       Some(odinQuery)
@@ -625,25 +571,21 @@ class QueryCompiler(
     case OutgoingWildcard           => None
     case Incoming(FailLabelMatcher) => Some(new FailQuery(defaultTokenField))
     case Incoming(matcher: ExactLabelMatcher) =>
-      val spanTermQuery =
-        new SpanTermQuery(new Term(outgoingTokenField, matcher.string))
+      val spanTermQuery = new SpanTermQuery(new Term(outgoingTokenField, matcher.string))
       val odinQuery = new OdinQueryWrapper(maybeMask(spanTermQuery))
       Some(odinQuery)
     case Incoming(matcher: RegexLabelMatcher) =>
-      val regexpQuery =
-        new RegexpQuery(new Term(outgoingTokenField, matcher.regex.regex))
+      val regexpQuery = new RegexpQuery(new Term(outgoingTokenField, matcher.regex.regex))
       val spanQuery = new SpanMultiTermQueryWrapper(regexpQuery)
       val odinQuery = new OdinQueryWrapper(maybeMask(spanQuery))
       Some(odinQuery)
     case Outgoing(FailLabelMatcher) => Some(new FailQuery(defaultTokenField))
     case Outgoing(matcher: ExactLabelMatcher) =>
-      val spanTermQuery =
-        new SpanTermQuery(new Term(incomingTokenField, matcher.string))
+      val spanTermQuery = new SpanTermQuery(new Term(incomingTokenField, matcher.string))
       val odinQuery = new OdinQueryWrapper(maybeMask(spanTermQuery))
       Some(odinQuery)
     case Outgoing(matcher: RegexLabelMatcher) =>
-      val regexpQuery =
-        new RegexpQuery(new Term(incomingTokenField, matcher.regex.regex))
+      val regexpQuery = new RegexpQuery(new Term(incomingTokenField, matcher.regex.regex))
       val spanQuery = new SpanMultiTermQueryWrapper(regexpQuery)
       val odinQuery = new OdinQueryWrapper(maybeMask(spanQuery))
       Some(odinQuery)

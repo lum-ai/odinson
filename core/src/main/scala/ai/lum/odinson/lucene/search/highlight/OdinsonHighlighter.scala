@@ -31,8 +31,7 @@ trait OdinsonHighlighter {
     val tvs = reader.getTermVectors(docId)
     val doc = reader.document(docId)
     val sentenceText = doc.getField(field).stringValue
-    val ts: TokenStream =
-      TokenSources.getTokenStream(field, tvs, sentenceText, analyzer, -1)
+    val ts: TokenStream = TokenSources.getTokenStream(field, tvs, sentenceText, analyzer, -1)
     val tokens: Array[String] = TokenStreamUtils.getTokens(ts)
 
     if (captures.nonEmpty) {

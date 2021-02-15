@@ -19,10 +19,7 @@ class DocEndQuery(
 
   def getField(): String = defaultTokenField
 
-  override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): OdinsonWeight = {
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     new DocEndWeight(searcher, null)
   }
 

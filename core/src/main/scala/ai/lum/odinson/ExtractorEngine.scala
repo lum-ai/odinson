@@ -110,10 +110,7 @@ class ExtractorEngine private (
     * @param disableMatchSelector
     * @return
     */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    disableMatchSelector: Boolean
-  ): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
     query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
   }
 
@@ -145,11 +142,7 @@ class ExtractorEngine private (
     * @param disableMatchSelector
     * @return
     */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    disableMatchSelector: Boolean
-  ): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
     query(odinsonQuery, n, null, disableMatchSelector)
   }
 
@@ -162,11 +155,7 @@ class ExtractorEngine private (
     * @param after an OdinResults with a set of lucene documents
     * @return
     */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinResults
-  ): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinResults): OdinResults = {
     query(odinsonQuery, n, after.scoreDocs.last)
   }
 
@@ -179,11 +168,7 @@ class ExtractorEngine private (
     * @param after the last lucene document to ignore
     * @return
     */
-  def query(
-    odinsonQuery: OdinsonQuery,
-    n: Int,
-    after: OdinsonScoreDoc
-  ): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
     query(odinsonQuery, n, after, false)
   }
 
@@ -229,15 +214,12 @@ class ExtractorEngine private (
   def getParentDoc(docId: String): LuceneDocument = {
     val sterileDocID = docId.escapeJava
     val booleanQuery = new LuceneBooleanQuery.Builder()
-    val q1 =
-      new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
+    val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
     val q2 = new QueryParser("type", analyzer).parse("metadata")
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
-    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd =>
-      indexReader.document(sd.doc)
-    )
+    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
   }
@@ -247,10 +229,7 @@ class ExtractorEngine private (
     compileRuleString(rules, Map.empty[String, String])
   }
 
-  def compileRuleString(
-    rules: String,
-    variables: Map[String, String]
-  ): Seq[Extractor] = {
+  def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleString(rules, variables)
   }
 
@@ -258,10 +237,7 @@ class ExtractorEngine private (
     compileRuleFile(ruleFile, Map.empty[String, String])
   }
 
-  def compileRuleFile(
-    ruleFile: File,
-    variables: Map[String, String]
-  ): Seq[Extractor] = {
+  def compileRuleFile(ruleFile: File, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleFile(ruleFile, variables)
   }
 
@@ -269,10 +245,7 @@ class ExtractorEngine private (
     compileRuleFile(rulePath, Map.empty[String, String])
   }
 
-  def compileRuleFile(
-    rulePath: String,
-    variables: Map[String, String]
-  ): Seq[Extractor] = {
+  def compileRuleFile(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleFile(rulePath, variables)
   }
 
@@ -280,10 +253,7 @@ class ExtractorEngine private (
     compileRuleResource(rulePath, Map.empty[String, String])
   }
 
-  def compileRuleResource(
-    rulePath: String,
-    variables: Map[String, String]
-  ): Seq[Extractor] = {
+  def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleResource(rulePath, variables)
   }
 
@@ -293,14 +263,8 @@ class ExtractorEngine private (
     disableMatchSelector: Boolean,
     mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
   ): Iterator[Mention] = {
-    val odinResults =
-      query(extractor.query, numSentences, null, disableMatchSelector)
-    new MentionsIterator(
-      extractor.label,
-      Some(extractor.name),
-      odinResults,
-      mruIdGetter
-    )
+    val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
+    new MentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
   }
 
   /** Execute all rules in a grammar without populating the state.
@@ -319,12 +283,7 @@ class ExtractorEngine private (
     allowTriggerOverlaps: Boolean = false,
     disableMatchSelector: Boolean = false
   ): Iterator[Mention] = {
-    extractNoState(
-      extractors,
-      numDocs(),
-      allowTriggerOverlaps,
-      disableMatchSelector
-    )
+    extractNoState(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
   /** Execute all rules in a grammar without populating the state.
@@ -345,16 +304,11 @@ class ExtractorEngine private (
     allowTriggerOverlaps: Boolean,
     disableMatchSelector: Boolean
   ): Iterator[Mention] = {
-    val mruIdGetter =
-      MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
     // Apply each extractor, concatenate results
-    val resultsIterators = extractors.map(extract(
-      _,
-      numSentences,
-      disableMatchSelector,
-      mruIdGetter
-    ))
+    val resultsIterators =
+      extractors.map(extract(_, numSentences, disableMatchSelector, mruIdGetter))
     val results = MentionsIterator.concatenate(resultsIterators)
 
     // Apply the triggerOverlap filter, if enabled
@@ -378,12 +332,7 @@ class ExtractorEngine private (
     allowTriggerOverlaps: Boolean = false,
     disableMatchSelector: Boolean = false
   ): Iterator[Mention] = {
-    extractMentions(
-      extractors,
-      numDocs(),
-      allowTriggerOverlaps,
-      disableMatchSelector
-    )
+    extractMentions(extractors, numDocs(), allowTriggerOverlaps, disableMatchSelector)
   }
 
   /** Execute all extractors in a grammar according to their priorities,
@@ -405,30 +354,19 @@ class ExtractorEngine private (
     // If there is a mock state, then we don't want to add mentions to the state, rather, we want to extract without a state
     // FIXME: maybe remove the mock state since we have "extractNoState" entry point?
     if (state.isInstanceOf[MockState.type]) {
-      return extractNoState(
-        extractors,
-        numSentences,
-        allowTriggerOverlaps,
-        disableMatchSelector
-      )
+      return extractNoState(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
     }
 
     val minIterations = extractors.map(_.priority.minIterations).max
-    val mruIdGetter =
-      MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
 
     var finished = false
     var epoch = 1
 
     while (!finished) {
       // extract the mentions from all extractors of this priority
-      val mentions = extractFromPriority(
-        epoch,
-        extractors,
-        numSentences,
-        disableMatchSelector,
-        mruIdGetter
-      )
+      val mentions =
+        extractFromPriority(epoch, extractors, numSentences, disableMatchSelector, mruIdGetter)
       epoch += 1
       // if anything returned, add to the state
       if (mentions.hasNext) {
@@ -470,10 +408,7 @@ class ExtractorEngine private (
     * @param m Mention
     * @return original Mention plus any argument Mentions that need to be added to the State
     */
-  private def handleArgumentPromotion(
-    m: Mention,
-    usingState: Boolean
-  ): Seq[Mention] = {
+  private def handleArgumentPromotion(m: Mention, usingState: Boolean): Seq[Mention] = {
     // This will accrue the promoted argument mentions and original mention, all of which
     // will be converted to having StateMatches (if usingState)
     val results = new ArrayBuffer[Mention]()
@@ -562,8 +497,7 @@ class ExtractorEngine private (
   @deprecated(
     message =
       "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since =
-      "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
+    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
   def getString(docID: Int, m: OdinsonMatch): String = {
     getTokens(docID, m).mkString(" ")
@@ -574,17 +508,13 @@ class ExtractorEngine private (
   }
 
   def getArgument(mention: Mention, name: String): String = {
-    getStringForSpan(
-      mention.luceneDocId,
-      mention.arguments(name).head.odinsonMatch
-    )
+    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
   }
 
   @deprecated(
     message =
       "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.",
-    since =
-      "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
+    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
   def getTokens(m: Mention): Array[String] = {
     getTokens(m.luceneDocId, m.odinsonMatch)
@@ -602,11 +532,7 @@ class ExtractorEngine private (
     getTokensForSpan(docID, displayField, m.start, m.end)
   }
 
-  def getTokensForSpan(
-    docID: Int,
-    m: OdinsonMatch,
-    fieldName: String
-  ): Array[String] = {
+  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
     getTokensForSpan(docID, fieldName, m.start, m.end)
   }
 
@@ -614,20 +540,14 @@ class ExtractorEngine private (
     getTokensForSpan(docID, displayField, start, end)
   }
 
-  def getTokensForSpan(
-    docID: Int,
-    fieldName: String,
-    start: Int,
-    end: Int
-  ): Array[String] = {
+  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
     getTokens(docID, fieldName).slice(start, end)
   }
 
   @deprecated(
     message =
       "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since =
-      "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
+    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
   def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
     getTokens(docID, displayField).slice(m.start, m.end)

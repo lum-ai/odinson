@@ -27,8 +27,7 @@ class OdinOrQuery(
 
   def getField(): String = field
 
-  override def setState(stateOpt: Option[State]): Unit =
-    clauses.foreach(_.setState(stateOpt))
+  override def setState(stateOpt: Option[State]): Unit = clauses.foreach(_.setState(stateOpt))
 
   override def rewrite(reader: IndexReader): Query = {
     val rewritten = clauses.map(_.rewrite(reader).asInstanceOf[OdinsonQuery])
@@ -43,11 +42,8 @@ class OdinOrQuery(
     searcher: IndexSearcher,
     needsScores: Boolean
   ): OdinsonWeight = {
-    val subWeights = clauses.map(
-      _.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    ).asJava
-    val terms =
-      if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
+    val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
+    val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
     new OdinOrWeight(subWeights, searcher, terms)
   }
 
@@ -76,11 +72,7 @@ class OdinOrQuery(
       val builder = new ArrayBuilder.ofRef[OdinsonSpans]
       builder.sizeHint(clauses.size)
       for (weight <- subWeights) {
-        val subSpan =
-          weight.getSpans(
-            context,
-            requiredPostings
-          ) //.asInstanceOf[OdinsonSpans]
+        val subSpan = weight.getSpans(context, requiredPostings) //.asInstanceOf[OdinsonSpans]
         if (subSpan != null) {
           builder += subSpan
         }
@@ -135,8 +127,7 @@ class OdinOrSpans(val subSpans: Array[OdinsonSpans]) extends OdinsonSpans {
   def cost(): Long = subSpans.map(_.cost()).sum
 
   override def asTwoPhaseIterator(): TwoPhaseIterator = {
-    var sumMatchCost: Float =
-      0 // See also DisjunctionScorer.asTwoPhaseIterator()
+    var sumMatchCost: Float = 0 // See also DisjunctionScorer.asTwoPhaseIterator()
     var sumApproxCost: Long = 0
 
     for (w <- byDocQueue.iterator().asScala) {

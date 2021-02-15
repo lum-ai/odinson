@@ -14,10 +14,7 @@ class DocStartQuery(val field: String) extends OdinsonQuery { self =>
 
   def getField(): String = field
 
-  override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
-  ): OdinsonWeight = {
+  override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     new DocStartWeight(searcher, null)
   }
 
