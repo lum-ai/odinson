@@ -137,8 +137,7 @@ class QueryParser(
   // this production handles arguments without label, with full traversal, and with optional half step
   def untypedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ quantifier(includeLazy =
-      false
-    ).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
+      false).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
         val fullTraversal = lastTraversal match {
           case None    => traversalsWithSurface
