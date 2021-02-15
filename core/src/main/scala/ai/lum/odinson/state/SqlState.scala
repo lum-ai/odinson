@@ -10,14 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{
-  IdGetter,
-  LazyIdGetter,
-  Mention,
-  NamedCapture,
-  OdinsonMatch,
-  StateMatch
-}
+import ai.lum.odinson.{ IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch }
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.apache.lucene.search.IndexSearcher

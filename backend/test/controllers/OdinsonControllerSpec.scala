@@ -25,10 +25,7 @@ import scala.reflect.io.Directory
   * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
   */
 
-class OdinsonControllerSpec
-    extends PlaySpec
-    with GuiceOneAppPerTest
-    with Injecting {
+class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
   val defaultconfig = ConfigFactory.load()
 

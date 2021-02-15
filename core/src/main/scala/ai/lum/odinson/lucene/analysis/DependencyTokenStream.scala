@@ -2,13 +2,9 @@ package ai.lum.odinson.lucene.analysis
 
 import scala.annotation.tailrec
 import org.apache.lucene.analysis.TokenStream
-import org.apache.lucene.analysis.tokenattributes.{
-  CharTermAttribute,
-  PositionIncrementAttribute
-}
+import org.apache.lucene.analysis.tokenattributes.{ CharTermAttribute, PositionIncrementAttribute }
 
-class DependencyTokenStream(val edges: Array[Array[(Int, String)]])
-    extends TokenStream {
+class DependencyTokenStream(val edges: Array[Array[(Int, String)]]) extends TokenStream {
   // edges can be either incoming or outgoing
 
   def this(edges: Seq[Seq[(Int, String)]]) = {

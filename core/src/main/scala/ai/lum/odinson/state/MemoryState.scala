@@ -11,8 +11,7 @@ import com.typesafe.config.Config
 // This version of MemoryState differs from most versions of State in that it does not need to
 // serialize the OdinsonMatches and then deserialize them as StateMatches.  This version keeps
 // the matches just as they are.  This might cause behavior changes in clients.  Beware!
-class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
-    extends State {
+class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None) extends State {
   import MemoryState._
 
   if (persistOnClose) require(outfile.isDefined)
@@ -20,8 +19,8 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
   implicit val resultItemOrdering: MemoryState.MentionOrdering.type =
     MemoryState.MentionOrdering
 
-  protected val baseIdLabelToMentions
-    : mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] = mutable.Map.empty
+  protected val baseIdLabelToMentions: mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] =
+    mutable.Map.empty
 
   protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] =
     mutable.Map.empty
@@ -134,15 +133,12 @@ object MemoryState {
 
     def compare(left: Mention, right: Mention): Int = {
       right match {
-        case equal if left == right                             => 0
-        case earlierDoc if left.luceneDocId < right.luceneDocId => -1
-        case laterDoc if left.luceneDocId > right.luceneDocId   => 1
-        case sameDocComesFirst
-            if left.odinsonMatch.start < right.odinsonMatch.start => -1
-        case sameDocComesAfter
-            if left.odinsonMatch.start > right.odinsonMatch.start => 1
-        case sameDocSameStart
-            if left.odinsonMatch.start == right.odinsonMatch.start =>
+        case equal if left == right                                                  => 0
+        case earlierDoc if left.luceneDocId < right.luceneDocId                      => -1
+        case laterDoc if left.luceneDocId > right.luceneDocId                        => 1
+        case sameDocComesFirst if left.odinsonMatch.start < right.odinsonMatch.start => -1
+        case sameDocComesAfter if left.odinsonMatch.start > right.odinsonMatch.start => 1
+        case sameDocSameStart if left.odinsonMatch.start == right.odinsonMatch.start =>
           val leftStart =
             if (left.odinsonMatch.namedCaptures.isEmpty) left.odinsonMatch.start
             else left.odinsonMatch.namedCaptures.map(_.capturedMatch.start).min

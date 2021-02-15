@@ -1,12 +1,6 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.{
-  Document,
-  ExtractorEngine,
-  Sentence,
-  TokensField,
-  utils
-}
+import ai.lum.odinson.{ Document, ExtractorEngine, Sentence, TokensField, utils }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
 class TestExtractorEngine extends OdinsonTest {

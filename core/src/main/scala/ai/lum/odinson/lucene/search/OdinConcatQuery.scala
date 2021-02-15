@@ -165,9 +165,7 @@ class OdinConcatQuery(
           val pos = left.end
           // one after the last left span with end == pos
           var iStop = i
-          while (
-            iStop < leftSpansSorted.length && leftSpansSorted(iStop).end == pos
-          ) {
+          while (iStop < leftSpansSorted.length && leftSpansSorted(iStop).end == pos) {
             iStop += 1
           }
           // one after the last right span with start == pos

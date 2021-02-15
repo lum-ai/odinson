@@ -78,9 +78,7 @@ object OdinsonWeight {
     termContexts: JMap[Term, TermContext],
     similarity: Similarity
   ): Similarity.SimWeight = {
-    if (
-      termContexts == null || termContexts.size() == 0 || query.getField() == null
-    ) return null
+    if (termContexts == null || termContexts.size() == 0 || query.getField() == null) return null
     val termStats = new Array[TermStatistics](termContexts.size())
     var i = 0
     for (term <- termContexts.keySet().iterator().asScala) {

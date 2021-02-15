@@ -148,8 +148,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   ): Boolean = {
     getAllMatches(odinResults)
       .collect {
-        case (mDoc, mMatch)
-            if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
+        case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
           mMatch
       }
       .nonEmpty
@@ -169,8 +168,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
     captured
       .collect {
-        case (mDoc, mMatch)
-            if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
+        case (mDoc, mMatch) if (mDoc == doc && mMatch.start == start && mMatch.end == end) =>
           mMatch
       }
       .nonEmpty

@@ -94,9 +94,7 @@ class OdinNotQuery(
             lastApproxDoc = doc
             lastApproxResult = excludeTwoPhase.matches()
           }
-          if (
-            doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)
-          ) {
+          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)) {
             return AcceptStatus.YES
           }
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed

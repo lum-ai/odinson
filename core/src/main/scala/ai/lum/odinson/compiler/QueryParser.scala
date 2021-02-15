@@ -79,8 +79,7 @@ class QueryParser(
   }
 
   // the argument must be a mention that already exists in the state
-  def existingArgumentPatternWithoutFullTraversal[_: P]
-    : P[Ast.ArgumentPattern] = {
+  def existingArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, label, quant, lastTraversal) =>
@@ -156,8 +155,7 @@ class QueryParser(
   }
 
   // the argument will be promoted to a mention if it isn't one already
-  def promotedArgumentPatternWithoutFullTraversal[_: P]
-    : P[Ast.ArgumentPattern] = {
+  def promotedArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, label, quant, lastTraversal) =>
@@ -217,8 +215,7 @@ class QueryParser(
   }
 
   // this production handles arguments without label and with a single half step
-  def untypedArgumentPatternWithoutFullTraversal[_: P]
-    : P[Ast.ArgumentPattern] = {
+  def untypedArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ quantifier(includeLazy =
       false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, quant, lastTraversal) =>

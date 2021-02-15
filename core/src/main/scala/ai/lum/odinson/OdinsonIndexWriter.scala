@@ -10,12 +10,7 @@ import org.apache.lucene.document.Field.Store
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.{
-  Directory,
-  FSDirectory,
-  IOContext,
-  RAMDirectory
-}
+import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory

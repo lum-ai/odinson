@@ -155,9 +155,7 @@ class OdinsonCollector(
 
       // based on the docBase of the next reader in line, we might want to skip this entire reader
       // if all the indexes here are before the specified 'after' value
-      if (
-        context.parent.isTopLevel && context.parent.leaves().size() > context.ordInParent + 1
-      ) {
+      if (context.parent.isTopLevel && context.parent.leaves().size() > context.ordInParent + 1) {
         val nextLeafContext =
           context.parent.leaves().get(context.ordInParent + 1)
         if (nextLeafContext.docBase <= after + 1) {

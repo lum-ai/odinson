@@ -300,9 +300,7 @@ class OdinsonController @Inject() (
       val composedExtractors = parentQuery match {
         case Some(pq) =>
           val cpq = extractorEngine.compiler.mkParentQuery(pq)
-          baseExtractors.map(be =>
-            be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq))
-          )
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
         case None => baseExtractors
       }
       val start = System.currentTimeMillis()
@@ -566,8 +564,7 @@ class OdinsonController @Inject() (
     Json.obj(namedCapture.name -> mkJson(namedCapture.capturedMatch))
   }
 
-  def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc)
-    : Json.JsValueWrapper = {
+  def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
     Json.obj(
       "sentenceId" -> odinsonScoreDoc.doc,
       "score" -> odinsonScoreDoc.score,

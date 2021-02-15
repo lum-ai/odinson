@@ -40,8 +40,7 @@ object OdinsonQuery {
     terms
   }
 
-  def getTermContexts(weights: Collection[OdinsonWeight])
-    : JMap[Term, TermContext] = {
+  def getTermContexts(weights: Collection[OdinsonWeight]): JMap[Term, TermContext] = {
     val terms = new TreeMap[Term, TermContext]()
     for (w <- weights.iterator().asScala) {
       w.extractTermContexts(terms)

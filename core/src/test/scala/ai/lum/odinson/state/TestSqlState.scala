@@ -269,8 +269,7 @@ class TestSqlState extends OdinsonTest {
     }
   }
 
-  def newRandomDocBasesAndIdsAndLabels(random: Random)
-    : Array[(Int, Int, String)] = {
+  def newRandomDocBasesAndIdsAndLabels(random: Random): Array[(Int, Int, String)] = {
     val count = random.nextInt(5) + 4
     val docBasesAndIdsAndLabels = 1.to(count).map { _ =>
       val docId = random.nextInt()

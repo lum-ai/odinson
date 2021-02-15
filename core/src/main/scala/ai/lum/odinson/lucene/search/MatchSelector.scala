@@ -84,8 +84,7 @@ object MatchSelector {
             ???
           }
 
-        case (leftMatches, rightMatches)
-            if leftMatches.nonEmpty && rightMatches.nonEmpty =>
+        case (leftMatches, rightMatches) if leftMatches.nonEmpty && rightMatches.nonEmpty =>
           val left = expandFirstMatch(leftMatches)
           val right = expandFirstMatch(rightMatches)
           traverse(left, right)
@@ -145,9 +144,7 @@ object MatchSelector {
   private def packageEvents(sketch: EventSketch): List[EventMatch] = {
     val trigger = sketch.trigger
     val argumentPackages = packageArguments(sketch.argSketches)
-    argumentPackages.map(args =>
-      new EventMatch(trigger, args, sketch.argumentMetadata)
-    )
+    argumentPackages.map(args => new EventMatch(trigger, args, sketch.argumentMetadata))
   }
 
   private def packageArguments(
@@ -189,8 +186,7 @@ object MatchSelector {
     }
   }
 
-  private def groupMatches(matches: Seq[OdinsonMatch])
-    : Seq[Seq[OdinsonMatch]] = {
+  private def groupMatches(matches: Seq[OdinsonMatch]): Seq[Seq[OdinsonMatch]] = {
     val buckets = ArrayBuffer.empty[ArrayBuffer[OdinsonMatch]]
     for (m <- matches) {
       var found = false

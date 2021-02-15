@@ -58,8 +58,7 @@ class OdinsonScorer(
   // - consumes all matches with the same start position
   // - selects the span to return
   // - leaves the spans iterator at the next start position
-  private def getCurrentMatchesAndAdvance(spans: OdinsonSpans)
-    : Seq[OdinsonMatch] = {
+  private def getCurrentMatchesAndAdvance(spans: OdinsonSpans): Seq[OdinsonMatch] = {
     val startPosition = spans.startPosition()
     if (startPosition == Spans.NO_MORE_POSITIONS) {
       return Nil
@@ -74,9 +73,7 @@ class OdinsonScorer(
     // select final match
     val finalMatches = MatchSelector.pickMatches(currentMatches)
     // advance to next match that doesn't overlap with current result
-    while (
-      nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatches.last.end
-    ) {
+    while (nextStart != Spans.NO_MORE_POSITIONS && nextStart < finalMatches.last.end) {
       nextStart = spans.nextStartPosition()
     }
     // return results

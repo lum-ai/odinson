@@ -235,9 +235,7 @@ class ExtractorEngine private (
     val q2 = new QueryParser("type", analyzer).parse("metadata")
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
-    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd =>
-      indexReader.document(sd.doc)
-    )
+    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
   }

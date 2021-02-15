@@ -4,9 +4,7 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
-import org.apache.lucene.queryparser.classic.{
-  QueryParser => LuceneQueryParser
-}
+import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
@@ -107,17 +105,13 @@ class QueryCompiler(
       val include =
         new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
       val lookahead = mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
-      lookahead.map(exclude =>
-        new OdinNotQuery(include, exclude, defaultTokenField)
-      )
+      lookahead.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) =>
       val include =
         new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
       val lookbehind = mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
-      lookbehind.map(exclude =>
-        new OdinNotQuery(include, exclude, defaultTokenField)
-      )
+      lookbehind.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     // token constraints
 
@@ -136,9 +130,7 @@ class QueryCompiler(
       val reqArgQueries = required.flatMap(mkArgumentQuery)
       val optArgQueries = optional.flatMap(mkArgumentQuery)
       // all arguments should survive the transformation
-      if (
-        reqArgQueries.length != required.length || optArgQueries.length != optional.length
-      ) {
+      if (reqArgQueries.length != required.length || optArgQueries.length != optional.length) {
         ???
       }
       // add start-constraints of required args to trigger
@@ -214,9 +206,7 @@ class QueryCompiler(
     // named captures
 
     case Ast.NamedCapturePattern(name, label, pattern) =>
-      mkOdinsonQuery(pattern).map(q =>
-        new OdinQueryNamedCapture(q, name, label)
-      )
+      mkOdinsonQuery(pattern).map(q => new OdinQueryNamedCapture(q, name, label))
 
     // mentions
 
@@ -373,8 +363,7 @@ class QueryCompiler(
 
   }
 
-  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern)
-    : Option[FullTraversalQuery] = tr match {
+  def mkFullTraversalQuery(tr: Ast.FullTraversalPattern): Option[FullTraversalQuery] = tr match {
 
     case t: Ast.SingleStepFullTraversalPattern =>
       mkOdinsonQuery(t.surface).map { q =>

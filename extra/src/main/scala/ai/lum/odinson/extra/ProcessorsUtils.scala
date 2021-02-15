@@ -2,15 +2,8 @@ package ai.lum.odinson.extra
 
 import java.util.UUID
 
-import org.clulab.processors.{
-  Document => ProcessorsDocument,
-  Sentence => ProcessorsSentence
-}
-import ai.lum.odinson.{
-  Document => OdinsonDocument,
-  Sentence => OdinsonSentence,
-  _
-}
+import org.clulab.processors.{ Document => ProcessorsDocument, Sentence => ProcessorsSentence }
+import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence, _ }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import edu.cmu.dynet.Initialize
@@ -66,9 +59,7 @@ object ProcessorsUtils {
       s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk =
       s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
-    val maybeDeps = s.dependencies.map(g =>
-      GraphField(dependenciesField, g.allEdges, g.roots)
-    )
+    val maybeDeps = s.dependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
     val fields = Some(raw) :: Some(word) :: List(
       maybeTag,
       maybeLemma,

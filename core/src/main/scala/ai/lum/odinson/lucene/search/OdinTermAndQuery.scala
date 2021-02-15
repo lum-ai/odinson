@@ -81,8 +81,7 @@ class OdinTermAndQuery(
 
   }
 
-  class OdinTermAndSpans(val subSpans: Array[OdinsonSpans])
-      extends ConjunctionSpans {
+  class OdinTermAndSpans(val subSpans: Array[OdinsonSpans]) extends ConjunctionSpans {
 
     import Spans._
 

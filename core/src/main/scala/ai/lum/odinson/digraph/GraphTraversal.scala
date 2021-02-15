@@ -155,8 +155,7 @@ case class Outgoing(matcher: LabelMatcher) extends GraphTraversal {
 }
 
 /** execute a series of traversals where each one starts at the result of the previous one */
-case class Concatenation(traversals: List[GraphTraversal])
-    extends GraphTraversal {
+case class Concatenation(traversals: List[GraphTraversal]) extends GraphTraversal {
 
   def traverse(graph: DirectedGraph, startNode: Int): Seq[Int] = {
     if (traversals.isEmpty) return Nil

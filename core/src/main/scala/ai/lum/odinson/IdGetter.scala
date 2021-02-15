@@ -18,8 +18,7 @@ class KnownIdGetter(docId: String, sentId: String) extends IdGetter {
 
 // This IdGetter delays the doc/sent id lookup until the Mention is referenced or used,
 // saving computational time during extraction.
-class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int)
-    extends IdGetter {
+class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends IdGetter {
   protected lazy val document = indexSearcher.doc(documentId)
   protected lazy val docId: String = document.getField("docId").stringValue
   protected lazy val sentId: String = document.getField("sentId").stringValue
