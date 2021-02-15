@@ -1,8 +1,11 @@
 package ai.lum.odinson.digraph
 
 import java.io.IOException
+
+import ai.lum.common.TryWithResources.using
+
 import scala.collection.mutable
-import org.apache.lucene.store.{ Directory, IOContext }
+import org.apache.lucene.store.{Directory, IOContext}
 import ai.lum.odinson.OdinsonIndexWriter
 
 /** This vocabulary is meant for the labels of the edges of the dependency graph.
@@ -64,8 +67,9 @@ object Vocabulary {
 
   def fromDirectory(directory: Directory): Vocabulary = try {
     // FIXME: is this the correct instantiation of IOContext?
-    val stream = directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)
-    Vocabulary.load(stream.readString())
+    using (directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)) { stream =>
+      Vocabulary.load(stream.readString())
+    }
   } catch {
     case e:IOException => Vocabulary.empty
   }

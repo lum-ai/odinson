@@ -1,6 +1,8 @@
 package ai.lum.odinson.utils
 
 import java.io.IOException
+
+import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.OdinsonIndexWriter
 import org.apache.lucene.store.{Directory, IOContext}
 import ujson.Value
@@ -36,8 +38,9 @@ object IndexSettings {
   }
 
   def fromDirectory(directory: Directory): IndexSettings = try {
-    val stream = directory.openInput(OdinsonIndexWriter.SETTINGSINFO_FILENAME, new IOContext)
-    IndexSettings.load(stream.readString())
+    using (directory.openInput(OdinsonIndexWriter.SETTINGSINFO_FILENAME, new IOContext)) { stream =>
+      IndexSettings.load(stream.readString())
+    }
   } catch {
     case e:IOException => IndexSettings(Seq())
   }
