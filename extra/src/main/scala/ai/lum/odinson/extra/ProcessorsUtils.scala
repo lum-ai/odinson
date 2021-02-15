@@ -25,6 +25,7 @@ object ProcessorsUtils {
 
   // load field names from config
   val config = ConfigFactory.load()
+  // format: off
   val documentIdField   = config[String]("odinson.index.documentIdField")
   val rawTokenField     = config[String]("odinson.index.rawTokenField")
   val wordTokenField    = config[String]("odinson.index.wordTokenField")
@@ -33,6 +34,7 @@ object ProcessorsUtils {
   val chunkTokenField   = config[String]("odinson.index.chunkTokenField")
   val entityTokenField  = config[String]("odinson.index.entityTokenField")
   val dependenciesField = config[String]("odinson.index.dependenciesField")
+  // format: on
 
   /** convert processors document to odinson document */
   def convertDocument(d: ProcessorsDocument): OdinsonDocument = {
