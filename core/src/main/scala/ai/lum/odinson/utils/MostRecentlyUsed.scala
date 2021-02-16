@@ -1,7 +1,6 @@
 package ai.lum.odinson.utils
 
-/**
-  * This class provides functionality similar to mutable.Map[K, V]'s getOrElseUpdate(key, default).
+/** This class provides functionality similar to mutable.Map[K, V]'s getOrElseUpdate(key, default).
   * It keeps track of the (very) most recently used value associated with a key.
   * It's not a general cache or even a MoreRecentlyUsed, but is intended for use when keys
   * are either completely sorted or at least grouped so that == keys follow each other.
@@ -17,8 +16,7 @@ class MostRecentlyUsed[K, V](constructor: K => V) {
   var keyOpt: Option[K] = None
   var valueOpt: Option[V] = None
 
-  /**
-    * @param key the key
+  /** @param key the key
     * @return if the key has just been seen, the value previously (constructed and) returned for the key,
     *         but otherwise a newly constructed (and then cached) value for the key
     */
@@ -33,6 +31,7 @@ class MostRecentlyUsed[K, V](constructor: K => V) {
       value
     }
   }
+
 }
 
 object MostRecentlyUsed {

@@ -3,7 +3,6 @@ package ai.lum.odinson.state
 import ai.lum.odinson.Mention
 import ai.lum.odinson.MentionsIterator.emptyMentionIterator
 
-
 object MockState extends State {
   val emptyMentionArray = new Array[Mention](0)
 

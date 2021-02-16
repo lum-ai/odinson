@@ -8,12 +8,11 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.search.CollectionTerminatedException
 
-
 class OdinsonCollector(
   private val collectedResults: Array[OdinsonScoreDoc],
   private val after: Int,
   private val computeTotalHits: Boolean,
-  private val disableMatchSelector: Boolean,
+  private val disableMatchSelector: Boolean
 ) extends Collector {
 
   def this(numHits: Int, after: Int, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
@@ -24,8 +23,18 @@ class OdinsonCollector(
     this(numHits, -1, computeTotalHits, disableMatchSelector)
   }
 
-  def this(numHits: Int, afterDoc: OdinsonScoreDoc, computeTotalHits: Boolean, disableMatchSelector: Boolean) = {
-    this(numHits, if (afterDoc == null) -1 else afterDoc.doc, computeTotalHits, disableMatchSelector)
+  def this(
+    numHits: Int,
+    afterDoc: OdinsonScoreDoc,
+    computeTotalHits: Boolean,
+    disableMatchSelector: Boolean
+  ) = {
+    this(
+      numHits,
+      if (afterDoc == null) -1 else afterDoc.doc,
+      computeTotalHits,
+      disableMatchSelector
+    )
   }
 
   private var totalHits: Int = 0
@@ -51,14 +60,16 @@ class OdinsonCollector(
 
     override def setScorer(scorer: Scorer): Unit = scorer match {
       case s: OdinsonScorer => this.scorer = s
-      case _ =>throw new OdinsonException("unsupported scorer")
+      case _                => throw new OdinsonException("unsupported scorer")
     }
+
   }
 
   case class TotalHitsCalculatingLeafCollector(
     docBase: Int,
-    afterDoc: Int,
+    afterDoc: Int
   ) extends OdinsonLeafCollector {
+
     def collect(doc: Int): Unit = {
       totalHits += 1
       if (collectedHits >= collectedResults.length || doc <= afterDoc) {
@@ -66,23 +77,26 @@ class OdinsonCollector(
         // for accurate totalHits count
         return
       }
-      val matches = if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
+      val matches =
+        if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
         shardIndex = -1,
         matches = matches,
         segmentDocId = doc,
-        segmentDocBase = docBase,
+        segmentDocBase = docBase
       )
       collectedHits += 1
     }
+
   }
 
   case class EarlyTerminationLeafCollector(
     docBase: Int,
-    afterDoc: Int,
+    afterDoc: Int
   ) extends OdinsonLeafCollector {
+
     def collect(doc: Int): Unit = {
       if (collectedHits >= collectedResults.length) {
         // terminate, since all required results have been collected
@@ -91,18 +105,20 @@ class OdinsonCollector(
       if (doc <= afterDoc) {
         return
       }
-      val matches = if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
+      val matches =
+        if (disableMatchSelector) scorer.getAllPossibleMatches() else scorer.getMatches()
       collectedResults(collectedHits) = new OdinsonScoreDoc(
         doc = doc + docBase,
         score = scorer.score(),
         shardIndex = -1,
         matches = matches,
         segmentDocId = doc,
-        segmentDocBase = docBase,
+        segmentDocBase = docBase
       )
       collectedHits += 1
       totalHits += 1
     }
+
   }
 
   case class NOPCollector() extends LeafCollector {

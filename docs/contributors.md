@@ -7,7 +7,7 @@ nav_order: 2
 # Contributors:
 
 [Marco Valenzuela-Escárcega](https://github.com/marcovzla),   
-[Gustave Hahn-Powell](https://github.com/myedibleenso),  
+[Gus Hahn-Powell](https://github.com/myedibleenso),  
 [Dane Bell](http://danebell.info),  
 [Keith Alcock](http://www.keithalcock.com),  
 [Becky Sharp](https://github.com/BeckySharp),  

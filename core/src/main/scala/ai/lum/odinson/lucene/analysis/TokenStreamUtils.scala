@@ -20,7 +20,9 @@ object TokenStreamUtils {
     val doc = indexSearcher.doc(docID)
     val tvs = indexSearcher.getIndexReader().getTermVectors(docID)
     val field = doc.getField(fieldName)
-    if (field == null) throw new OdinsonException(s"Attempted to getTokens from field that was not stored: $fieldName")
+    if (field == null) throw new OdinsonException(
+      s"Attempted to getTokens from field that was not stored: $fieldName"
+    )
     val text = field.stringValue
     val ts = TokenSources.getTokenStream(fieldName, tvs, text, analyzer, -1)
     val tokens = getTokens(ts)

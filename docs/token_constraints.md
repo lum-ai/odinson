@@ -15,7 +15,7 @@ If you write a query such as this:
 
     dog
 
-Odinson will look for any occurrence of the word `dog`.  Unless specified otherwise, this will be *case-insensitive* and will normalize accents and unicode characters.  That is, this pattern will match: `dog`, `DoG`, and `dög`.
+Odinson will look for any occurrence of the word `dog`.  Unless specified otherwise, this will be *case-insensitive* and will normalize accents and Unicode characters.  That is, this pattern will match: `dog`, `DoG`, and `dög`.
 
 ## Using the token fields
 

@@ -99,7 +99,7 @@ case class ConcatFullTraversalSpans(
   def matchFullTraversal(
     graph: DirectedGraph,
     maxToken: Int,
-    srcMatches: Array[OdinsonMatch],
+    srcMatches: Array[OdinsonMatch]
   ): Array[OdinsonMatch] = {
     var currentMatches = srcMatches
     for (step <- fullTraversal) {

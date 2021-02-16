@@ -4,8 +4,8 @@ import fastparse._
 import ScriptWhitespace._
 
 class QueryParser(
-    val allTokenFields: Seq[String], // the names of all valid token fields
-    val defaultTokenField: String,   // the name of the default token field
+  val allTokenFields: Seq[String], // the names of all valid token fields
+  val defaultTokenField: String // the name of the default token field
 ) {
 
   import QueryParser._
@@ -14,7 +14,8 @@ class QueryParser(
   def parseBasicQuery(query: String) = parse(query.trim, basicPattern(_)).get.value
 
   // FIXME temporary entrypoint
-  def parseEventQuery(query: String) = parse(query.trim, eventPattern(_), verboseFailures = true).get.value
+  def parseEventQuery(query: String) =
+    parse(query.trim, eventPattern(_), verboseFailures = true).get.value
 
   def eventPattern[_: P]: P[Ast.EventPattern] = {
     P(Start ~ "trigger" ~ "=" ~ surfacePattern ~ argumentPattern.rep(1) ~ End).map {
@@ -35,8 +36,7 @@ class QueryParser(
   def existingArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
-      fullTraversalSurface ~ disjunctiveTraversal.?
-    ).map {
+      fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
@@ -52,7 +52,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = false)
     }
@@ -61,8 +61,7 @@ class QueryParser(
   // the argument must be a mention that already exists in the state
   def existingArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal
-    ).map {
+      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, label, quant, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
@@ -72,7 +71,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = false)
     }
@@ -87,8 +86,7 @@ class QueryParser(
   def promotedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
       quantifier(includeLazy = false).? ~ "=" ~
-      fullTraversalSurface ~ disjunctiveTraversal.?
-    ).map {
+      fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, label, quant, traversalsWithSurface, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
@@ -105,7 +103,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = true)
     }
@@ -114,8 +112,7 @@ class QueryParser(
   // the argument will be promoted to a mention if it isn't one already
   def promotedArgumentPatternWithoutFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
     P(Literals.identifier.! ~ ":" ~ "^" ~ Literals.identifier.! ~
-      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal
-    ).map {
+      quantifier(includeLazy = false).? ~ "=" ~ disjunctiveTraversal).map {
       case (name, label, quant, lastTraversal) =>
         // the kind of mention we want
         val mention = Ast.MentionPattern(None, label)
@@ -126,7 +123,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, Some(label), fullTraversal, min, max, promote = true)
     }
@@ -139,10 +136,11 @@ class QueryParser(
 
   // this production handles arguments without label, with full traversal, and with optional half step
   def untypedArgumentPatternWithFullTraversal[_: P]: P[Ast.ArgumentPattern] = {
-    P(Literals.identifier.! ~ quantifier(includeLazy = false).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
+    P(Literals.identifier.! ~ quantifier(includeLazy =
+      false).? ~ "=" ~ fullTraversalSurface ~ disjunctiveTraversal.?).map {
       case (name, quant, traversalsWithSurface, lastTraversal) =>
         val fullTraversal = lastTraversal match {
-          case None => traversalsWithSurface
+          case None    => traversalsWithSurface
           case Some(t) =>
             // if we don't have a final token pattern then assume a wildcard
             val wildcard = Ast.ConstraintPattern(Ast.Wildcard)
@@ -152,7 +150,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, None, fullTraversal, min, max, promote = true)
     }
@@ -168,7 +166,7 @@ class QueryParser(
         // get quantifier parameters
         val (min, max) = quant match {
           case Some(GreedyQuantifier(min, max)) => (min, max)
-          case _ => (1, Some(1))
+          case _                                => (1, Some(1))
         }
         Ast.ArgumentPattern(name, None, fullTraversal, min, max, promote = true)
     }
@@ -181,7 +179,7 @@ class QueryParser(
 
   def graphTraversalPattern[_: P]: P[Ast.Pattern] = {
     P(surfacePattern ~ fullTraversalSurface.?).map {
-      case (src, None) => src
+      case (src, None)            => src
       case (src, Some(traversal)) => Ast.GraphTraversalPattern(src, traversal)
     }
   }
@@ -195,7 +193,7 @@ class QueryParser(
   def fullTraversalSurface[_: P]: P[Ast.FullTraversalPattern] = {
     P(atomicTraversalSurface.rep(1)).map {
       case Seq(t) => t
-      case ts => Ast.ConcatFullTraversalPattern(ts.toList)
+      case ts     => Ast.ConcatFullTraversalPattern(ts.toList)
     }
   }
 
@@ -245,13 +243,16 @@ class QueryParser(
   def quantifiedPattern[_: P]: P[Ast.Pattern] = {
     P(atomicPattern ~ quantifier(includeLazy = true).?).map {
       case (pattern, None) => pattern
-      case (pattern, Some(GreedyQuantifier(min, max))) => Ast.GreedyRepetitionPattern(pattern, min, max)
-      case (pattern, Some(LazyQuantifier(min, max)))   => Ast.LazyRepetitionPattern(pattern, min, max)
+      case (pattern, Some(GreedyQuantifier(min, max))) =>
+        Ast.GreedyRepetitionPattern(pattern, min, max)
+      case (pattern, Some(LazyQuantifier(min, max))) => Ast.LazyRepetitionPattern(pattern, min, max)
     }
   }
 
   def atomicPattern[_: P]: P[Ast.Pattern] = {
-    P(constraintPattern | mentionPattern | "(" ~ disjunctivePattern ~ ")" | expandPattern | namedCapturePattern | assertionPattern)
+    P(
+      constraintPattern | mentionPattern | "(" ~ disjunctivePattern ~ ")" | expandPattern | namedCapturePattern | assertionPattern
+    )
   }
 
   def mentionPattern[_: P]: P[Ast.Pattern] = {
@@ -259,7 +260,9 @@ class QueryParser(
   }
 
   def namedCapturePattern[_: P]: P[Ast.Pattern] = {
-    P("(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")").map {
+    P(
+      "(?<" ~ Literals.identifier.! ~ (":" ~ Literals.identifier.!).? ~ ">" ~ disjunctivePattern ~ ")"
+    ).map {
       case (name, maybeLabel, pattern) =>
         Ast.NamedCapturePattern(name, maybeLabel, pattern)
     }
@@ -292,6 +295,7 @@ class QueryParser(
   def quantOperator[_: P](includeLazy: Boolean): P[Quantifier] = {
     if (includeLazy) {
       P(StringIn("?", "*", "+", "??", "*?", "+?")).!.map {
+        // format: off
         case "?"  => GreedyQuantifier(0, Some(1))
         case "*"  => GreedyQuantifier(0, None)
         case "+"  => GreedyQuantifier(1, None)
@@ -299,31 +303,39 @@ class QueryParser(
         case "*?" => LazyQuantifier(0, None)
         case "+?" => LazyQuantifier(1, None)
         case _ => ??? // this shouldn't happen
+        // format: on
       }
     } else {
       P(StringIn("?", "*", "+")).!.map {
+        // format: off
         case "?"  => GreedyQuantifier(0, Some(1))
         case "*"  => GreedyQuantifier(0, None)
         case "+"  => GreedyQuantifier(1, None)
         case _ => ??? // this shouldn't happen
+        // format: on
       }
     }
   }
 
   def range[_: P](includeLazy: Boolean): P[Quantifier] = {
     if (includeLazy) {
-      P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ StringIn("}", "}?").!).flatMap {
+      P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ StringIn(
+        "}",
+        "}?"
+      ).!).flatMap {
+        // format: off
         case (Some(min), Some(max), _) if min > max => Fail
-        case (None,      maxOption, "}")  => Pass(GreedyQuantifier(0, maxOption))
+        case (None,      maxOption, "}")  => Pass(GreedyQuantifier(  0, maxOption))
         case (Some(min), maxOption, "}")  => Pass(GreedyQuantifier(min, maxOption))
-        case (None,      maxOption, "}?") => Pass(LazyQuantifier(0, maxOption))
-        case (Some(min), maxOption, "}?") => Pass(LazyQuantifier(min, maxOption))
+        case (None,      maxOption, "}?") => Pass(LazyQuantifier  (  0, maxOption))
+        case (Some(min), maxOption, "}?") => Pass(LazyQuantifier  (min, maxOption))
+        // format: on
       }
     } else {
       P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ "}").flatMap {
         case (Some(min), Some(max)) if min > max => Fail
-        case (None,      maxOption)  => Pass(GreedyQuantifier(0, maxOption))
-        case (Some(min), maxOption)  => Pass(GreedyQuantifier(min, maxOption))
+        case (None, maxOption)                   => Pass(GreedyQuantifier(0, maxOption))
+        case (Some(min), maxOption)              => Pass(GreedyQuantifier(min, maxOption))
       }
     }
   }
@@ -350,10 +362,12 @@ class QueryParser(
 
   def lookaround[_: P]: P[Ast.Assertion] = {
     P(StringIn("(?=", "(?!", "(?<=", "(?<!").! ~ disjunctivePattern ~ ")").map {
+      // format: off
       case ("(?=",  pattern) => Ast.PositiveLookaheadAssertion(pattern)
       case ("(?!",  pattern) => Ast.NegativeLookaheadAssertion(pattern)
       case ("(?<=", pattern) => Ast.PositiveLookbehindAssertion(pattern)
       case ("(?<!", pattern) => Ast.NegativeLookbehindAssertion(pattern)
+      // format: on
       case _ => ???
     }
   }
@@ -496,18 +510,22 @@ class QueryParser(
 
   def regexFieldConstraint[_: P]: P[Ast.Constraint] = {
     P(fieldName ~ StringIn("=", "!=").! ~ regexMatcher).map {
+      // format: off
       case (name, "=",  matcher) => Ast.FieldConstraint(name, matcher)
       case (name, "!=", matcher) => Ast.NegatedConstraint(Ast.FieldConstraint(name, matcher))
+      // format: on
       case _ => ??? // this shouldn't happen
     }
   }
 
   def stringFieldConstraint[_: P]: P[Ast.Constraint] = {
     P(fieldName ~ StringIn("=", "!=").! ~ extendedStringMatcher ~ "~".!.?).map {
+      // format: off
       case (name, "=",  matcher, None)    => Ast.FieldConstraint(name, matcher)
       case (name, "!=", matcher, None)    => Ast.NegatedConstraint(Ast.FieldConstraint(name, matcher))
       case (name, "=",  matcher, Some(_)) => Ast.FuzzyConstraint(name, matcher)
       case (name, "!=", matcher, Some(_)) => Ast.NegatedConstraint(Ast.FuzzyConstraint(name, matcher))
+      // format: on
       case _ => ??? // this shouldn't happen
     }
   }

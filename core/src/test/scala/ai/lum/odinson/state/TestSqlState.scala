@@ -2,7 +2,14 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{ExtractorEngine, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{
+  ExtractorEngine,
+  Mention,
+  MentionsIterator,
+  NamedCapture,
+  OdinsonMatch,
+  StateMatch
+}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.TestUtils
@@ -30,14 +37,26 @@ class TestSqlState extends OdinsonTest {
     stateMatch
   }
 
-  def newMention(docBase: Int = docBase, docId: Int = docId, docIndex: Int = docIndex, resultLabel: String = resultLabel,
-      resultName: String = resultName): Mention = {
+  def newMention(
+    docBase: Int = docBase,
+    docId: Int = docId,
+    docIndex: Int = docIndex,
+    resultLabel: String = resultLabel,
+    resultName: String = resultName
+  ): Mention = {
     val stateMatch = newOdinsonMatch()
     val resultLabelOpt =
-        if (resultLabel.isEmpty) None
-        else Some(resultLabel)
-    val mention: Mention = new Mention(odinsonMatch = stateMatch, label = resultLabelOpt, luceneDocId = docIndex,
-        luceneSegmentDocId = docId, luceneSegmentDocBase = docBase, nullIdGetter, foundBy = resultName)
+      if (resultLabel.isEmpty) None
+      else Some(resultLabel)
+    val mention: Mention = new Mention(
+      odinsonMatch = stateMatch,
+      label = resultLabelOpt,
+      luceneDocId = docIndex,
+      luceneSegmentDocId = docId,
+      luceneSegmentDocBase = docBase,
+      nullIdGetter,
+      foundBy = resultName
+    )
 
     mention
   }
@@ -49,57 +68,60 @@ class TestSqlState extends OdinsonTest {
     val idProvider = new IdProvider()
     val writeNodes = SqlResultItem.toWriteNodes(resultItem, idProvider)
 
-    writeNodes.length should equal (3)
+    writeNodes.length should equal(3)
 
     val node0 = writeNodes(0)
     val node1 = writeNodes(1)
     val node2 = writeNodes(2)
 
-    node0.id should equal (0)
+    node0.id should equal(0)
     node0.parentId should equal(2)
-    node0.name should equal ("name_0")
-    node0.label should equal ("label_0")
+    node0.name should equal("name_0")
+    node0.label should equal("label_0")
 
-    node1.id should equal (1)
+    node1.id should equal(1)
     node1.parentId should equal(2)
-    node1.name should be ("name_1")
-    node1.label should equal ("label_1")
+    node1.name should be("name_1")
+    node1.label should equal("label_1")
 
     node2.id should equal(2)
-    node2.parentId should equal (-1)
-    node2.name should equal ("resultName")
-    node2.label should equal ("resultLabel")
+    node2.parentId should equal(-1)
+    node2.name should equal("resultName")
+    node2.label should equal("resultLabel")
   }
 
   def equals(left: NamedCapture, right: NamedCapture): Boolean = {
     left.name == right.name &&
-        left.label == right.label &&
-        equals(left.capturedMatch.asInstanceOf[StateMatch], right.capturedMatch.asInstanceOf[StateMatch])
+    left.label == right.label &&
+    equals(
+      left.capturedMatch.asInstanceOf[StateMatch],
+      right.capturedMatch.asInstanceOf[StateMatch]
+    )
   }
 
   def equals(left: StateMatch, right: StateMatch): Boolean = {
     left.start == right.start &&
-        left.end == right.end &&
-        left.namedCaptures.length == right.namedCaptures.length &&
-        left.namedCaptures.indices.forall { index =>
-          equals(left.namedCaptures(index), right.namedCaptures(index))
-        }
+    left.end == right.end &&
+    left.namedCaptures.length == right.namedCaptures.length &&
+    left.namedCaptures.indices.forall { index =>
+      equals(left.namedCaptures(index), right.namedCaptures(index))
+    }
   }
 
   def equals(left: Mention, right: Mention): Boolean = {
     left.luceneSegmentDocBase == right.luceneSegmentDocBase &&
-        left.luceneSegmentDocId == right.luceneSegmentDocId &&
-        left.luceneDocId == right.luceneDocId &&
-        left.label == right.label &&
-        left.foundBy == right.foundBy &&
-        equals(left.odinsonMatch.asInstanceOf[StateMatch], right.odinsonMatch.asInstanceOf[StateMatch])
+    left.luceneSegmentDocId == right.luceneSegmentDocId &&
+    left.luceneDocId == right.luceneDocId &&
+    left.label == right.label &&
+    left.foundBy == right.foundBy &&
+    equals(left.odinsonMatch.asInstanceOf[StateMatch], right.odinsonMatch.asInstanceOf[StateMatch])
   }
 
   it should "compare properly" in {
     val m1 = newMention()
     val m2 = newMention()
 
-    equals(m1, m2) should be (true)
+    equals(m1, m2) should be(true)
   }
 
   it should "survive a round trip" in {
@@ -107,23 +129,29 @@ class TestSqlState extends OdinsonTest {
     val state = SqlState(config, null)
     val resultItem1 = newMention()
     val odinsonScoreDocs = Array(
-      new OdinsonScoreDoc(docIndex, 0.0f, -1,
+      new OdinsonScoreDoc(
+        docIndex,
+        0.0f,
+        -1,
         Array(
           resultItem1.odinsonMatch
         ),
-        docId, docBase)
+        docId,
+        docBase
+      )
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
-    val mentionsIterator = new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
+    val mentionsIterator =
+      new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
     val resultItems2 = {
       state.addMentions(mentionsIterator)
       state.getMentions(docBase, docId, resultLabel)
     }
 
-    resultItems2.length should be (1)
+    resultItems2.length should be(1)
     val resultItem2 = resultItems2.head
 
-    equals(resultItem1, resultItem2) should be (true)
+    equals(resultItem1, resultItem2) should be(true)
   }
 
   val sizeOfString = 50
@@ -159,16 +187,16 @@ class TestSqlState extends OdinsonTest {
     val docIndex = random.nextInt()
     val count = random.nextInt(20) + 1
     val odinsonMatches = 1.to(count).map { _ => newRandomOdinsonMatch(random) }.toArray
-    val odinsonScoreDoc = new OdinsonScoreDoc(docIndex, 0.0f, -1,
-        odinsonMatches, docId, docBase
-    )
+    val odinsonScoreDoc = new OdinsonScoreDoc(docIndex, 0.0f, -1, odinsonMatches, docId, docBase)
 
     odinsonScoreDoc
   }
 
   def newRandomOdinResults(random: Random, docId: Int, docBase: Int): OdinResults = {
     val count = random.nextInt(20) + 1
-    val odinsonScoreDocs = 1.to(count).map { _ => newRandomOdinsonScoreDoc(random, docId, docBase) }.toArray
+    val odinsonScoreDocs = 1.to(count).map { _ =>
+      newRandomOdinsonScoreDoc(random, docId, docBase)
+    }.toArray
     val odinResults = new OdinResults(0, odinsonScoreDocs, 0.0f)
 
     odinResults
@@ -186,23 +214,31 @@ class TestSqlState extends OdinsonTest {
       val odinResults = newRandomOdinResults(random, docId, docBase)
       // Convert to ResultItem so that can be compared later.
       val resultItems1 = odinResults.scoreDocs
-          .flatMap { scoreDoc =>
-              scoreDoc.matches.map { odinsonMatch =>
-                new Mention(odinsonMatch, Some(resultLabel), scoreDoc.doc, scoreDoc.segmentDocId,
-                  scoreDoc.segmentDocBase, idGetter, resultName)
-              }
+        .flatMap { scoreDoc =>
+          scoreDoc.matches.map { odinsonMatch =>
+            new Mention(
+              odinsonMatch,
+              Some(resultLabel),
+              scoreDoc.doc,
+              scoreDoc.segmentDocId,
+              scoreDoc.segmentDocBase,
+              idGetter,
+              resultName
+            )
           }
-      val mentionsIterator = new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
+        }
+      val mentionsIterator =
+        new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
       val resultItems2 = {
         state.addMentions(mentionsIterator)
         state.getMentions(docBase, docId, resultLabel)
       }
 
-      resultItems1.length should be (resultItems2.length)
+      resultItems1.length should be(resultItems2.length)
       resultItems1.zip(resultItems2).foreach { case (leftResultItem, rightResultItem) =>
         if (!equals(leftResultItem, rightResultItem))
           println(s"left: $leftResultItem != right: $rightResultItem")
-        equals(leftResultItem, rightResultItem) should be (true)
+        equals(leftResultItem, rightResultItem) should be(true)
       }
       state.clear()
     }
@@ -228,17 +264,29 @@ class TestSqlState extends OdinsonTest {
 
     1.to(20).foreach { index => // Do this many tests.
       val docBasesAndIdsAndLabels = newRandomDocBasesAndIdsAndLabels(random)
-      val odinResultses = docBasesAndIdsAndLabels.map { case (docBase, docId, label) => newRandomOdinResults(random, docId, docBase) }
-      val resultItems1 = odinResultses.zip(docBasesAndIdsAndLabels).flatMap { case (odinResults, (_, _, label)) =>
-        odinResults.scoreDocs.flatMap { scoreDoc =>
-          scoreDoc.matches.map { odinsonMatch =>
-            new Mention(odinsonMatch, Some(label), scoreDoc.doc, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, nullIdGetter, resultName)
+      val odinResultses = docBasesAndIdsAndLabels.map { case (docBase, docId, label) =>
+        newRandomOdinResults(random, docId, docBase)
+      }
+      val resultItems1 =
+        odinResultses.zip(docBasesAndIdsAndLabels).flatMap { case (odinResults, (_, _, label)) =>
+          odinResults.scoreDocs.flatMap { scoreDoc =>
+            scoreDoc.matches.map { odinsonMatch =>
+              new Mention(
+                odinsonMatch,
+                Some(label),
+                scoreDoc.doc,
+                scoreDoc.segmentDocId,
+                scoreDoc.segmentDocBase,
+                nullIdGetter,
+                resultName
+              )
+            }
           }
         }
-      }
-      val resultItems2 =  {
+      val resultItems2 = {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
-          val mentionsIterator = new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
+          val mentionsIterator =
+            new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
 
           state.addMentions(mentionsIterator)
         }
@@ -251,12 +299,12 @@ class TestSqlState extends OdinsonTest {
         }
       }
 
-      resultItems1.length should be (resultItems2.length)
+      resultItems1.length should be(resultItems2.length)
       // Sort both of them.
       resultItems1.zip(resultItems2).foreach { case (leftResultItem, rightResultItem) =>
         if (!equals(leftResultItem, rightResultItem))
           println(s"left: $leftResultItem != right: $rightResultItem")
-        equals(leftResultItem, rightResultItem) should be (true)
+        equals(leftResultItem, rightResultItem) should be(true)
       }
     }
   }
@@ -268,14 +316,14 @@ class TestSqlState extends OdinsonTest {
     val filename = "../test.sql"
     val file = new File(filename)
     val config = ExtractorEngine.defaultConfig
-        .withValue("odinson.state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
-        .withValue("odinson.state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
+      .withValue("odinson.state.sql.persistOnClose", ConfigValueFactory.fromAnyRef(true))
+      .withValue("odinson.state.sql.persistFile", ConfigValueFactory.fromAnyRef(filename))
 
     file.delete()
-    file.exists should be (false)
+    file.exists should be(false)
     val state = SqlState(config, null)
     state.close()
-    file.exists should be (true)
+    file.exists should be(true)
     file.delete()
   }
 }

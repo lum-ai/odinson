@@ -1,11 +1,11 @@
 package controllers
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
 import java.nio.file.Files
 
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.scalatestplus.play.guice._
 import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
@@ -17,18 +17,15 @@ import play.api.libs.json._
 import org.scalatestplus.play._
 import play.api.test._
 
-
 import scala.reflect.io.Directory
 
-/**
- * Add your spec here.
- * You can mock out a whole application including requests, plugins etc.
- *
- * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
- */
+/** Add your spec here.
+  * You can mock out a whole application including requests, plugins etc.
+  *
+  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
+  */
 
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
-
 
   val defaultconfig = ConfigFactory.load()
 
@@ -36,7 +33,6 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
   val srcDir: File = new File(getClass.getResource("/").getFile)
-
 
   try {
     FileUtils.copyDirectory(srcDir, tmpFolder)
@@ -54,9 +50,9 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))
       // re-compute the index and docs path's
       .withValue(
-      "odinson.indexDir",
-      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
-    )
+        "odinson.indexDir",
+        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
+      )
       .withValue(
         "odinson.docsDir",
         ConfigValueFactory.fromAnyRef(docsDir)
@@ -186,13 +182,15 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         """.stripMargin
 
       val body = Json.obj(
+        // format: off
         "grammar"              -> ruleString,
         "pageSize"             -> 10,
         "allowTriggerOverlaps" -> false
+        // format: on
       )
 
-
-      val response = controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
+      val response =
+        controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
       Helpers.contentAsString(response) must include("vision")
@@ -214,9 +212,11 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         """.stripMargin
 
       val body = Json.obj(
-        "grammar" -> ruleString,
-        "pageSize" -> 10,
+        // format: off
+        "grammar"              -> ruleString,
+        "pageSize"             -> 10,
         "allowTriggerOverlaps" -> false
+        // format: on
       )
 
       val response = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body)).get
@@ -230,7 +230,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     "respond with token-based frequencies using the /term-freq endpoint" in {
       val body = Json.obj("field" -> "word")
 
-      val response = route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -238,6 +239,5 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     }
 
   }
-
 
 }
