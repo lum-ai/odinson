@@ -4,11 +4,10 @@ import java.io.IOException
 
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.OdinsonIndexWriter
-import org.apache.lucene.store.{Directory, IOContext}
+import org.apache.lucene.store.{ Directory, IOContext }
 import ujson.Value
 
-/**
-  * Class to store settings for the OdinsonIndex.
+/** Class to store settings for the OdinsonIndex.
   * Currently included:
   *
   * @param storedFields the names of the fields that are stored fields in the lucene index
@@ -37,11 +36,14 @@ object IndexSettings {
     new IndexSettings(storedFields)
   }
 
-  def fromDirectory(directory: Directory): IndexSettings = try {
-    using (directory.openInput(OdinsonIndexWriter.SETTINGSINFO_FILENAME, new IOContext)) { stream =>
-      IndexSettings.load(stream.readString())
+  def fromDirectory(directory: Directory): IndexSettings =
+    try {
+      using(directory.openInput(OdinsonIndexWriter.SETTINGSINFO_FILENAME, new IOContext)) {
+        stream =>
+          IndexSettings.load(stream.readString())
+      }
+    } catch {
+      case e: IOException => IndexSettings(Seq())
     }
-  } catch {
-    case e:IOException => IndexSettings(Seq())
-  }
+
 }

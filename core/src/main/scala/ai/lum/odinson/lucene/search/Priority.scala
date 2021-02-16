@@ -3,8 +3,10 @@ package ai.lum.odinson
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 sealed trait Priority {
+
   /** returns true if `i` matches the priority */
   def matches(i: Int): Boolean
+
   /** minimum number of iterations required to satisfy the priority */
   def minIterations: Int
 }
@@ -36,10 +38,11 @@ object Priority {
   private val sparse = """^\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]$""".r
 
   def apply(s: String): Priority = s.trim match {
-    case exact(n) => ExactPriority(n.toInt)
+    case exact(n)       => ExactPriority(n.toInt)
     case interval(n, m) => IntervalPriority(n.toInt, m.toInt)
-    case lower(n) => LowerBoundPriority(n.toInt)
-    case sparse(ns) => SparsePriority(ns.split(",").map(_.trim.toInt).toSet)
-    case p => throw new OdinsonException(s"invalid priority '$p'")
+    case lower(n)       => LowerBoundPriority(n.toInt)
+    case sparse(ns)     => SparsePriority(ns.split(",").map(_.trim.toInt).toSet)
+    case p              => throw new OdinsonException(s"invalid priority '$p'")
   }
+
 }

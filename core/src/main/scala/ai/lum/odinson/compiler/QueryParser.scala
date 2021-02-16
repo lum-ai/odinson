@@ -334,12 +334,11 @@ class QueryParser(
     } else {
       P("{" ~ Literals.unsignedInt.? ~ "," ~ Literals.unsignedInt.? ~ "}").flatMap {
         case (Some(min), Some(max)) if min > max => Fail
-        case (None,      maxOption)  => Pass(GreedyQuantifier(0, maxOption))
-        case (Some(min), maxOption)  => Pass(GreedyQuantifier(min, maxOption))
+        case (None, maxOption)                   => Pass(GreedyQuantifier(0, maxOption))
+        case (Some(min), maxOption)              => Pass(GreedyQuantifier(min, maxOption))
       }
     }
   }
-
 
   def repetition[_: P]: P[Quantifier] = {
     P("{" ~ Literals.unsignedInt ~ "}").map {

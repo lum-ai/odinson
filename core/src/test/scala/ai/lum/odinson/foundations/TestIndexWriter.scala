@@ -6,12 +6,12 @@ import java.nio.file.Files
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 import org.apache.lucene.store.FSDirectory
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
-import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
+import ai.lum.odinson.{ OdinsonIndexWriter, DateField, StringField }
 import ai.lum.common.ConfigFactory
 // file imports
 import scala.reflect.io.Directory
@@ -27,9 +27,9 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     defaultConfig
       // re-compute the index and docs path's
       .withValue(
-      "odinson.indexDir",
-      ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
-    )
+        "odinson.indexDir",
+        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
+      )
   }
 
   def deleteIndex = {
@@ -41,7 +41,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     deleteIndex
     OdinsonIndexWriter.fromConfig(testConfig)
   }
-  
+
   "OdinsonIndexWriter" should "object should return index from config correctly" in {
     // get index writer
     val indexWriter = getOdinsonIndexWriter
@@ -49,7 +49,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close
   }
-  
+
   it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
     val indexWriter = getOdinsonIndexWriter
     // Initialize fild of type DateField
@@ -80,7 +80,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
 
     val query = ee.compiler.mkQuery(pattern)
     val results = ee.query(query, 1)
-    results.totalHits should equal (1)
+    results.totalHits should equal(1)
 
     val matches = results.scoreDocs.head.matches
     val docId = results.scoreDocs.head.doc
@@ -95,14 +95,22 @@ class TestOdinsonIndexWriter extends OdinsonTest {
       testConfig
         // re-compute the index and docs path's
         .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
-        .withValue("odinson.index.storedFields", ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava))
+        .withValue(
+          "odinson.index.storedFields",
+          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
+        )
     }
 
     val indexWriter = OdinsonIndexWriter.fromConfig(customConfig)
     // close and write the settings file
     indexWriter.close()
     val settings = IndexSettings.fromDirectory(FSDirectory.open(indexFile.toPath))
-    settings.storedFields should contain theSameElementsAs Seq("apple", "banana", "kiwi", indexWriter.displayField)
+    settings.storedFields should contain theSameElementsAs Seq(
+      "apple",
+      "banana",
+      "kiwi",
+      indexWriter.displayField
+    )
   }
 
   it should "store stored fields and not others" in {
@@ -116,7 +124,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     ee.getTokensForSpan(0, "tag", 0, 1) should contain only "NNS"
     // though `entity` is a field in the Document, it wasn't stored, so the extractor engine shouldn't
     // be able to retrieve the content
-    an [OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
+    an[OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
 
   }
 }

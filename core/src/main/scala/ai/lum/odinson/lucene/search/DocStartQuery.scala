@@ -19,8 +19,8 @@ class DocStartQuery(val field: String) extends OdinsonQuery { self =>
   }
 
   class DocStartWeight(
-      searcher: IndexSearcher,
-      termContexts: JMap[Term, TermContext]
+    searcher: IndexSearcher,
+    termContexts: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, termContexts) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -29,7 +29,10 @@ class DocStartQuery(val field: String) extends OdinsonQuery { self =>
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       new DocStartSpans(context.reader)
     }
 

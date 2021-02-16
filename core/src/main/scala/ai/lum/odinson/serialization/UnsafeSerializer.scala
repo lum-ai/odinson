@@ -30,9 +30,12 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
     val values = new Array[Int](length)
     val bytesToCopy = length * sizeOfInt
     unsafe.copyMemory(
-      bytes, byteArrayOffset + pos,
-      values, intArrayOffset,
-      bytesToCopy)
+      bytes,
+      byteArrayOffset + pos,
+      values,
+      intArrayOffset,
+      bytesToCopy
+    )
     pos += bytesToCopy
     values
   }
@@ -43,9 +46,12 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
     val bytesToCopy = length * sizeOfInt
     putInt(length)
     unsafe.copyMemory(
-      values, intArrayOffset,
-      bytes, byteArrayOffset + pos,
-      bytesToCopy)
+      values,
+      intArrayOffset,
+      bytes,
+      byteArrayOffset + pos,
+      bytesToCopy
+    )
     pos += bytesToCopy
   }
 
@@ -57,9 +63,12 @@ class UnsafeSerializer(val bytes: Array[Byte]) {
     val outgoingSlices = getIntArray()
     val roots = getIntArray()
     new DirectedGraph(
-      incomingFlat, incomingSlices,
-      outgoingFlat, outgoingSlices,
-      roots)
+      incomingFlat,
+      incomingSlices,
+      outgoingFlat,
+      outgoingSlices,
+      roots
+    )
   }
 
   /** put a DirectedGraph in bytes at the current position */

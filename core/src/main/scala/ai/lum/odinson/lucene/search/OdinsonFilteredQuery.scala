@@ -12,7 +12,7 @@ import Spans._
 
 class OdinsonFilteredQuery(
   val query: OdinsonQuery,
-  val filter: Query,
+  val filter: Query
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (query, filter).##
@@ -56,7 +56,10 @@ class OdinsonFilteredQuery(
       weight.extractTermContexts(contexts)
     }
 
-    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
+    def getSpans(
+      context: LeafReaderContext,
+      requiredPostings: SpanWeight.Postings
+    ): OdinsonSpans = {
       val terms = context.reader().terms(getField())
       if (terms == null) {
         return null // field does not exist

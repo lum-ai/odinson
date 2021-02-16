@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{Map => JMap, Set => JSet}
+import java.util.{ Map => JMap, Set => JSet }
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -46,14 +46,14 @@ class ExpandWeight(
   query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
-  val weight: OdinsonWeight,
+  val weight: OdinsonWeight
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = {
     weight.extractTerms(terms)
   }
 
-  def extractTermContexts(contexts: JMap[Term,TermContext]): Unit = {
+  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = {
     weight.extractTermContexts(contexts)
   }
 
@@ -126,7 +126,7 @@ class ExpandSpans(val spans: OdinsonSpans) extends OdinsonSpans {
     val allMatches = spans.getAllMatches()
     val (graphMatches, otherMatches) = allMatches.partition {
       case m: GraphTraversalMatch => true
-      case _ => false
+      case _                      => false
     }
     if (graphMatches.isEmpty) {
       otherMatches
