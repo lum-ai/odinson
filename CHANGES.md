@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### Added
 - Added project-wide formatting settings and a PR check for linting
+- Added a file that accompanies index (`settings.json`) that describes settings used in creating the index.  Currently storing `storedFields`. ([#255](https://github.com/lum-ai/odinson/pull/255))
 - Added REST API endpoint for returning frequencies of token-based annotations in a corpus.
 - Added `ai.lum.odinson.utils.TestUtils` and the corresponding `OdinsonText` in the main project for using the test utils in dependent projects ([#232](https://github.com/lum-ai/odinson/pull/231))
 - Added some additional methods to ExtractorEngine to access tokens from diff fields of a Lucene Doc ([#231](https://github.com/lum-ai/odinson/pull/231))
