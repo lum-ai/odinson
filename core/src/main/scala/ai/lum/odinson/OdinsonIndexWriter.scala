@@ -284,12 +284,12 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
-    // Always store the display field, also store these additional fields
-    val settings = IndexSettings(Seq(displayField) ++ storedFields)
     new OdinsonIndexWriter(
       // format: off
       directory            = directory, 
       vocabulary           = vocabulary,
+      // Always store the display field, also store these additional fields
+      settings             = IndexSettings(Seq(displayField) ++ storedFields),
       documentIdField      = config[String]("odinson.index.documentIdField"),
       sentenceIdField      = config[String]("odinson.index.sentenceIdField"),
       sentenceLengthField  = config[String]("odinson.index.sentenceLengthField"),
