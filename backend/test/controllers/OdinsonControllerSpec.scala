@@ -41,9 +41,9 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       throw new OdinsonException(s"Can't copy resources directory ${srcDir}")
   }
 
-  val dataDir  = tmpFolder.getAbsolutePath
+  val dataDir = tmpFolder.getAbsolutePath
   val indexDir = new File(tmpFolder, "index")
-  val docsDir  = new File(tmpFolder, "docs").getAbsolutePath
+  val docsDir = new File(tmpFolder, "docs").getAbsolutePath
 
   val testConfig: Config = {
     defaultconfig
@@ -63,13 +63,13 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   def hasResults(resp: JsValue): Boolean = (resp \ "scoreDocs") match {
     // scoreDocs exists, but what is its type?
     case JsDefined(jsval) => jsval match {
-      // if our query matched, we should have a non-empty array here
-      case JsArray(array) => array.nonEmpty
-      case _ => false
-    }
+        // if our query matched, we should have a non-empty array here
+        case JsArray(array) => array.nonEmpty
+        case _              => false
+      }
     // scoreDocs not found! :(
     case _ => false
-  } 
+  }
 
   def noResults(resp: JsValue): Boolean = hasResults(resp) == false
 
@@ -82,11 +82,12 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   // create index
   IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
-  implicit override def newAppForTest(testData: TestData): Application = new GuiceApplicationBuilder()
-  .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
-  .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
-  .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
-  .build()
+  implicit override def newAppForTest(testData: TestData): Application =
+    new GuiceApplicationBuilder()
+      .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
+      .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
+      .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
+      .build()
 
   val controller = new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
 
@@ -159,7 +160,10 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     "process a pattern query by accessing the /pattern endpoint" in {
       // the pattern used in this test: "[lemma=be] []"
-      val result = route(app, FakeRequest(GET, "/api/execute/pattern?odinsonQuery=%5Blemma%3Dbe%5D%20%5B%5D")).get
+      val result = route(
+        app,
+        FakeRequest(GET, "/api/execute/pattern?odinsonQuery=%5Blemma%3Dbe%5D%20%5B%5D")
+      ).get
 
       status(result) mustBe OK
       contentType(result) mustBe Some("application/json")

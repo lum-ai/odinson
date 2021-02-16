@@ -41,7 +41,6 @@ class OdinsonIndexWriter(
   val displayField: String,
   val parentDocFieldType: String,
   val parentDocField: String
-  val displayField: String
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._

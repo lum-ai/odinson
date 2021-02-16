@@ -14,20 +14,19 @@ import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
-
 class QueryCompiler(
-    val allTokenFields: Seq[String],
-    val defaultTokenField: String,
-    val sentenceLengthField: String,
-    // FIXME: Consider renaming to graphField
-    val dependenciesField: String,
-    val incomingTokenField: String,
-    val outgoingTokenField: String,
-    val dependenciesVocabulary: Vocabulary,
-    val aggressiveNormalizationToDefaultField: Boolean,
-    val documentIdField: String,
-    val parentDocFieldType: String,
-    val parentDocField: String
+  val allTokenFields: Seq[String],
+  val defaultTokenField: String,
+  val sentenceLengthField: String,
+  // FIXME: Consider renaming to graphField
+  val dependenciesField: String,
+  val incomingTokenField: String,
+  val outgoingTokenField: String,
+  val dependenciesVocabulary: Vocabulary,
+  val aggressiveNormalizationToDefaultField: Boolean,
+  val documentIdField: String,
+  val parentDocFieldType: String,
+  val parentDocField: String
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
@@ -617,7 +616,8 @@ object QueryCompiler {
       incomingTokenField = config[String]("odinson.compiler.incomingTokenField"),
       outgoingTokenField = config[String]("odinson.compiler.outgoingTokenField"),
       dependenciesVocabulary = vocabulary,
-      aggressiveNormalizationToDefaultField = config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
+      aggressiveNormalizationToDefaultField =
+        config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
       documentIdField = config[String]("odinson.index.documentIdField"),
       parentDocFieldType = config[String]("odinson.index.parentDocFieldType"),
       parentDocField = config[String]("odinson.index.parentDocField")
