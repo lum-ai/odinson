@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search.spans
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -10,8 +10,8 @@ import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.State
 
 class OdinsonSpanContainingQuery(
-  val big: OdinsonQuery, // the main query
-  val little: OdinsonQuery // the filter
+    val big: OdinsonQuery,   // the main query
+    val little: OdinsonQuery // the filter
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (big, little).##
@@ -32,8 +32,7 @@ class OdinsonSpanContainingQuery(
   override def createWeight(searcher: IndexSearcher, needsScores: Boolean): OdinsonWeight = {
     val bigWeight = big.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
     val littleWeight = little.createWeight(searcher, false).asInstanceOf[OdinsonWeight]
-    val termContexts =
-      if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
+    val termContexts = if (needsScores) OdinsonQuery.getTermContexts(bigWeight, littleWeight) else null
     new OdinsonSpanContainingWeight(this, searcher, termContexts, bigWeight, littleWeight)
   }
 

@@ -5,6 +5,7 @@ import java.io._
 import java.util.zip._
 import java.nio.charset.StandardCharsets
 
+
 object GzipUtils {
 
   def compress(data: String): Array[Byte] = {

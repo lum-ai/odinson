@@ -11,9 +11,9 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.utils.ExecutionContextExecutorServiceBridge
 
 class OdinsonIndexSearcher(
-  context: IndexReaderContext,
-  executor: ExecutorService,
-  computeTotalHits: Boolean
+    context: IndexReaderContext,
+    executor: ExecutorService,
+    computeTotalHits: Boolean,
 ) extends IndexSearcher(context, executor) {
 
   def this(r: IndexReader, e: ExecutorService, computeTotalHits: Boolean) = {
@@ -41,14 +41,9 @@ class OdinsonIndexSearcher(
     odinSearch(after, query, numHits, false)
   }
 
-  class StandardCollectorManager(
-    after: OdinsonScoreDoc,
-    cappedNumHits: Int,
-    disableMatchSelector: Boolean
-  ) extends CollectorManager[OdinsonCollector, OdinResults] {
+  class StandardCollectorManager(after: OdinsonScoreDoc, cappedNumHits: Int, disableMatchSelector: Boolean) extends CollectorManager[OdinsonCollector, OdinResults] {
 
-    def newCollector() =
-      new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
+    def newCollector() = new OdinsonCollector(cappedNumHits, after, computeTotalHits, disableMatchSelector)
 
     def reduce(collectors: Collection[OdinsonCollector]): OdinResults = {
       val collectedResults = collectors.iterator.asScala.map(_.odinResults).toArray
@@ -56,15 +51,9 @@ class OdinsonIndexSearcher(
 
       mergedResults
     }
-
   }
 
-  def odinSearch(
-    after: OdinsonScoreDoc,
-    query: OdinsonQuery,
-    numHits: Int,
-    disableMatchSelector: Boolean
-  ): OdinResults = {
+  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int, disableMatchSelector: Boolean): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
       after == null || after.doc < limit,
@@ -75,5 +64,4 @@ class OdinsonIndexSearcher(
 
     search(query, manager)
   }
-
 }

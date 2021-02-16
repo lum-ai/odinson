@@ -4,9 +4,10 @@ import java.util.Arrays
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
 
-/** This is a port of org.apache.lucene.search.spans.ConjunctionSpans
-  * We had to do this because the original is not a public class.
-  */
+/**
+ * This is a port of org.apache.lucene.search.spans.ConjunctionSpans
+ * We had to do this because the original is not a public class.
+ */
 trait ConjunctionSpans extends OdinsonSpans {
 
   import DocIdSetIterator._
@@ -30,7 +31,7 @@ trait ConjunctionSpans extends OdinsonSpans {
   // use to move to next doc with all clauses
   val conjunction: DocIdSetIterator = subSpans match {
     case Array(disi) => disi
-    case subSpans    => ConjunctionDISI.intersectSpans(Arrays.asList(subSpans: _*))
+    case subSpans => ConjunctionDISI.intersectSpans(Arrays.asList(subSpans:_*))
   }
 
   def cost(): Long = conjunction.cost()

@@ -29,15 +29,9 @@ object Ast {
   case class ConstraintPattern(constraint: Constraint) extends Pattern
   case class DisjunctivePattern(patterns: List[Pattern]) extends Pattern
   case class ConcatenatedPattern(patterns: List[Pattern]) extends Pattern
-
-  case class NamedCapturePattern(name: String, label: Option[String], pattern: Pattern)
-      extends Pattern
-
+  case class NamedCapturePattern(name: String, label: Option[String], pattern: Pattern) extends Pattern
   case class MentionPattern(argName: Option[String], label: String) extends Pattern
-
-  case class GraphTraversalPattern(src: Pattern, fullTraversal: FullTraversalPattern)
-      extends Pattern
-
+  case class GraphTraversalPattern(src: Pattern, fullTraversal: FullTraversalPattern) extends Pattern
   case class LazyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class GreedyRepetitionPattern(pattern: Pattern, min: Int, max: Option[Int]) extends Pattern
   case class FilterPattern(mainPattern: Pattern, filterPattern: Pattern) extends Pattern
@@ -50,44 +44,31 @@ object Ast {
     argCheck()
 
     def argCheck(): Unit = {
-      val argNames = arguments.map(_.name)
-      if (argNames.toSet.size < argNames.length) {
-        throw new OdinsonException(
-          "There are multiple arguments with the same name in EventPattern."
-        )
-      }
+     val argNames = arguments.map(_.name)
+     if (argNames.toSet.size < argNames.length) {
+       throw new OdinsonException("There are multiple arguments with the same name in EventPattern.")
+     }
     }
-
   }
-
   case class ArgumentPattern(
     name: String,
     label: Option[String],
     fullTraversal: FullTraversalPattern,
     min: Int,
     max: Option[Int],
-    promote: Boolean // capture mention on-the-fly if not already captured
+    promote: Boolean, // capture mention on-the-fly if not already captured
   ) extends Pattern
 
   sealed trait FullTraversalPattern {
-
-    def addMentionFilterToTerminals(
-      mention: MentionPattern,
-      allowPromotion: Boolean
-    ): FullTraversalPattern
-
+    def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern
     def isRequired: Boolean = true
   }
 
   case class SingleStepFullTraversalPattern(
     traversal: Traversal,
-    surface: Pattern
+    surface: Pattern,
   ) extends FullTraversalPattern {
-
-    def addMentionFilterToTerminals(
-      mention: MentionPattern,
-      allowPromotion: Boolean
-    ): FullTraversalPattern = {
+    def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern = {
       val newPattern =
         if (allowPromotion) {
           // if promotion is allowed then allow original pattern as well as the filtered one
@@ -98,23 +79,15 @@ object Ast {
         }
       SingleStepFullTraversalPattern(traversal, newPattern)
     }
-
   }
 
   case class ConcatFullTraversalPattern(
     clauses: List[FullTraversalPattern]
   ) extends FullTraversalPattern {
-
-    def addMentionFilterToTerminals(
-      mention: MentionPattern,
-      allowPromotion: Boolean
-    ): FullTraversalPattern = {
+    def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern = {
       // traverse the list backwards adding filters until we find something required
       @annotation.tailrec
-      def applyFilter(
-        remaining: List[FullTraversalPattern],
-        results: List[FullTraversalPattern]
-      ): List[FullTraversalPattern] = {
+      def applyFilter(remaining: List[FullTraversalPattern], results: List[FullTraversalPattern]): List[FullTraversalPattern] = {
         remaining match {
           case Nil => results
           case head :: tail if head.isRequired =>
@@ -128,20 +101,14 @@ object Ast {
       val newTraversal = applyFilter(clauses.reverse, Nil).reverse
       ConcatFullTraversalPattern(newTraversal)
     }
-
   }
 
   case class RepeatFullTraversalPattern(
-    min: Int,
-    max: Int,
-    fullTraversal: FullTraversalPattern
+    min: Int, max: Int,
+    fullTraversal: FullTraversalPattern,
   ) extends FullTraversalPattern {
     override def isRequired: Boolean = min > 0
-
-    def addMentionFilterToTerminals(
-      mention: MentionPattern,
-      allowPromotion: Boolean
-    ): FullTraversalPattern = {
+    def addMentionFilterToTerminals(mention: MentionPattern, allowPromotion: Boolean): FullTraversalPattern = {
       (min, max) match {
 
         case (0, 0) =>
@@ -174,7 +141,6 @@ object Ast {
 
       }
     }
-
   }
 
   sealed trait Traversal

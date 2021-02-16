@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Collection, TreeMap, Map => JMap }
+import java.util.{Collection, TreeMap, Map => JMap}
 
 import ai.lum.odinson.state.State
 
@@ -8,20 +8,21 @@ import scala.collection.JavaConverters._
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 
-/** In some sense, the Query class is where it all begins. Without a Query,
-  * there would be nothing to score. Furthermore, the Query class is the
-  * catalyst for the other scoring classes as it is often responsible for
-  * creating them or coordinating the functionality between them.
-  *
-  * (copied from lucene documentation)
-  */
+/**
+ * In some sense, the Query class is where it all begins. Without a Query,
+ * there would be nothing to score. Furthermore, the Query class is the
+ * catalyst for the other scoring classes as it is often responsible for
+ * creating them or coordinating the functionality between them.
+ *
+ * (copied from lucene documentation)
+ */
 abstract class OdinsonQuery extends Query {
 
   def canEqual(a: Any): Boolean = a.isInstanceOf[OdinsonQuery]
 
   override def equals(that: Any): Boolean = that match {
     case that: OdinsonQuery => that.canEqual(this) && this.hashCode == that.hashCode
-    case _                  => false
+    case _ => false
   }
 
   def getField(): String

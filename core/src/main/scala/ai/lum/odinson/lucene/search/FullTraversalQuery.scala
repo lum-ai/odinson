@@ -19,12 +19,7 @@ trait FullTraversalQuery {
 }
 
 trait FullTraversalWeight {
-
-  def getSpans(
-    context: LeafReaderContext,
-    requiredPostings: SpanWeight.Postings
-  ): FullTraversalSpans
-
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): FullTraversalSpans
   def subWeights: List[OdinsonWeight]
   def extractTerms(terms: JSet[Term]): Unit
   def extractTermContexts(contexts: JMap[Term, TermContext]): Unit
@@ -32,12 +27,6 @@ trait FullTraversalWeight {
 
 trait FullTraversalSpans {
   def subSpans: List[OdinsonSpans]
-
-  def matchFullTraversal(
-    graph: DirectedGraph,
-    maxToken: Int,
-    srcMatches: Array[OdinsonMatch]
-  ): Array[OdinsonMatch]
-
+  def matchFullTraversal(graph: DirectedGraph, maxToken: Int, srcMatches: Array[OdinsonMatch]): Array[OdinsonMatch]
   def advanceToDoc(doc: Int): Boolean
 }

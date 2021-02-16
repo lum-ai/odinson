@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -9,8 +9,8 @@ import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class DocEndQuery(
-  val defaultTokenField: String,
-  val sentenceLengthField: String
+    val defaultTokenField: String,
+    val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (defaultTokenField, sentenceLengthField).##
@@ -24,8 +24,8 @@ class DocEndQuery(
   }
 
   class DocEndWeight(
-    searcher: IndexSearcher,
-    termContexts: JMap[Term, TermContext]
+      searcher: IndexSearcher,
+      termContexts: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, termContexts) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -34,10 +34,7 @@ class DocEndQuery(
 
     def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = ()
 
-    def getSpans(
-      context: LeafReaderContext,
-      requiredPostings: SpanWeight.Postings
-    ): OdinsonSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val reader = context.reader
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
       new DocEndSpans(reader, numWordsPerDoc)
@@ -48,8 +45,8 @@ class DocEndQuery(
 }
 
 class DocEndSpans(
-  val reader: IndexReader,
-  val numWordsPerDoc: NumericDocValues
+    val reader: IndexReader,
+    val numWordsPerDoc: NumericDocValues
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._

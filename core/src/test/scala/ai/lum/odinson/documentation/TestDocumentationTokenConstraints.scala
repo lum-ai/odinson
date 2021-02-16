@@ -4,9 +4,8 @@ import ai.lum.odinson.Document
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
 class TestDocumentationTokenConstraints extends OdinsonTest {
-
-  def exampleSentence: String =
-    """{"id":"dd","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["George","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["george","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["ORGANIZATION","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","I-NP","I-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
+  def exampleSentence: String = 
+     """{"id":"dd","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George","ate","gummy","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["George","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["george","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["ORGANIZATION","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","I-NP","I-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
 
   "Documentation-TokenConstraints" should "work for 'Example'" in {
     val ee = mkExtractorEngineFromText("The dog barks")
@@ -19,7 +18,7 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     val s1 = ee.query(q1)
     numMatches(s1) shouldEqual (0)
   }
-
+  
   it should "work for 'Using the token fields'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = mkExtractorEngine(doc)
@@ -29,12 +28,12 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     val s = ee.query(q)
     // 2 nouns
     numMatches(s) shouldEqual (2)
-    //
+    // 
     val q1 = ee.compiler.mkQuery("[tag=/V.*/]")
     val s1 = ee.query(q1)
     numMatches(s1) shouldEqual (1)
   }
-
+  
   it should "work for 'Operators for token constraints'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = mkExtractorEngine(doc)
@@ -47,7 +46,7 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     val s1 = ee.query(q1)
     numMatches(s1) shouldEqual (0)
   }
-
+  
   it should "work for 'Wildcards'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = mkExtractorEngine(doc)
@@ -59,7 +58,7 @@ class TestDocumentationTokenConstraints extends OdinsonTest {
     // each token in the sentence
     numMatches(s) shouldEqual (5)
   }
-
+  
   it should "work for 'quantifiers'" in {
     val doc = Document.fromJson(exampleSentence)
     val ee = mkExtractorEngine(doc)

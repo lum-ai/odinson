@@ -18,8 +18,8 @@ class TestPatterns extends OdinsonTest {
       val q = ee.compiler.mkQuery(pattern)
       val results = ee.query(q)
       val actual = mkStrings(results, ee)
-
-      actual should equal(expected)
+      
+      actual should equal (expected)
     }
   }
   source.close()

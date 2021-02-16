@@ -12,7 +12,7 @@ import ai.lum.odinson.lucene.search.spans._
 
 case class SingleStepFullTraversalQuery(
   traversal: GraphTraversal,
-  surface: OdinsonQuery
+  surface: OdinsonQuery,
 ) extends FullTraversalQuery {
 
   def toString(field: String): String = {
@@ -52,20 +52,16 @@ case class SingleStepFullTraversalQuery(
 
 case class SingleStepFullTraversalWeight(
   traversal: GraphTraversal,
-  weight: OdinsonWeight
+  weight: OdinsonWeight,
 ) extends FullTraversalWeight {
 
   def subWeights: List[OdinsonWeight] = List(weight)
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
 
-  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit =
-    weight.extractTermContexts(contexts)
+  def extractTermContexts(contexts: JMap[Term, TermContext]): Unit = weight.extractTermContexts(contexts)
 
-  def getSpans(
-    context: LeafReaderContext,
-    requiredPostings: SpanWeight.Postings
-  ): FullTraversalSpans = {
+  def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): FullTraversalSpans = {
     val spans = weight.getSpans(context, requiredPostings).asInstanceOf[OdinsonSpans]
     if (spans == null) return null
     SingleStepFullTraversalSpans(traversal, spans)
@@ -75,21 +71,17 @@ case class SingleStepFullTraversalWeight(
 
 case class SingleStepFullTraversalSpans(
   traversal: GraphTraversal,
-  spans: OdinsonSpans
+  spans: OdinsonSpans,
 ) extends FullTraversalSpans {
 
   private var dstMatches: Array[OdinsonMatch] = null
 
   def subSpans: List[OdinsonSpans] = List(spans)
 
-  def matchFullTraversal(
-    graph: DirectedGraph,
-    maxToken: Int,
-    srcMatches: Array[OdinsonMatch]
-  ): Array[OdinsonMatch] = {
+  def matchFullTraversal(graph: DirectedGraph, maxToken: Int, srcMatches: Array[OdinsonMatch]): Array[OdinsonMatch] = {
     matchPairs(graph, maxToken, traversal, srcMatches, dstMatches)
   }
-
+  
   // advance all spans in arg to the specified doc
   def advanceToDoc(doc: Int): Boolean = {
     // if the spans haven't advanced then try to catch up
@@ -105,10 +97,7 @@ case class SingleStepFullTraversalSpans(
   }
 
   // returns a map from token index to all matches that contain that token
-  private def mkInvIndex(
-    spans: Array[OdinsonMatch],
-    maxToken: Int
-  ): Array[ArrayBuffer[OdinsonMatch]] = {
+  private def mkInvIndex(spans: Array[OdinsonMatch], maxToken: Int): Array[ArrayBuffer[OdinsonMatch]] = {
     val index = new Array[ArrayBuffer[OdinsonMatch]](maxToken)
     // empty buffer meant to stay empty and be reused
     val empty = new ArrayBuffer[OdinsonMatch]

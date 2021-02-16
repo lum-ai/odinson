@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
 import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.spans._
@@ -12,19 +12,18 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.state.State
 
 /** Traverses the graph from `src` to `dst` following the traversal pattern.
-  *  Returns `dst` if there is a match.
-  */
+ *  Returns `dst` if there is a match.
+ */
 class GraphTraversalQuery(
-  val defaultTokenField: String,
-  val dependenciesField: String,
-  val sentenceLengthField: String,
-  val src: OdinsonQuery,
-  val fullTraversal: FullTraversalQuery
+    val defaultTokenField: String,
+    val dependenciesField: String,
+    val sentenceLengthField: String,
+    val src: OdinsonQuery,
+    val fullTraversal: FullTraversalQuery,
 ) extends OdinsonQuery { self =>
 
   // TODO GraphTraversal.hashCode
-  override def hashCode: Int =
-    (defaultTokenField, dependenciesField, sentenceLengthField, src, fullTraversal).##
+  override def hashCode: Int = (defaultTokenField, dependenciesField, sentenceLengthField, src, fullTraversal).##
 
   override def setState(stateOpt: Option[State]): Unit = {
     src.setState(stateOpt)
@@ -43,13 +42,7 @@ class GraphTraversalQuery(
     val rewrittenSrc = src.rewrite(reader).asInstanceOf[OdinsonQuery]
     val rewrittenTraversal = fullTraversal.rewrite(reader)
     if (src != rewrittenSrc || fullTraversal != rewrittenTraversal) {
-      new GraphTraversalQuery(
-        defaultTokenField,
-        dependenciesField,
-        sentenceLengthField,
-        rewrittenSrc,
-        rewrittenTraversal
-      )
+      new GraphTraversalQuery(defaultTokenField, dependenciesField, sentenceLengthField, rewrittenSrc, rewrittenTraversal)
     } else {
       super.rewrite(reader)
     }
@@ -64,10 +57,10 @@ class GraphTraversalQuery(
   }
 
   class GraphTraversalWeight(
-    val srcWeight: OdinsonWeight,
-    val fullTraversal: FullTraversalWeight,
-    searcher: IndexSearcher,
-    terms: JMap[Term, TermContext]
+      val srcWeight: OdinsonWeight,
+      val fullTraversal: FullTraversalWeight,
+      searcher: IndexSearcher,
+      terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -80,10 +73,7 @@ class GraphTraversalQuery(
       fullTraversal.extractTermContexts(contexts)
     }
 
-    def getSpans(
-      context: LeafReaderContext,
-      requiredPostings: SpanWeight.Postings
-    ): OdinsonSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val reader = context.reader
       val srcSpans = srcWeight.getSpans(context, requiredPostings)
       val traversalSpans = fullTraversal.getSpans(context, requiredPostings)
@@ -91,13 +81,7 @@ class GraphTraversalQuery(
       val graphPerDoc = reader.getSortedDocValues(dependenciesField)
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
       val subSpans = srcSpans :: traversalSpans.subSpans
-      new GraphTraversalSpans(
-        subSpans.toArray,
-        srcSpans,
-        traversalSpans,
-        graphPerDoc,
-        numWordsPerDoc
-      )
+      new GraphTraversalSpans(subSpans.toArray, srcSpans, traversalSpans, graphPerDoc, numWordsPerDoc)
     }
 
   }
@@ -105,11 +89,11 @@ class GraphTraversalQuery(
 }
 
 class GraphTraversalSpans(
-  val subSpans: Array[OdinsonSpans],
-  val srcSpans: OdinsonSpans,
-  val fullTraversal: FullTraversalSpans,
-  val graphPerDoc: SortedDocValues,
-  val numWordsPerDoc: NumericDocValues
+    val subSpans: Array[OdinsonSpans],
+    val srcSpans: OdinsonSpans,
+    val fullTraversal: FullTraversalSpans,
+    val graphPerDoc: SortedDocValues,
+    val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 
   import Spans._
@@ -131,11 +115,7 @@ class GraphTraversalSpans(
     fullTraversal.advanceToDoc(docID())
     graph = UnsafeSerializer.bytesToGraph(graphPerDoc.get(docID()).bytes)
     maxToken = numWordsPerDoc.get(docID())
-    pq = QueueByPosition.mkPositionQueue(fullTraversal.matchFullTraversal(
-      graph,
-      maxToken.toInt,
-      srcSpans.getAllMatches()
-    ))
+    pq = QueueByPosition.mkPositionQueue(fullTraversal.matchFullTraversal(graph, maxToken.toInt, srcSpans.getAllMatches()))
     if (pq.size() > 0) {
       atFirstInCurrentDoc = true
       topPositionOdinsonMatch = null

@@ -2,6 +2,7 @@ package ai.lum.odinson.events
 
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
+
 class TestArgQuantifiers extends OdinsonTest {
 
   def ee = mkExtractorEngine("gummy-bears-consumption")
@@ -16,7 +17,7 @@ class TestArgQuantifiers extends OdinsonTest {
     """
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 5)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val Array(m1, m2) = results.scoreDocs.head.matches
     // test trigger
@@ -26,7 +27,7 @@ class TestArgQuantifiers extends OdinsonTest {
     testArguments(m1, desiredArgs35)
     testArguments(m2, desiredArgs67)
   }
-
+  
   it should "find two events with one optional theme each" in {
     val pattern = """
       trigger = consumption
@@ -34,7 +35,7 @@ class TestArgQuantifiers extends OdinsonTest {
     """
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 5)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val Array(m1, m2) = results.scoreDocs.head.matches
     // test trigger
@@ -44,7 +45,7 @@ class TestArgQuantifiers extends OdinsonTest {
     testArguments(m1, desiredArgs35)
     testArguments(m2, desiredArgs67)
   }
-
+  
   it should "find one event with two required themes" in {
     val pattern = """
       trigger = consumption
@@ -52,7 +53,7 @@ class TestArgQuantifiers extends OdinsonTest {
     """
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 5)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 1
     val Array(m) = results.scoreDocs.head.matches
     // test trigger
@@ -64,7 +65,7 @@ class TestArgQuantifiers extends OdinsonTest {
     )
     testArguments(m, desiredArgs)
   }
-
+  
   it should "find one event with two optional themes" in {
     val pattern = """
       trigger = consumption
@@ -72,7 +73,7 @@ class TestArgQuantifiers extends OdinsonTest {
     """
     val q = ee.compiler.compileEventQuery(pattern)
     val results = ee.query(q, 5)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 1
     val Array(m) = results.scoreDocs.head.matches
     // test trigger
@@ -85,3 +86,4 @@ class TestArgQuantifiers extends OdinsonTest {
     testArguments(m, desiredArgs)
   }
 }
+

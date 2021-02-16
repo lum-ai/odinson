@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{ Map => JMap, Set => JSet }
+import java.util.{Map => JMap, Set => JSet}
 
 import org.apache.lucene.index._
 import org.apache.lucene.search._
@@ -34,10 +34,10 @@ class OdinQueryWrapper(val query: SpanQuery) extends OdinsonQuery {
 }
 
 class OdinWeightWrapper(
-  query: OdinsonQuery,
-  searcher: IndexSearcher,
-  termContexts: JMap[Term, TermContext],
-  val weight: SpanWeight
+    query: OdinsonQuery,
+    searcher: IndexSearcher,
+    termContexts: JMap[Term, TermContext],
+    val weight: SpanWeight
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)

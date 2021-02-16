@@ -2,7 +2,7 @@ package ai.lum.odinson.events
 
 import ai.lum.common.FileUtils._
 import java.io.File
-import java.nio.file.{ Files, Path }
+import java.nio.file.{Files, Path}
 
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
@@ -38,7 +38,7 @@ class TestRuleFile extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4)
+      ArgumentOffsets("object", 2, 4),
     )
     testArguments(m, desiredArgs)
     eeGummy.clearState()
@@ -96,7 +96,7 @@ class TestRuleFile extends OdinsonTest {
         |  - import: /testGrammar/testRules.yml
         |
        """.stripMargin
-    assertThrows[OdinsonException] {
+    assertThrows[OdinsonException]{
       ee.compileRuleString(rules)
     }
   }

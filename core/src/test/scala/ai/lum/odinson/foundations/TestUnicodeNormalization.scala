@@ -24,7 +24,7 @@ class TestUnicodeNormalization extends OdinsonTest {
   it should "normalize mu" in {
     val mu1 = "\u00b5"
     val mu2 = "\u03bc"
-    val Mu = "\u039c"
+    val Mu  = "\u039c"
     mu1 should not equal mu2
     mu1 should not equal Mu
     mu2 should not equal Mu

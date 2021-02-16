@@ -9,8 +9,8 @@ import ai.lum.common.JavaCollectionUtils._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinTermAndQuery(
-  val clauses: List[OdinsonQuery],
-  val field: String
+    val clauses: List[OdinsonQuery],
+    val field: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (clauses, field).##
@@ -32,8 +32,8 @@ class OdinTermAndQuery(
   }
 
   override def createWeight(
-    searcher: IndexSearcher,
-    needsScores: Boolean
+      searcher: IndexSearcher,
+      needsScores: Boolean
   ): OdinsonWeight = {
     val subWeights = clauses.map(_.createWeight(searcher, false).asInstanceOf[OdinsonWeight]).asJava
     val terms = if (needsScores) OdinsonQuery.getTermContexts(subWeights) else null
@@ -41,9 +41,9 @@ class OdinTermAndQuery(
   }
 
   class OdinTermAndWeight(
-    val subWeights: JList[OdinsonWeight],
-    searcher: IndexSearcher,
-    terms: JMap[Term, TermContext]
+      val subWeights: JList[OdinsonWeight],
+      searcher: IndexSearcher,
+      terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -54,10 +54,7 @@ class OdinTermAndQuery(
       for (weight <- subWeights) weight.extractTermContexts(contexts)
     }
 
-    def getSpans(
-      context: LeafReaderContext,
-      requiredPostings: SpanWeight.Postings
-    ): OdinsonSpans = {
+    def getSpans(context: LeafReaderContext, requiredPostings: SpanWeight.Postings): OdinsonSpans = {
       val terms = context.reader().terms(field)
       if (terms == null) {
         return null // field does not exist

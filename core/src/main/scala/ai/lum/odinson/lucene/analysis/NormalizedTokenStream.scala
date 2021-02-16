@@ -6,7 +6,7 @@ import ai.lum.common.StringUtils._
 
 class NormalizedTokenStream(
   val tokenSeqs: Seq[Seq[String]],
-  val aggressive: Boolean = false
+  val aggressive: Boolean = false,
 ) extends TokenStream {
 
   val posIncrAtt = addAttribute(classOf[PositionIncrementAttribute])
@@ -18,15 +18,13 @@ class NormalizedTokenStream(
   private var synonymIndex: Int = 0
 
   /** Gets several parallel sequences of tokens (e.g., words, tags, lemmas, etc)
-    *  and groups them by position into collections of distinct normalized strings.
-    *  The members of each of these collections will be considered synonyms.
-    */
+   *  and groups them by position into collections of distinct normalized strings.
+   *  The members of each of these collections will be considered synonyms.
+   */
   private def mkSynonyms(tokenSeqs: Seq[Seq[String]]): Vector[Vector[String]] = {
     val synonyms = for (i <- tokenSeqs.head.indices) yield {
       tokenSeqs
-        .map(tokens =>
-          if (aggressive) tokens(i).normalizeUnicodeAggressively else tokens(i).normalizeUnicode
-        )
+        .map(tokens => if (aggressive) tokens(i).normalizeUnicodeAggressively else tokens(i).normalizeUnicode)
         .distinct
         .toVector
     }

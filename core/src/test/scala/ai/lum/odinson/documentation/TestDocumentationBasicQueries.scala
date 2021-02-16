@@ -1,10 +1,9 @@
 package ai.lum.odison.documentation
 
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
-import ai.lum.odinson.{ Document, OdinsonMatch }
+import ai.lum.odinson.{Document, OdinsonMatch}
 
 class TestDocumentationBasicQueries extends OdinsonTest {
-
   def doc: Document =
     Document.fromJson(
       """{"id":"george-what?-bears","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["George","and","dog","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["George","and","dog","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["george","and","dog","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["ORGANIZATION","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","I-NP","I-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
@@ -22,7 +21,7 @@ class TestDocumentationBasicQueries extends OdinsonTest {
     val q = ee.compiler.mkQuery("[tag=/N.*/] and [lemma=dog]")
     val results = ee.query(q)
     numMatches(results) shouldEqual (1)
-    existsMatchWithSpan(results, doc = 0, start = 0, end = 3) should be(true)
+    existsMatchWithSpan(results, doc = 0, start = 0, end = 3) should be (true)
   }
 
   // (?<animal> [tag=/N.*/]) and [lemma=dog]
@@ -43,9 +42,7 @@ class TestDocumentationBasicQueries extends OdinsonTest {
   it should "work for 'named captures with syntax'" in {
     val ee = mkExtractorEngine(doc1)
     // what is there should match
-    val q = ee.compiler.mkQuery(
-      "(?<controller> [entity=PROTEIN]) <nsubj phosphorilates >dobj (?<theme> [entity=PROTEIN])"
-    )
+    val q = ee.compiler.mkQuery("(?<controller> [entity=PROTEIN]) <nsubj phosphorilates >dobj (?<theme> [entity=PROTEIN])")
     val s = ee.query(q)
     s.totalHits shouldEqual (1)
     val matchval: OdinsonMatch = s.scoreDocs.head.matches.head

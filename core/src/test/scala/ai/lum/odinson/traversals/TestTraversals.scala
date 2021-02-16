@@ -17,24 +17,24 @@ class TestTraversals extends OdinsonTest {
     val pattern = "[word=cats] >conj_and [tag=/N.*/]"
     val query = eeAlien.compiler.mkQuery(pattern)
     val results = eeAlien.query(query, 1)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val doc = results.scoreDocs.head.doc
     val Array(m1, m2) = results.scoreDocs.head.matches
-    eeAlien.getStringForSpan(doc, m1) should equal("horses")
-    eeAlien.getStringForSpan(doc, m2) should equal("cattle")
+    eeAlien.getStringForSpan(doc, m1) should equal ("horses")
+    eeAlien.getStringForSpan(doc, m2) should equal ("cattle")
   }
 
   it should "support parentheses surrounding graph traversals AND surface patterns" in {
     val pattern = "[word=cats] (>conj_and [tag=/N.*/])"
     val query = eeAlien.compiler.mkQuery(pattern)
     val results = eeAlien.query(query, 1)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     results.scoreDocs.head.matches should have size 2
     val doc = results.scoreDocs.head.doc
     val Array(m1, m2) = results.scoreDocs.head.matches
-    eeAlien.getStringForSpan(doc, m1) should equal("horses")
-    eeAlien.getStringForSpan(doc, m2) should equal("cattle")
+    eeAlien.getStringForSpan(doc, m1) should equal ("horses")
+    eeAlien.getStringForSpan(doc, m2) should equal ("cattle")
   }
 
   // A little helper method to reduce code duplication for the following tests
@@ -42,7 +42,7 @@ class TestTraversals extends OdinsonTest {
     val pattern = s"[word=animals] (>nmod_such_as [])${quantifier}"
     val query = eeHedgehogs.compiler.mkQuery(pattern)
     val results = eeHedgehogs.query(query, 1)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     val matches = results.scoreDocs.head.matches
     matches should have size expectedMatches.length
     val doc = results.scoreDocs.head.doc
@@ -71,16 +71,13 @@ class TestTraversals extends OdinsonTest {
   }
 
   it should "support quantifiers on groups of graph traversals and surface patterns -- kleene star" in {
-    testHedgehogQuantifier(
-      "*",
-      Array("animals", "hedgehogs", "coypu", "yyymals", "deer", "zzzmals")
-    )
+    testHedgehogQuantifier("*", Array("animals", "hedgehogs", "coypu", "yyymals", "deer", "zzzmals"))
   }
 
   def testSpoonExpanding(pattern: String, expectedMatches: Array[String]) = {
     val query = eeSpoon.compiler.mkQuery(pattern)
     val results = eeSpoon.query(query, 1)
-    results.totalHits should equal(1)
+    results.totalHits should equal (1)
     val matches = results.scoreDocs.head.matches
     val doc = results.scoreDocs.head.doc
     val foundStrings = matches.map(m => eeSpoon.getStringForSpan(doc, m))
@@ -110,5 +107,6 @@ class TestTraversals extends OdinsonTest {
     val expected = Array("chopsticks", "chopsticks and a spoon")
     testSpoonExpanding(pattern, expected)
   }
+
 
 }

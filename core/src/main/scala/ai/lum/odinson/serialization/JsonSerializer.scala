@@ -43,6 +43,7 @@ object JsonSerializer {
     ujson.write(asJsonValue(m))
   }
 
+
   // Json Lines (one mention json per line)
 
   def asJsonLines(ms: Iterator[Mention]): Seq[String] = {
@@ -67,7 +68,7 @@ object JsonSerializer {
     val corpusDocId = m.idGetter.getDocId
     val corpusSentId = m.idGetter.getSentId
 
-    ujson.Obj(
+    ujson.Obj (
       "scalaType" -> m.getClass.getCanonicalName,
       "odinsonMatch" -> asJsonValue(m.odinsonMatch),
       "label" -> stringOrNull(m.label),
@@ -83,7 +84,7 @@ object JsonSerializer {
 
   def asJsonValue(om: OdinsonMatch): Value = {
     val scalaType = om.getClass.getCanonicalName
-    om match {
+     om match {
       case sm: StateMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
@@ -95,7 +96,7 @@ object JsonSerializer {
         ujson.Obj(
           "scalaType" -> scalaType,
           "start" -> ng.start,
-          "end" -> ng.end
+          "end" -> ng.end,
         )
       case em: EventMatch =>
         ujson.Obj(
@@ -109,27 +110,27 @@ object JsonSerializer {
         ujson.Obj(
           "scalaType" -> scalaType,
           "srcMatch" -> asJsonValue(gt.srcMatch),
-          "dstMatch" -> asJsonValue(gt.dstMatch)
+          "dstMatch" -> asJsonValue(gt.dstMatch),
         )
 
       case concat: ConcatMatch =>
-        ujson.Obj(
-          "scalaType" -> scalaType,
-          "subMatches" -> concat.subMatches.map(asJsonValue).toSeq
-        )
+      ujson.Obj(
+        "scalaType" -> scalaType,
+        "subMatches" -> concat.subMatches.map(asJsonValue).toSeq,
+      )
 
       case rep: RepetitionMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
           "subMatches" -> rep.subMatches.map(asJsonValue).toSeq,
-          "isGreedy" -> rep.isGreedy
+          "isGreedy" -> rep.isGreedy,
         )
 
       case opt: OptionalMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
           "subMatch" -> asJsonValue(opt.subMatch),
-          "isGreedy" -> opt.isGreedy
+          "isGreedy" -> opt.isGreedy,
         )
 
       case or: OrMatch =>
@@ -144,7 +145,7 @@ object JsonSerializer {
           "scalaType" -> scalaType,
           "subMatch" -> asJsonValue(named.subMatch),
           "name" -> named.name,
-          "label" -> stringOrNull(named.label)
+          "label" -> stringOrNull(named.label),
         )
 
       case _ => ???
@@ -169,7 +170,7 @@ object JsonSerializer {
   }
 
   def asJsonValue(metadatas: Array[ArgumentMetadata]): Value = {
-    ujson.Arr {
+    ujson.Arr{
       metadatas.map(asJsonValue).toSeq
     }
   }
@@ -239,16 +240,7 @@ object JsonSerializer {
     val sentId = json("sentId").str
     val idGetter = new KnownIdGetter(docId, sentId)
 
-    new Mention(
-      odinsonMatch,
-      label,
-      luceneDocId,
-      luceneSegmentDocId,
-      luceneSegmentDocBase,
-      idGetter,
-      foundBy,
-      arguments
-    )
+    new Mention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
   }
 
   def deserializeMatch(json: Value): OdinsonMatch = {
@@ -313,7 +305,6 @@ object JsonSerializer {
   def deserializeNamedCaptures(json: Value): Array[NamedCapture] = {
     json.arr.toArray.map(deserializeNamedCapture)
   }
-
   def deserializeNamedCapture(json: Value): NamedCapture = {
     val name = json("name").str
     val label = deserializeOptionString(json("label"))
@@ -324,7 +315,6 @@ object JsonSerializer {
   def deserializeArgMetadatas(json: Value): Array[ArgumentMetadata] = {
     json.arr.toArray.map(deserializeArgMetadata)
   }
-
   def deserializeArgMetadata(json: Value): ArgumentMetadata = {
     val metadata = json.obj.toMap
     val name = metadata("name").str
@@ -337,14 +327,14 @@ object JsonSerializer {
   def deserializeOptionString(json: Value): Option[String] = {
     json match {
       case ujson.Null => None
-      case someLabel  => Some(someLabel.str)
+      case someLabel => Some(someLabel.str)
     }
   }
 
   def deserializeOptionInt(json: Value): Option[Int] = {
     json match {
       case ujson.Null => None
-      case i          => Some(i.num.toInt)
+      case i => Some(i.num.toInt)
     }
   }
 

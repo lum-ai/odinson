@@ -20,22 +20,22 @@ case class MentionInfo(
   sentenceId: String,
   sentenceText: String,
   foundBy: String,
-  args: Seq[ArgInfo]
-) {
+  args: Seq[ArgInfo],
+)
+{
   def toJson: String = write(this)
 }
-
-object MentionInfo { implicit val rw: ReadWriter[MentionInfo] = macroRW }
+object MentionInfo {implicit val rw: ReadWriter[MentionInfo] = macroRW}
 
 // Wrapper for named captures (i.e., arguments) for use in the example,
 // again not intended to be comprehensive.
-case class ArgInfo(role: String, tokens: Seq[String]) {
+case class ArgInfo(role: String, tokens: Seq[String])
+{
   def toJson: String = write(this)
 }
+object ArgInfo {implicit val rw: ReadWriter[ArgInfo] = macroRW}
 
-object ArgInfo { implicit val rw: ReadWriter[ArgInfo] = macroRW }
-
-object Example extends App with LazyLogging {
+object Example extends App with LazyLogging{
 
   // Specify paths and settings in the local config file
   val config = ConfigFactory.load()

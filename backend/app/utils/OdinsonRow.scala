@@ -13,7 +13,6 @@ case class OdinsonRow(
   end: Int,
   matchingSpan: String
 ) {
-
   def toRow(delimiter: String = OdinsonRow.BASE_DELIMITER): String = {
     Seq(
       odinsonQuery,
@@ -26,13 +25,11 @@ case class OdinsonRow(
       OdinsonRow.sterilizeAndQuote(docId)
     ).mkString(delimiter)
   }
-
 }
 
 object OdinsonRow {
   val ARRAY_DELIMITER = ";"
   val BASE_DELIMITER = "\t"
-
   def HEADER(delimiter: String = OdinsonRow.BASE_DELIMITER): String = Seq(
     "ODINSON_QUERY",
     "PARENT_QUERY",

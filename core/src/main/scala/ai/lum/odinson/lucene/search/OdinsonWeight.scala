@@ -8,24 +8,23 @@ import org.apache.lucene.search.spans._
 import org.apache.lucene.search.similarities._
 import ai.lum.odinson.lucene.search.spans._
 
-/** The Weight interface provides an internal representation of the Query
-  * so that it can be reused. Any IndexSearcher dependent state should be
-  * stored in the Weight implementation, not in the Query class.
-  *
-  * (copied from lucene documentation)
-  */
+/**
+ * The Weight interface provides an internal representation of the Query
+ * so that it can be reused. Any IndexSearcher dependent state should be
+ * stored in the Weight implementation, not in the Query class.
+ *
+ * (copied from lucene documentation)
+ */
 abstract class OdinsonWeight(
-  val query: OdinsonQuery,
-  val searcher: IndexSearcher,
-  val termContexts: JMap[Term, TermContext]
+    val query: OdinsonQuery,
+    val searcher: IndexSearcher,
+    val termContexts: JMap[Term, TermContext]
 ) extends Weight(query) {
 
   import SpanWeight._
 
   val similarity: Similarity = searcher.getSimilarity(termContexts != null)
-
-  val simWeight: Similarity.SimWeight =
-    OdinsonWeight.buildSimWeight(query, searcher, termContexts, similarity)
+  val simWeight: Similarity.SimWeight = OdinsonWeight.buildSimWeight(query, searcher, termContexts, similarity)
 
   def extractTermContexts(contexts: JMap[Term, TermContext]): Unit
   def getSpans(ctx: LeafReaderContext, requiredPostings: Postings): OdinsonSpans
@@ -58,11 +57,9 @@ abstract class OdinsonWeight(
         val docScorer = similarity.simScorer(simWeight, context)
         val freqExplanation = Explanation.`match`(freq, "phraseFreq=" + freq)
         val scoreExplanation = docScorer.explain(doc, freqExplanation)
-        return Explanation.`match`(
-          scoreExplanation.getValue(),
-          "weight(" + getQuery() + " in " + doc + ") [" + similarity.getClass().getSimpleName() + "], result of:",
-          scoreExplanation
-        )
+        return Explanation.`match`(scoreExplanation.getValue(),
+          "weight("+getQuery()+" in "+doc+") [" + similarity.getClass().getSimpleName() + "], result of:",
+          scoreExplanation)
       }
     }
     Explanation.noMatch("no matching term")
@@ -73,10 +70,10 @@ abstract class OdinsonWeight(
 object OdinsonWeight {
 
   def buildSimWeight(
-    query: OdinsonQuery,
-    searcher: IndexSearcher,
-    termContexts: JMap[Term, TermContext],
-    similarity: Similarity
+      query: OdinsonQuery,
+      searcher: IndexSearcher,
+      termContexts: JMap[Term, TermContext],
+      similarity: Similarity
   ): Similarity.SimWeight = {
     if (termContexts == null || termContexts.size() == 0 || query.getField() == null) return null
     val termStats = new Array[TermStatistics](termContexts.size())

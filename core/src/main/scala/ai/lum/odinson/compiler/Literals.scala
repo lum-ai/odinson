@@ -16,7 +16,7 @@ object Literals {
   def identifier[_: P]: P[String] = {
     P(
       CharPred(c => c.isUnicodeIdentifierStart || c == '_') ~
-        CharsWhile(_.isUnicodeIdentifierPart).?
+      CharsWhile(_.isUnicodeIdentifierPart).?
     ).!
   }
 
@@ -24,7 +24,7 @@ object Literals {
   def extendedIdentifier[_: P]: P[String] = {
     P(
       CharPred(c => c.isUnicodeIdentifierStart || c == '_') ~
-        CharsWhile(c => c.isUnicodeIdentifierPart || c == ':' || c == '-').?
+      CharsWhile(c => c.isUnicodeIdentifierPart || c == ':' || c == '-').?
     ).!
   }
 
@@ -48,25 +48,25 @@ object Literals {
     s => s.drop(1).dropRight(1).replaceAll("""\\/""", "/")
   }
 
-  /** The parser constructed by this method returns the delimited string as it
-    * was found. It is the caller's job to drop delimiters and unescape any
-    * escaped char.
-    */
+  /**
+   * The parser constructed by this method returns the delimited string as it
+   * was found. It is the caller's job to drop delimiters and unescape any
+   * escaped char.
+   */
   def delimitedString[_: P](delimiter: Char, escape: Char): P[String] = {
     P(
       // open delimiter
       CharPred(_ == delimiter) ~
+      // valid characters
+      CharsWhile(c => c != delimiter && c != escape).? ~
+      (
+        // an escaped character
+        (if (delimiter == escape) CharPred(_ == delimiter).rep(exactly = 2) else CharPred(_ == escape) ~ AnyChar) ~
         // valid characters
-        CharsWhile(c => c != delimiter && c != escape).? ~
-        (
-          // an escaped character
-          (if (delimiter == escape) CharPred(_ == delimiter).rep(exactly = 2)
-           else CharPred(_ == escape) ~ AnyChar) ~
-            // valid characters
-            CharsWhile(c => c != delimiter && c != escape).?
-        ).rep ~
-        // close delimiter
-        CharPred(_ == delimiter)
+        CharsWhile(c => c != delimiter && c != escape).?
+      ).rep ~
+      // close delimiter
+      CharPred(_ == delimiter)
     ).!
   }
 

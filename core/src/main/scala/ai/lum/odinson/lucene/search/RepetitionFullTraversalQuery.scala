@@ -13,7 +13,7 @@ import ai.lum.odinson.lucene.search.spans._
 case class RepetitionFullTraversalQuery(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalQuery
+  fullTraversal: FullTraversalQuery,
 ) extends FullTraversalQuery {
 
   def toString(field: String): String = {
@@ -53,7 +53,7 @@ case class RepetitionFullTraversalQuery(
 case class RepetitionFullTraversalWeight(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalWeight
+  fullTraversal: FullTraversalWeight,
 ) extends FullTraversalWeight {
 
   def getSpans(
@@ -80,7 +80,7 @@ case class RepetitionFullTraversalWeight(
 case class RepetitionFullTraversalSpans(
   min: Int,
   max: Int,
-  fullTraversal: FullTraversalSpans
+  fullTraversal: FullTraversalSpans,
 ) extends FullTraversalSpans {
 
   def subSpans: List[OdinsonSpans] = {
@@ -95,7 +95,7 @@ case class RepetitionFullTraversalSpans(
   def matchFullTraversal(
     graph: DirectedGraph,
     maxToken: Int,
-    srcMatches: Array[OdinsonMatch]
+    srcMatches: Array[OdinsonMatch],
   ): Array[OdinsonMatch] = {
     var currentMatches = srcMatches
 

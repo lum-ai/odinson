@@ -7,7 +7,7 @@ import org.apache.lucene.search.spans._
 import ai.lum.odinson.lucene.search.spans._
 
 class LookaheadQuery(
-  val query: OdinsonQuery
+  val query: OdinsonQuery,
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (query).##
@@ -37,7 +37,7 @@ class LookaheadWeight(
   query: OdinsonQuery,
   searcher: IndexSearcher,
   termContexts: JMap[Term, TermContext],
-  val weight: OdinsonWeight
+  val weight: OdinsonWeight,
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = {
@@ -56,7 +56,7 @@ class LookaheadWeight(
 }
 
 class LookaheadSpans(
-  val spans: OdinsonSpans
+  val spans: OdinsonSpans,
 ) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
