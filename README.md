@@ -1,4 +1,4 @@
-![Tests (GitHub Actions)](https://github.com/lum-ai/odinson/workflows/Odinson%20CI/badge.svg)
+[![Tests (GitHub Actions)](https://github.com/lum-ai/odinson/workflows/Odinson%20CI/badge.svg)](https://github.com/lum-ai/odinson/actions)
 [![codecov](https://codecov.io/gh/lum-ai/odinson/branch/master/graph/badge.svg)](https://codecov.io/gh/lum-ai/odinson)
 
 # Odinson
