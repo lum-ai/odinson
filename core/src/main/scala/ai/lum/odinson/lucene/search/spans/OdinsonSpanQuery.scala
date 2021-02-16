@@ -15,7 +15,7 @@ class OdinsonSpanQuery(val query: OdinsonQuery) extends SpanQuery {
 
   override def equals(that: Any): Boolean = that match {
     case that: OdinsonSpanQuery => that.canEqual(this) && this.hashCode == that.hashCode
-    case _ => false
+    case _                      => false
   }
 
   def getField(): String = query.getField()

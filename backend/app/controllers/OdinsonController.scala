@@ -8,48 +8,60 @@ import javax.inject._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 import scala.util.control.NonFatal
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
 import akka.actor._
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.index.MultiFields
 import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonMatch, Document => OdinsonDocument}
+import ai.lum.odinson.{
+  BuildInfo,
+  ExtractorEngine,
+  Mention,
+  NamedCapture,
+  OdinsonMatch,
+  Document => OdinsonDocument
+}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
+import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
 
 @Singleton
-class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(implicit ec: ExecutionContext)
-  extends AbstractController(cc) {
+class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
+  implicit ec: ExecutionContext
+) extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
   val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
-  val docsDir            = config[File]("odinson.docsDir")
-  val DOC_ID_FIELD       = config[String]("odinson.index.documentIdField")
-  val SENTENCE_ID_FIELD  = config[String]("odinson.index.sentenceIdField")
-  val WORD_TOKEN_FIELD   = config[String]("odinson.displayField")
-  val pageSize           = config[Int]("odinson.pageSize")
+  // format: off
+  val docsDir           = config[File]  ("odinson.docsDir")
+  val DOC_ID_FIELD      = config[String]("odinson.index.documentIdField")
+  val SENTENCE_ID_FIELD = config[String]("odinson.index.sentenceIdField")
+  val WORD_TOKEN_FIELD  = config[String]("odinson.displayField")
+  val pageSize          = config[Int]   ("odinson.pageSize")
+  // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {
+
     def format(pretty: Option[Boolean]): Result = pretty match {
       case Some(true) => Ok(Json.prettyPrint(json)).as(ContentTypes.JSON)
-      case _ => Ok(json).as(ContentTypes.JSON)
+      case _          => Ok(json).as(ContentTypes.JSON)
     }
+
   }
 
   def buildInfo(pretty: Option[Boolean]) = Action {
@@ -66,14 +78,20 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
-  /**
-    * For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
-
+  /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
+    *
     * @param field raw, token, lemma, tag, etc.
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
     */
-  def termFreq(field: String, order: Option[String], min: Option[Int], max: Option[Int],
-               scale: Option[String], reverse: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+  def termFreq(
+    field: String,
+    order: Option[String],
+    min: Option[Int],
+    max: Option[Int],
+    scale: Option[String],
+    reverse: Option[Boolean],
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
@@ -100,7 +118,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // reverse if necessary
         val reversed = reverse match {
           case Some(true) => ordered.reverse
-          case _ => ordered
+          case _          => ordered
         }
 
         // transform the frequencies as requested
@@ -108,8 +126,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           case Some("log10") => reversed map { case (term, freq) => (term, math.log10(freq)) }
           case Some("percent") =>
             val countTotal = reversed.foldLeft(0.toLong)((s, term) => s + term._2)
-            reversed map { case (term, freq) => (term, freq.toDouble / countTotal)}
-          case _ => reversed.map{ case (term, freq) => (term, freq.toDouble) }
+            reversed map { case (term, freq) => (term, freq.toDouble / countTotal) }
+          case _ => reversed.map { case (term, freq) => (term, freq.toDouble) }
         }
 
         // cutoff the results to the requested ranks
@@ -171,7 +189,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       // NOTE: It's possible the vocabulary could change if the index is updated
       val vocabulary = loadVocabulary
       val vocab = vocabulary.terms.toList.sorted
-      val json  = Json.toJson(vocab)
+      val json = Json.toJson(vocab)
       json.format(pretty)
     }
   }
@@ -182,7 +200,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def sentenceJsonForSentId(sentenceId: Int, pretty: Option[Boolean]) = Action.async {
     Future {
       // ensure doc id is correct
-      val json  = mkAbridgedSentence(sentenceId)
+      val json = mkAbridgedSentence(sentenceId)
       json.format(pretty)
     }
   }
@@ -208,8 +226,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
-  /**
-    * Queries the index.
+  /** Queries the index.
     *
     * @param odisonQuery An OdinsonQuery
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
@@ -219,7 +236,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def retrieveResults(
     odinsonQuery: OdinsonQuery,
     prevDoc: Option[Int],
-    prevScore: Option[Float],
+    prevScore: Option[Float]
   ): OdinResults = {
     (prevDoc, prevScore) match {
       case (Some(doc), Some(score)) =>
@@ -245,8 +262,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   // import play.api.libs.json.Json
 
-  /**
-    * Executes the provided Odinson grammar.
+  /** Executes the provided Odinson grammar.
     *
     * @param grammar An Odinson grammar
     * @param parentQuery A Lucene query to filter documents (optional).
@@ -278,12 +294,17 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
       val maxSentences: Int = pageSize match {
         case Some(ps) => ps
-        case None => extractorEngine.numDocs()
+        case None     => extractorEngine.numDocs()
       }
 
       val mentions: Seq[Mention] = {
         // FIXME: should deal in iterators to allow for, e.g., pagination...?
-        val iterator = extractorEngine.extractMentions(composedExtractors, numSentences = maxSentences, allowTriggerOverlaps = allowTriggerOverlaps, disableMatchSelector = false)
+        val iterator = extractorEngine.extractMentions(
+          composedExtractors,
+          numSentences = maxSentences,
+          allowTriggerOverlaps = allowTriggerOverlaps,
+          disableMatchSelector = false
+        )
         iterator.toVector
       }
 
@@ -299,9 +320,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
-  /**
-    *
-    * @param odinsonQuery An Odinson pattern
+  /** @param odinsonQuery An Odinson pattern
     * @param parentQuery A Lucene query to filter documents (optional).
     * @param label The label to use when committing matches to the state.
     * @param commit Whether or not results should be committed to the state.
@@ -437,16 +456,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ): JsValue = {
 
     val scoreDocs: JsValue = enriched match {
-      case true  => Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse):_*)
-      case false => Json.arr(results.scoreDocs.map(mkJson):_*)
+      case true  => Json.arr(results.scoreDocs.map(mkJsonWithEnrichedResponse): _*)
+      case false => Json.arr(results.scoreDocs.map(mkJson): _*)
     }
 
     Json.obj(
       "odinsonQuery" -> odinsonQuery,
-      "parentQuery"  -> parentQuery,
-      "duration"     -> duration,
-      "totalHits"    -> results.totalHits,
-      "scoreDocs"    -> scoreDocs
+      "parentQuery" -> parentQuery,
+      "duration" -> duration,
+      "totalHits" -> results.totalHits,
+      "scoreDocs" -> scoreDocs
     )
   }
 
@@ -458,13 +477,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     mentions: Seq[Mention]
   ): JsValue = {
 
-    val mentionsJson: JsValue = Json.arr(mentions.map(mkJson):_*)
+    val mentionsJson: JsValue = Json.arr(mentions.map(mkJson): _*)
 
     Json.obj(
-      "parentQuery"  -> parentQuery,
-      "duration"     -> duration,
+      "parentQuery" -> parentQuery,
+      "duration" -> duration,
       "allowTriggerOverlaps" -> allowTriggerOverlaps,
-      "mentions"    -> mentionsJson
+      "mentions" -> mentionsJson
     )
   }
 
@@ -474,14 +493,14 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val tokens = extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
     // odinsonMatch: OdinsonMatch,
     Json.obj(
-      "sentenceId"    -> mention.luceneDocId,
+      "sentenceId" -> mention.luceneDocId,
       // "score"         -> odinsonScoreDoc.score,
-      "label"         -> mention.label,
-      "documentId"    -> getDocId(mention.luceneDocId),
+      "label" -> mention.label,
+      "documentId" -> getDocId(mention.luceneDocId),
       "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "foundBy"       -> mention.foundBy,
-      "match"         -> Json.arr(mkJson(mention.odinsonMatch))
+      "words" -> JsArray(tokens.map(JsString)),
+      "foundBy" -> mention.foundBy,
+      "match" -> Json.arr(mkJson(mention.odinsonMatch))
     )
   }
 
@@ -490,19 +509,19 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     // we want **all** tokens for the sentence
     val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
     Json.obj(
-      "sentenceId"    -> odinsonScoreDoc.doc,
-      "score"         -> odinsonScoreDoc.score,
-      "documentId"    -> getDocId(odinsonScoreDoc.doc),
+      "sentenceId" -> odinsonScoreDoc.doc,
+      "score" -> odinsonScoreDoc.score,
+      "documentId" -> getDocId(odinsonScoreDoc.doc),
       "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson):_*)
+      "words" -> JsArray(tokens.map(JsString)),
+      "matches" -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
     )
   }
 
   def mkJson(m: OdinsonMatch): Json.JsValueWrapper = {
     Json.obj(
-      "span"     -> Json.obj("start" -> m.start, "end" -> m.end),
-      "captures" -> Json.arr(m.namedCaptures.map(mkJson):_*)
+      "span" -> Json.obj("start" -> m.start, "end" -> m.end),
+      "captures" -> Json.arr(m.namedCaptures.map(mkJson): _*)
     )
   }
 
@@ -512,12 +531,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
     Json.obj(
-      "sentenceId"    -> odinsonScoreDoc.doc,
-      "score"         -> odinsonScoreDoc.score,
-      "documentId"    -> getDocId(odinsonScoreDoc.doc),
+      "sentenceId" -> odinsonScoreDoc.doc,
+      "score" -> odinsonScoreDoc.score,
+      "documentId" -> getDocId(odinsonScoreDoc.doc),
       "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "sentence"      -> mkAbridgedSentence(odinsonScoreDoc.doc),
-      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson):_*)
+      "sentence" -> mkAbridgedSentence(odinsonScoreDoc.doc),
+      "matches" -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
     )
   }
 

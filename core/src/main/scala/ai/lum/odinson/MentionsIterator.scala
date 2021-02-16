@@ -7,13 +7,16 @@ import ai.lum.odinson.utils.MostRecentlyUsed
 import scala.annotation.tailrec
 
 class MentionsIterator(
-    labelOpt: Option[String],
-    nameOpt: Option[String],
-    odinResults: OdinResults,
-    mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
-  ) extends Iterator[Mention] {
+  labelOpt: Option[String],
+  nameOpt: Option[String],
+  odinResults: OdinResults,
+  mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
+) extends Iterator[Mention] {
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
-  val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) => total + scoreDoc.matches.length }
+
+  val matchesTotal: Int = scoreDocs.foldLeft(0) { case (total, scoreDoc) =>
+    total + scoreDoc.matches.length
+  }
 
   var matchesRemaining: Int = matchesTotal
   var scoreDocsIndex: Int = 0
@@ -34,21 +37,36 @@ class MentionsIterator(
 
       // TODO: double check that name == foundBy, replace?
       val idGetter = mruIdGetter.getOrNew(docIndex)
-      new Mention(odinsonMatch, labelOpt, docIndex, scoreDoc.segmentDocId, scoreDoc.segmentDocBase, idGetter, nameOpt.getOrElse(""))
-    }
-    else {
+      new Mention(
+        odinsonMatch,
+        labelOpt,
+        docIndex,
+        scoreDoc.segmentDocId,
+        scoreDoc.segmentDocBase,
+        idGetter,
+        nameOpt.getOrElse("")
+      )
+    } else {
       scoreDocsIndex += 1
       matchesIndex = 0
       next()
     }
   }
+
 }
 
 object MentionsIterator {
   val emptyMentionIterator = Iterator[Mention]()
-  def apply(labelOpt: Option[String], nameOpt: Option[String], odinResults: OdinResults, mruIdGetter:MostRecentlyUsed[Int, LazyIdGetter]): MentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
+
+  def apply(
+    labelOpt: Option[String],
+    nameOpt: Option[String],
+    odinResults: OdinResults,
+    mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
+  ): MentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
   def concatenate(iterators: Seq[Iterator[Mention]]): Iterator[Mention] = {
     iterators.foldLeft(emptyMentionIterator)(_ ++ _)
   }
+
 }

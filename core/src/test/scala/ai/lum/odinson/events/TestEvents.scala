@@ -1,12 +1,11 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.{EventMatch, MentionsIterator}
+import ai.lum.odinson.{ EventMatch, MentionsIterator }
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-
 
 class TestEvents extends OdinsonTest {
 
@@ -30,7 +29,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4),
+      ArgumentOffsets("object", 2, 4)
     )
     testArguments(m, desiredArgs)
   }
@@ -54,7 +53,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4),
+      ArgumentOffsets("object", 2, 4)
     )
     testArguments(m, desiredArgs)
   }
@@ -78,7 +77,7 @@ class TestEvents extends OdinsonTest {
     // the main event and the two args
     mentions.length should equal(3)
 
-    val em = mentions.map(_.odinsonMatch).collect{case m:EventMatch => m}.head
+    val em = mentions.map(_.odinsonMatch).collect { case m: EventMatch => m }.head
     val argMetadataNames = em.argumentMetadata.toSeq.map(_.name)
     // the length of this list should not change if it goes to a set
     argMetadataNames.length should be(argMetadataNames.toSet.size)
@@ -103,7 +102,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 3, 4),
+      ArgumentOffsets("object", 3, 4)
     )
     testArguments(m, desiredArgs)
     ee.clearState()
@@ -126,7 +125,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4),
+      ArgumentOffsets("object", 2, 4)
     )
     testArguments(m, desiredArgs)
     ee.clearState()
@@ -149,7 +148,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 3, 4),
+      ArgumentOffsets("object", 3, 4)
     )
     testArguments(m, desiredArgs)
     ee.clearState()
@@ -194,7 +193,14 @@ class TestEvents extends OdinsonTest {
     val q2 = ee.compiler.compileEventQuery(pattern)
 
     // The ee.query no longer adds to the state on its own, so this helper is being used.
-    def localQuery(odinsonQuery: OdinsonQuery, labelOpt: Option[String] = None, nameOpt: Option[String] = None, n: Int, after: OdinsonScoreDoc, disableMatchSelector: Boolean): OdinResults = {
+    def localQuery(
+      odinsonQuery: OdinsonQuery,
+      labelOpt: Option[String] = None,
+      nameOpt: Option[String] = None,
+      n: Int,
+      after: OdinsonScoreDoc,
+      disableMatchSelector: Boolean
+    ): OdinResults = {
       val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
       val odinMentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
 
@@ -202,9 +208,15 @@ class TestEvents extends OdinsonTest {
       odinResults
     }
 
-
     // This query adds to the state, so it is helped by the localQuery.
-    val results1 = localQuery(q1, labelOpt = Some("NP"), nameOpt = None, 1, after = null, disableMatchSelector = false)
+    val results1 = localQuery(
+      q1,
+      labelOpt = Some("NP"),
+      nameOpt = None,
+      1,
+      after = null,
+      disableMatchSelector = false
+    )
     results1.totalHits should equal(1)
     results1.scoreDocs.head.matches should have size 2
 
@@ -219,7 +231,7 @@ class TestEvents extends OdinsonTest {
     // test arguments
     val desiredArgs = Seq(
       ArgumentOffsets("subject", 0, 1),
-      ArgumentOffsets("object", 2, 4),
+      ArgumentOffsets("object", 2, 4)
     )
     testArguments(m, desiredArgs)
     ee.clearState()

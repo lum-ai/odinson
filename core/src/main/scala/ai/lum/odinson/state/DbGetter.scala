@@ -30,13 +30,13 @@ class DbGetter(resultSet: ResultSet) extends Iterator[DbGetter] {
       checkedNextResult
     }
 
-
   override def next(): DbGetter = {
     if (!checkedNext)
       resultSet.next()
     checkedNext = false
     this
   }
+
 }
 
 object DbGetter {
