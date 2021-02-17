@@ -6,10 +6,8 @@ import java.nio.file.Path
 import javax.inject._
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.Map
 import scala.util.control.NonFatal
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
@@ -72,9 +70,24 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @param field raw, token, lemma, tag, etc.
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
     */
-  def termFreq(field: String, order: Option[String], min: Option[Int], max: Option[Int],
-               scale: Option[String], reverse: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+  def termFreq(field: String, group: Option[String], filter: Option[String], order: Option[String],
+               min: Option[Int], max: Option[Int], scale: Option[String], reverse: Option[Boolean],
+               pretty: Option[Boolean]) = Action.async {
     Future {
+
+      // if a regex filter is specified, apply it
+      def isMatch(s: String, filter: Option[String]): Boolean = {
+        if (filter.isEmpty) true
+        // .* is necessary
+        else {
+          val pattern = filter.get.r
+          pattern.findFirstMatchIn(s) match {
+            case Some(_) => true
+            case _ => false
+          }
+        }
+      }
+
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
       val fieldNames = fields.iterator.asScala.toList
@@ -86,14 +99,17 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val termFreqs = scala.collection.mutable.HashMap[String, Long]()
         while (termsEnum.next() != null) {
           val term = termsEnum.term.utf8ToString
-          termFreqs.update(term, termsEnum.totalTermFreq)
+          // apply the filter if necessary
+          if (isMatch(term, filter)) {
+            termFreqs.update(term, termsEnum.totalTermFreq)
+          }
         }
 
         // order the resulting frequencies as requested
         val ordered = order match {
           // alphabetical
           case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
-          // alphabetical
+          // frequency
           case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
         }
 
@@ -103,21 +119,62 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           case _ => ordered
         }
 
-        // transform the frequencies as requested
-        val scaled: Seq[(String, Double)] = scale match {
-          case Some("log10") => reversed map { case (term, freq) => (term, math.log10(freq)) }
-          case Some("percent") =>
-            val countTotal = reversed.foldLeft(0.toLong)((s, term) => s + term._2)
-            reversed map { case (term, freq) => (term, freq.toDouble / countTotal)}
-          case _ => reversed.map{ case (term, freq) => (term, freq.toDouble) }
-        }
-
         // cutoff the results to the requested ranks
         val defaultMin = 0
         val defaultMax = 9
-        val res = scaled.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1)
+        val sliced = reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
 
-        Json.toJson(res.toMap).format(pretty)
+        // count instances of each pairing of `field` and `group` terms
+        val groupedTerms = if (group.nonEmpty && fieldNames.contains(group.get)) {
+          val pairFreqs = scala.collection.mutable.HashMap[(String, String), Long]()
+
+          // this is O(awful) but will only be costly when (max - min) is large
+          val pairs = for {
+            (term1, _) <- sliced
+            odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
+            results = extractorEngine.query(odinsonQuery)
+            scoreDoc <- results.scoreDocs
+            eachMatch <- scoreDoc.matches
+            term2 = extractorEngine.getTokensForSpan(scoreDoc.doc, eachMatch, group.get).head
+          } yield (term1, term2)
+          // count instances of this pair of terms from `field` and `group`, respectively
+          pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
+        } else sliced
+
+        // order again if there's a secondary grouping variable
+        val reordered = groupedTerms.sortBy{ case (ser, conditionedFreq) =>
+          ser match {
+            case singleTerm: String =>
+              (sliced.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
+            case (term1: String, _: String) =>
+              // find the total frequency of the term (ignoring group condition)
+              val totalFreq = sliced.find{ _._1 == term1 }.get._2
+              (sliced.indexOf((term1, totalFreq)), -conditionedFreq)
+          }
+        }
+
+        // transform the frequencies as requested, preserving order
+        val scaled = scale match {
+          case Some("log10") => reordered map { case (term, freq) => (term, math.log10(freq)) }
+          case Some("percent") =>
+            val countTotal = terms.getSumTotalTermFreq
+            reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
+          case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
+        }
+
+        // rearrange data into a Seq of Maps for Jsonization
+        val res: Seq[Map[String, String]] = scaled.map { case (termGroup, freq) =>
+          termGroup match {
+            case singleTerm: String =>
+              Map("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq.toString)
+            case (term1: String, term2: String) =>
+              Map("term" -> term1,
+                  "group" -> term2,
+                  "frequency" -> freq.toString)
+          }
+        }
+
+        Json.toJson(res).format(pretty)
       } else {
         // the requested field isn't in this index
         Json.obj().format(pretty)

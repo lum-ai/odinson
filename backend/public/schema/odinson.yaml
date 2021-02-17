@@ -303,11 +303,27 @@ paths:
         - name: field
           in: query
           description: |
-            The token field (e.g., word, lemma) whose frequencies are to be counted.
+            The token field (e.g., lemma) whose frequencies are to be counted.
           required: true
           schema:
             type: string
+            example: lemma
+        - name: group
+          in: query
+          description: |
+            A conditioning variable by which to group each term's counts.
+          required: false
+          schema:
+            type: string
             example: tag
+        - name: filter
+          in: query
+          description: |
+            A regular expression to filter the terms in `field` before counting.
+          required: false
+          schema:
+            type: string
+            example: "ate$"
         - name: order
           in: query
           description: |
@@ -644,13 +660,16 @@ components:
       properties:
         term:
           type: string
-          description: A term in a token field.
-          example: NNPS
+          description: A term in a token field (e.g., lemma).
+          example: achieve
+        group:
+          type: string
+          description: A grouping term from a second token field (e.g., tag).
+          example: VBD
         frequency:
-          type: number
-          format: float
+          type: string
           description: The number of occurrences of the term (potentially scaled).
-          example: 104291.0
+          example: "104291.0"
 
     # MatchFrequency:
     #   type: object
@@ -1076,6 +1095,7 @@ components:
         - numDocs
         - corpus
         - distinctDependencyRelations
+        - fields
       properties:
         numDocs:
           type: integer
@@ -1091,3 +1111,9 @@ components:
           format: int32
           description: "The number of dependency relation types indexed in the corpus."
           example: 134
+        fields:
+          type: array
+          items:
+            type: string
+            description: "A field available from the index."
+            example: tag
