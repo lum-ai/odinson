@@ -8,10 +8,10 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinRepetitionQuery(
-    val query: OdinsonQuery,
-    val min: Int,
-    val max: Int,
-    val isGreedy: Boolean
+  val query: OdinsonQuery,
+  val min: Int,
+  val max: Int,
+  val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
   require(min > 0, "min must be positive")
@@ -45,9 +45,9 @@ class OdinRepetitionQuery(
   }
 
   class OdinRepetitionWeight(
-      val weight: OdinsonWeight,
-      searcher: IndexSearcher,
-      terms: JMap[Term, TermContext]
+    val weight: OdinsonWeight,
+    searcher: IndexSearcher,
+    terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -72,10 +72,10 @@ class OdinRepetitionQuery(
 }
 
 class OdinRepetitionSpans(
-    val spans: OdinsonSpans,
-    val min: Int,
-    val max: Int,
-    val isGreedy: Boolean
+  val spans: OdinsonSpans,
+  val min: Int,
+  val max: Int,
+  val isGreedy: Boolean
 ) extends OdinsonSpans {
 
   import DocIdSetIterator._
@@ -140,7 +140,11 @@ class OdinRepetitionSpans(
     while (startIndex < matches.length) {
       if (numReps == 0) {
         numReps += 1
-      } else if (startIndex + numReps < matches.length && matches(startIndex+numReps-1).end == matches(startIndex+numReps).start) {
+      } else if (
+        startIndex + numReps < matches.length && matches(startIndex + numReps - 1).end == matches(
+          startIndex + numReps
+        ).start
+      ) {
         numReps += 1
       } else {
         startIndex += 1

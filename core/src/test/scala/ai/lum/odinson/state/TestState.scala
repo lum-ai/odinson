@@ -48,7 +48,7 @@ class TestState extends OdinsonTest {
     val noStateMentions = eeGummy.extractNoState(extractors).toArray
     noStateMentions should have size (1)
     val first = getMentionsWithLabel(noStateMentions, "First")
-    first should have size(1)
+    first should have size (1)
 
   }
 
@@ -89,19 +89,19 @@ class TestState extends OdinsonTest {
     val mentions = eeGummy.extractMentions(extractors).toArray
 
     val first = getMentionsWithLabel(mentions, "First")
-    first should have size(1)
+    first should have size (1)
 
     val second = getMentionsWithLabel(mentions, "Second")
-    second should have size(1)
+    second should have size (1)
 
     val third = getMentionsWithLabel(mentions, "Third")
-    third should have size(1)
+    third should have size (1)
 
     val fourth = getMentionsWithLabel(mentions, "Fourth")
-    fourth should have size(1)
+    fourth should have size (1)
 
     // the four main mentions and the promoted arg
-    mentions should have size(5)
+    mentions should have size (5)
     eeGummy.clearState()
   }
 
@@ -131,34 +131,33 @@ class TestState extends OdinsonTest {
 
     // First event -- make sure it's there
     val first = getMentionsWithLabel(mentions, "First")
-    first should have size(1)
+    first should have size (1)
     val firstMention = first.head
     // There should be one argument, for the person
-    firstMention.arguments should have size(1)
+    firstMention.arguments should have size (1)
     val personMentions = firstMention.arguments("person")
-    personMentions should have size(1)
+    personMentions should have size (1)
     // And that argument should be a Mention with label `Person`
     val person = personMentions.head
     person.label.getOrElse("NONE") should be("Person")
 
     // Second event, which relies on the promoted argument should be found
     val second = getMentionsWithLabel(mentions, "Second")
-    second should have size(1)
+    second should have size (1)
     val secondMention = second.head
     // There should be one argument, for the whatDid
-    secondMention.arguments should have size(1)
+    secondMention.arguments should have size (1)
     val didMentions = secondMention.arguments("whatDid")
-    didMentions should have size(1)
+    didMentions should have size (1)
     // And that argument should consist of "ate"
     val did = didMentions.head
     eeGummy.getStringForSpan(did.luceneDocId, did.odinsonMatch) should be("ate")
 
     // Overall, there should be four mentions found, the two main mentions and the promoted args
-    mentions should have size(4)
+    mentions should have size (4)
 
     eeGummy.clearState()
     eeGummy.close()
-
 
   }
 
@@ -189,21 +188,21 @@ class TestState extends OdinsonTest {
     val first = getMentionsWithLabel(mentions, "First")
     // the original "Becky", then the two found args ("bears" and ".")
     // since they were promoted
-    first should have size(3)
+    first should have size (3)
 
     val second = getMentionsWithLabel(mentions, "Second")
     // one mention (the event)
-    second should have size(1)
+    second should have size (1)
     val secondMention = second.head
     // should have been converted to a statematch
-    secondMention.odinsonMatch shouldBe a [StateMatch]
+    secondMention.odinsonMatch shouldBe a[StateMatch]
 
     // The args should all have been converted and promoted
     val args = secondMention.arguments("arg")
-    args should have size(3)
+    args should have size (3)
 
     args foreach { arg =>
-      arg.odinsonMatch shouldBe a [StateMatch]
+      arg.odinsonMatch shouldBe a[StateMatch]
     }
     eeGummy.clearState()
 
@@ -229,28 +228,27 @@ class TestState extends OdinsonTest {
     val first = getMentionsWithLabel(mentions, "First")
     // the original "Becky", then the two found args ("bears" and ".")
     // since they were promoted
-    first should have size(3)
+    first should have size (3)
     val firstMention = first.head
     // This match should have been converted to a StateMatch
-    firstMention.odinsonMatch should not be a [StateMatch]
+    firstMention.odinsonMatch should not be a[StateMatch]
 
     val second = getMentionsWithLabel(mentions, "Second")
     // one mention (the event)
-    second should have size(1)
+    second should have size (1)
     val secondMention = second.head
     // should not have been converted to a statematch
-    secondMention.odinsonMatch should not be a [StateMatch]
+    secondMention.odinsonMatch should not be a[StateMatch]
 
     // The args should all have been converted and promoted
     val args = secondMention.arguments("arg")
-    args should have size(3)
+    args should have size (3)
 
     args foreach { arg =>
-      arg.odinsonMatch should not be a [StateMatch]
+      arg.odinsonMatch should not be a[StateMatch]
       arg.label.get should be("First")
     }
     eeGummy.clearState()
   }
-
 
 }

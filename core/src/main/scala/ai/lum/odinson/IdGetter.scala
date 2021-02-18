@@ -29,5 +29,8 @@ class LazyIdGetter(indexSearcher: OdinsonIndexSearcher, documentId: Int) extends
 }
 
 object LazyIdGetter {
-  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter = new LazyIdGetter(indexSearcher, docId)
+
+  def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter =
+    new LazyIdGetter(indexSearcher, docId)
+
 }

@@ -19,7 +19,6 @@ import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
 
-
 object Shell extends App {
 
   // use ListMap to preserve commands order in `printHelp()`
@@ -44,7 +43,7 @@ object Shell extends App {
   sys.addShutdownHook {
     history.flush()
   }
-  
+
   // setup searcher
   val extractorEngine = ExtractorEngine.fromConfig()
 
@@ -95,15 +94,15 @@ object Shell extends App {
           running = false
         } else {
           line.trim match {
-            case "" => ()
-            case ":help" => printHelp()
-            case ":exit" => running = false
+            case ""           => ()
+            case ":help"      => printHelp()
+            case ":exit"      => running = false
             case ":buildinfo" => printBuildInfo()
-            case ":settings" => printSettings()
-            case ":more" => printMore(maxMatchesDisplay)
+            case ":settings"  => printSettings()
+            case ":more"      => printMore(maxMatchesDisplay)
             case ":corpus" =>
               println("Number of sentences: " + extractorEngine.numDocs.display)
-              // TODO maybe print some more stuff?
+            // TODO maybe print some more stuff?
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
               maxMatchesDisplay = n.toInt

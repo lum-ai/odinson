@@ -2,20 +2,13 @@ package ai.lum.odinson.extra
 
 import java.util.UUID
 
-import org.clulab.processors.{
-  Document => ProcessorsDocument,
-  Sentence => ProcessorsSentence
-}
-import ai.lum.odinson.{
-  Document => OdinsonDocument,
-  Sentence => OdinsonSentence,
-  _
-}
+import org.clulab.processors.{ Document => ProcessorsDocument, Sentence => ProcessorsSentence }
+import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence, _ }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import edu.cmu.dynet.Initialize
 import org.clulab.dynet.DyNetSync
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.collection.mutable
 
@@ -25,6 +18,7 @@ object ProcessorsUtils {
 
   // load field names from config
   val config = ConfigFactory.load()
+  // format: off
   val documentIdField   = config[String]("odinson.index.documentIdField")
   val rawTokenField     = config[String]("odinson.index.rawTokenField")
   val wordTokenField    = config[String]("odinson.index.wordTokenField")
@@ -33,6 +27,7 @@ object ProcessorsUtils {
   val chunkTokenField   = config[String]("odinson.index.chunkTokenField")
   val entityTokenField  = config[String]("odinson.index.entityTokenField")
   val dependenciesField = config[String]("odinson.index.dependenciesField")
+  // format: on
 
   /** convert processors document to odinson document */
   def convertDocument(d: ProcessorsDocument): OdinsonDocument = {
@@ -62,7 +57,8 @@ object ProcessorsUtils {
     val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
     val maybeDeps = s.dependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
-    val fields = Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
+    val fields =
+      Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
     OdinsonSentence(s.size, fields.flatten)
   }
 

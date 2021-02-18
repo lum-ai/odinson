@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{Map => JMap, Set => JSet}
+import java.util.{ Map => JMap, Set => JSet }
 
 import ai.lum.odinson.NamedCapture
 import ai.lum.odinson.OdinsonMatch
@@ -71,7 +71,9 @@ class StateQuery(
 
     // retrieve all segment-specific doc-ids corresponding to
     // the documents that contain a mention with the specified label
-    private val docIds: Array[Int] = stateOpt.map(_.getDocIds(docBase, label)).getOrElse(Array.empty)
+    private val docIds: Array[Int] =
+      stateOpt.map(_.getDocIds(docBase, label)).getOrElse(Array.empty)
+
     private var currentDocIndex: Int = -1
     private var currentDoc: Int = -1
 

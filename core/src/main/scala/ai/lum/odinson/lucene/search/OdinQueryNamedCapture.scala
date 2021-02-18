@@ -8,9 +8,9 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinQueryNamedCapture(
-    val query: OdinsonQuery,
-    val captureName: String,
-    val captureLabel: Option[String],
+  val query: OdinsonQuery,
+  val captureName: String,
+  val captureLabel: Option[String]
 ) extends OdinsonQuery {
 
   override def hashCode: Int = (query, captureName).##
@@ -37,12 +37,12 @@ class OdinQueryNamedCapture(
 }
 
 class OdinWeightNamedCapture(
-    query: OdinsonQuery,
-    searcher: IndexSearcher,
-    termContexts: JMap[Term, TermContext],
-    val weight: OdinsonWeight,
-    val captureName: String,
-    val captureLabel: Option[String],
+  query: OdinsonQuery,
+  searcher: IndexSearcher,
+  termContexts: JMap[Term, TermContext],
+  val weight: OdinsonWeight,
+  val captureName: String,
+  val captureLabel: Option[String]
 ) extends OdinsonWeight(query, searcher, termContexts) {
 
   def extractTerms(terms: JSet[Term]): Unit = weight.extractTerms(terms)
@@ -59,9 +59,9 @@ class OdinWeightNamedCapture(
 }
 
 class OdinSpansNamedCapture(
-    val spans: OdinsonSpans,
-    val captureName: String,
-    val captureLabel: Option[String],
+  val spans: OdinsonSpans,
+  val captureName: String,
+  val captureLabel: Option[String]
 ) extends OdinsonSpans {
   def nextDoc(): Int = spans.nextDoc()
   def advance(target: Int): Int = spans.advance(target)
@@ -74,7 +74,9 @@ class OdinSpansNamedCapture(
   def positionsCost(): Float = spans.positionsCost()
   override def asTwoPhaseIterator(): TwoPhaseIterator = spans.asTwoPhaseIterator()
   override def width(): Int = spans.width()
+
   override def odinsonMatch: OdinsonMatch = {
     new NamedMatch(spans.odinsonMatch, captureName, captureLabel)
   }
+
 }

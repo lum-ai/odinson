@@ -8,9 +8,9 @@ import ai.lum.odinson._
 import ai.lum.odinson.lucene.search.spans._
 
 class OdinsonOptionalQuery(
-    val query: OdinsonQuery,
-    val sentenceLengthField: String,
-    val isGreedy: Boolean
+  val query: OdinsonQuery,
+  val sentenceLengthField: String,
+  val isGreedy: Boolean
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (query, sentenceLengthField, isGreedy).##
@@ -84,7 +84,7 @@ class OdinsonOptionalQuery(
 class OdinsonOptionalSpans(
   // FIXME do i need the original spans?
   val originalSpans: OdinsonSpans, // original spans available
-  val mergedSpans: OdinOrSpans,    // original ORed with 0-grams
+  val mergedSpans: OdinOrSpans, // original ORed with 0-grams
   val isGreedy: Boolean
 ) extends OdinsonSpans {
 
@@ -99,6 +99,7 @@ class OdinsonOptionalSpans(
   def positionsCost(): Float = mergedSpans.positionsCost()
   override def asTwoPhaseIterator(): TwoPhaseIterator = mergedSpans.asTwoPhaseIterator()
   override def width(): Int = mergedSpans.width()
+
   override def odinsonMatch: OdinsonMatch = {
     new OptionalMatch(mergedSpans.odinsonMatch, isGreedy)
   }
