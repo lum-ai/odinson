@@ -1,5 +1,0 @@
-dist: trusty
-language: scala
-branches:
-  only:
-    - master

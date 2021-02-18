@@ -12,7 +12,7 @@ If you're looking for a way to help, please take a look at [our open issues](htt
 
 When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners of this repository before making a change. Open communication helps us to avoid duplication of effort.
 
-Before getting started, be sure to review our **Pull request Process** for a step-by-step explanation of how to get your changes reviewed and merged promptly.
+Before getting started, be sure to review our [Pull request Process](http://gh.lum.ai/odinson/contributing.html#pull-request-process) for a step-by-step explanation of how to get your changes reviewed and merged promptly.
 
 Finally, please note we have a code of conduct that we expect everyone to follow throughout all interactions with the project and its community.
 
@@ -31,7 +31,7 @@ Before opening a new pull request, ensure that ...
 ## Formatting Tips
 
 Automatic formatting is not always optimal.  If you notice formatting that it is not just ugly or annoying for a particular section of code, but that significantly impedes understanding or hides errors that a different format would expose, consider these two options:
-1. Wrap the section between [format comments](https://scalameta.org/scalafmt/docs/configuration.html#-format-off) `// format: off`and`// format: on`.
+1. Wrap the section between [format comments](https://scalameta.org/scalafmt/docs/configuration.html#-format-off) `// format: off` and `// format: on`.
 2. Temporarily override configuration settings with [scalafmt comments](https://scalameta.org/scalafmt/docs/configuration.html#for-code-block) `// scalafmt: {}`. 
 
 Please consider use of these options to be recommendations.  They may be ruled out during the pull request process.  You may want to search for formatting comments in the code to familiarize yourself with their limited usage.  Here is one particularly good example for guidance:
@@ -50,11 +50,7 @@ case (Some(min), maxOption, "}?") => Pass(LazyQuantifier  (min, maxOption))
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+community a harassment-free experience for everyone.
 
 We pledge to act and interact in ways that contribute to an open, welcoming,
 diverse, inclusive, and healthy community.
