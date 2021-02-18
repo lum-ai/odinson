@@ -175,19 +175,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     "respond with token-based frequencies using the /term-freq endpoint" in {
       val body = Json.obj("field" -> "word")
 
-<<<<<<< HEAD
-      val response = route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
-
-      status(response) mustBe OK
-      contentType(response) mustBe Some("application/json")
-      println(Helpers.contentAsString(response))
-    }
-
-  }
-=======
       val response =
         route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
->>>>>>> master
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
