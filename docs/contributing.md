@@ -31,7 +31,7 @@ Before opening a new pull request, ensure that ...
 ## Formatting Tips
 
 Automatic formatting is not always optimal.  If you notice formatting that it is not just ugly or annoying for a particular section of code, but that significantly impedes understanding or hides errors that a different format would expose, consider these two options:
-1. Wrap the section between [format comments](https://scalameta.org/scalafmt/docs/configuration.html#-format-off) `// format: off`and`// format: on`.
+1. Wrap the section between [format comments](https://scalameta.org/scalafmt/docs/configuration.html#-format-off) `// format: off` and `// format: on`.
 2. Temporarily override configuration settings with [scalafmt comments](https://scalameta.org/scalafmt/docs/configuration.html#for-code-block) `// scalafmt: {}`. 
 
 Please consider use of these options to be recommendations.  They may be ruled out during the pull request process.  You may want to search for formatting comments in the code to familiarize yourself with their limited usage.  Here is one particularly good example for guidance:
