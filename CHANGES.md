@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [0.3.0] - 2021-02-18
 ### Added
 - Added project-wide formatting settings and a PR check for linting
 - Added a file that accompanies index (`settings.json`) that describes settings used in creating the index.  Currently storing `storedFields`. ([#255](https://github.com/lum-ai/odinson/pull/255))
