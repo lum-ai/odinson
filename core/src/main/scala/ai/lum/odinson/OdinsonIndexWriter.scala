@@ -270,8 +270,8 @@ object OdinsonIndexWriter {
     val sortedDocValuesFieldMaxSize  = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
     val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
     val invalidCharacterReplacement  = config[String]("odinson.index.invalidCharacterReplacement")
-    val storedFields        = config[List[String]]("odinson.index.storedFields")
-    val displayField        = config[String]("odinson.displayField")
+    val storedFields         = config[List[String]]("odinson.index.storedFields")
+    val displayField         = config[String]("odinson.displayField")
     // format: on
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
