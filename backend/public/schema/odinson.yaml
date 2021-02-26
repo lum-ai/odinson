@@ -382,6 +382,66 @@ paths:
                  items:
                    $ref: '#/components/schemas/TermFrequency'
 
+  /api/histogram:
+    get:
+      tags:
+        - statistics
+      summary: |
+        Binned frequencies of token annotations such as word and lemma counts.
+      description: |
+        Binned frequencies of token annotations such as word and lemma counts.
+        Bins are defined by left-closed (right-open) intervals.
+      operationId: histogram
+      parameters:
+        - name: field
+          in: query
+          description: |
+            The token field (e.g., lemma) whose frequencies are to be counted.
+          required: true
+          schema:
+            type: string
+            example: lemma
+        - name: bins
+          in: query
+          description: |
+            How many bins to cut the data into.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 120
+        - name: equalProbability
+          in: query
+          description: |
+            Whether to determine bin widths by quantile (instead of even bins).
+            Y values will be probability density estimates rather than counts.
+          required: false
+          schema:
+            type: boolean
+        - name: xLogScale
+          in: query
+          description: |
+            Whether to apply log10 scaling to token frequency counts or not (default).
+          required: false
+          schema:
+            type: boolean
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Binned frequencies of token annotations such as word and lemma counts.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/Bin'
+
   # /api/most-common:
   #   get:
   #     tags:
@@ -667,9 +727,32 @@ components:
           description: A grouping term from a second token field (e.g., tag).
           example: VBD
         frequency:
-          type: string
+          type: float
           description: The number of occurrences of the term (potentially scaled).
-          example: "104291.0"
+          example: 104291.0
+
+    Bin:
+      type: object
+      required:
+        - w
+        - x
+        - y
+      properties:
+        w:
+          type: number
+          format: float
+          description: The width of the bin.
+          example: 0.673
+        x:
+          type: number
+          format: float
+          description: The lower bound of the bin (inclusive).
+          example: 6.0
+        y:
+          type: number
+          format: float
+          description: The count or density of the bin.
+          example: 18203
 
     # MatchFrequency:
     #   type: object

@@ -183,6 +183,17 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       println(Helpers.contentAsString(response))
     }
 
+    "respond with frequency table using the /histogram endpoint" in {
+      val body = Json.obj("field" -> "lemma")
+
+      val response =
+        route(app, FakeRequest(GET, "/api/histogram?field=lemma").withJsonBody(body)).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      println(Helpers.contentAsString(response))
+    }
+
   }
 
 }

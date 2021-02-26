@@ -5,6 +5,7 @@ import java.nio.file.Path
 
 import javax.inject._
 
+import scala.math._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 import scala.util.control.NonFatal
@@ -37,6 +38,8 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+
+import scala.annotation.tailrec
 
 @Singleton
 class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
@@ -78,9 +81,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
-  /**
-    * For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
-
+  /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
     * @param field raw, token, lemma, tag, etc.
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
     */
@@ -97,7 +98,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           val pattern = filter.get.r
           pattern.findFirstMatchIn(s) match {
             case Some(_) => true
-            case _ => false
+            case _       => false
           }
         }
       }
@@ -124,13 +125,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           // alphabetical
           case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
           // frequency
-          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
+          case _             => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
         }
 
         // reverse if necessary
         val reversed = reverse match {
           case Some(true) => ordered.reverse
-          case _ => ordered
+          case _          => ordered
         }
 
         // cutoff the results to the requested ranks
@@ -169,7 +170,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
         // transform the frequencies as requested, preserving order
         val scaled = scale match {
-          case Some("log10") => reordered map { case (term, freq) => (term, math.log10(freq)) }
+          case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
           case Some("percent") =>
             val countTotal = terms.getSumTotalTermFreq
             reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
@@ -177,18 +178,135 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         }
 
         // rearrange data into a Seq of Maps for Jsonization
-        val res: Seq[Map[String, String]] = scaled.map { case (termGroup, freq) =>
+        val jsonObjs = scaled.map { case (termGroup, freq) =>
           termGroup match {
             case singleTerm: String =>
-              Map("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq.toString)
+              Json.obj("term"      -> singleTerm.asInstanceOf[String],
+                       "frequency" -> freq)
             case (term1: String, term2: String) =>
-              Map("term" -> term1,
-                  "group" -> term2,
-                  "frequency" -> freq.toString)
+              Json.obj("term"      -> term1,
+                       "group"     -> term2,
+                       "frequency" -> freq)
           }
         }
 
-        Json.toJson(res).format(pretty)
+        Json.arr(jsonObjs).format(pretty)
+      } else {
+        // the requested field isn't in this index
+        Json.obj().format(pretty)
+      }
+    }
+  }
+
+  def quantiles(data: Array[Double], nBins: Int, isContinuous: Option[Boolean]): Seq[Double] = {
+    val sortedData = data.sorted
+    val percentiles = (0 to nBins) map (_.toDouble / nBins)
+
+    val extraBounds = percentiles.foldLeft(List.empty[Double])( (res, percentile) => {
+      val i = percentile * (sortedData.length - 1)
+      val lowerBound = floor(i).toInt
+      val upperBound = ceil(i).toInt
+      val fractionalPart = i - lowerBound
+      val interpolation = sortedData(lowerBound) * (1 - fractionalPart) +
+        sortedData(upperBound) * fractionalPart
+      val toAdd = isContinuous match {
+        case Some(true) => interpolation
+        case _ => round(interpolation).toDouble
+      }
+      if (toAdd - res.headOption.getOrElse(-1.0) > 1e-12) {
+        toAdd :: res
+      } else {
+        res
+      }
+    })
+
+    extraBounds.reverse
+  }
+
+  // count the frequencies that fall into each bin
+  def histify(xs: List[Double], bounds: List[Double]): List[Long] = {
+    @tailrec
+    def iter(xs: List[Double], bounds: List[Double],
+             result: List[Long]): List[Long] = bounds match {
+      case Nil => Nil
+      case head :: Nil => xs.size :: result
+      case head :: tail =>
+        val (leftward, rightward) = xs.partition(_ < head)
+        iter(rightward, tail, leftward.size :: result)
+    }
+
+    iter(xs, bounds, List.empty[Long]).reverse
+  }
+
+  /** Return coordinates defining a histogram of frequencies for a given field
+    */
+  def histogram(field: String, bins: Option[Int], equalProbability: Option[Boolean],
+                xLogScale: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+    Future {
+      // ensure that the requested field exists in the index
+      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fieldNames = fields.iterator.asScala.toList
+      // if the field exists, find the frequencies of each term
+      if (fieldNames contains field) {
+        // find the frequency of all terms in this field
+        val terms = fields.terms(field)
+        val termsEnum = terms.iterator()
+        val termFreqs = scala.collection.mutable.HashMap[String, Long]()
+        while (termsEnum.next() != null) {
+          val term = termsEnum.term.utf8ToString
+          termFreqs.update(term, termsEnum.totalTermFreq)
+        }
+        val frequencies = termFreqs.values.toList.map(_.toDouble)
+        val scaledFreqs = xLogScale match {
+          case Some(true) => frequencies.map(log10)
+          case _ => frequencies
+        }
+
+        val nBins: Int = if (bins.getOrElse(-1) > 0) {
+          // user-provided bin count
+          bins.get
+        } else if (equalProbability.getOrElse(false)) {
+          // more bins for equal probability graph
+          ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
+        } else {
+          // Rice rule
+          ceil(2.0 * cbrt(scaledFreqs.length)).toInt
+        }
+
+        val epsilon = 1e-9
+        val (max, min) = (scaledFreqs.max, scaledFreqs.min)
+        val allBounds = if(equalProbability.getOrElse(false)) {
+          quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
+        } else {
+          val rawBinWidth = (max - min) / nBins.toDouble
+          val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
+          (0 until nBins).foldLeft(List(min.toDouble))((res, i) => (binWidth + res.head) :: res).reverse
+        }
+        // right-inclusive bounds (for counting bins)
+        val rightBounds = allBounds.tail.toList // map (_ + epsilon)
+
+        // number of each token type falling into this bin
+        val binCounts = histify(scaledFreqs, rightBounds)
+        val totalCount = binCounts.sum.toDouble
+
+        val jsonObjs = for (i <- allBounds.init.indices) yield {
+          val width = allBounds(i + 1) - allBounds(i)
+          val x = allBounds(i)
+          val y = if(equalProbability.getOrElse(false)) {
+            // bar AREA (not height) should be proportional to the count for this bin
+            if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
+          } else {
+            // report the actual count (can be scaled by UI)
+            binCounts(i).toDouble
+          }
+          Json.obj(
+            "w" -> width,
+            "x" -> x,
+            "y" -> y
+          )
+        }
+
+        Json.arr(jsonObjs).format(pretty)
       } else {
         // the requested field isn't in this index
         Json.obj().format(pretty)
