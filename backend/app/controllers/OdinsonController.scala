@@ -198,21 +198,33 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
+  /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
+    * @param data The data to be binned.
+    * @param nBins The number of quantiles (e.g. 4 for quartiles).
+    * @param isContinuous True if the data is continuous (if it has been log10ed, for example)
+    * @return A sequence of quantile boundaries which should be inclusive of all data.
+    */
   def quantiles(data: Array[Double], nBins: Int, isContinuous: Option[Boolean]): Seq[Double] = {
     val sortedData = data.sorted
+    // quantile boundaries expressed as percentiles
     val percentiles = (0 to nBins) map (_.toDouble / nBins)
 
-    val extraBounds = percentiles.foldLeft(List.empty[Double])( (res, percentile) => {
+    val bounds = percentiles.foldLeft(List.empty[Double])( (res, percentile) => {
+      // approximate index of this percentile
       val i = percentile * (sortedData.length - 1)
+      // interpolate between the two values of `data` that `i` falls between
       val lowerBound = floor(i).toInt
       val upperBound = ceil(i).toInt
       val fractionalPart = i - lowerBound
       val interpolation = sortedData(lowerBound) * (1 - fractionalPart) +
         sortedData(upperBound) * fractionalPart
+      // if data is count data, the boundaries should be on whole numbers
       val toAdd = isContinuous match {
         case Some(true) => interpolation
         case _ => round(interpolation).toDouble
       }
+      // ensure that boundaries have a reasonable width to mitigate floating point errors
+      // ensure no width-zero bins
       if (toAdd - res.headOption.getOrElse(-1.0) > 1e-12) {
         toAdd :: res
       } else {
@@ -220,25 +232,39 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       }
     })
 
-    extraBounds.reverse
+    bounds.reverse
   }
 
-  // count the frequencies that fall into each bin
-  def histify(xs: List[Double], bounds: List[Double]): List[Long] = {
+  /** Count the instances of @data that fall within each consecutive pair of bounds (lower-bound inclusive).
+    * @param data The count/frequency data to be analyzed.
+    * @param bounds The boundaries that define the bins used for histogram summaries.
+    * @return The counts of `data` that fall into each bin.
+    */
+  def histify(data: List[Double], bounds: List[Double]): List[Long] = {
     @tailrec
-    def iter(xs: List[Double], bounds: List[Double],
+    def iter(data: List[Double], bounds: List[Double],
              result: List[Long]): List[Long] = bounds match {
+      // empty list can't be counted
       case Nil => Nil
-      case head :: Nil => xs.size :: result
+      // the last item in the list -- all remaining data fall into the last bin
+      case head :: Nil => data.size :: result
+      // shave off the unallocated datapoints that fall under this boundary cutoff and count them
       case head :: tail =>
-        val (leftward, rightward) = xs.partition(_ < head)
+        val (leftward, rightward) = data.partition(_ < head)
         iter(rightward, tail, leftward.size :: result)
     }
 
-    iter(xs, bounds, List.empty[Long]).reverse
+    iter(data, bounds, List.empty[Long]).reverse
   }
 
-  /** Return coordinates defining a histogram of frequencies for a given field
+  /**
+    * Return coordinates defining a histogram of counts/frequencies for a given field.
+    * @param field The field to analyze, e.g. lemma.
+    * @param bins The number of bins to use for data partitioning (optional).
+    * @param equalProbability Use variable-width bins to equalize the probability of each bin (optional).
+    * @param xLogScale `log10`-transform the counts of each term (optional).
+    * @param pretty Whether to pretty-print the JSON returned by the function.
+    * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
   def histogram(field: String, bins: Option[Int], equalProbability: Option[Boolean],
                 xLogScale: Option[Boolean], pretty: Option[Boolean]) = Action.async {
@@ -257,6 +283,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           termFreqs.update(term, termsEnum.totalTermFreq)
         }
         val frequencies = termFreqs.values.toList.map(_.toDouble)
+        // log10-transform the counts of each term
         val scaledFreqs = xLogScale match {
           case Some(true) => frequencies.map(log10)
           case _ => frequencies
@@ -273,15 +300,19 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           ceil(2.0 * cbrt(scaledFreqs.length)).toInt
         }
 
-        val epsilon = 1e-9
         val (max, min) = (scaledFreqs.max, scaledFreqs.min)
+
+        // the boundaries of every bin (of length nBins + 1)
         val allBounds = if(equalProbability.getOrElse(false)) {
+          // use quantiles to equalize the probability of each bin
           quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
         } else {
+          // use an invariant bin width
           val rawBinWidth = (max - min) / nBins.toDouble
           val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
           (0 until nBins).foldLeft(List(min.toDouble))((res, i) => (binWidth + res.head) :: res).reverse
         }
+
         // right-inclusive bounds (for counting bins)
         val rightBounds = allBounds.tail.toList // map (_ + epsilon)
 
@@ -289,11 +320,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val binCounts = histify(scaledFreqs, rightBounds)
         val totalCount = binCounts.sum.toDouble
 
+        // unify allBounds and binCounts to generate one JSON object per bin
         val jsonObjs = for (i <- allBounds.init.indices) yield {
           val width = allBounds(i + 1) - allBounds(i)
           val x = allBounds(i)
           val y = if(equalProbability.getOrElse(false)) {
             // bar AREA (not height) should be proportional to the count for this bin
+            // thus it is density rather than probability or count
             if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
           } else {
             // report the actual count (can be scaled by UI)
