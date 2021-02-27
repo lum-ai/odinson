@@ -127,23 +127,36 @@ lazy val backend = project
 
 // Release steps
 releaseProcess := Seq[ReleaseStep](
-  checkSnapshotDependencies,
+//  checkSnapshotDependencies,
   inquireVersions,
   runClean,
   runTest,
   setReleaseVersion,
-  commitReleaseVersion,
-  tagRelease,
+//  commitReleaseVersion,
+//  tagRelease,
   releaseStepCommandAndRemaining("+publishSigned"),
-  releaseStepCommandAndRemaining("sonatypeBundleRelease"),
-  setNextVersion,
-  commitNextVersion,
-  pushChanges
+//  releaseStepCommandAndRemaining("sonatypeBundleRelease"),
+  setNextVersion//,
+//  commitNextVersion,
+//  pushChanges
 )
 
 // Publishing settings
 
-publishTo in ThisBuild := sonatypePublishToBundle.value
+//publishTo in ThisBuild := sonatypePublishToBundle.value
+
+publishTo := {
+  val artifactory = "https://artifactory.lum.ai/artifactory/"
+  val repository = "sbt-release-local"
+  val details =
+    if (isSnapshot.value) ";build.timestamp=" + new java.util.Date().getTime
+    else ""
+  val location = artifactory + repository + details
+
+  Some("Artifactory Realm" at location)
+}
+
+credentials += Credentials(Path.userHome / ".sbt" / ".lum-credentials")
 
 publishMavenStyle in ThisBuild := true
 
