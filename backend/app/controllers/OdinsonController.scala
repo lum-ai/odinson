@@ -266,8 +266,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @param pretty Whether to pretty-print the JSON returned by the function.
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
-  def histogram(field: String, bins: Option[Int], equalProbability: Option[Boolean],
-                xLogScale: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+  def termHist(field: String, bins: Option[Int], equalProbability: Option[Boolean],
+               xLogScale: Option[Boolean], pretty: Option[Boolean]) = Action.async {
     Future {
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)

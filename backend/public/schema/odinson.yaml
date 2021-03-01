@@ -382,7 +382,7 @@ paths:
                  items:
                    $ref: '#/components/schemas/TermFrequency'
 
-  /api/histogram:
+  /api/term-hist:
     get:
       tags:
         - statistics
@@ -391,7 +391,7 @@ paths:
       description: |
         Binned frequencies of token annotations such as word and lemma counts.
         Bins are defined by left-closed (right-open) intervals.
-      operationId: histogram
+      operationId: term-hist
       parameters:
         - name: field
           in: query
