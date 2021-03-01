@@ -85,9 +85,17 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @param field raw, token, lemma, tag, etc.
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
     */
-  def termFreq(field: String, group: Option[String], filter: Option[String], order: Option[String],
-               min: Option[Int], max: Option[Int], scale: Option[String], reverse: Option[Boolean],
-               pretty: Option[Boolean]) = Action.async {
+  def termFreq(
+    field: String,
+    group: Option[String],
+    filter: Option[String],
+    order: Option[String],
+    min: Option[Int],
+    max: Option[Int],
+    scale: Option[String],
+    reverse: Option[Boolean],
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
 
       // if a regex filter is specified, apply it
@@ -125,7 +133,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           // alphabetical
           case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
           // frequency
-          case _             => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
+          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
         }
 
         // reverse if necessary
@@ -137,33 +145,35 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // cutoff the results to the requested ranks
         val defaultMin = 0
         val defaultMax = 9
-        val sliced = reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+        val sliced =
+          reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
 
         // count instances of each pairing of `field` and `group` terms
-        val groupedTerms = if (group.nonEmpty && fieldNames.contains(group.get)) {
-          val pairFreqs = scala.collection.mutable.HashMap[(String, String), Long]()
+        val groupedTerms =
+          if (group.nonEmpty && fieldNames.contains(group.get)) {
+            val pairFreqs = scala.collection.mutable.HashMap[(String, String), Long]()
 
-          // this is O(awful) but will only be costly when (max - min) is large
-          val pairs = for {
-            (term1, _) <- sliced
-            odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
-            results = extractorEngine.query(odinsonQuery)
-            scoreDoc <- results.scoreDocs
-            eachMatch <- scoreDoc.matches
-            term2 = extractorEngine.getTokensForSpan(scoreDoc.doc, eachMatch, group.get).head
-          } yield (term1, term2)
-          // count instances of this pair of terms from `field` and `group`, respectively
-          pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
-        } else sliced
+            // this is O(awful) but will only be costly when (max - min) is large
+            val pairs = for {
+              (term1, _) <- sliced
+              odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
+              results = extractorEngine.query(odinsonQuery)
+              scoreDoc <- results.scoreDocs
+              eachMatch <- scoreDoc.matches
+              term2 = extractorEngine.getTokensForSpan(scoreDoc.doc, eachMatch, group.get).head
+            } yield (term1, term2)
+            // count instances of this pair of terms from `field` and `group`, respectively
+            pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
+          } else sliced
 
         // order again if there's a secondary grouping variable
-        val reordered = groupedTerms.sortBy{ case (ser, conditionedFreq) =>
+        val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
           ser match {
             case singleTerm: String =>
               (sliced.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
             case (term1: String, _: String) =>
               // find the total frequency of the term (ignoring group condition)
-              val totalFreq = sliced.find{ _._1 == term1 }.get._2
+              val totalFreq = sliced.find { _._1 == term1 }.get._2
               (sliced.indexOf((term1, totalFreq)), -conditionedFreq)
           }
         }
@@ -181,12 +191,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val jsonObjs = scaled.map { case (termGroup, freq) =>
           termGroup match {
             case singleTerm: String =>
-              Json.obj("term"      -> singleTerm.asInstanceOf[String],
-                       "frequency" -> freq)
+              Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
             case (term1: String, term2: String) =>
-              Json.obj("term"      -> term1,
-                       "group"     -> term2,
-                       "frequency" -> freq)
+              Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
           }
         }
 
@@ -209,7 +216,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     // quantile boundaries expressed as percentiles
     val percentiles = (0 to nBins) map (_.toDouble / nBins)
 
-    val bounds = percentiles.foldLeft(List.empty[Double])( (res, percentile) => {
+    val bounds = percentiles.foldLeft(List.empty[Double])((res, percentile) => {
       // approximate index of this percentile
       val i = percentile * (sortedData.length - 1)
       // interpolate between the two values of `data` that `i` falls between
@@ -221,7 +228,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       // if data is count data, the boundaries should be on whole numbers
       val toAdd = isContinuous match {
         case Some(true) => interpolation
-        case _ => round(interpolation).toDouble
+        case _          => round(interpolation).toDouble
       }
       // ensure that boundaries have a reasonable width to mitigate floating point errors
       // ensure no width-zero bins
@@ -242,23 +249,22 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     */
   def histify(data: List[Double], bounds: List[Double]): List[Long] = {
     @tailrec
-    def iter(data: List[Double], bounds: List[Double],
-             result: List[Long]): List[Long] = bounds match {
-      // empty list can't be counted
-      case Nil => Nil
-      // the last item in the list -- all remaining data fall into the last bin
-      case head :: Nil => data.size :: result
-      // shave off the unallocated datapoints that fall under this boundary cutoff and count them
-      case head :: tail =>
-        val (leftward, rightward) = data.partition(_ < head)
-        iter(rightward, tail, leftward.size :: result)
-    }
+    def iter(data: List[Double], bounds: List[Double], result: List[Long]): List[Long] =
+      bounds match {
+        // empty list can't be counted
+        case Nil => Nil
+        // the last item in the list -- all remaining data fall into the last bin
+        case head :: Nil => data.size :: result
+        // shave off the unallocated datapoints that fall under this boundary cutoff and count them
+        case head :: tail =>
+          val (leftward, rightward) = data.partition(_ < head)
+          iter(rightward, tail, leftward.size :: result)
+      }
 
     iter(data, bounds, List.empty[Long]).reverse
   }
 
-  /**
-    * Return coordinates defining a histogram of counts/frequencies for a given field.
+  /** Return coordinates defining a histogram of counts/frequencies for a given field.
     * @param field The field to analyze, e.g. lemma.
     * @param bins The number of bins to use for data partitioning (optional).
     * @param equalProbability Use variable-width bins to equalize the probability of each bin (optional).
@@ -266,8 +272,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @param pretty Whether to pretty-print the JSON returned by the function.
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
-  def termHist(field: String, bins: Option[Int], equalProbability: Option[Boolean],
-               xLogScale: Option[Boolean], pretty: Option[Boolean]) = Action.async {
+  def termHist(
+    field: String,
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean],
+    pretty: Option[Boolean]
+  ) = Action.async {
     Future {
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
@@ -286,31 +297,36 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // log10-transform the counts of each term
         val scaledFreqs = xLogScale match {
           case Some(true) => frequencies.map(log10)
-          case _ => frequencies
+          case _          => frequencies
         }
 
-        val nBins: Int = if (bins.getOrElse(-1) > 0) {
-          // user-provided bin count
-          bins.get
-        } else if (equalProbability.getOrElse(false)) {
-          // more bins for equal probability graph
-          ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
-        } else {
-          // Rice rule
-          ceil(2.0 * cbrt(scaledFreqs.length)).toInt
-        }
+        val nBins: Int =
+          if (bins.getOrElse(-1) > 0) {
+            // user-provided bin count
+            bins.get
+          } else if (equalProbability.getOrElse(false)) {
+            // more bins for equal probability graph
+            ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
+          } else {
+            // Rice rule
+            ceil(2.0 * cbrt(scaledFreqs.length)).toInt
+          }
 
         val (max, min) = (scaledFreqs.max, scaledFreqs.min)
 
         // the boundaries of every bin (of length nBins + 1)
-        val allBounds = if(equalProbability.getOrElse(false)) {
-          // use quantiles to equalize the probability of each bin
-          quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
-        } else {
-          // use an invariant bin width
-          val rawBinWidth = (max - min) / nBins.toDouble
-          val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
-          (0 until nBins).foldLeft(List(min.toDouble))((res, i) => (binWidth + res.head) :: res).reverse
+        val allBounds = equalProbability match {
+          case Some(true) =>
+            // use quantiles to equalize the probability of each bin
+            quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
+
+          case _ =>
+            // use an invariant bin width
+            val rawBinWidth = (max - min) / nBins.toDouble
+            val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
+            (0 until nBins).foldLeft(List(min.toDouble))((res, i) =>
+              (binWidth + res.head) :: res
+            ).reverse
         }
 
         // right-inclusive bounds (for counting bins)
@@ -324,13 +340,14 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val jsonObjs = for (i <- allBounds.init.indices) yield {
           val width = allBounds(i + 1) - allBounds(i)
           val x = allBounds(i)
-          val y = if(equalProbability.getOrElse(false)) {
-            // bar AREA (not height) should be proportional to the count for this bin
-            // thus it is density rather than probability or count
-            if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
-          } else {
-            // report the actual count (can be scaled by UI)
-            binCounts(i).toDouble
+          val y = equalProbability match {
+            case Some(true) =>
+              // bar AREA (not height) should be proportional to the count for this bin
+              // thus it is density rather than probability or count
+              if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
+            case _ =>
+              // report the actual count (can be scaled by UI)
+              binCounts(i).toDouble
           }
           Json.obj(
             "w" -> width,
