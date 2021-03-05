@@ -173,10 +173,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     }
 
     "respond with token-based frequencies using the /term-freq endpoint" in {
-      val body = Json.obj("field" -> "word")
-
       val response =
-        route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
+        route(app, FakeRequest(GET, "/api/term-freq?field=word")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -184,10 +182,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     }
 
     "respond with frequency table using the simplest possible /term-hist endpoint" in {
-      val body = Json.obj("field" -> "lemma")
-
       val response =
-        route(app, FakeRequest(GET, "/api/term-hist?field=lemma").withJsonBody(body)).get
+        route(app, FakeRequest(GET, "/api/term-hist?field=lemma")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -195,13 +191,12 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     }
 
     "respond with frequency table using the maximal /term-hist endpoint" in {
-
       val response =
         route(app, FakeRequest(GET, "/api/term-hist?field=tag&bins=5&equalProbability=true&xLogScale=true&pretty=true")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
-      //println(Helpers.contentAsString(response))
+      println(Helpers.contentAsString(response))
     }
 
   }
