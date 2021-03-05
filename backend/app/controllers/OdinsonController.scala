@@ -98,12 +98,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
 
-      // if a regex filter is specified, apply it
-      def isMatch(s: String, filter: Option[String]): Boolean = {
-        if (filter.isEmpty) true
+      /** Convenience method to determine if a string matches a given regular expression.
+        * @param s The String to be searched.
+        * @param regex The regular expression against which `s` should be compared.
+        * @return True if there's at least one match.
+        */
+      def isMatch(s: String, regex: Option[String]): Boolean = {
+        if (regex.isEmpty) true
         // .* is necessary
         else {
-          val pattern = filter.get.r
+          val pattern = regex.get.r
           pattern.findFirstMatchIn(s) match {
             case Some(_) => true
             case _       => false
@@ -122,7 +126,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val termFreqs = scala.collection.mutable.HashMap[String, Long]()
         while (termsEnum.next() != null) {
           val term = termsEnum.term.utf8ToString
-          // apply the filter if necessary
+          // apply the regex if necessary
           if (isMatch(term, filter)) {
             termFreqs.update(term, termsEnum.totalTermFreq)
           }
