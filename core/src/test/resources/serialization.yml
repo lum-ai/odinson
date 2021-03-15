@@ -75,3 +75,10 @@ rules:
     type: basic
     pattern: |
       (?<name> Rainbows)
+
+  - name: MultipleWords
+    label: MultipleWordsLabel
+    priority: 1
+    type: basic
+    pattern: |
+      [word=/Rainbows|shine|bright/]{1,3}
