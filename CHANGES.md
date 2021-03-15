@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.3.0] - 2021-02-18
 ### Added
+- Added ability to serialize Mentions verbosely (with displayField or all storedFields) ([#265](https://github.com/lum-ai/odinson/pull/265))
 - Added project-wide formatting settings and a PR check for linting
 - Added a file that accompanies index (`settings.json`) that describes settings used in creating the index.  Currently storing `storedFields`. ([#255](https://github.com/lum-ai/odinson/pull/255))
 - Added REST API endpoint for returning frequencies of token-based annotations in a corpus.
@@ -36,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
 - Started documentation at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
+- JsonSerializer is now a class, and has the ability to serialize verbose detail about Mentions ([#265](https://github.com/lum-ai/odinson/pull/265))
 - updated version of CluLab processors in `extra/` to 8.2.3 ([#241](https://github.com/lum-ai/odinson/pull/241))
 - using whole config to create ExtractorEngine and its components (rather than subconfigs) ([#231](https://github.com/lum-ai/odinson/pull/231))
 - removed the MentionFactory, rename OdinMentionsIterator to MentionsIterator ([#228](https://github.com/lum-ai/odinson/pull/228))
