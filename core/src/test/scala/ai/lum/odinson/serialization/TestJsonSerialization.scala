@@ -243,16 +243,18 @@ class TestJsonSerialization extends OdinsonTest {
     val nonevent = getSingleMentionFromRule(mentions, "MultipleWords")
     val json = displaySerializer.asJsonValue(nonevent)
     val detail = json("detail")
-    val raw = detail("raw").arr.map(_.str)
+    val raw = detail("mention")("raw").arr.map(_.str)
     raw should contain inOrderOnly ("Rainbows", "shine", "bright")
-
+    val docRaw = detail("document")("raw").arr.map(_.str)
+    docRaw.mkString(" ") shouldBe "Rainbows shine bright bright bright ."
+    
     a[java.util.NoSuchElementException] should be thrownBy json("lemma")
   }
 
   "JsonSerializer with verbose=all" should "include the all stored fields and content" in {
     val nonevent = getSingleMentionFromRule(mentions, "MultipleWords")
     val json = allSerializer.asJsonValue(nonevent)
-    val detail = json("detail")
+    val detail = json("detail")("mention")
 
     detail("raw").arr.map(_.str) should contain inOrderOnly ("Rainbows", "shine", "bright")
     detail("lemma").arr.map(_.str) should contain inOrderOnly ("rainbow", "shine", "bright")

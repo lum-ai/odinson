@@ -189,20 +189,24 @@ class JsonSerializer(
 
   private def mkVerboseContent(m: Mention): Value = {
     val json = ujson.Obj()
+    json("mention") = ujson.Obj()
+    json("document") = ujson.Obj()
 
     // Determine which fields to include, given the specified level of verbosity
     // Note that since we already checked the validity of verbose and engine,
     // calling `get` here on the engine should not be a problem.
     val fieldsToInclude = verbose match {
-      case VerboseLevels.Minimal  => Seq.empty
-      case VerboseLevels.Display  => Seq(engine.get.displayField)
-      case VerboseLevels.All      => engine.get.indexSettings.storedFields
+      case VerboseLevels.Minimal => Seq.empty
+      case VerboseLevels.Display => Seq(engine.get.displayField)
+      case VerboseLevels.All     => engine.get.indexSettings.storedFields
     }
 
     // Retrieve the tokens for each included field
     for (field <- fieldsToInclude) {
-      val tokens = engine.get.getTokensForSpan(m, field)
-      json(field) = tokens.toSeq
+      val mentionTokens = engine.get.getTokensForSpan(m, field)
+      json("mention")(field) = mentionTokens.toSeq
+      val documentTokens = engine.get.getTokens(m.luceneDocId, field)
+      json("document")(field) = documentTokens.toSeq
     }
 
     json
@@ -400,6 +404,5 @@ object JsonSerializer {
     val Minimal, Display, All = Value
 
   }
-
 
 }
