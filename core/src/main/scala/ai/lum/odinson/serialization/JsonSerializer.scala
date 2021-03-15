@@ -6,13 +6,12 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
 class JsonSerializer(
-  verbose: String = NONE,
+  verbose: VerboseLevels.Verbosity = VerboseLevels.Minimal,
   indent: Int = 4,
   engine: Option[ExtractorEngine] = None
 ) {
 
   // Ensure a valid verbosity level and compatible engine
-  checkVerbosity(verbose)
   checkEngine(verbose, engine)
 
   // Json String
@@ -80,10 +79,7 @@ class JsonSerializer(
     )
 
     // Add verbose content if requested
-    if (verbose != NONE) {
-      if (engine == null) throw new OdinsonException(
-        "Cannot use verbose serialization without giving an extractor engine."
-      )
+    if (verbose != VerboseLevels.Minimal) {
       json("detail") = mkVerboseContent(m)
     }
 
@@ -198,9 +194,9 @@ class JsonSerializer(
     // Note that since we already checked the validity of verbose and engine,
     // calling `get` here on the engine should not be a problem.
     val fieldsToInclude = verbose match {
-      case NONE    => Seq.empty
-      case DISPLAY => Seq(engine.get.displayField)
-      case ALL     => engine.get.indexSettings.storedFields
+      case VerboseLevels.Minimal  => Seq.empty
+      case VerboseLevels.Display  => Seq(engine.get.displayField)
+      case VerboseLevels.All      => engine.get.indexSettings.storedFields
     }
 
     // Retrieve the tokens for each included field
@@ -382,16 +378,8 @@ class JsonSerializer(
   //        HELPER METHODS
   // -------------------------------------
 
-  def checkVerbosity(verbose: String): Unit = {
-    if (!validVerbose.contains(verbose)) {
-      throw new OdinsonException(
-        s"Invalid setting for `verbose`: $verbose [valid: ${validVerbose.mkString(", ")}]"
-      )
-    }
-  }
-
-  def checkEngine(verbose: String, engine: Option[ExtractorEngine]): Unit = {
-    if (verbose != NONE && engine.isEmpty) {
+  def checkEngine(verbose: VerboseLevels.Verbosity, engine: Option[ExtractorEngine]): Unit = {
+    if (verbose != VerboseLevels.Minimal && engine.isEmpty) {
       throw new OdinsonException(
         "Cannot request verbose serialization without providing an ExtractorEngine."
       )
@@ -401,9 +389,17 @@ class JsonSerializer(
 }
 
 object JsonSerializer {
-  val NONE = "none"
-  val DISPLAY = "display"
-  val ALL = "all"
-  val validVerbose = Seq(NONE, DISPLAY, ALL)
+
+  // Enum to handle the supported levels of verbosity of Mentions.
+  //  - Minimal:  No additional text included
+  //  - Display:  Display field included
+  //  - All:      All stored fields included
+  object VerboseLevels extends Enumeration {
+    type Verbosity = Value
+
+    val Minimal, Display, All = Value
+
+  }
+
 
 }

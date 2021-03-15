@@ -2,6 +2,7 @@ package ai.lum.odinson.serialization
 
 import java.util
 
+import ai.lum.odinson.serialization.JsonSerializer.VerboseLevels
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
@@ -26,13 +27,13 @@ class TestJsonSerialization extends OdinsonTest {
   val mentions = engine.extractNoState(extractors).toArray
 
   val jsonSerializer =
-    new JsonSerializer(verbose = JsonSerializer.NONE, indent = 4, engine = Some(engine))
+    new JsonSerializer(verbose = VerboseLevels.Minimal, indent = 4, engine = Some(engine))
 
   val displaySerializer =
-    new JsonSerializer(verbose = JsonSerializer.DISPLAY, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(verbose = VerboseLevels.Display, indent = 4, engine = Some(verboseEngine))
 
   val allSerializer =
-    new JsonSerializer(verbose = JsonSerializer.ALL, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(verbose = VerboseLevels.All, indent = 4, engine = Some(verboseEngine))
 
   "JsonSerializer" should "handle NGramMentions" in {
     val m = getSingleMentionFromRule(mentions, "NGram")
