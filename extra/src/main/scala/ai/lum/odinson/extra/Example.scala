@@ -53,7 +53,10 @@ object Example extends App with LazyLogging {
   mentions.foreach(displayMention(_, extractorEngine))
 
   // Export Mentions (here as json lines)
-  val serialized = JsonSerializer.asJsonLines(mentions)
+  val jsonSerializer =
+    new JsonSerializer(verbose = JsonSerializer.DISPLAY, engine = Some(extractorEngine))
+
+  val serialized = jsonSerializer.asJsonLines(mentions)
   outputFile.writeString(serialized.mkString("\n"))
 
 }
