@@ -1,33 +1,27 @@
 package ai.lum.odinson.serialization
 
 import ai.lum.odinson._
+import ai.lum.odinson.serialization.JsonSerializer._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
-object JsonSerializer {
+class JsonSerializer(verbose: String = NONE, indent: Int = 4, engine: Option[ExtractorEngine] = None) {
+
+  // Ensure a valid verbosity level and compatible engine
+  checkVerbosity(verbose)
+  checkEngine(verbose, engine)
 
   // Json String
 
   def asJsonPretty(ms: Iterator[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Iterator[Mention], indent: Int): String = {
-    asJsonPretty(ms.toSeq, indent)
+    asJsonPretty(ms.toSeq)
   }
 
   def asJsonPretty(ms: Seq[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Seq[Mention], indent: Int): String = {
     ujson.write(asJsonValue(ms), indent)
   }
 
   def asJsonPretty(m: Mention): String = {
-    ujson.write(asJsonValue(m), indent = 4)
-  }
-
-  def asJsonPretty(m: Mention, indent: Int): String = {
     ujson.write(asJsonValue(m), indent)
   }
 
@@ -42,6 +36,7 @@ object JsonSerializer {
   def asJsonString(m: Mention): String = {
     ujson.write(asJsonValue(m))
   }
+
 
   // Json Lines (one mention json per line)
 
@@ -64,10 +59,11 @@ object JsonSerializer {
   }
 
   def asJsonValue(m: Mention): Value = {
+
     val corpusDocId = m.idGetter.getDocId
     val corpusSentId = m.idGetter.getSentId
 
-    ujson.Obj(
+    val json = ujson.Obj(
       "scalaType" -> m.getClass.getCanonicalName,
       "odinsonMatch" -> asJsonValue(m.odinsonMatch),
       "label" -> stringOrNull(m.label),
@@ -77,8 +73,16 @@ object JsonSerializer {
       "docId" -> corpusDocId,
       "sentId" -> corpusSentId,
       "foundBy" -> m.foundBy,
-      "arguments" -> asJsonValue(m.arguments)
+      "arguments" -> asJsonValue(m.arguments),
     )
+
+    // Add verbose content if requested
+    if (verbose != NONE) {
+      if (engine == null) throw new OdinsonException("Cannot use verbose serialization without giving an extractor engine.")
+      json("detail") = mkVerboseContent(m)
+    }
+
+    json
   }
 
   def asJsonValue(om: OdinsonMatch): Value = {
@@ -181,6 +185,28 @@ object JsonSerializer {
       "max" -> intOrNull(metadata.max)
     )
   }
+
+  private def mkVerboseContent(m: Mention): Value = {
+    val json = ujson.Obj()
+
+    // Determine which fields to include, given the specified level of verbosity
+    // Note that since we already checked the validity of verbose and engine,
+    // calling `get` here on the engine should not be a problem.
+    val fieldsToInclude = verbose match {
+      case NONE => Seq.empty
+      case DISPLAY => Seq(engine.get.displayField)
+      case ALL => engine.get.indexSettings.storedFields
+    }
+
+    // Retrieve the tokens for each included field
+    for (field <- fieldsToInclude) {
+      val tokens = engine.get.getTokensForSpan(m, field)
+      json(field) = tokens.toSeq
+    }
+
+    json
+  }
+
 
   def stringOrNull(s: Option[String]): Value = {
     if (s.isDefined) ujson.Str(s.get)
@@ -347,5 +373,29 @@ object JsonSerializer {
       case i          => Some(i.num.toInt)
     }
   }
+
+  // -------------------------------------
+  //        HELPER METHODS
+  // -------------------------------------
+
+  def checkVerbosity(verbose: String): Unit = {
+    if (!validVerbose.contains(verbose)) {
+      throw new OdinsonException(s"Invalid setting for `verbose`: $verbose [valid: ${validVerbose.mkString(", ")}]")
+    }
+  }
+
+ def checkEngine(verbose: String, engine: Option[ExtractorEngine]): Unit = {
+   if (verbose != NONE && engine.isEmpty) {
+     throw new OdinsonException("Cannot request verbose serialization without providing an ExtractorEngine.")
+   }
+ }
+}
+
+object JsonSerializer{
+  val NONE = "none"
+  val DISPLAY = "display"
+  val ALL = "all"
+  val validVerbose = Seq(NONE, DISPLAY, ALL)
+
 
 }
