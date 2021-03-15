@@ -11,8 +11,12 @@ class TestJsonSerialization extends OdinsonTest {
   val doc = getDocument("rainbows")
   val engine = mkExtractorEngine(doc)
   val storedFields = util.Arrays.asList("raw", "lemma", "tag")
+
   val verboseEngine = mkExtractorEngine(
-    defaultConfig.withValue("odinson.index.storedFields", ConfigValueFactory.fromIterable(storedFields)),
+    defaultConfig.withValue(
+      "odinson.index.storedFields",
+      ConfigValueFactory.fromIterable(storedFields)
+    ),
     doc
   )
 
@@ -20,9 +24,15 @@ class TestJsonSerialization extends OdinsonTest {
 
   // Without state
   val mentions = engine.extractNoState(extractors).toArray
-  val jsonSerializer = new JsonSerializer(verbose = JsonSerializer.NONE, indent = 4, engine = Some(engine))
-  val displaySerializer = new JsonSerializer(verbose = JsonSerializer.DISPLAY, indent = 4, engine = Some(verboseEngine))
-  val allSerializer = new JsonSerializer(verbose = JsonSerializer.ALL, indent = 4, engine = Some(verboseEngine))
+
+  val jsonSerializer =
+    new JsonSerializer(verbose = JsonSerializer.NONE, indent = 4, engine = Some(engine))
+
+  val displaySerializer =
+    new JsonSerializer(verbose = JsonSerializer.DISPLAY, indent = 4, engine = Some(verboseEngine))
+
+  val allSerializer =
+    new JsonSerializer(verbose = JsonSerializer.ALL, indent = 4, engine = Some(verboseEngine))
 
   "JsonSerializer" should "handle NGramMentions" in {
     val m = getSingleMentionFromRule(mentions, "NGram")
@@ -235,7 +245,7 @@ class TestJsonSerialization extends OdinsonTest {
     val raw = detail("raw").arr.map(_.str)
     raw should contain inOrderOnly ("Rainbows", "shine", "bright")
 
-    a [java.util.NoSuchElementException] should be thrownBy json("lemma")
+    a[java.util.NoSuchElementException] should be thrownBy json("lemma")
   }
 
   "JsonSerializer with verbose=all" should "include the all stored fields and content" in {
@@ -247,7 +257,7 @@ class TestJsonSerialization extends OdinsonTest {
     detail("lemma").arr.map(_.str) should contain inOrderOnly ("rainbow", "shine", "bright")
     detail("tag").arr.map(_.str) should contain inOrderOnly ("NNS", "VBP", "JJ")
 
-    a [java.util.NoSuchElementException] should be thrownBy json("watermelon")
+    a[java.util.NoSuchElementException] should be thrownBy json("watermelon")
   }
 
 }
