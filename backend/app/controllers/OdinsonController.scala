@@ -81,9 +81,35 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
+  /** Convenience method to determine if a string matches a given regular expression.
+    * @param s The String to be searched.
+    * @param regex The regular expression against which `s` should be compared.
+    * @return True if there's at least one match.
+    */
+  private def isMatch(s: String, regex: Option[String]): Boolean = {
+    if (regex.isEmpty) true
+    // .* is necessary
+    else {
+      val pattern = regex.get.r
+      pattern.findFirstMatchIn(s) match {
+        case Some(_) => true
+        case _       => false
+      }
+    }
+  }
+
+
   /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
-    * @param field raw, token, lemma, tag, etc.
+    * @param field The field to count (e.g., raw, token, lemma, tag, etc.)
+    * @param group Optional second field to condition the field counts on.
+    * @param filter Optional regular expression filter for terms within `field`
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
+    * @param min Highest rank to return (0 is highest possible value).
+    * @param max Lowest rank to return (e.g., 9).
+    * @param scale "count" for raw frequencies (default), "log10" for log-transform, "percent" for percent of total.
+    * @param reverse Whether to reverse the order before slicing between `min` and `max` (default false).
+    * @param pretty Whether to pretty-print the JSON results.
+    * @return JSON frequency table as an array of objects.
     */
   def termFreq(
     field: String,
@@ -97,23 +123,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-
-      /** Convenience method to determine if a string matches a given regular expression.
-        * @param s The String to be searched.
-        * @param regex The regular expression against which `s` should be compared.
-        * @return True if there's at least one match.
-        */
-      def isMatch(s: String, regex: Option[String]): Boolean = {
-        if (regex.isEmpty) true
-        // .* is necessary
-        else {
-          val pattern = regex.get.r
-          pattern.findFirstMatchIn(s) match {
-            case Some(_) => true
-            case _       => false
-          }
-        }
-      }
 
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
@@ -206,6 +215,125 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // the requested field isn't in this index
         Json.obj().format(pretty)
       }
+    }
+  }
+
+  case class RuleFreqRequest(
+    grammar: String,
+    parentQuery: Option[String] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
+    group: Option[String] = None,
+    filter: Option[String] = None,
+    order: Option[String] = None,
+    min: Option[Int] = None,
+    max: Option[Int] = None,
+    scale: Option[String] = None,
+    reverse: Option[Boolean] = None,
+    pretty: Option[Boolean] = None
+  )
+
+  object RuleFreqRequest {
+    implicit val fmt: OFormat[RuleFreqRequest] = Json.format[RuleFreqRequest]
+    implicit val read: Reads[RuleFreqRequest] = Json.reads[RuleFreqRequest]
+  }
+
+  /** Count how many times each rule matches from the active grammar on the active dataset.
+    * @param grammar An Odinson grammar.
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
+    * @param filter Optional regular expression filter for the rule name.
+    * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order.
+    * @param min Highest rank to return (0 is highest possible value).
+    * @param max Lowest rank to return (e.g., 9).
+    * @param scale "count" for raw frequencies (default), "log10" for log-transform, "percent" for percent of total.
+    * @param reverse Whether to reverse the order before slicing between `min` and `max` (default false).
+    * @param pretty Whether to pretty-print the JSON results.
+    * @return JSON frequency table as an array of objects.
+    */
+  def ruleFreq() = Action { request =>
+    val gr = request.body.asJson.get.as[RuleFreqRequest]
+    //println(s"GrammarRequest: ${gr}")
+    val grammar = gr.grammar
+    val parentQuery = gr.parentQuery
+    val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
+    // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
+    // val group = gr.group
+    val filter = gr.filter
+    val order = gr.order
+    val min = gr.min
+    val max = gr.max
+    val scale = gr.scale
+    val reverse = gr.reverse
+    val pretty = gr.pretty
+    try {
+      // rules -> OdinsonQuery
+      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
+      val composedExtractors = parentQuery match {
+        case Some(pq) =>
+          val cpq = extractorEngine.compiler.mkParentQuery(pq)
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+        case None => baseExtractors
+      }
+
+      val mentions: Seq[Mention] = {
+        val iterator = extractorEngine.extractMentions(
+          composedExtractors,
+          numSentences = extractorEngine.numDocs(),
+          allowTriggerOverlaps = allowTriggerOverlaps,
+          disableMatchSelector = false
+        )
+        iterator.toVector
+      }
+
+      val ruleFreqs = mentions
+        // rule name is all that matters
+        .map(_.foundBy)
+        // collect the instances of each rule's results
+        .groupBy(identity)
+        // filter the rules by name, if a filter was passed
+        .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+        // count how many matches for each rule
+        .map{ case (k, v) => k -> v.length }
+        .toSeq
+
+      // order the resulting frequencies as requested
+      val ordered = order match {
+        // alphabetical
+        case Some("alpha") => ruleFreqs.sortBy { case (ruleName, _) => ruleName }
+        // frequency
+        case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
+      }
+
+      // reverse if necessary
+      val reversed = reverse match {
+        case Some(true) => ordered.reverse
+        case _          => ordered
+      }
+
+      val countTotal = reversed.map(_._2).sum
+
+      // cutoff the results to the requested ranks
+      val defaultMin = 0
+      val defaultMax = 9
+      val sliced = reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+
+      // transform the frequencies as requested, preserving order
+      val scaled = scale match {
+        case Some("log10") => sliced map { case (rule, freq) => (rule, log10(freq)) }
+        case Some("percent") =>
+          sliced map { case (rule, freq) => (rule, freq.toDouble / countTotal) }
+        case _ => sliced.map { case (rule, freq) => (rule, freq.toDouble) }
+      }
+
+      // rearrange data into a Seq of Maps for Jsonization
+      val jsonObjs = scaled.map { case (ruleName, freq) => Json.obj("rule" -> ruleName, "matches" -> freq) }
+
+      Json.arr(jsonObjs).format(pretty)
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Status(400)(json)
     }
   }
 
@@ -368,6 +496,17 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
+  def ruleHist(
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean],
+    pretty: Option[Boolean]
+  ) = Action.async {
+    Future {
+      Json.obj().format(pretty)
+    }
+  }
+
   /** Information about the current corpus. <br>
     * Directory name, num docs, num dependency types, etc.
     */
@@ -481,11 +620,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   )
 
   object GrammarRequest {
-    implicit val fmt = Json.format[GrammarRequest]
-    implicit val read = Json.reads[GrammarRequest]
+    implicit val fmt: OFormat[GrammarRequest] = Json.format[GrammarRequest]
+    implicit val read: Reads[GrammarRequest] = Json.reads[GrammarRequest]
   }
-
-  // import play.api.libs.json.Json
 
   /** Executes the provided Odinson grammar.
     *

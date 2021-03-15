@@ -179,6 +179,14 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       println(Helpers.contentAsString(response))
     }
 
+    "respond with rule-based frequencies using the /rule-freq endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/rule-freq")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      println(Helpers.contentAsString(response))
+    }
+
     "respond with frequency table using the simplest possible /term-hist endpoint" in {
       val response = route(app, FakeRequest(GET, "/api/term-hist?field=lemma")).get
 
@@ -195,6 +203,22 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
           "/api/term-hist?field=tag&bins=5&equalProbability=true&xLogScale=true&pretty=true"
         )
       ).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      println(Helpers.contentAsString(response))
+    }
+
+    "respond with frequency table using the simplest possible /rule-hist endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/rule-hist")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      println(Helpers.contentAsString(response))
+    }
+
+    "respond with frequency table using the maximal /rule-hist endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/rule-hist")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")

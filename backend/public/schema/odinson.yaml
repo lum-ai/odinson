@@ -382,6 +382,33 @@ paths:
                  items:
                    $ref: '#/components/schemas/TermFrequency'
 
+  /api/rule-freq:
+    post:
+      tags:
+        - statistics
+      summary: |
+        Count how many times each rule matches from the active grammar on the active dataset.
+      description: |
+        Count how many times each rule matches from the active grammar on the active dataset.
+      operationId: rule-freq
+      requestBody:
+        description: |
+          A request for
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleFreqRequest'
+      responses:
+        '200':
+          description: Frequencies of extraction matches by rule name.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/FrequencyTable'
+
   /api/term-hist:
     get:
       tags:
@@ -627,6 +654,75 @@ components:
             Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
           example: false
 
+    RuleFreqRequest:
+      type: object
+      required:
+        - rules
+      properties:
+        grammar:
+          type: string
+          description: |
+            An Odinson grammar.
+          example: |
+             # an example grammar
+             rules:
+              - name: "example"
+                label: GrammaticalSubject
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  subject  = >nsubj []
+#        parentQuery:
+#          type: string
+#          description: |
+#            A Lucene query to filter Documents before applying an Odinson pattern.
+#          example: "year: 1973"
+        allowTriggerOverlaps:
+          type: boolean
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
+          example: false
+#        group:
+#          type: string
+#          description: |
+#            A conditioning variable by which to group each rule's counts.
+#          example: ruleType
+        filter:
+          type: string
+          description: |
+            A regular expression to filter the rule names before counting.
+          example: "ate$"
+        order:
+          type: string
+          description: |
+            The order in which to return results: "freq" (frequency order, default) or "alpha" (alphanumeric order).
+          example: freq
+        min:
+          type: integer
+          format: int32
+          description: |
+            The smallest rank to return, with 0 (default) being the highest ranked.
+          example: 0
+        max:
+          type: integer
+          format: int32
+          description: |
+            The highest rank to return, e.g. 9 (default).
+          example: 9
+        scale:
+          type: string
+          description: |
+            Scaling to apply to frequency counts. Choices are "count" (default), "log10", and "percent".
+          example: count
+        reverse:
+          type: boolean
+          description: |
+            Whether to reverse the rank order, to select the 10 lease frequent results, for example.
+        pretty:
+          type: boolean
+          description: |
+            Whether or not to pretty print the response.
+
     OdinsonGrammarResults:
       type: object
       required:
@@ -712,7 +808,7 @@ components:
           description: The similarity score for the returned term.
           example: 0.673
 
-    TermFrequency:
+    FrequencyTable:
       type: object
       required:
         - term
