@@ -247,7 +247,7 @@ class TestJsonSerialization extends OdinsonTest {
     raw should contain inOrderOnly ("Rainbows", "shine", "bright")
     val docRaw = detail("document")("raw").arr.map(_.str)
     docRaw.mkString(" ") shouldBe "Rainbows shine bright bright bright ."
-    
+
     a[java.util.NoSuchElementException] should be thrownBy json("lemma")
   }
 
