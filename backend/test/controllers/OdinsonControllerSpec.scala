@@ -172,6 +172,56 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
+    "not persist state across uses of the /grammar endpoint" in {
+
+      val ruleString1 =
+        s"""
+           |rules:
+           | - name: "example1"
+           |   label: GrammaticalSubject
+           |   type: event
+           |   pattern: |
+           |       trigger = [lemma=have]
+           |       subject  = >nsubj []
+           |
+        """.stripMargin
+
+      val body1 =
+        Json.obj("grammar" -> ruleString1, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
+
+      val response1 = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body1)).get
+
+      status(response1) mustBe OK
+      contentType(response1) mustBe Some("application/json")
+      Helpers.contentAsString(response1) must include("example1")
+
+      val ruleString2 =
+        s"""
+           |rules:
+           | - name: "example2"
+           |   label: GrammaticalObject
+           |   type: event
+           |   pattern: |
+           |       trigger = [lemma=have]
+           |       subject  = >dobj []
+           |
+        """.stripMargin
+
+      val body2 =
+        Json.obj("grammar" -> ruleString2, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
+
+      val response2 = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body2)).get
+
+      status(response2) mustBe OK
+      contentType(response2) mustBe Some("application/json")
+      val response2Content = Helpers.contentAsString(response2)
+      response2Content must include("example2")
+      response2Content must include("GrammaticalObject")
+      response2Content must not include("example1")
+      response2Content must not include("GrammaticalSubject")
+
+    }
+
     "respond with token-based frequencies using the /term-freq endpoint" in {
       val body = Json.obj("field" -> "word")
 

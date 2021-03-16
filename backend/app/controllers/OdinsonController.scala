@@ -44,7 +44,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 ) extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
-  val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
   // format: off
   val docsDir           = config[File]  ("odinson.docsDir")
   val DOC_ID_FIELD      = config[String]("odinson.index.documentIdField")
@@ -75,6 +74,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def numDocs = Action {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
@@ -93,6 +93,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
       val fieldNames = fields.iterator.asScala.toList
@@ -148,6 +149,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     */
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
       val numDocs = extractorEngine.indexReader.numDocs
       val corpusDir = config[File]("odinson.indexDir").getName
       val depsVocabSize = {
@@ -166,11 +168,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def getDocId(luceneDocId: Int): String = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     val doc: LuceneDocument = extractorEngine.indexReader.document(luceneDocId)
     doc.getValues(DOC_ID_FIELD).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     val doc = extractorEngine.indexReader.document(luceneDocId)
     // FIXME: this isn't safe
     doc.getValues(SENTENCE_ID_FIELD).head.toInt
@@ -207,11 +211,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   /** Stores query results in state.
     *
-    * @param odinsonQuery An Odinson pattern
+    * @param extractorEngine An extractor whose state should be altered.
+    * @param odinsonQuery An Odinson pattern.
     * @param parentQuery A Lucene query to filter documents (optional).
     * @param label The label to use when committing matches.
     */
   def commitResults(
+    extractorEngine: ExtractorEngine,
     odinsonQuery: String,
     parentQuery: Option[String],
     label: String = "Mention"
@@ -238,6 +244,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     prevDoc: Option[Int],
     prevScore: Option[Float]
   ): OdinResults = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     (prevDoc, prevScore) match {
       case (Some(doc), Some(score)) =>
         val osd = new OdinsonScoreDoc(doc, score)
@@ -273,6 +280,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def executeGrammar() = Action { request =>
     //println(s"body: ${request.body}")
     //val json: JsValue = request.body.asJson.get
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     // FIXME: replace .get with validation check
     val gr = request.body.asJson.get.as[GrammarRequest]
     //println(s"GrammarRequest: ${gr}")
@@ -340,6 +348,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
       try {
+        val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
+
         val oq = parentQuery match {
           case Some(pq) =>
             extractorEngine.compiler.mkQuery(odinsonQuery, pq)
@@ -354,6 +364,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         if (commit.getOrElse(false)) {
           // FIXME: can this be processed in the background?
           commitResults(
+            extractorEngine = extractorEngine,
             odinsonQuery = odinsonQuery,
             parentQuery = parentQuery,
             label = label.getOrElse("Mention")
@@ -395,6 +406,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
       try {
+        val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
@@ -415,6 +427,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
       try {
+        val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
@@ -488,6 +501,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def mkJson(mention: Mention): Json.JsValueWrapper = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
     // We want **all** tokens for the sentence
     val tokens = extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
@@ -505,6 +519,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
     val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
@@ -541,6 +556,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
