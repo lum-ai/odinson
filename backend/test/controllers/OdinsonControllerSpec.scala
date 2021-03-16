@@ -217,8 +217,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       val response2Content = Helpers.contentAsString(response2)
       response2Content must include("example2")
       response2Content must include("GrammaticalObject")
-      response2Content must not include("example1")
-      response2Content must not include("GrammaticalSubject")
+      response2Content must not include ("example1")
+      response2Content must not include ("GrammaticalSubject")
 
     }
 
