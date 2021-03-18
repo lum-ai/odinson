@@ -222,7 +222,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     grammar: String,
     parentQuery: Option[String] = None,
     allowTriggerOverlaps: Option[Boolean] = None,
-    group: Option[String] = None,
+    // group: Option[String] = None,
     filter: Option[String] = None,
     order: Option[String] = None,
     min: Option[Int] = None,
@@ -251,20 +251,20 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return JSON frequency table as an array of objects.
     */
   def ruleFreq() = Action { request =>
-    val gr = request.body.asJson.get.as[RuleFreqRequest]
+    val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
     //println(s"GrammarRequest: ${gr}")
-    val grammar = gr.grammar
-    val parentQuery = gr.parentQuery
-    val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
+    val grammar = ruleFreqRequest.grammar
+    val parentQuery = ruleFreqRequest.parentQuery
+    val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
     // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
     // val group = gr.group
-    val filter = gr.filter
-    val order = gr.order
-    val min = gr.min
-    val max = gr.max
-    val scale = gr.scale
-    val reverse = gr.reverse
-    val pretty = gr.pretty
+    val filter = ruleFreqRequest.filter
+    val order = ruleFreqRequest.order
+    val min = ruleFreqRequest.min
+    val max = ruleFreqRequest.max
+    val scale = ruleFreqRequest.scale
+    val reverse = ruleFreqRequest.reverse
+    val pretty = ruleFreqRequest.pretty
     try {
       // rules -> OdinsonQuery
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
@@ -326,7 +326,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       }
 
       // rearrange data into a Seq of Maps for Jsonization
-      val jsonObjs = scaled.map { case (ruleName, freq) => Json.obj("rule" -> ruleName, "matches" -> freq) }
+      val jsonObjs = scaled.map { case (ruleName, freq) => Json.obj("term" -> ruleName, "frequency" -> freq) }
 
       Json.arr(jsonObjs).format(pretty)
     } catch {
@@ -396,6 +396,76 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     iter(data, bounds, List.empty[Long]).reverse
   }
 
+  // helper function
+  private def processCounts(
+     frequencies: List[Double],
+     bins: Option[Int],
+     equalProbability: Option[Boolean],
+     xLogScale: Option[Boolean]
+  ): Seq[JsObject] = {
+    // log10-transform the counts
+    val scaledFreqs = xLogScale match {
+      case Some(true) => frequencies.map(log10)
+      case _ => frequencies
+    }
+
+    val nBins: Int =
+      if (bins.getOrElse(-1) > 0) {
+        // user-provided bin count
+        bins.get
+      } else if (equalProbability.getOrElse(false)) {
+        // more bins for equal probability graph
+        ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
+      } else {
+        // Rice rule
+        ceil(2.0 * cbrt(scaledFreqs.length)).toInt
+      }
+
+    val (max, min) = (scaledFreqs.max, scaledFreqs.min)
+
+    // the boundaries of every bin (of length nBins + 1)
+    val allBounds = equalProbability match {
+      case Some(true) =>
+        // use quantiles to equalize the probability of each bin
+        quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
+
+      case _ =>
+        // use an invariant bin width
+        val rawBinWidth = (max - min) / nBins.toDouble
+        val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
+        (0 until nBins).foldLeft(List(min.toDouble))((res, i) =>
+          (binWidth + res.head) :: res
+        ).reverse
+    }
+
+    // right-inclusive bounds (for counting bins)
+    val rightBounds = allBounds.tail.toList // map (_ + epsilon)
+
+    // number of each count falling into this bin
+    val binCounts = histify(scaledFreqs, rightBounds)
+    val totalCount = binCounts.sum.toDouble
+
+    // unify allBounds and binCounts to generate one JSON object per bin
+    for (i <- allBounds.init.indices) yield {
+      val width = allBounds(i + 1) - allBounds(i)
+      val x = allBounds(i)
+      val y = equalProbability match {
+        case Some(true) =>
+          // bar AREA (not height) should be proportional to the count for this bin
+          // thus it is density rather than probability or count
+          if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
+        case _ =>
+          // report the actual count (can be scaled by UI)
+          binCounts(i).toDouble
+      }
+      Json.obj(
+        "w" -> width,
+        "x" -> x,
+        "y" -> y
+      )
+    }
+  }
+
   /** Return coordinates defining a histogram of counts/frequencies for a given field.
     * @param field The field to analyze, e.g. lemma.
     * @param bins The number of bins to use for data partitioning (optional).
@@ -426,67 +496,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           termFreqs.update(term, termsEnum.totalTermFreq)
         }
         val frequencies = termFreqs.values.toList.map(_.toDouble)
-        // log10-transform the counts of each term
-        val scaledFreqs = xLogScale match {
-          case Some(true) => frequencies.map(log10)
-          case _          => frequencies
-        }
 
-        val nBins: Int =
-          if (bins.getOrElse(-1) > 0) {
-            // user-provided bin count
-            bins.get
-          } else if (equalProbability.getOrElse(false)) {
-            // more bins for equal probability graph
-            ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
-          } else {
-            // Rice rule
-            ceil(2.0 * cbrt(scaledFreqs.length)).toInt
-          }
-
-        val (max, min) = (scaledFreqs.max, scaledFreqs.min)
-
-        // the boundaries of every bin (of length nBins + 1)
-        val allBounds = equalProbability match {
-          case Some(true) =>
-            // use quantiles to equalize the probability of each bin
-            quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
-
-          case _ =>
-            // use an invariant bin width
-            val rawBinWidth = (max - min) / nBins.toDouble
-            val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
-            (0 until nBins).foldLeft(List(min.toDouble))((res, i) =>
-              (binWidth + res.head) :: res
-            ).reverse
-        }
-
-        // right-inclusive bounds (for counting bins)
-        val rightBounds = allBounds.tail.toList // map (_ + epsilon)
-
-        // number of each token type falling into this bin
-        val binCounts = histify(scaledFreqs, rightBounds)
-        val totalCount = binCounts.sum.toDouble
-
-        // unify allBounds and binCounts to generate one JSON object per bin
-        val jsonObjs = for (i <- allBounds.init.indices) yield {
-          val width = allBounds(i + 1) - allBounds(i)
-          val x = allBounds(i)
-          val y = equalProbability match {
-            case Some(true) =>
-              // bar AREA (not height) should be proportional to the count for this bin
-              // thus it is density rather than probability or count
-              if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
-            case _ =>
-              // report the actual count (can be scaled by UI)
-              binCounts(i).toDouble
-          }
-          Json.obj(
-            "w" -> width,
-            "x" -> x,
-            "y" -> y
-          )
-        }
+        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
         Json.arr(jsonObjs).format(pretty)
       } else {
@@ -496,14 +507,80 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
-  def ruleHist(
+  case class RuleHistRequest(
+    grammar: String,
+    parentQuery: Option[String] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
     bins: Option[Int],
     equalProbability: Option[Boolean],
     xLogScale: Option[Boolean],
     pretty: Option[Boolean]
-  ) = Action.async {
-    Future {
-      Json.obj().format(pretty)
+  )
+
+  object RuleHistRequest {
+    implicit val fmt: OFormat[RuleHistRequest] = Json.format[RuleHistRequest]
+    implicit val read: Reads[RuleHistRequest] = Json.reads[RuleHistRequest]
+  }
+
+  /** Return coordinates defining a histogram of counts/frequencies of matches of each rule.
+    * @param grammar An Odinson grammar.
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
+    * @param bins Number of bins to cut the rule counts into.
+    * @param equalProbability Whether to make bin widths variable to make them equally probable.
+    * @param xLogScale `log10`-transform the counts of each rule (optional).
+    * @param pretty Whether to pretty-print the JSON returned by the function.
+    * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
+    */
+  def ruleHist() = Action { request =>
+    val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
+    val grammar = ruleHistRequest.grammar
+    val parentQuery = ruleHistRequest.parentQuery
+    val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
+    val bins = ruleHistRequest.bins
+    val equalProbability = ruleHistRequest.equalProbability
+    val xLogScale = ruleHistRequest.xLogScale
+    val pretty = ruleHistRequest.pretty
+
+    try {
+      // rules -> OdinsonQuery
+      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
+      val composedExtractors = parentQuery match {
+        case Some(pq) =>
+          val cpq = extractorEngine.compiler.mkParentQuery(pq)
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+        case None => baseExtractors
+      }
+
+      val mentions: Seq[Mention] = {
+        val iterator = extractorEngine.extractMentions(
+          composedExtractors,
+          numSentences = extractorEngine.numDocs(),
+          allowTriggerOverlaps = allowTriggerOverlaps,
+          disableMatchSelector = false
+        )
+        iterator.toVector
+      }
+
+      val frequencies = mentions
+        // rule name is all that matters
+        .map(_.foundBy)
+        // collect the instances of each rule's results
+        .groupBy(identity)
+        // filter the rules by name, if a filter was passed
+        // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+        // count how many matches for each rule
+        .map{ case (k, v) => v.length.toDouble }
+        .toList
+
+      val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+
+      Json.arr(jsonObjs).format(pretty)
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Status(400)(json)
     }
   }
 
