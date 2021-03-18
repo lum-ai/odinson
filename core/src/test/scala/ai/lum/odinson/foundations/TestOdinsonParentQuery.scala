@@ -49,7 +49,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
   }
 
   it should "match metadata document" in {
-    val pattern = "character:Special Agent Dale Cooper
+    val pattern = "character:Special Agent Dale Cooper"
     val query = ee.compiler.mkParentQuery(pattern)
     val res = ee.indexSearcher.search(query, 10)
     res.totalHits shouldBe 1
