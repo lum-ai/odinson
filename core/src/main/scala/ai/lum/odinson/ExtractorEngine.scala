@@ -104,7 +104,7 @@ class ExtractorEngine private (
     * will be returned, instead of just the correct one according to the query semantics,
     * e.g., select the longest match for the greedy quantifiers.
     *
-    * If you don't know why you should disable the MatchSelector, then keeep it enabled.
+    * If you don't know why you should disable the MatchSelector, then keep it enabled.
     *
     * @param odinsonQuery
     * @param disableMatchSelector

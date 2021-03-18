@@ -169,18 +169,133 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
       Helpers.contentAsString(response) must include("adults")
-
     }
 
     "respond with token-based frequencies using the /term-freq endpoint" in {
-      val body = Json.obj("field" -> "word")
-
-      val response =
-        route(app, FakeRequest(GET, "/api/term-freq?field=word").withJsonBody(body)).get
+      val response = route(app, FakeRequest(GET, "/api/term-freq?field=word")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
-      println(Helpers.contentAsString(response))
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("term")
+      Helpers.contentAsString(response) must include("frequency")
+    }
+
+    val expandedRules =
+      s"""
+         |rules:
+         | - name: "agent-active"
+         |   label: Agent
+         |   type: event
+         |   pattern: |
+         |       trigger = [tag=/V.*/]
+         |       agent  = >nsubj []
+         |
+           | - name: "patient-active"
+         |   label: Patient
+         |   type: event
+         |   pattern: |
+         |       trigger = [tag=/V.*/]
+         |       patient  = >dobj []
+         |
+           | - name: "agent-passive"
+         |   label: Agent
+         |   type: event
+         |   pattern: |
+         |       trigger = [tag=/V.*/]
+         |       agent  = >nmod_by []
+         |
+           | - name: "patient-passive"
+         |   label: Patient
+         |   type: event
+         |   pattern: |
+         |       trigger = [tag=/V.*/]
+         |       patient  = >nsubjpass []
+         |
+        """.stripMargin
+
+    "respond with rule-based frequencies using the /rule-freq endpoint" in {
+      val body = Json.obj(
+        "grammar" -> expandedRules,
+        "parentQuery" -> "the",
+        "allowTriggerOverlaps" -> true,
+        "order" -> "freq",
+        "min" -> 0,
+        "max" -> 1,
+        "scale" -> "log10",
+        "reverse" -> true,
+        "pretty" -> true
+      )
+
+      val response =
+        controller.ruleFreq().apply(FakeRequest(POST, "/api/rule-freq").withJsonBody(body))
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("term")
+      Helpers.contentAsString(response) must include("frequency")
+    }
+
+    "respond with frequency table using the simplest possible /term-hist endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/term-hist?field=lemma")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("w")
+      Helpers.contentAsString(response) must include("x")
+      Helpers.contentAsString(response) must include("y")
+    }
+
+    "respond with frequency table using the maximal /term-hist endpoint" in {
+      val response = route(
+        app,
+        FakeRequest(
+          GET,
+          "/api/term-hist?field=tag&bins=5&equalProbability=true&xLogScale=true&pretty=true"
+        )
+      ).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("w")
+      Helpers.contentAsString(response) must include("x")
+      Helpers.contentAsString(response) must include("y")
+    }
+
+    "respond with frequency table using the simplest possible /rule-hist endpoint" in {
+      val body = Json.obj("grammar" -> expandedRules)
+
+      val response =
+        controller.ruleHist().apply(FakeRequest(POST, "/api/rule-hist").withJsonBody(body))
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("w")
+      Helpers.contentAsString(response) must include("x")
+      Helpers.contentAsString(response) must include("y")
+    }
+
+    "respond with frequency table using the maximal /rule-hist endpoint" in {
+      val body = Json.obj(
+        "grammar" -> expandedRules,
+        "parentQuery" -> "the",
+        "allowTriggerOverlaps" -> true,
+        "bins" -> 2,
+        "equalProbability" -> true,
+        "xLogScale" -> true,
+        "pretty" -> true
+      )
+
+      val response =
+        controller.ruleHist().apply(FakeRequest(POST, "/api/rule-hist").withJsonBody(body))
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("w")
+      Helpers.contentAsString(response) must include("x")
+      Helpers.contentAsString(response) must include("y")
     }
 
   }
