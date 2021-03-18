@@ -24,11 +24,19 @@ class TestOdinsonParentQuery extends OdinsonTest {
     // a simple Odinson pattern
     val pattern = "[lemma=pie]"
     // a query (using Lucene query syntax) that is executed against the document metadata
-    val parentQuery: String = "character:Major.*"
+    val parentQuery: String = "character:Major*"
     val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
     res.scoreDocs should have length 0
+  }
+
+  it should "return results when pattern succeeds" in {
+    val pattern: String = "[lemma=pie]"
+    val odinsonQuery: OdinsonQuery = ee.compiler.mkQuery(pattern)
+    val res: OdinResults = ee.query(odinsonQuery)
+    res.totalHits shouldBe 1
+    res.scoreDocs should have length 1
   }
 
   it should "return results when pattern succeeds and parent query succeeds" in {
@@ -36,6 +44,14 @@ class TestOdinsonParentQuery extends OdinsonTest {
     val parentQuery: String = "character:Special Agent*"
     val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
+    res.totalHits shouldBe 1
+    res.scoreDocs should have length 1
+  }
+
+  it should "match metadata document" in {
+    val pattern = "character:Special Agent Dale Cooper
+    val query = ee.compiler.mkParentQuery(pattern)
+    val res = ee.indexSearcher.search(query, 10)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1
   }
