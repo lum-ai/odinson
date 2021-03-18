@@ -98,7 +98,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
   }
 
-
   /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
     * @param field The field to count (e.g., raw, token, lemma, tag, etc.)
     * @param group Optional second field to condition the field counts on.
@@ -291,9 +290,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // collect the instances of each rule's results
         .groupBy(identity)
         // filter the rules by name, if a filter was passed
-        .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+        .filter { case (ruleName, ms) => isMatch(ruleName, filter) }
         // count how many matches for each rule
-        .map{ case (k, v) => k -> v.length }
+        .map { case (k, v) => k -> v.length }
         .toSeq
 
       // order the resulting frequencies as requested
@@ -315,7 +314,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       // cutoff the results to the requested ranks
       val defaultMin = 0
       val defaultMax = 9
-      val sliced = reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+      val sliced =
+        reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
 
       // transform the frequencies as requested, preserving order
       val scaled = scale match {
@@ -326,7 +326,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       }
 
       // rearrange data into a Seq of Maps for Jsonization
-      val jsonObjs = scaled.map { case (ruleName, freq) => Json.obj("term" -> ruleName, "frequency" -> freq) }
+      val jsonObjs = scaled.map { case (ruleName, freq) =>
+        Json.obj("term" -> ruleName, "frequency" -> freq)
+      }
 
       Json.arr(jsonObjs).format(pretty)
     } catch {
@@ -398,15 +400,15 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   // helper function
   private def processCounts(
-     frequencies: List[Double],
-     bins: Option[Int],
-     equalProbability: Option[Boolean],
-     xLogScale: Option[Boolean]
+    frequencies: List[Double],
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean]
   ): Seq[JsObject] = {
     // log10-transform the counts
     val scaledFreqs = xLogScale match {
       case Some(true) => frequencies.map(log10)
-      case _ => frequencies
+      case _          => frequencies
     }
 
     val nBins: Int =
@@ -570,7 +572,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // filter the rules by name, if a filter was passed
         // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
         // count how many matches for each rule
-        .map{ case (k, v) => v.length.toDouble }
+        .map { case (k, v) => v.length.toDouble }
         .toList
 
       val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
