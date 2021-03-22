@@ -241,21 +241,21 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
          |       trigger = [tag=/V.*/]
          |       agent  = >nsubj []
          |
-           | - name: "patient-active"
+         | - name: "patient-active"
          |   label: Patient
          |   type: event
          |   pattern: |
          |       trigger = [tag=/V.*/]
          |       patient  = >dobj []
          |
-           | - name: "agent-passive"
+         | - name: "agent-passive"
          |   label: Agent
          |   type: event
          |   pattern: |
          |       trigger = [tag=/V.*/]
          |       agent  = >nmod_by []
          |
-           | - name: "patient-passive"
+         | - name: "patient-passive"
          |   label: Patient
          |   type: event
          |   pattern: |
@@ -267,7 +267,6 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     "respond with rule-based frequencies using the /rule-freq endpoint" in {
       val body = Json.obj(
         "grammar" -> expandedRules,
-        "parentQuery" -> "the",
         "allowTriggerOverlaps" -> true,
         "order" -> "freq",
         "min" -> 0,
@@ -330,7 +329,6 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     "respond with frequency table using the maximal /rule-hist endpoint" in {
       val body = Json.obj(
         "grammar" -> expandedRules,
-        "parentQuery" -> "the",
         "allowTriggerOverlaps" -> true,
         "bins" -> 2,
         "equalProbability" -> true,

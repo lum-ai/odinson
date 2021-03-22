@@ -250,6 +250,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return JSON frequency table as an array of objects.
     */
   def ruleFreq() = Action { request =>
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
     //println(s"GrammarRequest: ${gr}")
     val grammar = ruleFreqRequest.grammar
@@ -284,6 +285,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         iterator.toVector
       }
 
+      println(mentions)
+
       val ruleFreqs = mentions
         // rule name is all that matters
         .map(_.foundBy)
@@ -295,6 +298,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         .map { case (k, v) => k -> v.length }
         .toSeq
 
+      println(ruleFreqs)
+
       // order the resulting frequencies as requested
       val ordered = order match {
         // alphabetical
@@ -303,11 +308,15 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
       }
 
+      println(ordered)
+
       // reverse if necessary
       val reversed = reverse match {
         case Some(true) => ordered.reverse
         case _          => ordered
       }
+
+      println(reversed)
 
       val countTotal = reversed.map(_._2).sum
 
@@ -317,6 +326,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val sliced =
         reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
 
+      println(sliced)
+
       // transform the frequencies as requested, preserving order
       val scaled = scale match {
         case Some("log10") => sliced map { case (rule, freq) => (rule, log10(freq)) }
@@ -324,6 +335,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           sliced map { case (rule, freq) => (rule, freq.toDouble / countTotal) }
         case _ => sliced.map { case (rule, freq) => (rule, freq.toDouble) }
       }
+
+      println(scaled)
 
       // rearrange data into a Seq of Maps for Jsonization
       val jsonObjs = scaled.map { case (ruleName, freq) =>
@@ -484,6 +497,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
       // ensure that the requested field exists in the index
       val fields = MultiFields.getFields(extractorEngine.indexReader)
       val fieldNames = fields.iterator.asScala.toList
@@ -535,6 +549,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
   def ruleHist() = Action { request =>
+    val extractorEngine: ExtractorEngine = ExtractorEngine.fromConfig(config)
     val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
     val grammar = ruleHistRequest.grammar
     val parentQuery = ruleHistRequest.parentQuery
@@ -543,7 +558,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val equalProbability = ruleHistRequest.equalProbability
     val xLogScale = ruleHistRequest.xLogScale
     val pretty = ruleHistRequest.pretty
-
     try {
       // rules -> OdinsonQuery
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
@@ -564,6 +578,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         iterator.toVector
       }
 
+      println(mentions)
+
       val frequencies = mentions
         // rule name is all that matters
         .map(_.foundBy)
@@ -574,6 +590,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // count how many matches for each rule
         .map { case (k, v) => v.length.toDouble }
         .toList
+
+      println(frequencies)
 
       val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
@@ -755,6 +773,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         )
         iterator.toVector
       }
+
+      println(mentions)
 
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
