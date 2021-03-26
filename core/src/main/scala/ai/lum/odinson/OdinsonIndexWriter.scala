@@ -23,6 +23,7 @@ import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -281,7 +282,10 @@ object OdinsonIndexWriter {
         (dir, vocab)
     }
     // Always store the display field, also store these additional fields
-    val settings = IndexSettings(Seq(displayField) ++ storedFields)
+    if (!storedFields.contains(displayField)) {
+      throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
+    }
+    val settings = IndexSettings(storedFields)
     new OdinsonIndexWriter(
       directory,
       vocabulary,

@@ -97,7 +97,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
         .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
         .withValue(
           "odinson.index.storedFields",
-          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
+          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi", "raw").asJava)
         )
     }
 
@@ -117,7 +117,10 @@ class TestOdinsonIndexWriter extends OdinsonTest {
 
     val doc = getDocument("rainbows")
     val customConfig: Config = defaultConfig
-      .withValue("odinson.index.storedFields", ConfigValueFactory.fromAnyRef(Seq("tag").asJava))
+      .withValue(
+        "odinson.index.storedFields",
+        ConfigValueFactory.fromAnyRef(Seq("tag", "raw").asJava)
+      )
     def ee = mkExtractorEngine(customConfig, doc)
 
     // we asked it to store `tag` so the extractor engine should be able to access the content
@@ -126,5 +129,20 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     // be able to retrieve the content
     an[OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
 
+  }
+
+  it should "throw an exception if the displayField isn't in the storedFields" in {
+    val indexFile = new File(tmpFolder, "index2")
+    val customConfig: Config = {
+      testConfig
+        // re-compute the index and docs path's
+        .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
+        .withValue(
+          "odinson.index.storedFields",
+          ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
+        )
+    }
+
+    an[OdinsonException] shouldBe thrownBy { OdinsonIndexWriter.fromConfig(customConfig) }
   }
 }

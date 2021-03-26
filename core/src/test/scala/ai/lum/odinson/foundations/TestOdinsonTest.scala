@@ -14,6 +14,9 @@ import ai.lum.odinson.{
 }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import com.typesafe.config.ConfigValueFactory
+
+import scala.collection.JavaConverters.asJavaIterableConverter
 
 class TestOdinsonTest extends OdinsonTest {
 
@@ -47,7 +50,16 @@ class TestOdinsonTest extends OdinsonTest {
     eeSQL.state shouldBe a[SqlState]
 
     //def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
-    val eeFoobar = extractorEngineWithConfigValue(doc, "odinson.displayField", "foobar")
+    val eeFoobar = mkExtractorEngine(
+      defaultConfig
+        .withValue("odinson.displayField", ConfigValueFactory.fromAnyRef("foobar"))
+        // The displayField is required to be in the storedFields
+        .withValue(
+          "odinson.index.storedFields",
+          ConfigValueFactory.fromAnyRef(Seq("foobar").asJava)
+        ),
+      doc
+    )
     eeFoobar.displayField should equal("foobar")
   }
 
