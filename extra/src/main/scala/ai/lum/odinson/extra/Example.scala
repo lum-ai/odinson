@@ -9,6 +9,7 @@ import ai.lum.odinson.serialization.JsonSerializer
 import ai.lum.odinson.utils.DisplayUtils.displayMention
 import ai.lum.odinson.utils.SituatedStream
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.serialization.JsonSerializer.VerboseLevels._
 import com.typesafe.scalalogging.LazyLogging
 import upickle.default._
 
@@ -53,7 +54,12 @@ object Example extends App with LazyLogging {
   mentions.foreach(displayMention(_, extractorEngine))
 
   // Export Mentions (here as json lines)
-  val serialized = JsonSerializer.asJsonLines(mentions)
+  val jsonSerializer = {
+    // can choose several levels of verbosity: Minimal, Display, and All
+    new JsonSerializer(verbose = Display, engine = Some(extractorEngine))
+  }
+
+  val serialized = jsonSerializer.asJsonLines(mentions)
   outputFile.writeString(serialized.mkString("\n"))
 
 }

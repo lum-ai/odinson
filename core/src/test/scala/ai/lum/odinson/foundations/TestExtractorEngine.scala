@@ -31,7 +31,7 @@ class TestExtractorEngine extends OdinsonTest {
   it should "getTokensFromSpan correctly from existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("lemma"))
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
     val rules = """
         |rules:
         |  - name: testrule
@@ -62,7 +62,7 @@ class TestExtractorEngine extends OdinsonTest {
   it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storeAllFields", "true")
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
     val rules = """
       |rules:
       |  - name: testrule

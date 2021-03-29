@@ -21,7 +21,7 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.utils.{ IndexSettings, MostRecentlyUsed }
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,6 +30,7 @@ class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val displayField: String,
+  val indexSettings: IndexSettings,
   val state: State, // todo: should this be private?
   val parentDocIdField: String
 ) {
@@ -643,6 +644,7 @@ object ExtractorEngine {
   ): ExtractorEngine = {
     val displayField = config[String]("odinson.displayField")
     val vocabulary = Vocabulary.fromDirectory(indexDir)
+    val indexSettings = IndexSettings.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher)
     val parentDocIdField = config[String]("odinson.index.documentIdField")
@@ -650,6 +652,7 @@ object ExtractorEngine {
       indexSearcher,
       compiler,
       displayField,
+      indexSettings,
       state,
       parentDocIdField
     )
