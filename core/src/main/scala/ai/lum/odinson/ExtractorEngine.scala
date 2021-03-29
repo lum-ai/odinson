@@ -624,12 +624,6 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
-  def fromConfig(config: Config, indexSearcher: OdinsonIndexSearcher): ExtractorEngine = {
-    val indexPath = config[File]("odinson.indexDir").toPath
-    val indexDir = FSDirectory.open(indexPath)
-    fromDirectory(config, indexDir, indexSearcher)
-  }
-
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
