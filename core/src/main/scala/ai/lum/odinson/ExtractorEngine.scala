@@ -623,11 +623,25 @@ object ExtractorEngine {
     fromDirectory(config, indexDir)
   }
 
+  def fromConfig(config: Config, indexSearcher: OdinsonIndexSearcher): ExtractorEngine = {
+    val indexPath = config[File]("odinson.indexDir").toPath
+    val indexDir = FSDirectory.open(indexPath)
+    fromDirectory(config, indexDir, indexSearcher)
+  }
+
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
-    val displayField = config[String]("odinson.displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
+    fromDirectory(config, indexDir, indexSearcher)
+  }
+
+  def fromDirectory(
+    config: Config,
+    indexDir: Directory,
+    indexSearcher: OdinsonIndexSearcher
+  ): ExtractorEngine = {
+    val displayField = config[String]("odinson.displayField")
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher)
