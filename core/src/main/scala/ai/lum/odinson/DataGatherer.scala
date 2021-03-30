@@ -7,6 +7,10 @@ import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.store.Directory
 
+// TODO: From Documents
+// TODO: Deps
+// TODO: Parent MetaData
+
 class DataGatherer(val indexSearcher: OdinsonIndexSearcher, val displayField: String, indexSettings: IndexSettings) {
 
   val analyzer = new WhitespaceAnalyzer()

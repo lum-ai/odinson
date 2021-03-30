@@ -154,8 +154,10 @@ class Mention(
       arguments,
       dataGathererOpt
     )
-    // populate it at the same level as the original
-    out.populateFields(_verbosity, dataGathererOpt)
+    // populate it at at the same level as the original, if the original was populated
+    if (_verbosity > VerboseLevels.Minimal) {
+      out.populateFields(_verbosity, dataGathererOpt)
+    }
     out
   }
 
