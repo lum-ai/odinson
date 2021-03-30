@@ -9,7 +9,7 @@ import ai.lum.odinson.serialization.JsonSerializer
 import ai.lum.odinson.utils.DisplayUtils.displayMention
 import ai.lum.odinson.utils.SituatedStream
 import ai.lum.odinson.ExtractorEngine
-import ai.lum.odinson.serialization.JsonSerializer.VerboseLevels._
+import ai.lum.odinson.DataGatherer.VerboseLevels._
 import com.typesafe.scalalogging.LazyLogging
 import upickle.default._
 

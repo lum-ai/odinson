@@ -2,14 +2,7 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{
-  ExtractorEngine,
-  Mention,
-  MentionsIterator,
-  NamedCapture,
-  OdinsonMatch,
-  StateMatch
-}
+import ai.lum.odinson.{DataGatherer, ExtractorEngine, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.TestUtils
@@ -42,7 +35,8 @@ class TestSqlState extends OdinsonTest {
     docId: Int = docId,
     docIndex: Int = docIndex,
     resultLabel: String = resultLabel,
-    resultName: String = resultName
+    resultName: String = resultName,
+    dataGathererOpt: Option[DataGatherer] = None
   ): Mention = {
     val stateMatch = newOdinsonMatch()
     val resultLabelOpt =
@@ -55,7 +49,8 @@ class TestSqlState extends OdinsonTest {
       luceneSegmentDocId = docId,
       luceneSegmentDocBase = docBase,
       nullIdGetter,
-      foundBy = resultName
+      foundBy = resultName,
+      dataGathererOpt
     )
 
     mention
@@ -126,7 +121,7 @@ class TestSqlState extends OdinsonTest {
 
   it should "survive a round trip" in {
     val config = ExtractorEngine.defaultConfig
-    val state = SqlState(config, null)
+    val state = SqlState(config, null, None)
     val resultItem1 = newMention()
     val odinsonScoreDocs = Array(
       new OdinsonScoreDoc(
@@ -142,7 +137,7 @@ class TestSqlState extends OdinsonTest {
     )
     val odinResults1 = new OdinResults(0, odinsonScoreDocs, 0.0f)
     val mentionsIterator =
-      new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter)
+      new MentionsIterator(Some(resultLabel), Some(resultName), odinResults1, mruIdGetter, None)
     val resultItems2 = {
       state.addMentions(mentionsIterator)
       state.getMentions(docBase, docId, resultLabel)
@@ -204,7 +199,7 @@ class TestSqlState extends OdinsonTest {
 
   it should "work with one Mention at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val state = SqlState(config, null)
+    val state = SqlState(config, null, None)
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
@@ -223,12 +218,13 @@ class TestSqlState extends OdinsonTest {
               scoreDoc.segmentDocId,
               scoreDoc.segmentDocBase,
               idGetter,
-              resultName
+              resultName,
+              None
             )
           }
         }
       val mentionsIterator =
-        new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter)
+        new MentionsIterator(Some(resultLabel), Some(resultName), odinResults, mruIdGetter, None)
       val resultItems2 = {
         state.addMentions(mentionsIterator)
         state.getMentions(docBase, docId, resultLabel)
@@ -259,7 +255,7 @@ class TestSqlState extends OdinsonTest {
 
   it should "work with multiple ResultItems at a time" in {
     val config = ExtractorEngine.defaultConfig
-    val state = SqlState(config, null)
+    val state = SqlState(config, null, None)
     val random = new Random(13)
 
     1.to(20).foreach { index => // Do this many tests.
@@ -278,7 +274,8 @@ class TestSqlState extends OdinsonTest {
                 scoreDoc.segmentDocId,
                 scoreDoc.segmentDocBase,
                 nullIdGetter,
-                resultName
+                resultName,
+                None
               )
             }
           }
@@ -286,7 +283,7 @@ class TestSqlState extends OdinsonTest {
       val resultItems2 = {
         odinResultses.zip(docBasesAndIdsAndLabels) foreach { case (odinResults, (_, _, label)) =>
           val mentionsIterator =
-            new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter)
+            new MentionsIterator(Some(label), Some(resultName), odinResults, mruIdGetter, None)
 
           state.addMentions(mentionsIterator)
         }
@@ -321,7 +318,7 @@ class TestSqlState extends OdinsonTest {
 
     file.delete()
     file.exists should be(false)
-    val state = SqlState(config, null)
+    val state = SqlState(config, null, None)
     state.close()
     file.exists should be(true)
     file.delete()

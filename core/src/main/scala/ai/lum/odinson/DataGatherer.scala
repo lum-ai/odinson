@@ -1,16 +1,18 @@
 package ai.lum.odinson
 
+import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.OdinsonScoreDoc
+import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonScoreDoc}
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.store.Directory
 
-class DataGatherer(indexSearcher: IndexSearcher, val displayField: String, indexSettings: IndexSettings) {
+class DataGatherer(val indexSearcher: OdinsonIndexSearcher, val displayField: String, indexSettings: IndexSettings) {
 
   val analyzer = new WhitespaceAnalyzer()
 
   val storedFields = indexSettings.storedFields
+
 
   @deprecated(
     message =
@@ -83,8 +85,33 @@ class DataGatherer(indexSearcher: IndexSearcher, val displayField: String, index
     TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
   }
 
+  def fieldsToInclude(level: VerboseLevels.Verbosity = VerboseLevels.Display): Seq[String] = {
+    // Determine which fields to include, given the specified level of verbosity
+    // Note that since we already checked the validity of verbose and engine,
+    // calling `get` here on the engine should not be a problem.
+    level match {
+      case VerboseLevels.Minimal => Seq.empty
+      case VerboseLevels.Display => Seq(displayField)
+      case VerboseLevels.All     => storedFields
+    }
+  }
 }
 
 object DataGatherer {
 
+  def apply(indexSearcher: OdinsonIndexSearcher, displayField: String, indexDir: Directory): DataGatherer = {
+    new DataGatherer(indexSearcher, displayField, IndexSettings.fromDirectory(indexDir))
+  }
+
+  // Enum to handle the supported levels of verbosity of Mentions.
+  //  - Minimal:  No additional text included
+  //  - Display:  Display field included
+  //  - All:      All stored fields included
+  object VerboseLevels extends Enumeration {
+    type Verbosity = Value
+
+    // Default ordering is in order provided
+    val Minimal, Display, All = Value
+
+  }
 }

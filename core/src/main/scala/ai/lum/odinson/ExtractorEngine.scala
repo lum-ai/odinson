@@ -2,25 +2,23 @@ package ai.lum.odinson
 
 import java.io.File
 
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{
-  BooleanClause => LuceneBooleanClause,
-  BooleanQuery => LuceneBooleanQuery
-}
-import org.apache.lucene.store.{ Directory, FSDirectory }
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
+import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
+import ai.lum.odinson.DataGatherer.VerboseLevels
+import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{ MockState, State }
+import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.utils.{ IndexSettings, MostRecentlyUsed }
+import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 import scala.collection.mutable.ArrayBuffer
@@ -493,6 +491,23 @@ class ExtractorEngine private (
     } yield mention
   }
 
+  // Attach the document and mention annotations to the Mention
+  def populateMentions(ms: Seq[Mention], level: Verbosity): Unit = {
+    ms.map(_.populateFields(level))
+  }
+
+  def extractAndPopulate(
+    extractors: Seq[Extractor],
+    numSentences: Int = numDocs(),
+    allowTriggerOverlaps: Boolean = false,
+    disableMatchSelector: Boolean = false,
+    level: Verbosity = VerboseLevels.Display
+  ): Seq[Mention] =
+  {
+    val mentions = extractMentions(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector).toSeq
+    populateMentions(mentions, level)
+    mentions
+  }
 
   // Methods to access DataGatherer
   @deprecated(
@@ -588,12 +603,11 @@ object ExtractorEngine {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
     val displayField = config[String]("odinson.displayField")
-    val indexSettings = IndexSettings.fromDirectory(indexDir)
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    val dataGatherer = new DataGatherer(indexSearcher, displayField, indexSettings)
+    val dataGatherer = DataGatherer(indexSearcher, displayField, indexDir)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val state = State(config, indexSearcher)
+    val state = State(config, indexSearcher, indexDir)
     val parentDocIdField = config[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,

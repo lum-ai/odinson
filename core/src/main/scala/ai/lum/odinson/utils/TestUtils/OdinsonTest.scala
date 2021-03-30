@@ -324,22 +324,20 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param m
     * @param desiredMentionText the text that the Mention should consist of (for events, this is the trigger)
     * @param desiredArgs  the Arguments that should be found in the event
-    * @param engine ExtractorEngine
     */
   def testMention(
     m: Mention,
     desiredMentionText: String,
     desiredArgs: Seq[Argument],
-    engine: ExtractorEngine
   ): Unit = {
     // Check that the trigger is as desired
-    engine.getStringForSpan(m.luceneDocId, m.odinsonMatch) shouldEqual (desiredMentionText)
+    m.text shouldEqual (desiredMentionText)
 
     // extract match arguments from the mathing objects
     val matchArgs = for {
       (argName, argMentions) <- m.arguments
       mention <- argMentions
-    } yield Argument(argName, engine.getStringForSpan(m.luceneDocId, mention.odinsonMatch))
+    } yield Argument(argName, mention.text)
 
     // all desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)

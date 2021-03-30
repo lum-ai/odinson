@@ -202,7 +202,7 @@ class TestEvents extends OdinsonTest {
       disableMatchSelector: Boolean
     ): OdinResults = {
       val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
-      val odinMentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
+      val odinMentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter, Some(ee.dataGatherer))
 
       ee.state.addMentions(odinMentionsIterator)
       odinResults

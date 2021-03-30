@@ -1,7 +1,7 @@
 package ai.lum.odinson.serialization
 
+import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson._
-import ai.lum.odinson.serialization.JsonSerializer._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
@@ -11,7 +11,7 @@ class JsonSerializer(
   dataGathererOpt: Option[DataGatherer] = None
 ) {
 
-  // Ensure a valid verbosity level and compatible engine
+  // Ensure a valid verbosity level and compatible dataGatherer
   checkDataGatherer(verbose, dataGathererOpt)
 
   // Json String
@@ -188,28 +188,20 @@ class JsonSerializer(
   }
 
   private def mkVerboseContent(m: Mention): Value = {
-    val json = ujson.Obj()
-    json("mention") = ujson.Obj()
-    json("document") = ujson.Obj()
-
-    // Determine which fields to include, given the specified level of verbosity
-    // Note that since we already checked the validity of verbose and engine,
-    // calling `get` here on the engine should not be a problem.
-    val fieldsToInclude = verbose match {
-      case VerboseLevels.Minimal => Seq.empty
-      case VerboseLevels.Display => Seq(dataGathererOpt.get.displayField)
-      case VerboseLevels.All     => dataGathererOpt.get.storedFields
+    // Check that the mention is populated at the desired level
+    if (!m.hasFieldsPopulated(verbose)) {
+      m.populateFields(verbose, dataGathererOpt)
     }
 
-    // Retrieve the tokens for each included field
-    for (field <- fieldsToInclude) {
-      val mentionTokens = dataGathererOpt.get.getTokensForSpan(m, field)
-      json("mention")(field) = mentionTokens.toSeq
-      val documentTokens = dataGathererOpt.get.getTokens(m.luceneDocId, field)
-      json("document")(field) = documentTokens.toSeq
-    }
-
-    json
+    val fieldsToInclude = dataGathererOpt.get.fieldsToInclude(verbose)
+    ujson.Obj(
+      "mention" -> m.mentionFields
+        .filterKeys(key => fieldsToInclude.contains(key))
+        .mapValues(_.toSeq),
+      "document" -> m.documentFields
+        .filterKeys(key => fieldsToInclude.contains(key))
+        .mapValues(_.toSeq)
+    )
   }
 
   def stringOrNull(s: Option[String]): Value = {
@@ -277,7 +269,8 @@ class JsonSerializer(
       luceneSegmentDocBase,
       idGetter,
       foundBy,
-      arguments
+      arguments,
+      dataGathererOpt
     )
   }
 
@@ -388,21 +381,6 @@ class JsonSerializer(
         "Cannot request verbose serialization without providing an ExtractorEngine."
       )
     }
-  }
-
-}
-
-object JsonSerializer {
-
-  // Enum to handle the supported levels of verbosity of Mentions.
-  //  - Minimal:  No additional text included
-  //  - Display:  Display field included
-  //  - All:      All stored fields included
-  object VerboseLevels extends Enumeration {
-    type Verbosity = Value
-
-    val Minimal, Display, All = Value
-
   }
 
 }
