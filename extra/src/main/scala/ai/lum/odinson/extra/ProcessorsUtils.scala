@@ -2,12 +2,18 @@ package ai.lum.odinson.extra
 
 import java.util.UUID
 
-import org.clulab.processors.{ Document => ProcessorsDocument, Sentence => ProcessorsSentence }
+import org.clulab.processors.{
+  Processor,
+  Document => ProcessorsDocument,
+  Sentence => ProcessorsSentence
+}
 import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence, _ }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import edu.cmu.dynet.Initialize
 import org.clulab.dynet.DyNetSync
+import org.clulab.processors.clu.CluProcessor
+import org.clulab.processors.fastnlp.FastNLPProcessor
 import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.collection.mutable
@@ -28,6 +34,19 @@ object ProcessorsUtils {
   val entityTokenField  = config[String]("odinson.index.entityTokenField")
   val dependenciesField = config[String]("odinson.index.dependenciesField")
   // format: on
+
+  def getProcessor(processorType: String): Processor = {
+    processorType match {
+      case "FastNLPProcessor" => {
+        initializeDyNet()
+        new FastNLPProcessor
+      }
+      case "CluProcessor" => {
+        initializeDyNet()
+        new CluProcessor
+      }
+    }
+  }
 
   /** convert processors document to odinson document */
   def convertDocument(d: ProcessorsDocument): OdinsonDocument = {
