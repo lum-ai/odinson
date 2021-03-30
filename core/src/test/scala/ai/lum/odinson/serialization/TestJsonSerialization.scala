@@ -27,13 +27,13 @@ class TestJsonSerialization extends OdinsonTest {
   val mentions = engine.extractNoState(extractors).toArray
 
   val jsonSerializer =
-    new JsonSerializer(verbose = VerboseLevels.Minimal, indent = 4, engine = Some(engine))
+    new JsonSerializer(verbose = VerboseLevels.Minimal, indent = 4, dataGathererOpt = Some(engine.dataGatherer))
 
   val displaySerializer =
-    new JsonSerializer(verbose = VerboseLevels.Display, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(verbose = VerboseLevels.Display, indent = 4, dataGathererOpt = Some(verboseEngine.dataGatherer))
 
   val allSerializer =
-    new JsonSerializer(verbose = VerboseLevels.All, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(verbose = VerboseLevels.All, indent = 4, dataGathererOpt = Some(verboseEngine.dataGatherer))
 
   "JsonSerializer" should "handle NGramMentions" in {
     val m = getSingleMentionFromRule(mentions, "NGram")

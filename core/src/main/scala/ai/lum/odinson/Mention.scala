@@ -8,7 +8,8 @@ class Mention(
   val luceneSegmentDocBase: Int,
   val idGetter: IdGetter,
   val foundBy: String,
-  val arguments: Map[String, Array[Mention]] = Map.empty
+  val arguments: Map[String, Array[Mention]] = Map.empty,
+  dataGathererOpt: Option[DataGatherer]
 ) {
 
   def this(
@@ -18,7 +19,8 @@ class Mention(
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
     idGetter: IdGetter,
-    foundBy: String
+    foundBy: String,
+    dataGathererOpt: Option[DataGatherer]
   ) = {
     this(
       odinsonMatch,
@@ -35,8 +37,10 @@ class Mention(
         luceneSegmentDocId,
         luceneSegmentDocBase,
         idGetter,
-        foundBy
-      )
+        foundBy,
+        dataGathererOpt
+      ),
+      dataGathererOpt: Option[DataGatherer]
     )
   }
 
@@ -52,7 +56,8 @@ class Mention(
     luceneSegmentDocBase: Int = this.luceneSegmentDocBase,
     idGetter: IdGetter = this.idGetter,
     foundBy: String = this.foundBy,
-    arguments: Map[String, Array[Mention]] = this.arguments
+    arguments: Map[String, Array[Mention]] = this.arguments,
+    dataGathererOpt: Option[DataGatherer] = this.dataGathererOpt
   ): Mention = {
     new Mention(
       odinsonMatch,
@@ -62,7 +67,8 @@ class Mention(
       luceneSegmentDocBase,
       idGetter,
       foundBy,
-      arguments
+      arguments,
+      dataGathererOpt
     )
   }
 
@@ -83,7 +89,8 @@ object Mention {
     luceneSegmentDocId: Int,
     luceneSegmentDocBase: Int,
     idGetter: IdGetter,
-    foundBy: String
+    foundBy: String,
+    dataGathererOpt: Option[DataGatherer]
   ): Map[String, Array[Mention]] = {
     odinsonMatch
       .namedCaptures
@@ -102,7 +109,8 @@ object Mention {
             // we mark the captures as matched by the same rule as the whole match
             // todo: FoundBy handler
             // todo: add foundBy info to state somehow
-            foundBy
+            foundBy,
+            dataGathererOpt
           )
         }
       }

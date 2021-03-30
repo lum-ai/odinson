@@ -8,11 +8,11 @@ import ujson.Value
 class JsonSerializer(
   verbose: VerboseLevels.Verbosity = VerboseLevels.Minimal,
   indent: Int = 4,
-  engine: Option[ExtractorEngine] = None
+  dataGathererOpt: Option[DataGatherer] = None
 ) {
 
   // Ensure a valid verbosity level and compatible engine
-  checkEngine(verbose, engine)
+  checkDataGatherer(verbose, dataGathererOpt)
 
   // Json String
 
@@ -197,15 +197,15 @@ class JsonSerializer(
     // calling `get` here on the engine should not be a problem.
     val fieldsToInclude = verbose match {
       case VerboseLevels.Minimal => Seq.empty
-      case VerboseLevels.Display => Seq(engine.get.displayField)
-      case VerboseLevels.All     => engine.get.indexSettings.storedFields
+      case VerboseLevels.Display => Seq(dataGathererOpt.get.displayField)
+      case VerboseLevels.All     => dataGathererOpt.get.storedFields
     }
 
     // Retrieve the tokens for each included field
     for (field <- fieldsToInclude) {
-      val mentionTokens = engine.get.getTokensForSpan(m, field)
+      val mentionTokens = dataGathererOpt.get.getTokensForSpan(m, field)
       json("mention")(field) = mentionTokens.toSeq
-      val documentTokens = engine.get.getTokens(m.luceneDocId, field)
+      val documentTokens = dataGathererOpt.get.getTokens(m.luceneDocId, field)
       json("document")(field) = documentTokens.toSeq
     }
 
@@ -382,8 +382,8 @@ class JsonSerializer(
   //        HELPER METHODS
   // -------------------------------------
 
-  def checkEngine(verbose: VerboseLevels.Verbosity, engine: Option[ExtractorEngine]): Unit = {
-    if (verbose != VerboseLevels.Minimal && engine.isEmpty) {
+  def checkDataGatherer(verbose: VerboseLevels.Verbosity, dataGathererOpt: Option[DataGatherer]): Unit = {
+    if (verbose != VerboseLevels.Minimal && dataGathererOpt.isEmpty) {
       throw new OdinsonException(
         "Cannot request verbose serialization without providing an ExtractorEngine."
       )

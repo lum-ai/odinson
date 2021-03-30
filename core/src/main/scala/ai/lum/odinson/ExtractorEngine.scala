@@ -17,7 +17,6 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
@@ -29,14 +28,13 @@ import scala.collection.mutable.ArrayBuffer
 class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
-  val displayField: String,
-  val indexSettings: IndexSettings,
+  val dataGatherer: DataGatherer,
   val state: State, // todo: should this be private?
   val parentDocIdField: String
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
-  val analyzer = new WhitespaceAnalyzer()
+  val analyzer = dataGatherer.analyzer
 
   val indexReader = indexSearcher.getIndexReader()
 
@@ -265,7 +263,7 @@ class ExtractorEngine private (
     mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
   ): Iterator[Mention] = {
     val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
-    new MentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
+    new MentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter, Some(dataGatherer))
   }
 
   /** Execute all rules in a grammar without populating the state.
@@ -495,76 +493,38 @@ class ExtractorEngine private (
     } yield mention
   }
 
+
+  // Methods to access DataGatherer
   @deprecated(
     message =
       "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.",
     since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
-  def getString(docID: Int, m: OdinsonMatch): String = {
-    getTokens(docID, m).mkString(" ")
-  }
-
-  def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
-    getTokensForSpan(docID, m).mkString(" ")
-  }
-
-  def getArgument(mention: Mention, name: String): String = {
-    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
-  }
-
+  def getString(docID: Int, m: OdinsonMatch): String = dataGatherer.getString(docID, m)
+  def getStringForSpan(docID: Int, m: OdinsonMatch): String = dataGatherer.getStringForSpan(docID, m)
+  def getArgument(mention: Mention, name: String): String = dataGatherer.getArgument(mention, name)
   @deprecated(
     message =
       "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.",
     since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
-  def getTokens(m: Mention): Array[String] = {
-    getTokens(m.luceneDocId, m.odinsonMatch)
-  }
-
-  def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
-  }
-
-  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokensForSpan(docID, displayField, m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
-    getTokensForSpan(docID, fieldName, m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = {
-    getTokensForSpan(docID, displayField, start, end)
-  }
-
-  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
-    getTokens(docID, fieldName).slice(start, end)
-  }
-
+  def getTokens(m: Mention): Array[String] = dataGatherer.getTokens(m)
+  def getTokensForSpan(m: Mention): Array[String] = dataGatherer.getTokensForSpan(m)
+  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = dataGatherer.getTokensForSpan(m, fieldName)
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = dataGatherer.getTokensForSpan(docID, m)
+  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = dataGatherer.getTokensForSpan(docID, m, fieldName)
+  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = dataGatherer.getTokensForSpan(docID, start, end)
+  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = dataGatherer.getTokensForSpan(docID, fieldName, start, end)
   @deprecated(
     message =
       "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.",
     since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
   )
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokens(docID, displayField).slice(m.start, m.end)
-  }
+  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = dataGatherer.getTokens(docID, m)
+  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = dataGatherer.getTokens(scoreDoc)
+  def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = dataGatherer.getTokens(scoreDoc, fieldName)
+  def getTokens(docID: Int, fieldName: String): Array[String] = dataGatherer.getTokens(docID, fieldName)
 
-  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
-    getTokens(scoreDoc.doc, displayField)
-  }
-
-  def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
-    getTokens(scoreDoc.doc, fieldName)
-  }
-
-  def getTokens(docID: Int, fieldName: String): Array[String] = {
-    TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
-  }
 
   /** Close the open resources.
     */
@@ -628,17 +588,17 @@ object ExtractorEngine {
     val indexReader = DirectoryReader.open(indexDir)
     val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
     val displayField = config[String]("odinson.displayField")
-    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    val vocabulary = Vocabulary.fromDirectory(indexDir)
     val indexSettings = IndexSettings.fromDirectory(indexDir)
+    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
+    val dataGatherer = new DataGatherer(indexSearcher, displayField, indexSettings)
+    val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher)
     val parentDocIdField = config[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
-      displayField,
-      indexSettings,
+      dataGatherer,
       state,
       parentDocIdField
     )

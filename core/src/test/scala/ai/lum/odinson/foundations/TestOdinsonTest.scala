@@ -60,7 +60,7 @@ class TestOdinsonTest extends OdinsonTest {
         ),
       doc
     )
-    eeFoobar.displayField should equal("foobar")
+    eeFoobar.dataGatherer.displayField should equal("foobar")
   }
 
   it should "getMentionsFromRule" in {

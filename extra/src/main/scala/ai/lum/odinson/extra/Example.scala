@@ -56,7 +56,7 @@ object Example extends App with LazyLogging {
   // Export Mentions (here as json lines)
   val jsonSerializer = {
     // can choose several levels of verbosity: Minimal, Display, and All
-    new JsonSerializer(verbose = Display, engine = Some(extractorEngine))
+    new JsonSerializer(verbose = Display, dataGathererOpt = Some(extractorEngine.dataGatherer))
   }
 
   val serialized = jsonSerializer.asJsonLines(mentions)
