@@ -2,7 +2,7 @@ package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonScoreDoc}
+import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonScoreDoc }
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.store.Directory
@@ -11,12 +11,15 @@ import org.apache.lucene.store.Directory
 // TODO: Deps
 // TODO: Parent MetaData
 
-class DataGatherer(val indexSearcher: OdinsonIndexSearcher, val displayField: String, indexSettings: IndexSettings) {
+class DataGatherer(
+  val indexSearcher: OdinsonIndexSearcher,
+  val displayField: String,
+  indexSettings: IndexSettings
+) {
 
   val analyzer = new WhitespaceAnalyzer()
 
   val storedFields = indexSettings.storedFields
-
 
   @deprecated(
     message =
@@ -99,11 +102,16 @@ class DataGatherer(val indexSearcher: OdinsonIndexSearcher, val displayField: St
       case VerboseLevels.All     => storedFields
     }
   }
+
 }
 
 object DataGatherer {
 
-  def apply(indexSearcher: OdinsonIndexSearcher, displayField: String, indexDir: Directory): DataGatherer = {
+  def apply(
+    indexSearcher: OdinsonIndexSearcher,
+    displayField: String,
+    indexDir: Directory
+  ): DataGatherer = {
     new DataGatherer(indexSearcher, displayField, IndexSettings.fromDirectory(indexDir))
   }
 
@@ -118,4 +126,5 @@ object DataGatherer {
     val Minimal, Display, All = Value
 
   }
+
 }

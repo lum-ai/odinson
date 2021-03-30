@@ -328,7 +328,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   def testMention(
     m: Mention,
     desiredMentionText: String,
-    desiredArgs: Seq[Argument],
+    desiredArgs: Seq[Argument]
   ): Unit = {
     // Check that the trigger is as desired
     m.text shouldEqual (desiredMentionText)

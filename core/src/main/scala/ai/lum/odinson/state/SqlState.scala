@@ -11,9 +11,17 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import ai.lum.odinson.utils.IndexSettings
-import ai.lum.odinson.{DataGatherer, IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{
+  DataGatherer,
+  IdGetter,
+  LazyIdGetter,
+  Mention,
+  NamedCapture,
+  OdinsonMatch,
+  StateMatch
+}
 import com.typesafe.config.Config
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.store.Directory
 
@@ -148,13 +156,13 @@ object SqlResultItem {
 
 // See https://dzone.com/articles/jdbc-what-resources-you-have about closing things.
 class SqlState protected (
-   val connection: Connection,
-   protected val factoryIndex: Long,
-   protected val stateIndex: Long,
-   val persistOnClose: Boolean = false,
-   val persistFile: Option[File] = None,
-   indexSearcher: OdinsonIndexSearcher,
-   dataGathererOpt: Option[DataGatherer]
+  val connection: Connection,
+  protected val factoryIndex: Long,
+  protected val stateIndex: Long,
+  val persistOnClose: Boolean = false,
+  val persistFile: Option[File] = None,
+  indexSearcher: OdinsonIndexSearcher,
+  dataGathererOpt: Option[DataGatherer]
 ) extends State {
 
   if (persistOnClose) require(persistFile.isDefined)
@@ -315,7 +323,14 @@ class SqlState protected (
         readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
-          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, idGetter, dataGathererOpt)
+          mentions += SqlResultItem.fromReadNodes(
+            docBase,
+            docId,
+            Some(label),
+            readNodes,
+            idGetter,
+            dataGathererOpt
+          )
           readNodes.clear()
         }
       }
@@ -377,7 +392,11 @@ class SqlState protected (
 object SqlState {
   protected var count: AtomicLong = new AtomicLong
 
-  def apply(config: Config, indexSearcher: OdinsonIndexSearcher, indexDirOpt: Option[Directory]): SqlState = {
+  def apply(
+    config: Config,
+    indexSearcher: OdinsonIndexSearcher,
+    indexDirOpt: Option[Directory]
+  ): SqlState = {
     val persistOnClose = config[Boolean]("odinson.state.sql.persistOnClose")
     val stateFile = config.get[File]("odinson.state.sql.persistFile")
     val jdbcUrl = config[String]("odinson.state.sql.url")
@@ -396,7 +415,8 @@ object SqlState {
     }
 
     val displayField = config[String]("odinson.displayField")
-    val dataGathererOpt = indexDirOpt.map(indexDir => DataGatherer(indexSearcher, displayField, indexDir))
+    val dataGathererOpt =
+      indexDirOpt.map(indexDir => DataGatherer(indexSearcher, displayField, indexDir))
 
     new SqlState(
       dataSource.getConnection,

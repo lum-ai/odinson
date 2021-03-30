@@ -375,7 +375,10 @@ class JsonSerializer(
   //        HELPER METHODS
   // -------------------------------------
 
-  def checkDataGatherer(verbose: VerboseLevels.Verbosity, dataGathererOpt: Option[DataGatherer]): Unit = {
+  def checkDataGatherer(
+    verbose: VerboseLevels.Verbosity,
+    dataGathererOpt: Option[DataGatherer]
+  ): Unit = {
     if (verbose != VerboseLevels.Minimal && dataGathererOpt.isEmpty) {
       throw new OdinsonException(
         "Cannot request verbose serialization without providing an ExtractorEngine."

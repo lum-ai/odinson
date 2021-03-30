@@ -66,8 +66,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "getMentionsFromRule" in {
 
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     // def getSingleMentionFromRule(ms: Seq[Mention], rulename: String): Mention = {
@@ -86,8 +88,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "get mentions with given label" in {
     //def getMentionsWithLabel(ms: Seq[Mention], label: String): Seq[Mention] = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     getMentionsWithLabel(mentions, "foobar") should contain theSameElementsAs (Seq(m1, m2))
@@ -95,8 +99,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "get mentions with string value" in {
     //def getMentionsWithStringValue(ms: Seq[Mention], s: String, engine: ExtractorEngine): Seq[Mention] = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     getMentionsWithStringValue(mentions, "foobar", ee) shouldBe empty
@@ -105,8 +111,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "determine if two mentions are equal" in {
     //def mentionsShouldBeEqual(a: Mention, b: Mention): Boolean = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
 
     mentionsShouldBeEqual(m1, m1) should be(true)
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy mentionsShouldBeEqual(
@@ -242,7 +250,8 @@ class TestOdinsonTest extends OdinsonTest {
   it should "test mention contents" in {
     //def testMention(m: Mention, desiredMentionText: String, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
     // non event without args
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
     m1.populateFields()
     noException should be thrownBy testMention(m1, "ramen", Seq())
 
@@ -294,7 +303,7 @@ class TestOdinsonTest extends OdinsonTest {
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "John",
-      Seq(),
+      Seq()
     )
 
     // event, with multiple args
@@ -311,19 +320,19 @@ class TestOdinsonTest extends OdinsonTest {
     noException should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "ramen"), Argument("food", "chopsticks")),
+      Seq(Argument("food", "ramen"), Argument("food", "chopsticks"))
     )
     // diff order of args provided
     noException should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "chopsticks"), Argument("food", "ramen")),
+      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"))
     )
     // repeated
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"), Argument("food", "ramen")),
+      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"), Argument("food", "ramen"))
     )
   }
 

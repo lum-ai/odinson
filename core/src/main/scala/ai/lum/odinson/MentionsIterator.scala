@@ -66,7 +66,8 @@ object MentionsIterator {
     odinResults: OdinResults,
     mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter],
     dataGathererOpt: Option[DataGatherer]
-  ): MentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter, dataGathererOpt)
+  ): MentionsIterator =
+    new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter, dataGathererOpt)
 
   def concatenate(iterators: Seq[Iterator[Mention]]): Iterator[Mention] = {
     iterators.foldLeft(emptyMentionIterator)(_ ++ _)

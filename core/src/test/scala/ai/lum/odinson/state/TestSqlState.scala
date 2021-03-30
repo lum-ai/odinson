@@ -2,7 +2,15 @@ package ai.lum.odinson.state
 
 import java.io.File
 
-import ai.lum.odinson.{DataGatherer, ExtractorEngine, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
+import ai.lum.odinson.{
+  DataGatherer,
+  ExtractorEngine,
+  Mention,
+  MentionsIterator,
+  NamedCapture,
+  OdinsonMatch,
+  StateMatch
+}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.TestUtils

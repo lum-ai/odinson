@@ -58,6 +58,7 @@ class Mention(
 
   /** Token start offset, inclusive */
   def start: Int = odinsonMatch.start
+
   /** Token end offset, exclusive */
   def end: Int = odinsonMatch.end
 
@@ -70,31 +71,37 @@ class Mention(
 
   def documentFields: Map[String, Array[String]] = _documentFields
   def mentionFields: Map[String, Array[String]] = _mentionFields
+
   def text: String = _text match {
     case noTxt if noTxt.isEmpty => throw new OdinsonException("Mention has not yet been populated")
-    case txt => txt.get
+    case txt                    => txt.get
   }
 
   def hasFieldsPopulated(level: VerboseLevels.Verbosity): Boolean = _verbosity >= level
 
   private def getTokens(field: String): Array[String] = {
-    if (!mentionFields.contains(field)) throw new OdinsonException(s"Unable to get field: [${field}], Mention was not populated")
+    if (!mentionFields.contains(field))
+      throw new OdinsonException(s"Unable to get field: [${field}], Mention was not populated")
     _mentionFields(field)
   }
 
-  /**
-    * Populate the mention with the annotations stored in the index and the provided DataGatherer
+  /** Populate the mention with the annotations stored in the index and the provided DataGatherer
     * @param level The level of population desired (all or some of the fields)
     * @param localDG The data gatherer to be used in populating the mentions
     * @return success
     */
-  def populateFields(level: VerboseLevels.Verbosity = VerboseLevels.Display, localDG: Option[DataGatherer] = dataGathererOpt): Boolean = {
+  def populateFields(
+    level: VerboseLevels.Verbosity = VerboseLevels.Display,
+    localDG: Option[DataGatherer] = dataGathererOpt
+  ): Boolean = {
     // Don't repopulate if it's already there.
     if (hasFieldsPopulated(level)) return true
 
     // Nothing was populated
     if (level == VerboseLevels.Minimal) {
-      logger.warn("Calling `populateFields` with a verbosity of VerboseLevels.Minimal does not populate anything.")
+      logger.warn(
+        "Calling `populateFields` with a verbosity of VerboseLevels.Minimal does not populate anything."
+      )
       return false
     }
 
