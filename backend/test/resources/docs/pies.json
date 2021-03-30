@@ -2,19 +2,19 @@
   "id": "tp-pies",
   "metadata": [
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "show",
-      "string": "Twin Peaks"
+      "tokens": ["Twin", "Peaks"]
     },
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "actor",
-      "string": "Kyle MacLachlan"
+      "tokens": ["Kyle", "MacLachlan"]
     },
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "character",
-      "string": "Special Agent Dale Cooper"
+      "tokens": ["Special", "Agent", "Dale", "Cooper"]
     }
   ],
   "sentences": [

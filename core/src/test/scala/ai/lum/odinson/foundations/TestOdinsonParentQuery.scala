@@ -56,4 +56,22 @@ class TestOdinsonParentQuery extends OdinsonTest {
     res.scoreDocs should have length 1
   }
 
+  it should "return results when pattern succeeds and exact string match parent query succeeds" in {
+    val pattern: String = "[lemma=pie]"
+    val parentQuery: String = """character: "Special Agent Dale Cooper""""
+    val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
+    val res: OdinResults = ee.query(odinsonQuery)
+    res.totalHits shouldBe 1
+    res.scoreDocs should have length 1
+  }
+
+  it should "return results when exact pattern succeeds and a two-field exact string match parent query succeeds" in {
+    val pattern: String = "[lemma=pie]"
+    val parentQuery: String = """character: "Special Agent Dale Cooper" AND show: "Twin Peaks""""
+    val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
+    val res: OdinResults = ee.query(odinsonQuery)
+    res.totalHits shouldBe 1
+    res.scoreDocs should have length 1
+  }
+
 }

@@ -2,24 +2,24 @@
   "id": "tp-briggs",
   "metadata": [
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "show",
-      "string": "Twin Peaks"
+      "tokens": ["Twin", "Peaks"]
     },
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "actor",
-      "string": "Don S. Davis"
+      "tokens": ["Don", "S.", "Davis"]
     },
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "character",
-      "string": "Major Garland Briggs"
+      "tokens": ["Major", "Garland", "Briggs"]
     },
     {
-      "$type": "ai.lum.odinson.StringField",
+      "$type": "ai.lum.odinson.TokensField",
       "name": "title",
-      "string": "May the Giant Be with You"
+      "tokens": ["May", "the", "Giant", "Be", "with", "You"]
     }
   ],
   "sentences": [
