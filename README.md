@@ -27,6 +27,13 @@ Again, please see [our documentation](http://gh.lum.ai/odinson/), for more infor
 
 We would also love to hear any questions, requests, or suggestions you may have.
 
+## Contributions
 
+If you would like to contribute to this project with code, rule sets, or other repo material, that's awesome!  Please do!  Some of these materials will help you get started:
 
+- There is a [document](http://gh.lum.ai/odinson/contributing.html) covering some of the technical issues related to contributing like the [Pull Request Process](http://gh.lum.ai/odinson/contributing.html#pull-request-process) and [Formatting Tips](http://gh.lum.ai/odinson/contributing.html#formatting-tips).
+- We do ask you to be nice and spell that out in a [Covenant Code of Conduct](http://gh.lum.ai/odinson/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us.
+- Some legal issues are involved and you should know about them up front.  We wouldn't want to accept contributions that aren't yours to give and you wouldn't want to lose the rights to things that you have shared.  To ensure that nothing of the sort happens, there is a [Contributor Licence Agreement (CLA)](https://gist.github.com/kwalcock/df2baf6f89278c0b550d8089acdcc14d) that will need to be signed before a pull request is accepted.  Please take a look at it before you get too far, just in case.
+
+Thanks for your interest in Odinson!
 
