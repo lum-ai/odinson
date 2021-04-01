@@ -33,7 +33,7 @@ If you would like to contribute to this project with code, rule sets, or other r
 
 - There is a [document](http://gh.lum.ai/odinson/contributing.html) covering some of the technical issues related to contributing like the [Pull Request Process](http://gh.lum.ai/odinson/contributing.html#pull-request-process) and [Formatting Tips](http://gh.lum.ai/odinson/contributing.html#formatting-tips).
 - We do ask you to be nice and spell that out in a [Covenant Code of Conduct](http://gh.lum.ai/odinson/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us.
-- Some legal issues are involved and you should know about them up front.  We wouldn't want to accept contributions that aren't yours to give and you wouldn't want to lose the rights to things that you have shared.  To ensure that nothing of the sort happens, there is a [Contributor Licence Agreement (CLA)](https://gist.github.com/kwalcock/df2baf6f89278c0b550d8089acdcc14d) that will need to be signed before a pull request is accepted.  Please take a look at it before you get too far, just in case.
+- Please ensure the contributions you propose are yours to give and you are comfortable with the shared rights.  There is a [Contributor License Agreement (CLA)](https://gist.github.com/kwalcock/df2baf6f89278c0b550d8089acdcc14d) that you will sign before a pull request is accepted so there are no surprises for any of us.  Please take a look at the CLA before you get too far, just in case, as there are legal ramifications.
 
 Thanks for your interest in Odinson!
 
