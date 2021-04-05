@@ -32,8 +32,8 @@ We would also love to hear any questions, requests, or suggestions you may have.
 If you would like to contribute to this project with code, rule sets, or other repo material, that's awesome!  Please do!  Some of these materials will help you get started:
 
 - There is a [document](http://gh.lum.ai/odinson/contributing.html) covering some of the technical issues related to contributing like the [Pull Request Process](http://gh.lum.ai/odinson/contributing.html#pull-request-process) and [Formatting Tips](http://gh.lum.ai/odinson/contributing.html#formatting-tips).
-- We do ask you to be nice, and we spell that out in a [Covenant Code of Conduct](http://gh.lum.ai/odinson/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us.
-- Please ensure the contributions you propose are yours to give and you are comfortable with the shared rights.  There is a [Contributor License Agreement (CLA)](https://gist.github.com/kwalcock/df2baf6f89278c0b550d8089acdcc14d) that you will sign before a pull request is accepted so there are no surprises for any of us.  Please take a look at the CLA before you get too far, just in case, as there are legal ramifications.
+- We do ask you to be nice, and we spell that out in a [Covenant Code of Conduct](http://gh.lum.ai/odinson/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us. :)
+- We ask that all contributors sign a [Contributor License Agreement (CLA)](https://gist.github.com/kwalcock/df2baf6f89278c0b550d8089acdcc14d) before a pull request is accepted.  This is common practice in many open-source projects (e.g., Apache, Lightbend, Python), and it is meant to clarify intellectual property rights.  In fact we use essentially the same CLA as Apache, with only minor changes, but please read it for yourself to make sure you agree.  
 
 Thanks for your interest in Odinson!
 
