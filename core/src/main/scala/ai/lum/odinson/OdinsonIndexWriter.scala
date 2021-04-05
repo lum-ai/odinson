@@ -295,8 +295,7 @@ object OdinsonIndexWriter {
       // format: off
       directory            = directory, 
       vocabulary           = vocabulary,
-      // Always store the display field, also store these additional fields
-      settings             = IndexSettings(Seq(displayField) ++ storedFields),
+      settings             = IndexSettings(storedFields),
       documentIdField      = config[String]("odinson.index.documentIdField"),
       sentenceIdField      = config[String]("odinson.index.sentenceIdField"),
       sentenceLengthField  = config[String]("odinson.index.sentenceLengthField"),
