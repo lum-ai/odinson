@@ -228,7 +228,6 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
       Helpers.contentAsString(response) must include("vision")
-      Helpers.contentAsString(response) must include("adults")
     }
 
     "respond with token-based frequencies using the /term-freq endpoint" in {
