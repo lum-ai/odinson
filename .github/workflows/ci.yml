@@ -16,10 +16,10 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Lint check via scalafmt
-      run: sbt scalafmtCheckAll
     - name: Run tests
       run: sbt coverage test
+    - name: Lint check via scalafmt
+      run: sbt scalafmtCheckAll
     - name: Coverage Report
       run: sbt coverageReport
     - name: Upload coverage to Codecov
