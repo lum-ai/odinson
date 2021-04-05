@@ -76,7 +76,8 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "not return results when pattern succeeds and one field of a two-field exact string match parent query fails (making the full parent query fail)" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String = """character: "Special Agent Dale Cooper" AND show: "Fire Walk With Me""""
+    val parentQuery: String =
+      """character: "Special Agent Dale Cooper" AND show: "Fire Walk With Me""""
     val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
