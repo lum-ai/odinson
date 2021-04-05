@@ -126,7 +126,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       val res1 = controller.runQuery(
         odinsonQuery = "[lemma=pie]",
-        parentQuery = Some("character:Major.*"),
+        parentQuery = Some("character:Maj*"),
         label = None,
         commit = None,
         prevDoc = None,

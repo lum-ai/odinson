@@ -24,7 +24,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
     // a simple Odinson pattern
     val pattern = "[lemma=pie]"
     // a query (using Lucene query syntax) that is executed against the document metadata
-    val parentQuery: String = "character:Major*"
+    val parentQuery: String = "character:Maj*"
     val odinsonQuery: OdinsonQuery = combineQueries(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
