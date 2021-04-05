@@ -5,6 +5,7 @@ import java.nio.file.Path
 
 import javax.inject._
 
+import scala.math._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 import scala.util.control.NonFatal
@@ -37,6 +38,8 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+
+import scala.annotation.tailrec
 
 @Singleton
 class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
@@ -80,18 +83,406 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
   }
 
+  /** Convenience method to determine if a string matches a given regular expression.
+    * @param s The String to be searched.
+    * @param regex The regular expression against which `s` should be compared.
+    * @return True if there's at least one match.
+    */
+  private def isMatch(s: String, regex: Option[String]): Boolean = {
+    if (regex.isEmpty) true
+    // .* is necessary
+    else {
+      val pattern = regex.get.r
+      pattern.findFirstMatchIn(s) match {
+        case Some(_) => true
+        case _       => false
+      }
+    }
+  }
+
   /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
-    *
-    * @param field raw, token, lemma, tag, etc.
+    * @param field The field to count (e.g., raw, token, lemma, tag, etc.)
+    * @param group Optional second field to condition the field counts on.
+    * @param filter Optional regular expression filter for terms within `field`
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order
+    * @param min Highest rank to return (0 is highest possible value).
+    * @param max Lowest rank to return (e.g., 9).
+    * @param scale "count" for raw frequencies (default), "log10" for log-transform, "percent" for percent of total.
+    * @param reverse Whether to reverse the order before slicing between `min` and `max` (default false).
+    * @param pretty Whether to pretty-print the JSON results.
+    * @return JSON frequency table as an array of objects.
     */
   def termFreq(
     field: String,
+    group: Option[String],
+    filter: Option[String],
     order: Option[String],
     min: Option[Int],
     max: Option[Int],
     scale: Option[String],
     reverse: Option[Boolean],
+    pretty: Option[Boolean]
+  ) = Action.async {
+    Future {
+
+      // ensure that the requested field exists in the index
+      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fieldNames = fields.iterator.asScala.toList
+      // if the field exists, find the frequencies of each term
+      if (fieldNames contains field) {
+        // find the frequency of all terms in this field
+        val terms = fields.terms(field)
+        val termsEnum = terms.iterator()
+        val termFreqs = scala.collection.mutable.HashMap[String, Long]()
+        while (termsEnum.next() != null) {
+          val term = termsEnum.term.utf8ToString
+          // apply the regex if necessary
+          if (isMatch(term, filter)) {
+            termFreqs.update(term, termsEnum.totalTermFreq)
+          }
+        }
+
+        // order the resulting frequencies as requested
+        val ordered = order match {
+          // alphabetical
+          case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
+          // frequency
+          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
+        }
+
+        // reverse if necessary
+        val reversed = reverse match {
+          case Some(true) => ordered.reverse
+          case _          => ordered
+        }
+
+        // cutoff the results to the requested ranks
+        val defaultMin = 0
+        val defaultMax = 9
+        val sliced =
+          reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+
+        // count instances of each pairing of `field` and `group` terms
+        val groupedTerms =
+          if (group.nonEmpty && fieldNames.contains(group.get)) {
+            val pairFreqs = scala.collection.mutable.HashMap[(String, String), Long]()
+
+            // this is O(awful) but will only be costly when (max - min) is large
+            val pairs = for {
+              (term1, _) <- sliced
+              odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
+              results = extractorEngine.query(odinsonQuery)
+              scoreDoc <- results.scoreDocs
+              eachMatch <- scoreDoc.matches
+              term2 = extractorEngine.getTokensForSpan(scoreDoc.doc, eachMatch, group.get).head
+            } yield (term1, term2)
+            // count instances of this pair of terms from `field` and `group`, respectively
+            pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
+          } else sliced
+
+        // order again if there's a secondary grouping variable
+        val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
+          ser match {
+            case singleTerm: String =>
+              (sliced.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
+            case (term1: String, _: String) =>
+              // find the total frequency of the term (ignoring group condition)
+              val totalFreq = sliced.find { _._1 == term1 }.get._2
+              (sliced.indexOf((term1, totalFreq)), -conditionedFreq)
+          }
+        }
+
+        // transform the frequencies as requested, preserving order
+        val scaled = scale match {
+          case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
+          case Some("percent") =>
+            val countTotal = terms.getSumTotalTermFreq
+            reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
+          case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
+        }
+
+        // rearrange data into a Seq of Maps for Jsonization
+        val jsonObjs = scaled.map { case (termGroup, freq) =>
+          termGroup match {
+            case singleTerm: String =>
+              Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
+            case (term1: String, term2: String) =>
+              Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
+          }
+        }
+
+        Json.arr(jsonObjs).format(pretty)
+      } else {
+        // the requested field isn't in this index
+        Json.obj().format(pretty)
+      }
+    }
+  }
+
+  case class RuleFreqRequest(
+    grammar: String,
+    parentQuery: Option[String] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
+    // group: Option[String] = None,
+    filter: Option[String] = None,
+    order: Option[String] = None,
+    min: Option[Int] = None,
+    max: Option[Int] = None,
+    scale: Option[String] = None,
+    reverse: Option[Boolean] = None,
+    pretty: Option[Boolean] = None
+  )
+
+  object RuleFreqRequest {
+    implicit val fmt: OFormat[RuleFreqRequest] = Json.format[RuleFreqRequest]
+    implicit val read: Reads[RuleFreqRequest] = Json.reads[RuleFreqRequest]
+  }
+
+  /** Count how many times each rule matches from the active grammar on the active dataset.
+    * @param grammar An Odinson grammar.
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
+    * @param filter Optional regular expression filter for the rule name.
+    * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order.
+    * @param min Highest rank to return (0 is highest possible value).
+    * @param max Lowest rank to return (e.g., 9).
+    * @param scale "count" for raw frequencies (default), "log10" for log-transform, "percent" for percent of total.
+    * @param reverse Whether to reverse the order before slicing between `min` and `max` (default false).
+    * @param pretty Whether to pretty-print the JSON results.
+    * @return JSON frequency table as an array of objects.
+    */
+  def ruleFreq() = Action { request =>
+    val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
+    //println(s"GrammarRequest: ${gr}")
+    val grammar = ruleFreqRequest.grammar
+    val parentQuery = ruleFreqRequest.parentQuery
+    val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
+    // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
+    // val group = gr.group
+    val filter = ruleFreqRequest.filter
+    val order = ruleFreqRequest.order
+    val min = ruleFreqRequest.min
+    val max = ruleFreqRequest.max
+    val scale = ruleFreqRequest.scale
+    val reverse = ruleFreqRequest.reverse
+    val pretty = ruleFreqRequest.pretty
+    try {
+      // rules -> OdinsonQuery
+      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
+      val composedExtractors = parentQuery match {
+        case Some(pq) =>
+          val cpq = extractorEngine.compiler.mkParentQuery(pq)
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+        case None => baseExtractors
+      }
+
+      val mentions: Seq[Mention] = {
+        val iterator = extractorEngine.extractMentions(
+          composedExtractors,
+          numSentences = extractorEngine.numDocs(),
+          allowTriggerOverlaps = allowTriggerOverlaps,
+          disableMatchSelector = false
+        )
+        iterator.toVector
+      }
+
+      val ruleFreqs = mentions
+        // rule name is all that matters
+        .map(_.foundBy)
+        // collect the instances of each rule's results
+        .groupBy(identity)
+        // filter the rules by name, if a filter was passed
+        .filter { case (ruleName, ms) => isMatch(ruleName, filter) }
+        // count how many matches for each rule
+        .map { case (k, v) => k -> v.length }
+        .toSeq
+
+      // order the resulting frequencies as requested
+      val ordered = order match {
+        // alphabetical
+        case Some("alpha") => ruleFreqs.sortBy { case (ruleName, _) => ruleName }
+        // frequency
+        case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
+      }
+
+      // reverse if necessary
+      val reversed = reverse match {
+        case Some(true) => ordered.reverse
+        case _          => ordered
+      }
+
+      val countTotal = reversed.map(_._2).sum
+
+      // cutoff the results to the requested ranks
+      val defaultMin = 0
+      val defaultMax = 9
+      val sliced =
+        reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+
+      // transform the frequencies as requested, preserving order
+      val scaled = scale match {
+        case Some("log10") => sliced map { case (rule, freq) => (rule, log10(freq)) }
+        case Some("percent") =>
+          sliced map { case (rule, freq) => (rule, freq.toDouble / countTotal) }
+        case _ => sliced.map { case (rule, freq) => (rule, freq.toDouble) }
+      }
+
+      // rearrange data into a Seq of Maps for Jsonization
+      val jsonObjs = scaled.map { case (ruleName, freq) =>
+        Json.obj("term" -> ruleName, "frequency" -> freq)
+      }
+
+      Json.arr(jsonObjs).format(pretty)
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Status(400)(json)
+    }
+  }
+
+  /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
+    * @param data The data to be binned.
+    * @param nBins The number of quantiles (e.g. 4 for quartiles).
+    * @param isContinuous True if the data is continuous (if it has been log10ed, for example)
+    * @return A sequence of quantile boundaries which should be inclusive of all data.
+    */
+  def quantiles(data: Array[Double], nBins: Int, isContinuous: Option[Boolean]): Seq[Double] = {
+    val sortedData = data.sorted
+    // quantile boundaries expressed as percentiles
+    val percentiles = (0 to nBins) map (_.toDouble / nBins)
+
+    val bounds = percentiles.foldLeft(List.empty[Double])((res, percentile) => {
+      // approximate index of this percentile
+      val i = percentile * (sortedData.length - 1)
+      // interpolate between the two values of `data` that `i` falls between
+      val lowerBound = floor(i).toInt
+      val upperBound = ceil(i).toInt
+      val fractionalPart = i - lowerBound
+      val interpolation = sortedData(lowerBound) * (1 - fractionalPart) +
+        sortedData(upperBound) * fractionalPart
+      // if data is count data, the boundaries should be on whole numbers
+      val toAdd = isContinuous match {
+        case Some(true) => interpolation
+        case _          => round(interpolation).toDouble
+      }
+      // ensure that boundaries have a reasonable width to mitigate floating point errors
+      // ensure no width-zero bins
+      if (toAdd - res.headOption.getOrElse(-1.0) > 1e-12) {
+        toAdd :: res
+      } else {
+        res
+      }
+    })
+
+    bounds.reverse
+  }
+
+  /** Count the instances of @data that fall within each consecutive pair of bounds (lower-bound inclusive).
+    * @param data The count/frequency data to be analyzed.
+    * @param bounds The boundaries that define the bins used for histogram summaries.
+    * @return The counts of `data` that fall into each bin.
+    */
+  def histify(data: List[Double], bounds: List[Double]): List[Long] = {
+    @tailrec
+    def iter(data: List[Double], bounds: List[Double], result: List[Long]): List[Long] =
+      bounds match {
+        // empty list can't be counted
+        case Nil => Nil
+        // the last item in the list -- all remaining data fall into the last bin
+        case head :: Nil => data.size :: result
+        // shave off the unallocated datapoints that fall under this boundary cutoff and count them
+        case head :: tail =>
+          val (leftward, rightward) = data.partition(_ < head)
+          iter(rightward, tail, leftward.size :: result)
+      }
+
+    iter(data, bounds, List.empty[Long]).reverse
+  }
+
+  // helper function
+  private def processCounts(
+    frequencies: List[Double],
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean]
+  ): Seq[JsObject] = {
+    // log10-transform the counts
+    val scaledFreqs = xLogScale match {
+      case Some(true) => frequencies.map(log10)
+      case _          => frequencies
+    }
+
+    val nBins: Int =
+      if (bins.getOrElse(-1) > 0) {
+        // user-provided bin count
+        bins.get
+      } else if (equalProbability.getOrElse(false)) {
+        // more bins for equal probability graph
+        ceil(2.0 * pow(scaledFreqs.length, 0.4)).toInt
+      } else {
+        // Rice rule
+        ceil(2.0 * cbrt(scaledFreqs.length)).toInt
+      }
+
+    val (max, min) = (scaledFreqs.max, scaledFreqs.min)
+
+    // the boundaries of every bin (of length nBins + 1)
+    val allBounds = equalProbability match {
+      case Some(true) =>
+        // use quantiles to equalize the probability of each bin
+        quantiles(scaledFreqs.toArray, nBins, isContinuous = xLogScale)
+
+      case _ =>
+        // use an invariant bin width
+        val rawBinWidth = (max - min) / nBins.toDouble
+        val binWidth = if (xLogScale.getOrElse(false)) rawBinWidth else round(rawBinWidth)
+        (0 until nBins).foldLeft(List(min.toDouble))((res, i) =>
+          (binWidth + res.head) :: res
+        ).reverse
+    }
+
+    // right-inclusive bounds (for counting bins)
+    val rightBounds = allBounds.tail.toList // map (_ + epsilon)
+
+    // number of each count falling into this bin
+    val binCounts = histify(scaledFreqs, rightBounds)
+    val totalCount = binCounts.sum.toDouble
+
+    // unify allBounds and binCounts to generate one JSON object per bin
+    for (i <- allBounds.init.indices) yield {
+      val width = allBounds(i + 1) - allBounds(i)
+      val x = allBounds(i)
+      val y = equalProbability match {
+        case Some(true) =>
+          // bar AREA (not height) should be proportional to the count for this bin
+          // thus it is density rather than probability or count
+          if (totalCount > 0 & width > 0) binCounts(i) / totalCount / width else 0.0
+        case _ =>
+          // report the actual count (can be scaled by UI)
+          binCounts(i).toDouble
+      }
+      Json.obj(
+        "w" -> width,
+        "x" -> x,
+        "y" -> y
+      )
+    }
+  }
+
+  /** Return coordinates defining a histogram of counts/frequencies for a given field.
+    * @param field The field to analyze, e.g. lemma.
+    * @param bins The number of bins to use for data partitioning (optional).
+    * @param equalProbability Use variable-width bins to equalize the probability of each bin (optional).
+    * @param xLogScale `log10`-transform the counts of each term (optional).
+    * @param pretty Whether to pretty-print the JSON returned by the function.
+    * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
+    */
+  def termHist(
+    field: String,
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean],
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
@@ -108,40 +499,92 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
           val term = termsEnum.term.utf8ToString
           termFreqs.update(term, termsEnum.totalTermFreq)
         }
+        val frequencies = termFreqs.values.toList.map(_.toDouble)
 
-        // order the resulting frequencies as requested
-        val ordered = order match {
-          // alphabetical
-          case Some("alpha") => termFreqs.toSeq.sortBy { case (term, _) => term }
-          // alphabetical
-          case _ => termFreqs.toSeq.sortBy { case (term, freq) => (-freq, term) }
-        }
+        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
-        // reverse if necessary
-        val reversed = reverse match {
-          case Some(true) => ordered.reverse
-          case _          => ordered
-        }
-
-        // transform the frequencies as requested
-        val scaled: Seq[(String, Double)] = scale match {
-          case Some("log10") => reversed map { case (term, freq) => (term, math.log10(freq)) }
-          case Some("percent") =>
-            val countTotal = reversed.foldLeft(0.toLong)((s, term) => s + term._2)
-            reversed map { case (term, freq) => (term, freq.toDouble / countTotal) }
-          case _ => reversed.map { case (term, freq) => (term, freq.toDouble) }
-        }
-
-        // cutoff the results to the requested ranks
-        val defaultMin = 0
-        val defaultMax = 9
-        val res = scaled.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1)
-
-        Json.toJson(res.toMap).format(pretty)
+        Json.arr(jsonObjs).format(pretty)
       } else {
         // the requested field isn't in this index
         Json.obj().format(pretty)
       }
+    }
+  }
+
+  case class RuleHistRequest(
+    grammar: String,
+    parentQuery: Option[String] = None,
+    allowTriggerOverlaps: Option[Boolean] = None,
+    bins: Option[Int],
+    equalProbability: Option[Boolean],
+    xLogScale: Option[Boolean],
+    pretty: Option[Boolean]
+  )
+
+  object RuleHistRequest {
+    implicit val fmt: OFormat[RuleHistRequest] = Json.format[RuleHistRequest]
+    implicit val read: Reads[RuleHistRequest] = Json.reads[RuleHistRequest]
+  }
+
+  /** Return coordinates defining a histogram of counts/frequencies of matches of each rule.
+    * @param grammar An Odinson grammar.
+    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
+    * @param bins Number of bins to cut the rule counts into.
+    * @param equalProbability Whether to make bin widths variable to make them equally probable.
+    * @param xLogScale `log10`-transform the counts of each rule (optional).
+    * @param pretty Whether to pretty-print the JSON returned by the function.
+    * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
+    */
+  def ruleHist() = Action { request =>
+    val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
+    val grammar = ruleHistRequest.grammar
+    val parentQuery = ruleHistRequest.parentQuery
+    val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
+    val bins = ruleHistRequest.bins
+    val equalProbability = ruleHistRequest.equalProbability
+    val xLogScale = ruleHistRequest.xLogScale
+    val pretty = ruleHistRequest.pretty
+
+    try {
+      // rules -> OdinsonQuery
+      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
+      val composedExtractors = parentQuery match {
+        case Some(pq) =>
+          val cpq = extractorEngine.compiler.mkParentQuery(pq)
+          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+        case None => baseExtractors
+      }
+
+      val mentions: Seq[Mention] = {
+        val iterator = extractorEngine.extractMentions(
+          composedExtractors,
+          numSentences = extractorEngine.numDocs(),
+          allowTriggerOverlaps = allowTriggerOverlaps,
+          disableMatchSelector = false
+        )
+        iterator.toVector
+      }
+
+      val frequencies = mentions
+        // rule name is all that matters
+        .map(_.foundBy)
+        // collect the instances of each rule's results
+        .groupBy(identity)
+        // filter the rules by name, if a filter was passed
+        // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+        // count how many matches for each rule
+        .map { case (k, v) => v.length.toDouble }
+        .toList
+
+      val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+
+      Json.arr(jsonObjs).format(pretty)
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Status(400)(json)
     }
   }
 
@@ -258,11 +701,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   )
 
   object GrammarRequest {
-    implicit val fmt = Json.format[GrammarRequest]
-    implicit val read = Json.reads[GrammarRequest]
+    implicit val fmt: OFormat[GrammarRequest] = Json.format[GrammarRequest]
+    implicit val read: Reads[GrammarRequest] = Json.reads[GrammarRequest]
   }
-
-  // import play.api.libs.json.Json
 
   /** Executes the provided Odinson grammar.
     *

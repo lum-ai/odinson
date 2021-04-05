@@ -1,33 +1,30 @@
 package ai.lum.odinson.serialization
 
 import ai.lum.odinson._
+import ai.lum.odinson.serialization.JsonSerializer._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
-object JsonSerializer {
+class JsonSerializer(
+  verbose: VerboseLevels.Verbosity = VerboseLevels.Minimal,
+  indent: Int = 4,
+  engine: Option[ExtractorEngine] = None
+) {
+
+  // Ensure a valid verbosity level and compatible engine
+  checkEngine(verbose, engine)
 
   // Json String
 
   def asJsonPretty(ms: Iterator[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Iterator[Mention], indent: Int): String = {
-    asJsonPretty(ms.toSeq, indent)
+    asJsonPretty(ms.toSeq)
   }
 
   def asJsonPretty(ms: Seq[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Seq[Mention], indent: Int): String = {
     ujson.write(asJsonValue(ms), indent)
   }
 
   def asJsonPretty(m: Mention): String = {
-    ujson.write(asJsonValue(m), indent = 4)
-  }
-
-  def asJsonPretty(m: Mention, indent: Int): String = {
     ujson.write(asJsonValue(m), indent)
   }
 
@@ -64,10 +61,11 @@ object JsonSerializer {
   }
 
   def asJsonValue(m: Mention): Value = {
+
     val corpusDocId = m.idGetter.getDocId
     val corpusSentId = m.idGetter.getSentId
 
-    ujson.Obj(
+    val json = ujson.Obj(
       "scalaType" -> m.getClass.getCanonicalName,
       "odinsonMatch" -> asJsonValue(m.odinsonMatch),
       "label" -> stringOrNull(m.label),
@@ -79,6 +77,13 @@ object JsonSerializer {
       "foundBy" -> m.foundBy,
       "arguments" -> asJsonValue(m.arguments)
     )
+
+    // Add verbose content if requested
+    if (verbose != VerboseLevels.Minimal) {
+      json("detail") = mkVerboseContent(m)
+    }
+
+    json
   }
 
   def asJsonValue(om: OdinsonMatch): Value = {
@@ -180,6 +185,31 @@ object JsonSerializer {
       "min" -> metadata.min,
       "max" -> intOrNull(metadata.max)
     )
+  }
+
+  private def mkVerboseContent(m: Mention): Value = {
+    val json = ujson.Obj()
+    json("mention") = ujson.Obj()
+    json("document") = ujson.Obj()
+
+    // Determine which fields to include, given the specified level of verbosity
+    // Note that since we already checked the validity of verbose and engine,
+    // calling `get` here on the engine should not be a problem.
+    val fieldsToInclude = verbose match {
+      case VerboseLevels.Minimal => Seq.empty
+      case VerboseLevels.Display => Seq(engine.get.displayField)
+      case VerboseLevels.All     => engine.get.indexSettings.storedFields
+    }
+
+    // Retrieve the tokens for each included field
+    for (field <- fieldsToInclude) {
+      val mentionTokens = engine.get.getTokensForSpan(m, field)
+      json("mention")(field) = mentionTokens.toSeq
+      val documentTokens = engine.get.getTokens(m.luceneDocId, field)
+      json("document")(field) = documentTokens.toSeq
+    }
+
+    json
   }
 
   def stringOrNull(s: Option[String]): Value = {
@@ -346,6 +376,33 @@ object JsonSerializer {
       case ujson.Null => None
       case i          => Some(i.num.toInt)
     }
+  }
+
+  // -------------------------------------
+  //        HELPER METHODS
+  // -------------------------------------
+
+  def checkEngine(verbose: VerboseLevels.Verbosity, engine: Option[ExtractorEngine]): Unit = {
+    if (verbose != VerboseLevels.Minimal && engine.isEmpty) {
+      throw new OdinsonException(
+        "Cannot request verbose serialization without providing an ExtractorEngine."
+      )
+    }
+  }
+
+}
+
+object JsonSerializer {
+
+  // Enum to handle the supported levels of verbosity of Mentions.
+  //  - Minimal:  No additional text included
+  //  - Display:  Display field included
+  //  - All:      All stored fields included
+  object VerboseLevels extends Enumeration {
+    type Verbosity = Value
+
+    val Minimal, Display, All = Value
+
   }
 
 }

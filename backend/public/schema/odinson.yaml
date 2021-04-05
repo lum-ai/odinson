@@ -303,11 +303,27 @@ paths:
         - name: field
           in: query
           description: |
-            The token field (e.g., word, lemma) whose frequencies are to be counted.
+            The token field (e.g., lemma) whose frequencies are to be counted.
           required: true
           schema:
             type: string
+            example: lemma
+        - name: group
+          in: query
+          description: |
+            A conditioning variable by which to group each term's counts.
+          required: false
+          schema:
+            type: string
             example: tag
+        - name: filter
+          in: query
+          description: |
+            A regular expression to filter the terms in `field` before counting.
+          required: false
+          schema:
+            type: string
+            example: "ate$"
         - name: order
           in: query
           description: |
@@ -364,7 +380,122 @@ paths:
                schema:
                  type: array
                  items:
-                   $ref: '#/components/schemas/TermFrequency'
+                   $ref: '#/components/schemas/FrequencyTable'
+
+  /api/rule-freq:
+    post:
+      tags:
+        - statistics
+      summary: |
+        Count how many times each rule matches from the given grammar on the active dataset.
+      description: |
+        Count how many times each rule matches from the given grammar on the active dataset.
+      operationId: rule-freq
+      requestBody:
+        description: |
+          An Odinson grammar.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleFreqRequest'
+      responses:
+        '200':
+          description: Frequencies of extraction matches by rule name.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/FrequencyTable'
+
+  /api/term-hist:
+    get:
+      tags:
+        - statistics
+      summary: |
+        Binned frequencies of token annotations such as word and lemma counts.
+      description: |
+        Binned frequencies of token annotations such as word and lemma counts.
+        Bins are defined by left-closed (right-open) intervals.
+      operationId: term-hist
+      parameters:
+        - name: field
+          in: query
+          description: |
+            The token field (e.g., lemma) whose frequencies are to be counted.
+          required: true
+          schema:
+            type: string
+            example: lemma
+        - name: bins
+          in: query
+          description: |
+            How many bins to cut the data into.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 120
+        - name: equalProbability
+          in: query
+          description: |
+            Whether to determine bin widths by quantile (instead of even bins).
+            Y values will be probability density estimates rather than counts.
+          required: false
+          schema:
+            type: boolean
+        - name: xLogScale
+          in: query
+          description: |
+            Whether to apply log10 scaling to token frequency counts or not (default).
+          required: false
+          schema:
+            type: boolean
+        - name: pretty
+          in: query
+          description: |
+            Whether or not to pretty print the response.
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Binned frequencies of token annotations such as word and lemma counts.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/Bin'
+
+  /api/rule-hist:
+    post:
+      tags:
+        - statistics
+      summary: |
+        Binned counts of how many times each rule matches from the active grammar on the active dataset.
+      description: |
+        Binned counts of how many times each rule matches from the active grammar on the active dataset.
+        Bins are defined by left-closed (right-open) intervals.
+      operationId: rule-hist
+      requestBody:
+        description: |
+          An Odinson grammar.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleHistRequest'
+      responses:
+        '200':
+          description: Binned frequencies of rule match counts.
+          content:
+             application/json:
+               schema:
+                 type: array
+                 items:
+                   $ref: '#/components/schemas/Bin'
 
   # /api/most-common:
   #   get:
@@ -458,7 +589,6 @@ paths:
           required: false
           schema:
             type: boolean
-
       responses:
         '200':
           description: "A JSON object containing build information."
@@ -551,6 +681,162 @@ components:
             Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
           example: false
 
+    RuleFreqRequest:
+      type: object
+      required:
+        - rules
+      properties:
+        grammar:
+          type: string
+          description: |
+            An Odinson grammar.
+          example: |
+             # an example grammar
+             rules:
+              - name: "example1"
+                label: Agent
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  agent   = >nsubj []
+              - name: "example2"
+                label: Patient
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  patient = >dobj []
+              - name: "example3"
+                label: Patient
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  patient = >nsubjpass []
+              - name: "example4"
+                label: Agent
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  agent   = >nmod_by []
+#        parentQuery:
+#          type: string
+#          description: |
+#            A Lucene query to filter Documents before applying an Odinson pattern.
+#          example: "year: 1973"
+        allowTriggerOverlaps:
+          type: boolean
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
+          example: false
+#        group:
+#          type: string
+#          description: |
+#            A conditioning variable by which to group each rule's counts.
+#          example: ruleType
+#        filter:
+#          type: string
+#          description: |
+#            A regular expression to filter the rule names before counting.
+#          example: "passive"
+        order:
+          type: string
+          description: |
+            The order in which to return results: "freq" (frequency order, default) or "alpha" (alphanumeric order).
+          example: freq
+        min:
+          type: integer
+          format: int32
+          description: |
+            The smallest rank to return, with 0 (default) being the highest ranked.
+          example: 0
+        max:
+          type: integer
+          format: int32
+          description: |
+            The highest rank to return, e.g. 9 (default).
+          example: 9
+        scale:
+          type: string
+          description: |
+            Scaling to apply to frequency counts. Choices are "count" (default), "log10", and "percent".
+          example: count
+        reverse:
+          type: boolean
+          description: |
+            Whether to reverse the rank order, to select the 10 lease frequent results, for example.
+        pretty:
+          type: boolean
+          description: |
+            Whether or not to pretty print the response.
+
+    RuleHistRequest:
+      type: object
+      required:
+        - rules
+      properties:
+        grammar:
+          type: string
+          description: |
+            An Odinson grammar.
+          example: |
+             # an example grammar
+             rules:
+              - name: "example1"
+                label: Agent
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  subject  = >nsubj []
+              - name: "example2"
+                label: Patient
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  object  = >dobj []
+              - name: "example3"
+                label: Patient
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  subject  = >nsubjpass []
+              - name: "example4"
+                label: Agent
+                type: event
+                pattern: |
+                  trigger = [lemma=have]
+                  subject  = >nmod_by []
+#        parentQuery:
+#          type: string
+#          description: |
+#            A Lucene query to filter Documents before applying an Odinson pattern.
+#          example: "year: 1973"
+        allowTriggerOverlaps:
+          type: boolean
+          description: |
+            Whether or not event arguments are permitted to overlap with the event's trigger. Defaults to false.
+          example: false
+        bins:
+          type: integer
+          format: int32
+          description: |
+            How many bins to cut the data into.
+          required: false
+          example: 3
+        equalProbability:
+          type: boolean
+          description: |
+            Whether to determine bin widths by quantile (instead of even bins).
+            Y values will be probability density estimates rather than counts.
+          required: false
+        xLogScale:
+          type: boolean
+          description: |
+            Whether to apply log10 scaling to token frequency counts or not (default).
+          required: false
+        pretty:
+          type: boolean
+          description: |
+            Whether or not to pretty print the response.
+
     OdinsonGrammarResults:
       type: object
       required:
@@ -636,7 +922,7 @@ components:
           description: The similarity score for the returned term.
           example: 0.673
 
-    TermFrequency:
+    FrequencyTable:
       type: object
       required:
         - term
@@ -644,13 +930,39 @@ components:
       properties:
         term:
           type: string
-          description: A term in a token field.
-          example: NNPS
+          description: A term such as a token field or rule name.
+          example: achieve
+        group:
+          type: string
+          description: A grouping term from a second token field (e.g., tag).
+          example: VBD
         frequency:
-          type: number
-          format: float
+          type: float
           description: The number of occurrences of the term (potentially scaled).
           example: 104291.0
+
+    Bin:
+      type: object
+      required:
+        - w
+        - x
+        - y
+      properties:
+        w:
+          type: number
+          format: float
+          description: The width of the bin.
+          example: 0.673
+        x:
+          type: number
+          format: float
+          description: The lower bound of the bin (inclusive).
+          example: 6.0
+        y:
+          type: number
+          format: float
+          description: The count or density of the bin.
+          example: 18203
 
     # MatchFrequency:
     #   type: object
@@ -1076,6 +1388,7 @@ components:
         - numDocs
         - corpus
         - distinctDependencyRelations
+        - fields
       properties:
         numDocs:
           type: integer
@@ -1091,3 +1404,9 @@ components:
           format: int32
           description: "The number of dependency relation types indexed in the corpus."
           example: 134
+        fields:
+          type: array
+          items:
+            type: string
+            description: "A field available from the index."
+            example: tag
