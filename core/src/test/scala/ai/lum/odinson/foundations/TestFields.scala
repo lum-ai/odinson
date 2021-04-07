@@ -1,9 +1,9 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.{Document, Sentence, TokensField}
+import ai.lum.odinson.{ Document, Sentence, TokensField }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 
@@ -87,8 +87,7 @@ class TestFields extends OdinsonTest {
     val mentions = ee2.extractMentions(extractors).toList
     mentions should have size (1)
   }
-
-  // todo: should it warn? crash? etc.
+  
   it should "throw an exception if pattern is written against arbitrary fields not indexed" in {
     an[OdinsonException] shouldBe thrownBy(ee.compiler.compile("[other = buzz]"))
   }
