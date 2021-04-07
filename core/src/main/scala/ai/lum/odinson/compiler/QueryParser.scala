@@ -2,6 +2,7 @@ package ai.lum.odinson.compiler
 
 import fastparse._
 import ScriptWhitespace._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class QueryParser(
   val allTokenFields: Seq[String], // the names of all valid token fields
@@ -533,7 +534,10 @@ class QueryParser(
   // any value in `allTokenFields` is a valid field name
   def fieldName[_: P]: P[String] = {
     P(Literals.identifier).flatMap { identifier =>
-      if (allTokenFields contains identifier) Pass(identifier) else Fail
+      if (allTokenFields contains identifier) Pass(identifier)
+      else throw new OdinsonException(
+        s"odinson.compiler.allTokenFields does not contain: $identifier"
+      ) //Fail
     }
   }
 
