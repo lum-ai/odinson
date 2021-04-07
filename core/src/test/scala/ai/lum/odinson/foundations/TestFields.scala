@@ -87,7 +87,7 @@ class TestFields extends OdinsonTest {
     val mentions = ee2.extractMentions(extractors).toList
     mentions should have size (1)
   }
-  
+
   it should "throw an exception if pattern is written against arbitrary fields not indexed" in {
     an[OdinsonException] shouldBe thrownBy(ee.compiler.compile("[other = buzz]"))
   }
