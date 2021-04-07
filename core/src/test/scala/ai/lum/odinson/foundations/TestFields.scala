@@ -2,7 +2,6 @@ package ai.lum.odinson.foundations
 
 import ai.lum.odinson.{ Document, Sentence, TokensField }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
-import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{ Config, ConfigValueFactory }
 
 import scala.collection.JavaConverters.asJavaIterableConverter
