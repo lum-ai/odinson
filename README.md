@@ -3,6 +3,8 @@
 
 # Odinson
 
+Kilroy was here
+
 Odinson can be used to rapidly query a natural language knowledge base and extract structured relations. Query patterns can be designed over (a) surface, syntax, or a combination of both.
 In particular, Odinson has been highly optimized to deliver these results in near real-time, which enables users to dynamically develop queries, receiving immediate feedback on the coverage and precision of the patterns at scale. 
 Please see our [LREC 2020 paper](https://lum.ai/docs/odinson.pdf) for technical details and evaluation.
