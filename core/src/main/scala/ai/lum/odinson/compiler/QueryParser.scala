@@ -534,10 +534,7 @@ class QueryParser(
   // any value in `allTokenFields` is a valid field name
   def fieldName[_: P]: P[String] = {
     P(Literals.identifier).flatMap { identifier =>
-      if (allTokenFields contains identifier) Pass(identifier)
-      else throw new OdinsonException(
-        s"odinson.compiler.allTokenFields does not contain: $identifier"
-      ) //Fail
+      if (allTokenFields contains identifier) Pass(identifier) else Fail
     }
   }
 

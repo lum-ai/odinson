@@ -89,7 +89,7 @@ class TestFields extends OdinsonTest {
   }
 
   it should "throw an exception if pattern is written against arbitrary fields not indexed" in {
-    an[OdinsonException] shouldBe thrownBy(ee.compiler.compile("[other = buzz]"))
+    a[java.lang.Exception] shouldBe thrownBy(ee.compiler.compile("[other = buzz]"))
   }
 
 }
