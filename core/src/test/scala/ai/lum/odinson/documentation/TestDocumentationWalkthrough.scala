@@ -32,7 +32,7 @@ class TestDocumentationWalkthrough extends OdinsonTest {
     """.stripMargin
 
   val extractors = extractorEngine.compileRuleString(rules)
-  val mentions = extractorEngine.extractAndPopulate(extractors)
+  val mentions = extractorEngine.extractAndPopulate(extractors).toVector
 
   behavior of "documentation"
 

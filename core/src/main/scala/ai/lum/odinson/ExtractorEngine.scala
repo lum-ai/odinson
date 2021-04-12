@@ -500,22 +500,20 @@ class ExtractorEngine private (
     } yield mention
   }
 
-  // Attach the document and mention annotations to the Mention
-  def populateMentions(ms: Seq[Mention], level: Verbosity): Unit = {
-    ms.map(_.populateFields(level))
-  }
-
   def extractAndPopulate(
     extractors: Seq[Extractor],
     numSentences: Int = numDocs(),
     allowTriggerOverlaps: Boolean = false,
     disableMatchSelector: Boolean = false,
     level: Verbosity = VerboseLevels.Display
-  ): Seq[Mention] = {
+  ): Iterator[Mention] = {
     val mentions =
-      extractMentions(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector).toSeq
-    populateMentions(mentions, level)
-    mentions
+      extractMentions(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
+    // Each mention populates itself in place, returns for new iterator
+    mentions.map{ m =>
+      m.populateFields(level)
+      m
+    }
   }
 
   // Methods to access DataGatherer
