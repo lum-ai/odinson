@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.3.0] - 2021-02-18
 ### Added
+- Added :mkDoc command to shell ([#272](https://github.com/lum-ai/odinson/pull/272))
 - Added ability to serialize Mentions verbosely (with displayField or all storedFields) ([#265](https://github.com/lum-ai/odinson/pull/265))
 - Added project-wide formatting settings and a PR check for linting
 - Added a file that accompanies index (`settings.json`) that describes settings used in creating the index.  Currently storing `storedFields`. ([#255](https://github.com/lum-ai/odinson/pull/255))
