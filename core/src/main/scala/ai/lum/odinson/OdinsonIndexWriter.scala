@@ -6,21 +6,21 @@ import java.util.Collection
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
-import org.apache.lucene.{document => lucenedoc}
+import org.apache.lucene.{ document => lucenedoc }
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.index.{IndexWriter, IndexWriterConfig}
+import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
+import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 import com.typesafe.scalalogging.LazyLogging
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
 import ai.lum.common.DisplayUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
-import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
+import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException

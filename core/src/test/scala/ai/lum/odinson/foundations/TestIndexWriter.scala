@@ -6,12 +6,12 @@ import java.nio.file.Files
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 import org.apache.lucene.store.FSDirectory
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
-import ai.lum.odinson.{DateField, OdinsonIndexWriter, StringField}
+import ai.lum.odinson.{ DateField, OdinsonIndexWriter, StringField }
 // file imports
 import java.io.File
 
@@ -147,7 +147,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
   }
 
 //  it should "store and retrieve large graphs" in {
-    // sortedDocValuesFieldMaxSize = 32766
+  // sortedDocValuesFieldMaxSize = 32766
 
 //    val large = Array.fill[Byte](40000)(217.toByte)
 //    val indexWriter = getOdinsonIndexWriter
