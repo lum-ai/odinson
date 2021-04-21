@@ -11,13 +11,14 @@ class TestTokenStreamUtils extends OdinsonTest {
     val doc = getDocument("becky-gummy-bears-v2")
     val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
 
-    val tokens = TokenStreamUtils.getTokensFromMultipleFields(0, Set("raw"), ee.indexSearcher, ee.analyzer)
-    tokens.keySet should contain only("raw")
+    val tokens =
+      TokenStreamUtils.getTokensFromMultipleFields(0, Set("raw"), ee.indexSearcher, ee.analyzer)
+    tokens.keySet should contain only ("raw")
 
     val luceneDoc = TokenStreamUtils.getDoc(0, Set("raw"), ee.indexSearcher)
-    luceneDoc.getFields should have size(1)
+    luceneDoc.getFields should have size (1)
     noException shouldBe thrownBy(luceneDoc.getField("raw"))
-    luceneDoc.getField("lemma") shouldBe(null)
+    luceneDoc.getField("lemma") shouldBe (null)
   }
 
 }

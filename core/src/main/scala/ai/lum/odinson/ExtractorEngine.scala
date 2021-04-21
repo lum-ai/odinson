@@ -510,7 +510,7 @@ class ExtractorEngine private (
     val mentions =
       extractMentions(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
     // Each mention populates itself in place, returns for new iterator
-    mentions.map{ m =>
+    mentions.map { m =>
       m.populateFields(level)
       m
     }

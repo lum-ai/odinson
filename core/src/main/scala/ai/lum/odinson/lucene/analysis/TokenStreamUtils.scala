@@ -12,7 +12,6 @@ import org.apache.lucene.index.Fields
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.search.highlight.TokenSources
 
-
 object TokenStreamUtils {
 
   def getDoc(docID: Int, fieldNames: Set[String], indexSearcher: IndexSearcher): Document = {
