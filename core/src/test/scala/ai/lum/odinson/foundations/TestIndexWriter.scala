@@ -3,15 +3,11 @@ package ai.lum.odinson.foundations
 // test imports
 import java.nio.file.Files
 
-import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigValueFactory}
-import org.apache.lucene.document.{BinaryDocValuesField, Document}
-import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.util.BytesRef
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
@@ -150,7 +146,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     an[OdinsonException] shouldBe thrownBy { OdinsonIndexWriter.fromConfig(customConfig) }
   }
 
-  it should "store and retrieve large graphs" in {
+//  it should "store and retrieve large graphs" in {
     // sortedDocValuesFieldMaxSize = 32766
 
 //    val large = Array.fill[Byte](40000)(217.toByte)
@@ -166,5 +162,5 @@ class TestOdinsonIndexWriter extends OdinsonTest {
 //    val computeTotalHits = true
 //    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
 
-  }
+//  }
 }
