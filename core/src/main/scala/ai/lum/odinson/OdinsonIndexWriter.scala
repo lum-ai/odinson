@@ -37,7 +37,6 @@ class OdinsonIndexWriter(
   val addToNormalizedField: Set[String],
   val incomingTokenField: String,
   val outgoingTokenField: String,
-  val sortedDocValuesFieldMaxSize: Int,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
   val displayField: String
@@ -259,7 +258,6 @@ object OdinsonIndexWriter {
     val addToNormalizedField = config[List[String]]("odinson.index.addToNormalizedField")
     val incomingTokenField = config[String]("odinson.index.incomingTokenField")
     val outgoingTokenField = config[String]("odinson.index.outgoingTokenField")
-    val sortedDocValuesFieldMaxSize = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
     val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
     val invalidCharacterReplacement = config[String]("odinson.index.invalidCharacterReplacement")
     val storedFields = config[List[String]]("odinson.index.storedFields")
@@ -291,7 +289,6 @@ object OdinsonIndexWriter {
       addToNormalizedField.toSet,
       incomingTokenField,
       outgoingTokenField,
-      sortedDocValuesFieldMaxSize,
       maxNumberOfTokensPerSentence,
       invalidCharacterReplacement,
       displayField
