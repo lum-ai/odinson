@@ -197,7 +197,7 @@ class OdinsonEventQuery(
       // subSpans is required by ConjunctionSpans
       val subSpans = triggerSpans :: requiredSpans.flatMap(_.subSpans)
       // get graphs
-      val graphPerDoc = context.reader.getSortedDocValues(dependenciesField)
+      val graphPerDoc = context.reader.getBinaryDocValues(dependenciesField)
       // get token counts
       val numWordsPerDoc = context.reader.getNumericDocValues(sentenceLengthField)
       // return event spans
@@ -220,7 +220,7 @@ class OdinsonEventSpans(
   val triggerSpans: OdinsonSpans,
   val requiredSpans: List[ArgumentSpans],
   val optionalSpans: List[ArgumentSpans],
-  val graphPerDoc: SortedDocValues,
+  val graphPerDoc: BinaryDocValues,
   val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 

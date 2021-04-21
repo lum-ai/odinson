@@ -3,19 +3,23 @@ package ai.lum.odinson.foundations
 // test imports
 import java.nio.file.Files
 
+import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
+import org.apache.lucene.document.{BinaryDocValuesField, Document}
+import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.util.BytesRef
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
-import ai.lum.odinson.{ OdinsonIndexWriter, DateField, StringField }
-import ai.lum.common.ConfigFactory
+import ai.lum.odinson.{DateField, OdinsonIndexWriter, StringField}
 // file imports
-import scala.reflect.io.Directory
 import java.io.File
+
+import scala.reflect.io.Directory
 
 class TestOdinsonIndexWriter extends OdinsonTest {
   type Fixture = OdinsonIndexWriter
@@ -144,5 +148,23 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     }
 
     an[OdinsonException] shouldBe thrownBy { OdinsonIndexWriter.fromConfig(customConfig) }
+  }
+
+  it should "store and retrieve large graphs" in {
+    // sortedDocValuesFieldMaxSize = 32766
+
+//    val large = Array.fill[Byte](40000)(217.toByte)
+//    val indexWriter = getOdinsonIndexWriter
+//    val graph = new BinaryDocValuesField("testfield", new BytesRef(large))
+//    val doc = new Document
+//    doc.add(graph)
+//    indexWriter.addDocuments(Seq(doc))
+//    indexWriter.commit()
+//    indexWriter.close()
+//
+//    val indexReader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+//    val computeTotalHits = true
+//    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
+
   }
 }
