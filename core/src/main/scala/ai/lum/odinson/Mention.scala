@@ -1,12 +1,10 @@
 package ai.lum.odinson
 
-import ai.lum.odinson
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.serialization.JsonSerializer
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 class Mention(
   val odinsonMatch: OdinsonMatch,
@@ -79,12 +77,6 @@ class Mention(
 
   def hasFieldsPopulated(level: VerboseLevels.Verbosity): Boolean = _verbosity >= level
 
-  private def getTokens(field: String): Array[String] = {
-    if (!mentionFields.contains(field))
-      throw new OdinsonException(s"Unable to get field: [${field}], Mention was not populated")
-    _mentionFields(field)
-  }
-
   /** Populate the mention with the annotations stored in the index and the provided DataGatherer
     * @param level The level of population desired (all or some of the fields)
     * @param localDG The data gatherer to be used in populating the mentions
@@ -111,19 +103,20 @@ class Mention(
     }
 
     // The fields are determined by the verbosity level and what's available in the index
-    val fieldsToInclude = localDG.get.fieldsToInclude(level)
-    val numFields = fieldsToInclude.length
+    val fieldsToInclude = localDG.get.fieldsToInclude(level).toSet
 
-    val documentFields = new Array[(String, Array[String])](numFields)
-    val mentionFields = new Array[(String, Array[String])](numFields)
+    val documentFields = new mutable.HashMap[String, Array[String]]()
+    val mentionFields = new mutable.HashMap[String, Array[String]]()
 
-    fieldsToInclude.zipWithIndex foreach { case (field, idx) =>
+    val documentTokens = localDG.get.getTokens(luceneDocId, fieldsToInclude)
+
+    fieldsToInclude foreach { field =>
       // The tokens from this field for the whole Document (i.e., Sentence)
-      val docTokens = localDG.get.getTokens(luceneDocId, field)
-      documentFields(idx) = (field, docTokens)
+      val docTokens = documentTokens(field)
+      documentFields(field) = docTokens
       // The slice of those fields that correspond to the Mention span
       val mentionTokens = docTokens.slice(start, end)
-      mentionFields(idx) = (field, mentionTokens)
+      mentionFields(field) = mentionTokens
     }
 
     // Store the populated fields

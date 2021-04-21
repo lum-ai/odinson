@@ -88,8 +88,15 @@ class DataGatherer(
     getTokens(scoreDoc.doc, fieldName)
   }
 
+  // TODO: deprecate this, and then remove -- this change is to preserve functionality
+  //   in the meantime
   def getTokens(docID: Int, fieldName: String): Array[String] = {
-    TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
+    TokenStreamUtils
+      .getTokensFromMultipleFields(docID, Set(fieldName), indexSearcher, analyzer)(fieldName)
+  }
+
+  def getTokens(docID: Int, fieldNames: Set[String]): Map[String, Array[String]] = {
+    TokenStreamUtils.getTokensFromMultipleFields(docID, fieldNames, indexSearcher, analyzer)
   }
 
   def fieldsToInclude(level: VerboseLevels.Verbosity = VerboseLevels.Display): Seq[String] = {
