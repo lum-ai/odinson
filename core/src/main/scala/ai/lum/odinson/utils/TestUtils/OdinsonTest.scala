@@ -58,7 +58,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param value config value to replace the default value or serve as value to new key
     * @return
     */
-  def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
+  def extractorEngineWithConfigValue(doc: Document, key: String, value: Any): ExtractorEngine = {
     val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
     mkExtractorEngine(newConfig, doc)
   }

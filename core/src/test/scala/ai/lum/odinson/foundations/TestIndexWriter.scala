@@ -3,19 +3,20 @@ package ai.lum.odinson.foundations
 // test imports
 import java.nio.file.Files
 
+import ai.lum.odinson._
+import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import org.apache.lucene.store.FSDirectory
-
-import scala.collection.JavaConverters.asJavaIterableConverter
 // lum imports
-import ai.lum.odinson.{ DateField, OdinsonIndexWriter, StringField }
+import ai.lum.odinson.OdinsonIndexWriter
 // file imports
 import java.io.File
 
 import scala.reflect.io.Directory
+import scala.collection.JavaConverters._
 
 class TestOdinsonIndexWriter extends OdinsonTest {
   type Fixture = OdinsonIndexWriter
@@ -48,6 +49,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     // make sure the folder was created with only the locker inside
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close
+    deleteIndex
   }
 
   it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
@@ -69,6 +71,8 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val luceneStringField = indexWriter.mkLuceneFields(stringField)
     luceneStringField.head.name shouldEqual ("smth")
     // TODO: should we test more stuff
+    indexWriter.close()
+    deleteIndex
   }
 
   it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
@@ -111,6 +115,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
       "kiwi",
       indexWriter.displayField
     )
+    deleteIndex
   }
 
   it should "store stored fields and not others" in {
@@ -127,7 +132,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     ee.getTokensForSpan(0, "tag", 0, 1) should contain only "NNS"
     // though `entity` is a field in the Document, it wasn't stored, so the extractor engine shouldn't
     // be able to retrieve the content
-    an[OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
+    an[Odin4sonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
 
   }
 
@@ -146,21 +151,56 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     an[OdinsonException] shouldBe thrownBy { OdinsonIndexWriter.fromConfig(customConfig) }
   }
 
-//  it should "store and retrieve large graphs" in {
-  // sortedDocValuesFieldMaxSize = 32766
+  it should "store and retrieve large graphs" in {
 
-//    val large = Array.fill[Byte](40000)(217.toByte)
-//    val indexWriter = getOdinsonIndexWriter
-//    val graph = new BinaryDocValuesField("testfield", new BytesRef(large))
-//    val doc = new Document
-//    doc.add(graph)
-//    indexWriter.addDocuments(Seq(doc))
-//    indexWriter.commit()
-//    indexWriter.close()
-//
-//    val indexReader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
-//    val computeTotalHits = true
-//    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
+    val numTokens = 4000
+    val large = Array.fill[String](numTokens)("test")
+    large(0) = "start"
+    large(3) = "success"
+    val raw = TokensField("raw", large.toSeq)
+    val word = TokensField("word", large.toSeq)
 
-//  }
+    val deps = new Array[(Int, Int, String)](numTokens)
+    for (i <- 0 until numTokens - 1) {
+      if (i < 3) {
+        // (0,1,edge)
+        deps(i) = (i, i + 1, "edge")
+      } else {
+        deps(i) = (i, i + 1, "nomatch")
+      }
+    }
+    val roots = Set[Int](0)
+    val graph = GraphField("dependencies", deps, roots)
+
+    val sent = Sentence(numTokens, Seq(raw, word, graph))
+    val doc = Document("testdoc", Seq.empty, Seq(sent))
+
+    // Yes, in fact the deps field is above the previous threshold
+    val incomingEdges = graph.mkIncomingEdges(numTokens)
+    val outgoingEdges = graph.mkOutgoingEdges(numTokens)
+    val indexWriter = getOdinsonIndexWriter
+
+    val directedGraph = indexWriter.mkDirectedGraph(incomingEdges, outgoingEdges, roots.toArray)
+    val bytes = UnsafeSerializer.graphToBytes(directedGraph)
+    // previously, we only supported up to this: sortedDocValuesFieldMaxSize = 32766
+    bytes.length should be > (32766)
+    indexWriter.close()
+
+    // ensure the EE can use it
+    val ee =
+      extractorEngineWithConfigValue(doc, "odinson.index.maxNumberOfTokensPerSentence", numTokens)
+    val rules =
+      """
+        |rules:
+        |  - name: testrule
+        |    type: basic
+        |    label: Test
+        |    pattern: |
+        |      start >edge+ success
+        |""".stripMargin
+    val extractors = ee.compileRuleString(rules)
+    val results = ee.extractNoState(extractors).toArray
+    results.length should be(1)
+    ee.getTokensForSpan(results.head) should contain only "success"
+  }
 }
