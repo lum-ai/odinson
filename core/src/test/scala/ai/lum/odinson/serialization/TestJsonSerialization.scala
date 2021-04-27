@@ -241,7 +241,7 @@ class TestJsonSerialization extends OdinsonTest {
     mentionsShouldBeEqual(m, deserializedPretty) should be(true)
   }
 
-  it should "properly serialize and deserialized using json lines" in {
+  it should "properly serialize and deserialize using json lines" in {
     val m1 = getSingleMentionFromRule(mentions, "Or")
     val m2 = getSingleMentionFromRule(mentions, "Named")
     val jsonLines = jsonSerializer.asJsonLines(Seq(m1, m2))
@@ -273,6 +273,16 @@ class TestJsonSerialization extends OdinsonTest {
     detail("tag").arr.map(_.str) should contain inOrderOnly ("NNS", "VBP", "JJ")
 
     a[java.util.NoSuchElementException] should be thrownBy json("watermelon")
+  }
+
+  it should "deserialize mentions populated with previous content" in {
+    val nonevent = getSingleMentionFromRule(mentions, "MultipleWords")
+    val json = allSerializer.asJsonValue(nonevent)
+    val emptySerializer = new JsonSerializer() // doesn't point to anything
+    val deserialized = emptySerializer.deserializeMention(json)
+    deserialized.text should be("Rainbows shine bright")
+    deserialized.documentFields("raw") shouldBe Array("Rainbows", "shine", "bright", "bright", "bright", ".")
+    deserialized.mentionFields("tag") should contain inOrderOnly ("NNS", "VBP", "JJ")
   }
 
 }

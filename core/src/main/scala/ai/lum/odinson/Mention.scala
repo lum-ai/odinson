@@ -15,7 +15,7 @@ class Mention(
   val idGetter: IdGetter,
   val foundBy: String,
   val arguments: Map[String, Array[Mention]] = Map.empty,
-  @transient dataGathererOpt: Option[DataGatherer]
+  dataGathererOpt: Option[DataGatherer]
 ) extends LazyLogging {
 
   def this(
@@ -86,16 +86,11 @@ class Mention(
     level: VerboseLevels.Verbosity = VerboseLevels.Display,
     localDG: Option[DataGatherer] = dataGathererOpt
   ): Boolean = {
+    // Nothing was populated
+    if (level == VerboseLevels.Minimal) return true
+
     // Don't repopulate if it's already there.
     if (hasFieldsPopulated(level)) return true
-
-    // Nothing was populated
-    if (level == VerboseLevels.Minimal) {
-      logger.warn(
-        "Calling `populateFields` with a verbosity of VerboseLevels.Minimal does not populate anything."
-      )
-      return false
-    }
 
     // The user asked for a higher level of population, but there is no DataGatherer to do it.
     if (localDG.isEmpty) {
@@ -132,6 +127,16 @@ class Mention(
     !argSuccesses.contains(false)
   }
 
+  def manuallyPopulate(
+    text: String,
+    documentFields: Map[String, Array[String]],
+    mentionFields: Map[String, Array[String]]
+  ): Unit = {
+    _documentFields = documentFields
+    _mentionFields = mentionFields
+    _text = Some(text)
+  }
+
   def copy(
     odinsonMatch: OdinsonMatch = this.odinsonMatch,
     label: Option[String] = this.label,
@@ -165,7 +170,7 @@ class Mention(
 
 object Mention {
 
-  /** A map from argument name to a sequence of matches.
+  /** A map from argument name to a sequence of mentions.
     *
     * The value of the map is a sequence because there are events
     * that can have several arguments with the same name.
@@ -196,7 +201,6 @@ object Mention {
             luceneSegmentDocBase,
             idGetter,
             // we mark the captures as matched by the same rule as the whole match
-            // todo: FoundBy handler
             // todo: add foundBy info to state somehow
             foundBy,
             dataGathererOpt
