@@ -2,9 +2,10 @@ package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonScoreDoc }
+import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonScoreDoc}
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+import org.apache.lucene.index.IndexReader
 import org.apache.lucene.store.Directory
 
 // TODO: From Documents
@@ -12,7 +13,7 @@ import org.apache.lucene.store.Directory
 // TODO: Parent MetaData
 
 class DataGatherer(
-  val indexSearcher: OdinsonIndexSearcher,
+  val indexReader: IndexReader,
   val displayField: String,
   indexSettings: IndexSettings
 ) {
@@ -21,30 +22,12 @@ class DataGatherer(
 
   val storedFields = indexSettings.storedFields
 
-  @deprecated(
-    message =
-      "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getString(docID: Int, m: OdinsonMatch): String = {
-    getTokens(docID, m).mkString(" ")
-  }
-
   def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
     getTokensForSpan(docID, m).mkString(" ")
   }
 
   def getArgument(mention: Mention, name: String): String = {
     getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
-  }
-
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(m: Mention): Array[String] = {
-    getTokens(m.luceneDocId, m.odinsonMatch)
   }
 
   def getTokensForSpan(m: Mention): Array[String] = {
@@ -71,15 +54,6 @@ class DataGatherer(
     getTokens(docID, fieldName).slice(start, end)
   }
 
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokens(docID, displayField).slice(m.start, m.end)
-  }
-
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
     getTokens(scoreDoc.doc, displayField)
   }
@@ -92,11 +66,11 @@ class DataGatherer(
   //   in the meantime
   def getTokens(docID: Int, fieldName: String): Array[String] = {
     TokenStreamUtils
-      .getTokensFromMultipleFields(docID, Set(fieldName), indexSearcher, analyzer)(fieldName)
+      .getTokensFromMultipleFields(docID, Set(fieldName), indexReader, analyzer)(fieldName)
   }
 
   def getTokens(docID: Int, fieldNames: Set[String]): Map[String, Array[String]] = {
-    TokenStreamUtils.getTokensFromMultipleFields(docID, fieldNames, indexSearcher, analyzer)
+    TokenStreamUtils.getTokensFromMultipleFields(docID, fieldNames, indexReader, analyzer)
   }
 
   def fieldsToInclude(level: VerboseLevels.Verbosity = VerboseLevels.Display): Seq[String] = {
@@ -115,11 +89,11 @@ class DataGatherer(
 object DataGatherer {
 
   def apply(
-    indexSearcher: OdinsonIndexSearcher,
+    indexReader: IndexReader,
     displayField: String,
     indexDir: Directory
   ): DataGatherer = {
-    new DataGatherer(indexSearcher, displayField, IndexSettings.fromDirectory(indexDir))
+    new DataGatherer(indexReader, displayField, IndexSettings.fromDirectory(indexDir))
   }
 
   // Enum to handle the supported levels of verbosity of Mentions.

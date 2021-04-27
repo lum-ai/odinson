@@ -416,7 +416,7 @@ object SqlState {
 
     val displayField = config[String]("odinson.displayField")
     val dataGathererOpt =
-      indexDirOpt.map(indexDir => DataGatherer(indexSearcher, displayField, indexDir))
+      indexDirOpt.map(indexDir => DataGatherer(indexSearcher.getIndexReader, displayField, indexDir))
 
     new SqlState(
       dataSource.getConnection,

@@ -517,24 +517,11 @@ class ExtractorEngine private (
   }
 
   // Methods to access DataGatherer
-  @deprecated(
-    message =
-      "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getString(docID: Int, m: OdinsonMatch): String = dataGatherer.getString(docID, m)
 
   def getStringForSpan(docID: Int, m: OdinsonMatch): String =
     dataGatherer.getStringForSpan(docID, m)
 
   def getArgument(mention: Mention, name: String): String = dataGatherer.getArgument(mention, name)
-
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(m: Mention): Array[String] = dataGatherer.getTokens(m)
 
   def getTokensForSpan(m: Mention): Array[String] = dataGatherer.getTokensForSpan(m)
 
@@ -552,13 +539,6 @@ class ExtractorEngine private (
 
   def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] =
     dataGatherer.getTokensForSpan(docID, fieldName, start, end)
-
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = dataGatherer.getTokens(docID, m)
 
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = dataGatherer.getTokens(scoreDoc)
 
@@ -611,6 +591,8 @@ class ExtractorEngine private (
     }
   }
 
+  // TODO move all deprecated stuff to end of file
+
 }
 
 object ExtractorEngine {
@@ -631,7 +613,7 @@ object ExtractorEngine {
     val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
     val displayField = config[String]("odinson.displayField")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    val dataGatherer = DataGatherer(indexSearcher, displayField, indexDir)
+    val dataGatherer = DataGatherer(indexReader, displayField, indexDir)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher, indexDir)

@@ -8,24 +8,23 @@ import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.Document
-import org.apache.lucene.index.Fields
-import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.index.{Fields, IndexReader}
 import org.apache.lucene.search.highlight.TokenSources
 
 object TokenStreamUtils {
 
-  def getDoc(docID: Int, fieldNames: Set[String], indexSearcher: IndexSearcher): Document = {
-    indexSearcher.doc(docID, fieldNames.asJava)
+  def getDoc(docID: Int, fieldNames: Set[String], indexReader: IndexReader): Document = {
+    indexReader.document(docID, fieldNames.asJava)
   }
 
   def getTokensFromMultipleFields(
     docID: Int,
     fieldNames: Set[String],
-    indexSearcher: IndexSearcher,
+    indexReader: IndexReader,
     analyzer: Analyzer
   ): Map[String, Array[String]] = {
-    val doc = getDoc(docID, fieldNames, indexSearcher)
-    val tvs = indexSearcher.getIndexReader().getTermVectors(docID)
+    val doc = getDoc(docID, fieldNames, indexReader)
+    val tvs = indexReader.getTermVectors(docID)
     fieldNames
       .map(field => (field, getTokens(doc, tvs, field, analyzer)))
       .toMap
