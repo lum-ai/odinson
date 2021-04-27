@@ -20,22 +20,10 @@ class DataGatherer(
 
   val analyzer = new WhitespaceAnalyzer()
 
-  val storedFields = indexSettings.storedFields
+  val storedFields: Seq[String] = indexSettings.storedFields
 
   def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
     getTokensForSpan(docID, m).mkString(" ")
-  }
-
-  def getArgument(mention: Mention, name: String): String = {
-    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
-  }
-
-  def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
-  }
-
-  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
   }
 
   def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
@@ -62,8 +50,6 @@ class DataGatherer(
     getTokens(scoreDoc.doc, fieldName)
   }
 
-  // TODO: deprecate this, and then remove -- this change is to preserve functionality
-  //   in the meantime
   def getTokens(docID: Int, fieldName: String): Array[String] = {
     TokenStreamUtils
       .getTokensFromMultipleFields(docID, Set(fieldName), indexReader, analyzer)(fieldName)
@@ -82,6 +68,34 @@ class DataGatherer(
       case VerboseLevels.Display => Seq(displayField)
       case VerboseLevels.All     => storedFields
     }
+  }
+
+  // ------------------------------
+  //          Deprecated
+  // ------------------------------
+
+  @deprecated(
+    message = "This method is deprecated, please use please use the `text()` method of the argument Mention",
+    since="0.3.2"
+  )
+  def getArgument(mention: Mention, name: String): String = {
+    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
+  }
+
+  @deprecated(
+    message = "This method is deprecated, please use Mention.mentionFields",
+    since="0.3.2"
+  )
+  def getTokensForSpan(m: Mention): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
+  }
+
+  @deprecated(
+    message = "This method is deprecated, please use Mention.mentionFields",
+    since="0.3.2"
+  )
+  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
   }
 
 }
