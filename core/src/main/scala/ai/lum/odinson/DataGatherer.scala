@@ -2,7 +2,7 @@ package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonScoreDoc}
+import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonScoreDoc }
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.IndexReader
@@ -75,8 +75,9 @@ class DataGatherer(
   // ------------------------------
 
   @deprecated(
-    message = "This method is deprecated, please use please use the `text()` method of the argument Mention",
-    since="0.3.2"
+    message =
+      "This method is deprecated, please use please use the `text()` method of the argument Mention",
+    since = "0.3.2"
   )
   def getArgument(mention: Mention, name: String): String = {
     getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
@@ -84,7 +85,7 @@ class DataGatherer(
 
   @deprecated(
     message = "This method is deprecated, please use Mention.mentionFields",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(m: Mention): Array[String] = {
     getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
@@ -92,7 +93,7 @@ class DataGatherer(
 
   @deprecated(
     message = "This method is deprecated, please use Mention.mentionFields",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
     getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)

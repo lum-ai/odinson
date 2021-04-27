@@ -8,7 +8,7 @@ import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.Document
-import org.apache.lucene.index.{Fields, IndexReader}
+import org.apache.lucene.index.{ Fields, IndexReader }
 import org.apache.lucene.search.highlight.TokenSources
 
 object TokenStreamUtils {

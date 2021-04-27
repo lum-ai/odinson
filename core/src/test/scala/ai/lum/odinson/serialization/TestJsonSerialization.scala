@@ -281,7 +281,14 @@ class TestJsonSerialization extends OdinsonTest {
     val emptySerializer = new JsonSerializer() // doesn't point to anything
     val deserialized = emptySerializer.deserializeMention(json)
     deserialized.text should be("Rainbows shine bright")
-    deserialized.documentFields("raw") shouldBe Array("Rainbows", "shine", "bright", "bright", "bright", ".")
+    deserialized.documentFields("raw") shouldBe Array(
+      "Rainbows",
+      "shine",
+      "bright",
+      "bright",
+      "bright",
+      "."
+    )
     deserialized.mentionFields("tag") should contain inOrderOnly ("NNS", "VBP", "JJ")
   }
 

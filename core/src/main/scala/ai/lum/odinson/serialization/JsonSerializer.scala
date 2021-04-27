@@ -195,7 +195,7 @@ class JsonSerializer(
 
     val fieldsToInclude = dataGathererOpt.get.fieldsToInclude(verbose)
     ujson.Obj(
-      "text"    -> m.text,
+      "text" -> m.text,
       "mention" -> m.mentionFields
         .filterKeys(key => fieldsToInclude.contains(key))
         .mapValues(_.toSeq),
@@ -279,12 +279,16 @@ class JsonSerializer(
     // Check to see if there was verbose content stored
     val detail = json.obj.value.get("detail")
     detail match {
-      case None => () // if no content was serialized, do nothing
-      case Some(content)    =>
+      case None          => () // if no content was serialized, do nothing
+      case Some(content) =>
         // Otherwise, add the serialized content
         val text = content("text").str
-        val docFields = content("document").obj.map{case (key, value) => (key, value.arr.map(_.str).toArray)}
-        val mentionFields = content("mention").obj.map{case (key, value) => (key, value.arr.map(_.str).toArray)}
+        val docFields = content("document").obj.map { case (key, value) =>
+          (key, value.arr.map(_.str).toArray)
+        }
+        val mentionFields = content("mention").obj.map { case (key, value) =>
+          (key, value.arr.map(_.str).toArray)
+        }
         out.manuallyPopulate(text, docFields.toMap, mentionFields.toMap)
     }
     out

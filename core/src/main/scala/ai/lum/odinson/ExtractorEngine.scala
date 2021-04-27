@@ -563,78 +563,77 @@ class ExtractorEngine private (
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getStringForSpan",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getStringForSpan(docID: Int, m: OdinsonMatch): String =
     dataGatherer.getStringForSpan(docID, m)
 
   @deprecated(
     message = "This method is deprecated, please use the `text()` method of the argument Mention",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getArgument(mention: Mention, name: String): String = dataGatherer.getArgument(mention, name)
 
   @deprecated(
     message = "This method is deprecated, please use Mention.mentionFields",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(m: Mention): Array[String] = dataGatherer.getTokensForSpan(m)
 
   @deprecated(
     message = "This method is deprecated, please use Mention.mentionFields",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(m: Mention, fieldName: String): Array[String] =
     dataGatherer.getTokensForSpan(m, fieldName)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] =
     dataGatherer.getTokensForSpan(docID, m)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] =
     dataGatherer.getTokensForSpan(docID, m, fieldName)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] =
     dataGatherer.getTokensForSpan(docID, start, end)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] =
     dataGatherer.getTokensForSpan(docID, fieldName, start, end)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = dataGatherer.getTokens(scoreDoc)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] =
     dataGatherer.getTokens(scoreDoc, fieldName)
 
   @deprecated(
     message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
-    since="0.3.2"
+    since = "0.3.2"
   )
   def getTokens(docID: Int, fieldName: String): Array[String] =
     dataGatherer.getTokens(docID, fieldName)
-
 
 }
 
