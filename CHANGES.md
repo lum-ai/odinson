@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.3.0] - 2021-02-18
 ### Added
+- Added ability to Mentions to populate their lexical content ([#274](https://github.com/lum-ai/odinson/pull/274)) 
 - Added :mkDoc command to shell ([#272](https://github.com/lum-ai/odinson/pull/272))
 - Added ability to serialize Mentions verbosely (with displayField or all storedFields) ([#265](https://github.com/lum-ai/odinson/pull/265))
 - Added project-wide formatting settings and a PR check for linting
@@ -40,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Put indexing docs in a method to be used by external projects. ([#90](https://github.com/lum-ai/odinson/pull/90))
 - Started documentation at [http://gh.lum.ai/odinson/](http://gh.lum.ai/odinson/) ([#97](https://github.com/lum-ai/odinson/pull/97))
 ### Changed
+- Moved responsibility for getting lexical content from ExtractorEngine to DataGatherer ([#274](https://github.com/lum-ai/odinson/pull/274))
 - JsonSerializer is now a class, and has the ability to serialize verbose detail about Mentions ([#265](https://github.com/lum-ai/odinson/pull/265))
 - updated version of CluLab processors in `extra/` to 8.2.3 ([#241](https://github.com/lum-ai/odinson/pull/241))
 - using whole config to create ExtractorEngine and its components (rather than subconfigs) ([#231](https://github.com/lum-ai/odinson/pull/231))
