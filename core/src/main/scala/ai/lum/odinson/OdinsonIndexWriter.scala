@@ -24,6 +24,7 @@ import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import org.apache.lucene.document.BinaryDocValuesField
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -36,7 +37,6 @@ class OdinsonIndexWriter(
   val addToNormalizedField: Set[String],
   val incomingTokenField: String,
   val outgoingTokenField: String,
-  val sortedDocValuesFieldMaxSize: Int,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
   val displayField: String
@@ -160,15 +160,8 @@ class OdinsonIndexWriter(
           new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(outgoingEdges))
         val bytes =
           UnsafeSerializer.graphToBytes(mkDirectedGraph(incomingEdges, outgoingEdges, roots))
-        if (bytes.length <= sortedDocValuesFieldMaxSize) {
-          val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
-          Seq(graph, in, out)
-        } else {
-          logger.warn(
-            s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes"
-          )
-          Seq.empty
-        }
+        val graph = new BinaryDocValuesField(f.name, new BytesRef(bytes))
+        Seq(graph, in, out)
       case f =>
         // fallback to the lucene fields that don't require sentence information
         mkLuceneFields(f)
@@ -265,7 +258,6 @@ object OdinsonIndexWriter {
     val addToNormalizedField = config[List[String]]("odinson.index.addToNormalizedField")
     val incomingTokenField = config[String]("odinson.index.incomingTokenField")
     val outgoingTokenField = config[String]("odinson.index.outgoingTokenField")
-    val sortedDocValuesFieldMaxSize = config[Int]("odinson.index.sortedDocValuesFieldMaxSize")
     val maxNumberOfTokensPerSentence = config[Int]("odinson.index.maxNumberOfTokensPerSentence")
     val invalidCharacterReplacement = config[String]("odinson.index.invalidCharacterReplacement")
     val storedFields = config[List[String]]("odinson.index.storedFields")
@@ -297,7 +289,6 @@ object OdinsonIndexWriter {
       addToNormalizedField.toSet,
       incomingTokenField,
       outgoingTokenField,
-      sortedDocValuesFieldMaxSize,
       maxNumberOfTokensPerSentence,
       invalidCharacterReplacement,
       displayField
