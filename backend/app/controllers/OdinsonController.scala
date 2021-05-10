@@ -185,7 +185,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
                   val term = termsEnum.term.utf8ToString
                   termFreqs.enqueue((term, termsEnum.totalTermFreq))
                   // if we exceed the size we need, just throw the oldest away
-                  if(termFreqs.size > maxIdx) termFreqs.dequeue()
+                  if (termFreqs.size > maxIdx) termFreqs.dequeue()
                 }
                 termFreqs
                   .toIndexedSeq
@@ -281,19 +281,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   /** Convenience method to determine if a string matches a given regular expression.
     * @param s The String to be searched.
     * @param regex The regular expression against which `s` should be compared.
-    * @return True if there's at least one match.
+    * @return True if the whole expression matches.
     */
-  private def isMatch(s: String, regex: Option[String]): Boolean = {
-    if (regex.isEmpty) true
-    // .* is necessary
-    else {
-      val pattern = regex.get.r
-      pattern.findFirstMatchIn(s) match {
-        case Some(_) => true
-        case _       => false
-      }
-    }
-  }
+  private def isMatch(s: String, regex: Option[String]): Boolean = s.matches(regex.getOrElse(".*"))
 
   case class RuleFreqRequest(
     grammar: String,
