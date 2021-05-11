@@ -50,7 +50,7 @@ class OdinsonIndexWriter(
     else writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
     writerConf
   }
-  writerConfig.setOpenMode(OpenMode.CREATE)
+
   val writer = new IndexWriter(directory, writerConfig)
 
   def addDocument(doc: OdinsonDocument): Unit = {
@@ -98,7 +98,10 @@ class OdinsonIndexWriter(
     addDocuments(block)
   }
 
-  def commit(): Unit = writer.commit()
+  def commit(): Unit = {
+    writer.flush()
+    writer.commit()
+  }
 
   def close(): Unit = {
     if (directory.listAll().contains(VOCABULARY_FILENAME)) directory.deleteFile(VOCABULARY_FILENAME)
