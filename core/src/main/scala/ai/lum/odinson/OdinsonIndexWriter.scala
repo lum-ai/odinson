@@ -21,6 +21,7 @@ import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.{Document => OdinsonDocument}
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -37,14 +38,24 @@ class OdinsonIndexWriter(
   val invalidCharacterReplacement: String,
   val storeAllFields: Boolean,
   val displayField: String,
+  val append : Boolean
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
 
   val analyzer = new WhitespaceAnalyzer()
-  val writerConfig = new IndexWriterConfig(analyzer)
+  val writerConfig = {
+    val writerConf = new IndexWriterConfig(analyzer)
+    if (!append) writerConf.setOpenMode(OpenMode.CREATE)
+    else writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
+    writerConf
+  }
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
+
+  def addDocument(doc: OdinsonDocument): Unit = {
+    indexDocuments(mkDocumentBlock(doc))
+  }
 
   def addDocuments(block: Seq[lucenedoc.Document]): Unit = {
     addDocuments(block.asJava)
@@ -52,6 +63,15 @@ class OdinsonIndexWriter(
 
   def addDocuments(block: Collection[lucenedoc.Document]): Unit = {
     writer.addDocuments(block)
+  }
+
+  def indexDocuments(block: Seq[lucenedoc.Document]): Unit = {
+    indexDocuments(block.asJava)
+  }
+
+  def indexDocuments(block: Collection[lucenedoc.Document]): Unit = {
+    writer.addDocuments(block)
+    if (append) commit()
   }
 
   /**
@@ -81,11 +101,14 @@ class OdinsonIndexWriter(
   def commit(): Unit = writer.commit()
 
   def close(): Unit = {
+    if (directory.listAll().contains(VOCABULARY_FILENAME)) directory.deleteFile(VOCABULARY_FILENAME)
+    if (directory.listAll().contains(BUILDINFO_FILENAME)) directory.deleteFile(BUILDINFO_FILENAME)
+
     // FIXME: is this the correct instantiation of IOContext?
-    using (directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
+    using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
       stream.writeString(vocabulary.dump)
     }
-    using (directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
+    using(directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
       stream.writeString(BuildInfo.toJson)
     }
     writer.close()
@@ -270,6 +293,7 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
+    val append = config[Boolean]("odinson.index.append")
     new OdinsonIndexWriter(
       directory, vocabulary,
       documentIdField,
@@ -283,7 +307,8 @@ object OdinsonIndexWriter {
       maxNumberOfTokensPerSentence,
       invalidCharacterReplacement,
       storeAllFields,
-      displayField
+      displayField,
+      append
     )
   }
 

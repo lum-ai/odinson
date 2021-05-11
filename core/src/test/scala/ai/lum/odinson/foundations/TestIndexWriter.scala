@@ -99,14 +99,14 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     indexer.addDocument(docOne)
 
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
-    reader.numDocs shouldBe 2
+    reader.numDocs shouldBe 2 // number of lucene entries, not documents
     reader.close()
 
     val docTwo = getDocument("ninja-turtles")
     indexer.addDocument(docTwo)
 
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
-    reader.numDocs() shouldBe 5
+    reader.numDocs() shouldBe 5 // number of lucene entries, not documents
 
     reader.close()
     indexer.close()
@@ -126,7 +126,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
 
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
 
-    reader.numDocs shouldBe 2
+    reader.numDocs shouldBe 2 // number of lucene entries, not documents
     reader.close()
     indexer.close()
 
@@ -137,8 +137,10 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val docTwo = getDocument("ninja-turtles")
     indexer.addDocument(docTwo)
 
+    Thread.sleep(500)
+
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
-    reader.numDocs() shouldBe 5
+    reader.numDocs() shouldBe 5 // number of lucene entries, not documents
 
     reader.close()
     indexer.close()
