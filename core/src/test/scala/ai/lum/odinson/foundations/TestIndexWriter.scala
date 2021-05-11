@@ -29,26 +29,24 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     )
   }
 
-  def deleteIndex = {
-    val dir = new Directory(indexDir)
-    dir.deleteRecursively()
+  def deleteIndex( indexDir : File ) : Boolean = {
+    new Directory( indexDir ).deleteRecursively()
   }
 
-  def getOdinsonIndexWriter: OdinsonIndexWriter = {
-    deleteIndex
-    OdinsonIndexWriter.fromConfig(testConfig)
+  def getOdinsonIndexWriter(config : Config = testConfig): OdinsonIndexWriter = {
+    OdinsonIndexWriter.fromConfig(config)
   }
   
   "OdinsonIndexWriter" should "object should return index from config correctly" in {
     // get index writer
-    val indexWriter = getOdinsonIndexWriter
+    val indexWriter = getOdinsonIndexWriter(testConfig)
     // make sure the folder was created with only the locker inside
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close
   }
   
   it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
-    val indexWriter = getOdinsonIndexWriter
+    val indexWriter = getOdinsonIndexWriter(testConfig)
     // Initialize fild of type DateField
     var field =
       """{"$type":"ai.lum.odinson.DateField","name":"smth","date":"1993-03-28"}"""
