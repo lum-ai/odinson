@@ -2,9 +2,10 @@ package ai.lum.odinson.foundations
 
 // test imports
 import java.nio.file.Files
-
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.{Config, ConfigValueFactory}
+import org.apache.lucene.index.{DirectoryReader, IndexReader}
+import org.apache.lucene.store.FSDirectory
 // lum imports
 import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
 import ai.lum.common.ConfigFactory
@@ -82,5 +83,70 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val foundStrings = matches.map(m => ee.getStringForSpan(docId, m))
 
     foundStrings shouldEqual expectedMatches
+  }
+
+  it should "incrementally append to a new index" in {
+    val (_, indexDir, config) = getTestConfig()
+    val appendConf = config.withValue( "odinson.index.append", ConfigValueFactory.fromAnyRef( true ) )
+    val indexer = getOdinsonIndexWriter( appendConf )
+    var reader : IndexReader = null
+
+    // add one doc...
+    val docOne : OdinsonDocument = getDocument( "alien-species" )
+    indexer.addDocument( docOne )
+
+    reader = DirectoryReader.open( FSDirectory.open( indexDir.toPath ) )
+    reader.numDocs shouldBe 2
+    reader.close()
+
+    val docTwo = getDocument( "ninja-turtles" )
+    indexer.addDocument( docTwo )
+
+    reader = DirectoryReader.open( FSDirectory.open( indexDir.toPath ) )
+    reader.numDocs() shouldBe 5
+
+    reader.close()
+    indexer.close()
+
+    deleteIndex( indexDir )
+  }
+
+  it should "incrementally append to an existing index" in {
+    val (_, indexDir, config) = getTestConfig()
+    val appendConf = config.withValue( "odinson.index.append", ConfigValueFactory.fromAnyRef( true ) )
+    var indexer = getOdinsonIndexWriter( appendConf )
+    var reader : IndexReader = null
+
+    // add one doc...
+    val docOne : OdinsonDocument = getDocument( "alien-species" )
+    indexer.addDocument( docOne )
+
+    reader = DirectoryReader.open( FSDirectory.open( indexDir.toPath ) )
+
+    reader.numDocs shouldBe 2
+    reader.close()
+    indexer.close()
+
+    // reopen the index with a new processor
+    indexer = getOdinsonIndexWriter( appendConf )
+    reader = DirectoryReader.open( FSDirectory.open( indexDir.toPath ) )
+
+    val docTwo = getDocument( "ninja-turtles" )
+    indexer.addDocument( docTwo )
+
+    reader = DirectoryReader.open( FSDirectory.open( indexDir.toPath ) )
+    reader.numDocs() shouldBe 5
+
+    reader.close()
+    indexer.close()
+
+    deleteIndex(indexDir)
+  }
+
+  private def getTestConfig( ) : (File, File, Config) = {
+    val tmpFolder : File = Files.createTempDirectory( "odinson-test" ).toFile()
+    val indexDir : File = new File( tmpFolder, "index" )
+    val testConfig : Config = defaultConfig.withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( indexDir.getAbsolutePath ) )
+    (tmpFolder, indexDir, testConfig)
   }
 }
