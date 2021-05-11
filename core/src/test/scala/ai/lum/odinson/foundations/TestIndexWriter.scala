@@ -2,13 +2,14 @@ package ai.lum.odinson.foundations
 
 // test imports
 import java.nio.file.Files
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.lucene.index.{DirectoryReader, IndexReader}
 import org.apache.lucene.store.FSDirectory
 // lum imports
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.{Document => OdinsonDocument}
 import ai.lum.odinson.{OdinsonIndexWriter, DateField, StringField}
-import ai.lum.common.ConfigFactory
+
 // file imports
 import scala.reflect.io.Directory
 import java.io.File
@@ -114,7 +115,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
   it should "incrementally append to an existing index" in {
     val (_, indexDir, config) = getTestConfig()
     val appendConf = config.withValue( "odinson.index.append", ConfigValueFactory.fromAnyRef( true ) )
-    var indexer = getOdinsonIndexWriter( appendConf )
+    var indexer : OdinsonIndexWriter = getOdinsonIndexWriter( appendConf )
     var reader : IndexReader = null
 
     // add one doc...
