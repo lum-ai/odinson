@@ -1,18 +1,21 @@
 package ai.lum.odinson.digraph
 
 import java.io.IOException
+
+import ai.lum.common.TryWithResources.using
+
 import scala.collection.mutable
 import org.apache.lucene.store.{ Directory, IOContext }
 import ai.lum.odinson.OdinsonIndexWriter
 
 /** This vocabulary is meant for the labels of the edges of the dependency graph.
- *  This object maps a term_id (int) to a symbol (string).
- *  It is thread-safe. Note that id assignment is sensitive to the order in which terms
- *  are added to the vocabulary.
- */
+  *  This object maps a term_id (int) to a symbol (string).
+  *  It is thread-safe. Note that id assignment is sensitive to the order in which terms
+  *  are added to the vocabulary.
+  */
 class Vocabulary(
-    private val idToTerm: mutable.ArrayBuffer[String],
-    private val termToId: mutable.HashMap[String, Int]
+  private val idToTerm: mutable.ArrayBuffer[String],
+  private val termToId: mutable.HashMap[String, Int]
 ) {
 
   def contains(id: Int): Boolean = idToTerm.isDefinedAt(id)
@@ -22,12 +25,14 @@ class Vocabulary(
   def getId(term: String): Option[Int] = termToId.get(term)
 
   def getOrCreateId(term: String): Int = synchronized {
-    termToId.getOrElseUpdate(term, {
-      val id = idToTerm.length
-      idToTerm += term
-      termToId += Tuple2(term, id)
-      id
-    })
+    termToId.getOrElseUpdate(
+      term, {
+        val id = idToTerm.length
+        idToTerm += term
+        termToId += Tuple2(term, id)
+        id
+      }
+    )
   }
 
   def getTerm(id: Int): Option[String] = {
@@ -62,12 +67,14 @@ object Vocabulary {
     new Vocabulary(buffer, map)
   }
 
-  def fromDirectory(directory: Directory): Vocabulary = try {
-    // FIXME: is this the correct instantiation of IOContext?
-    val stream = directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)
-    Vocabulary.load(stream.readString())
-  } catch {
-    case e:IOException => Vocabulary.empty
-  }
+  def fromDirectory(directory: Directory): Vocabulary =
+    try {
+      // FIXME: is this the correct instantiation of IOContext?
+      using(directory.openInput(OdinsonIndexWriter.VOCABULARY_FILENAME, new IOContext)) { stream =>
+        Vocabulary.load(stream.readString())
+      }
+    } catch {
+      case e: IOException => Vocabulary.empty
+    }
 
 }

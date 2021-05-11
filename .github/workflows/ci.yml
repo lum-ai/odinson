@@ -1,4 +1,4 @@
-name: Scala CI
+name: Odinson CI
 
 on:
   push:
@@ -16,6 +16,8 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - name: Lint check via scalafmt
+      run: sbt scalafmtCheckAll
     - name: Run tests
       run: sbt coverage test
     - name: Coverage Report

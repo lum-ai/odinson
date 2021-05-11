@@ -1,33 +1,30 @@
 package ai.lum.odinson.serialization
 
 import ai.lum.odinson._
+import ai.lum.odinson.serialization.JsonSerializer._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
-object JsonSerializer {
+class JsonSerializer(
+  verbose: VerboseLevels.Verbosity = VerboseLevels.Minimal,
+  indent: Int = 4,
+  engine: Option[ExtractorEngine] = None
+) {
+
+  // Ensure a valid verbosity level and compatible engine
+  checkEngine(verbose, engine)
 
   // Json String
 
   def asJsonPretty(ms: Iterator[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Iterator[Mention], indent: Int): String = {
-    asJsonPretty(ms.toSeq, indent)
+    asJsonPretty(ms.toSeq)
   }
 
   def asJsonPretty(ms: Seq[Mention]): String = {
-    asJsonPretty(ms, indent = 4)
-  }
-
-  def asJsonPretty(ms: Seq[Mention], indent: Int): String = {
     ujson.write(asJsonValue(ms), indent)
   }
 
   def asJsonPretty(m: Mention): String = {
-    ujson.write(asJsonValue(m), indent = 4)
-  }
-
-  def asJsonPretty(m: Mention, indent: Int): String = {
     ujson.write(asJsonValue(m), indent)
   }
 
@@ -42,7 +39,6 @@ object JsonSerializer {
   def asJsonString(m: Mention): String = {
     ujson.write(asJsonValue(m))
   }
-
 
   // Json Lines (one mention json per line)
 
@@ -65,10 +61,11 @@ object JsonSerializer {
   }
 
   def asJsonValue(m: Mention): Value = {
+
     val corpusDocId = m.idGetter.getDocId
     val corpusSentId = m.idGetter.getSentId
 
-    ujson.Obj (
+    val json = ujson.Obj(
       "scalaType" -> m.getClass.getCanonicalName,
       "odinsonMatch" -> asJsonValue(m.odinsonMatch),
       "label" -> stringOrNull(m.label),
@@ -80,11 +77,18 @@ object JsonSerializer {
       "foundBy" -> m.foundBy,
       "arguments" -> asJsonValue(m.arguments)
     )
+
+    // Add verbose content if requested
+    if (verbose != VerboseLevels.Minimal) {
+      json("detail") = mkVerboseContent(m)
+    }
+
+    json
   }
 
   def asJsonValue(om: OdinsonMatch): Value = {
     val scalaType = om.getClass.getCanonicalName
-     om match {
+    om match {
       case sm: StateMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
@@ -96,7 +100,7 @@ object JsonSerializer {
         ujson.Obj(
           "scalaType" -> scalaType,
           "start" -> ng.start,
-          "end" -> ng.end,
+          "end" -> ng.end
         )
       case em: EventMatch =>
         ujson.Obj(
@@ -110,27 +114,27 @@ object JsonSerializer {
         ujson.Obj(
           "scalaType" -> scalaType,
           "srcMatch" -> asJsonValue(gt.srcMatch),
-          "dstMatch" -> asJsonValue(gt.dstMatch),
+          "dstMatch" -> asJsonValue(gt.dstMatch)
         )
 
       case concat: ConcatMatch =>
-      ujson.Obj(
-        "scalaType" -> scalaType,
-        "subMatches" -> concat.subMatches.map(asJsonValue).toSeq,
-      )
+        ujson.Obj(
+          "scalaType" -> scalaType,
+          "subMatches" -> concat.subMatches.map(asJsonValue).toSeq
+        )
 
       case rep: RepetitionMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
           "subMatches" -> rep.subMatches.map(asJsonValue).toSeq,
-          "isGreedy" -> rep.isGreedy,
+          "isGreedy" -> rep.isGreedy
         )
 
       case opt: OptionalMatch =>
         ujson.Obj(
           "scalaType" -> scalaType,
           "subMatch" -> asJsonValue(opt.subMatch),
-          "isGreedy" -> opt.isGreedy,
+          "isGreedy" -> opt.isGreedy
         )
 
       case or: OrMatch =>
@@ -145,7 +149,7 @@ object JsonSerializer {
           "scalaType" -> scalaType,
           "subMatch" -> asJsonValue(named.subMatch),
           "name" -> named.name,
-          "label" -> stringOrNull(named.label),
+          "label" -> stringOrNull(named.label)
         )
 
       case _ => ???
@@ -170,7 +174,7 @@ object JsonSerializer {
   }
 
   def asJsonValue(metadatas: Array[ArgumentMetadata]): Value = {
-    ujson.Arr{
+    ujson.Arr {
       metadatas.map(asJsonValue).toSeq
     }
   }
@@ -181,6 +185,31 @@ object JsonSerializer {
       "min" -> metadata.min,
       "max" -> intOrNull(metadata.max)
     )
+  }
+
+  private def mkVerboseContent(m: Mention): Value = {
+    val json = ujson.Obj()
+    json("mention") = ujson.Obj()
+    json("document") = ujson.Obj()
+
+    // Determine which fields to include, given the specified level of verbosity
+    // Note that since we already checked the validity of verbose and engine,
+    // calling `get` here on the engine should not be a problem.
+    val fieldsToInclude = verbose match {
+      case VerboseLevels.Minimal => Seq.empty
+      case VerboseLevels.Display => Seq(engine.get.displayField)
+      case VerboseLevels.All     => engine.get.indexSettings.storedFields
+    }
+
+    // Retrieve the tokens for each included field
+    for (field <- fieldsToInclude) {
+      val mentionTokens = engine.get.getTokensForSpan(m, field)
+      json("mention")(field) = mentionTokens.toSeq
+      val documentTokens = engine.get.getTokens(m.luceneDocId, field)
+      json("document")(field) = documentTokens.toSeq
+    }
+
+    json
   }
 
   def stringOrNull(s: Option[String]): Value = {
@@ -240,7 +269,16 @@ object JsonSerializer {
     val sentId = json("sentId").str
     val idGetter = new KnownIdGetter(docId, sentId)
 
-    new Mention(odinsonMatch, label, luceneDocId, luceneSegmentDocId, luceneSegmentDocBase, idGetter, foundBy, arguments)
+    new Mention(
+      odinsonMatch,
+      label,
+      luceneDocId,
+      luceneSegmentDocId,
+      luceneSegmentDocBase,
+      idGetter,
+      foundBy,
+      arguments
+    )
   }
 
   def deserializeMatch(json: Value): OdinsonMatch = {
@@ -305,6 +343,7 @@ object JsonSerializer {
   def deserializeNamedCaptures(json: Value): Array[NamedCapture] = {
     json.arr.toArray.map(deserializeNamedCapture)
   }
+
   def deserializeNamedCapture(json: Value): NamedCapture = {
     val name = json("name").str
     val label = deserializeOptionString(json("label"))
@@ -315,6 +354,7 @@ object JsonSerializer {
   def deserializeArgMetadatas(json: Value): Array[ArgumentMetadata] = {
     json.arr.toArray.map(deserializeArgMetadata)
   }
+
   def deserializeArgMetadata(json: Value): ArgumentMetadata = {
     val metadata = json.obj.toMap
     val name = metadata("name").str
@@ -327,15 +367,42 @@ object JsonSerializer {
   def deserializeOptionString(json: Value): Option[String] = {
     json match {
       case ujson.Null => None
-      case someLabel => Some(someLabel.str)
+      case someLabel  => Some(someLabel.str)
     }
   }
 
   def deserializeOptionInt(json: Value): Option[Int] = {
     json match {
       case ujson.Null => None
-      case i => Some(i.num.toInt)
+      case i          => Some(i.num.toInt)
     }
+  }
+
+  // -------------------------------------
+  //        HELPER METHODS
+  // -------------------------------------
+
+  def checkEngine(verbose: VerboseLevels.Verbosity, engine: Option[ExtractorEngine]): Unit = {
+    if (verbose != VerboseLevels.Minimal && engine.isEmpty) {
+      throw new OdinsonException(
+        "Cannot request verbose serialization without providing an ExtractorEngine."
+      )
+    }
+  }
+
+}
+
+object JsonSerializer {
+
+  // Enum to handle the supported levels of verbosity of Mentions.
+  //  - Minimal:  No additional text included
+  //  - Display:  Display field included
+  //  - All:      All stored fields included
+  object VerboseLevels extends Enumeration {
+    type Verbosity = Value
+
+    val Minimal, Display, All = Value
+
   }
 
 }

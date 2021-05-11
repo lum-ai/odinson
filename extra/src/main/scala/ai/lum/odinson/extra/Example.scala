@@ -9,6 +9,7 @@ import ai.lum.odinson.serialization.JsonSerializer
 import ai.lum.odinson.utils.DisplayUtils.displayMention
 import ai.lum.odinson.utils.SituatedStream
 import ai.lum.odinson.ExtractorEngine
+import ai.lum.odinson.serialization.JsonSerializer.VerboseLevels._
 import com.typesafe.scalalogging.LazyLogging
 import upickle.default._
 
@@ -20,22 +21,22 @@ case class MentionInfo(
   sentenceId: String,
   sentenceText: String,
   foundBy: String,
-  args: Seq[ArgInfo],
-)
-{
+  args: Seq[ArgInfo]
+) {
   def toJson: String = write(this)
 }
-object MentionInfo {implicit val rw: ReadWriter[MentionInfo] = macroRW}
+
+object MentionInfo { implicit val rw: ReadWriter[MentionInfo] = macroRW }
 
 // Wrapper for named captures (i.e., arguments) for use in the example,
 // again not intended to be comprehensive.
-case class ArgInfo(role: String, tokens: Seq[String])
-{
+case class ArgInfo(role: String, tokens: Seq[String]) {
   def toJson: String = write(this)
 }
-object ArgInfo {implicit val rw: ReadWriter[ArgInfo] = macroRW}
 
-object Example extends App with LazyLogging{
+object ArgInfo { implicit val rw: ReadWriter[ArgInfo] = macroRW }
+
+object Example extends App with LazyLogging {
 
   // Specify paths and settings in the local config file
   val config = ConfigFactory.load()
@@ -53,7 +54,12 @@ object Example extends App with LazyLogging{
   mentions.foreach(displayMention(_, extractorEngine))
 
   // Export Mentions (here as json lines)
-  val serialized = JsonSerializer.asJsonLines(mentions)
+  val jsonSerializer = {
+    // can choose several levels of verbosity: Minimal, Display, and All
+    new JsonSerializer(verbose = Display, engine = Some(extractorEngine))
+  }
+
+  val serialized = jsonSerializer.asJsonLines(mentions)
   outputFile.writeString(serialized.mkString("\n"))
 
 }

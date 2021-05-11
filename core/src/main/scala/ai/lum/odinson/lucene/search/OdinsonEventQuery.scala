@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search
 
-import java.util.{Map => JMap, Set => JSet}
+import java.util.{ Map => JMap, Set => JSet }
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -20,7 +20,7 @@ case class ArgumentQuery(
   min: Int,
   max: Option[Int],
   promote: Boolean, // capture mention on-the-fly if not already captured
-  fullTraversal: FullTraversalQuery,
+  fullTraversal: FullTraversalQuery
 ) {
 
   def setState(stateOpt: Option[State]): Unit = {
@@ -58,7 +58,7 @@ case class ArgumentWeight(
   min: Int,
   max: Option[Int],
   promote: Boolean,
-  fullTraversal: FullTraversalWeight,
+  fullTraversal: FullTraversalWeight
 ) {
 
   def getSpans(
@@ -82,7 +82,7 @@ case class ArgumentSpans(
   min: Int,
   max: Option[Int],
   promote: Boolean,
-  fullTraversal: FullTraversalSpans,
+  fullTraversal: FullTraversalSpans
 ) {
 
   def subSpans: List[OdinsonSpans] = {
@@ -96,7 +96,7 @@ class OdinsonEventQuery(
   val requiredArguments: List[ArgumentQuery],
   val optionalArguments: List[ArgumentQuery],
   val dependenciesField: String,
-  val sentenceLengthField: String,
+  val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (trigger, requiredArguments, optionalArguments, dependenciesField).##
@@ -120,13 +120,15 @@ class OdinsonEventQuery(
     val rewrittenTrigger = trigger.rewrite(reader).asInstanceOf[OdinsonQuery]
     val rewrittenRequiredArguments = requiredArguments.map(_.rewrite(reader))
     val rewrittenOptionalArguments = optionalArguments.map(_.rewrite(reader))
-    if (trigger != rewrittenTrigger || requiredArguments != rewrittenRequiredArguments || optionalArguments != rewrittenOptionalArguments) {
+    if (
+      trigger != rewrittenTrigger || requiredArguments != rewrittenRequiredArguments || optionalArguments != rewrittenOptionalArguments
+    ) {
       new OdinsonEventQuery(
         rewrittenTrigger,
         rewrittenRequiredArguments,
         rewrittenOptionalArguments,
         dependenciesField,
-        sentenceLengthField,
+        sentenceLengthField
       )
     } else {
       super.rewrite(reader)
@@ -159,7 +161,7 @@ class OdinsonEventQuery(
     terms: JMap[Term, TermContext],
     triggerWeight: OdinsonWeight,
     requiredWeights: List[ArgumentWeight],
-    optionalWeights: List[ArgumentWeight],
+    optionalWeights: List[ArgumentWeight]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -189,13 +191,13 @@ class OdinsonEventQuery(
       val requiredSpans = requiredWeights.map(_.getSpans(context, requiredPostings))
       if (requiredSpans.exists(_ == null)) return null
       // Optional arguments that fail should be removed from the list
-      val optionalSpans = optionalWeights.flatMap{ w =>
+      val optionalSpans = optionalWeights.flatMap { w =>
         Option(w.getSpans(context, requiredPostings))
       }
       // subSpans is required by ConjunctionSpans
       val subSpans = triggerSpans :: requiredSpans.flatMap(_.subSpans)
       // get graphs
-      val graphPerDoc = context.reader.getSortedDocValues(dependenciesField)
+      val graphPerDoc = context.reader.getBinaryDocValues(dependenciesField)
       // get token counts
       val numWordsPerDoc = context.reader.getNumericDocValues(sentenceLengthField)
       // return event spans
@@ -205,7 +207,7 @@ class OdinsonEventQuery(
         requiredSpans,
         optionalSpans,
         graphPerDoc,
-        numWordsPerDoc,
+        numWordsPerDoc
       )
     }
 
@@ -218,8 +220,8 @@ class OdinsonEventSpans(
   val triggerSpans: OdinsonSpans,
   val requiredSpans: List[ArgumentSpans],
   val optionalSpans: List[ArgumentSpans],
-  val graphPerDoc: SortedDocValues,
-  val numWordsPerDoc: NumericDocValues,
+  val graphPerDoc: BinaryDocValues,
+  val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 
   import Spans._
@@ -261,7 +263,7 @@ class OdinsonEventSpans(
   private def getStartOfPath(m: OdinsonMatch): OdinsonMatch = {
     m match {
       case m: GraphTraversalMatch => getStartOfPath(m.srcMatch)
-      case m => m
+      case m                      => m
     }
   }
 
@@ -276,7 +278,7 @@ class OdinsonEventSpans(
     val matches = argument.fullTraversal.matchFullTraversal(graph, maxToken, srcMatches)
     matches
       .groupBy(getStartOfPath) // the start should be the trigger
-      .transform((k,v) => v.map(m => (argument, m)))
+      .transform((k, v) => v.map(m => (argument, m)))
   }
 
   // advance all spans in arg to the specified doc

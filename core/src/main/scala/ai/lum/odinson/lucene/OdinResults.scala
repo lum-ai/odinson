@@ -3,9 +3,9 @@ package ai.lum.odinson.lucene
 import ai.lum.odinson.lucene.search._
 
 class OdinResults(
-    val totalHits: Int,
-    val scoreDocs: Array[OdinsonScoreDoc],
-    var maxScore: Float
+  val totalHits: Int,
+  val scoreDocs: Array[OdinsonScoreDoc],
+  var maxScore: Float
 ) {
 
   def this(totalHits: Int, scoreDocs: Array[OdinsonScoreDoc]) = {
@@ -23,10 +23,10 @@ object OdinResults {
   }
 
   def merge(
-      start: Int,
-      topN: Int,
-      shardHits: Array[OdinResults],
-      setShardIndex: Boolean
+    start: Int,
+    topN: Int,
+    shardHits: Array[OdinResults],
+    setShardIndex: Boolean
   ): OdinResults = {
     var totalHitCount = 0
     val availHitCount = shardHits.map(s => if (s == null) 0 else s.scoreDocs.length).sum

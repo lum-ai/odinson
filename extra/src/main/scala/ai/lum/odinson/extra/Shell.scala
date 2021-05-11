@@ -18,7 +18,8 @@ import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
-
+import ai.lum.odinson.extra.ProcessorsUtils.getProcessor
+import org.clulab.processors.Processor
 
 object Shell extends App {
 
@@ -30,7 +31,8 @@ object Shell extends App {
     ":settings" -> "show settings (accepts optional scope)",
     ":corpus" -> "show some corpus statistics",
     ":more" -> "display a new results page",
-    ":display" -> "specify the maximum number of matches to display (ex. :display 10)"
+    ":display" -> "specify the maximum number of matches to display (ex. :display 10)",
+    ":mkDoc" -> "produce the Document json for the text given, using config-specified processor"
   )
 
   // read config parameters
@@ -40,11 +42,13 @@ object Shell extends App {
   val displayField = config[String]("odinson.displayField")
   val history = new FileHistory(config[File]("odinson.shell.history"))
 
+  lazy val processor: Processor = getProcessor(config[String]("odinson.extra.processorType"))
+
   // we must flush the history before exiting
   sys.addShutdownHook {
     history.flush()
   }
-  
+
   // setup searcher
   val extractorEngine = ExtractorEngine.fromConfig()
 
@@ -70,6 +74,7 @@ object Shell extends App {
   // patterns to parse commands with arguments
   val matchNumResultsToDisplay = """^:display\s+(\d+)$""".r
   val matchSettingsScope = """^:settings\s+([\w\.-]+)$""".r
+  val matchTextToParse = """^:mkDoc\s+(.*)""".r
 
   var query: String = null
   var after: OdinsonScoreDoc = null
@@ -95,19 +100,20 @@ object Shell extends App {
           running = false
         } else {
           line.trim match {
-            case "" => ()
-            case ":help" => printHelp()
-            case ":exit" => running = false
+            case ""           => ()
+            case ":help"      => printHelp()
+            case ":exit"      => running = false
             case ":buildinfo" => printBuildInfo()
-            case ":settings" => printSettings()
-            case ":more" => printMore(maxMatchesDisplay)
+            case ":settings"  => printSettings()
+            case ":more"      => printMore(maxMatchesDisplay)
             case ":corpus" =>
               println("Number of sentences: " + extractorEngine.numDocs.display)
-              // TODO maybe print some more stuff?
+            // TODO maybe print some more stuff?
             case matchSettingsScope(s) => printSettings(s)
             case matchNumResultsToDisplay(n) =>
               maxMatchesDisplay = n.toInt
               println(s"will now display a maximum of $maxMatchesDisplay matches ...")
+            case matchTextToParse(t) => printDocFromText(t)
             case s if s startsWith ":" =>
               println(s"Unrecognized command $s")
               println("Type :help for a list of commands")
@@ -155,6 +161,14 @@ object Shell extends App {
   def printSettings(): Unit = printSettings(config)
   def printSettings(s: String): Unit = printSettings(config[Config](s))
   def printSettings(c: Config): Unit = println(c.root().render())
+
+  /** Print the json of the Odinson Document for the string */
+  def printDocFromText(s: String): Unit = {
+    val procDoc = processor.annotate(s)
+    val doc = ProcessorsUtils.convertDocument(procDoc)
+    val json = doc.toJson
+    println(json)
+  }
 
   /** searches for pattern and prints the first n matches */
   def search(n: Int): Unit = {

@@ -12,9 +12,9 @@ import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.lucene.util._
 
 class OdinConcatQuery(
-    val clauses: List[OdinsonQuery],
-    val defaultTokenField: String,
-    val sentenceLengthField: String
+  val clauses: List[OdinsonQuery],
+  val defaultTokenField: String,
+  val sentenceLengthField: String
 ) extends OdinsonQuery { self =>
 
   override def hashCode: Int = (clauses, defaultTokenField, sentenceLengthField).##
@@ -49,9 +49,9 @@ class OdinConcatQuery(
   }
 
   class OdinConcatWeight(
-      val subWeights: JList[OdinsonWeight],
-      searcher: IndexSearcher,
-      terms: JMap[Term, TermContext]
+    val subWeights: JList[OdinsonWeight],
+    searcher: IndexSearcher,
+    terms: JMap[Term, TermContext]
   ) extends OdinsonWeight(self, searcher, terms) {
 
     def extractTerms(terms: JSet[Term]): Unit = {
@@ -88,9 +88,9 @@ class OdinConcatQuery(
   }
 
   class OdinConcatSpans(
-      val subSpans: Array[OdinsonSpans],
-      val reader: IndexReader,
-      getNumWordsPerDoc: => NumericDocValues // call-by-name
+    val subSpans: Array[OdinsonSpans],
+    val reader: IndexReader,
+    getNumWordsPerDoc: => NumericDocValues // call-by-name
   ) extends ConjunctionSpans {
 
     import Spans._
@@ -133,7 +133,7 @@ class OdinConcatQuery(
 
     private def concatSpansPair(
       leftSpans: Array[OdinsonMatch],
-      rightSpans: Array[OdinsonMatch],
+      rightSpans: Array[OdinsonMatch]
     ): Array[OdinsonMatch] = {
       // if either side is empty then there is nothing to concatenate
       if (leftSpans.isEmpty || rightSpans.isEmpty) return emptyMatchArray
@@ -191,7 +191,13 @@ class OdinConcatQuery(
         case (lhs: ConcatMatch, rhs: ConcatMatch) =>
           val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + rhs.subMatches.length)
           System.arraycopy(lhs.subMatches, 0, subMatches, 0, lhs.subMatches.length)
-          System.arraycopy(rhs.subMatches, 0, subMatches, lhs.subMatches.length, rhs.subMatches.length)
+          System.arraycopy(
+            rhs.subMatches,
+            0,
+            subMatches,
+            lhs.subMatches.length,
+            rhs.subMatches.length
+          )
           new ConcatMatch(subMatches)
         case (lhs: ConcatMatch, rhs) =>
           val subMatches = new Array[OdinsonMatch](lhs.subMatches.length + 1)
@@ -214,7 +220,7 @@ class OdinConcatQuery(
       while (i < spans.length) {
         results = spans(i) match {
           case s if results == null => s.getAllMatches()
-          case s => concatSpansPair(results, s.getAllMatches())
+          case s                    => concatSpansPair(results, s.getAllMatches())
         }
         if (results.isEmpty) return emptyMatchArray
         i += 1

@@ -1,9 +1,10 @@
 package ai.lum.odison.documentation
 
-import ai.lum.odinson.utils.TestUtils. OdinsonTest
-import ai.lum.odinson.{Document, OdinsonMatch}
+import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.{ Document, OdinsonMatch }
 
 class TestDocumentationQuantifiers extends OdinsonTest {
+
   def doc: Document =
     Document.fromJson(
       """{"id":"phosphorylation","metadata":[],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Foo","phosphorylates","bar","bears","."],"store":true},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Foo","phosphorylates","bar","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["foo", "phosphorylates","bar","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["PROTEIN","O","PROTEIN","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,2,"dobj"],[1,4,"punct"],[2,3,"amod"]],"roots":[1]}]}]}"""
@@ -22,9 +23,9 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     // since the arg is optional, we can match only the trigger or the arg
     numMatches(results) shouldEqual (2)
     // trigger
-    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 3, end = 4) should be (true)
+    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 3, end = 4) should be(true)
     // argument
-    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 2, end = 3) should be (true)
+    existsMatchWithCapturedMatchSpan(results, doc = 0, start = 2, end = 3) should be(true)
 
     val pattern1 = """
       trigger = [lemma=bar]
@@ -33,9 +34,9 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val q1 = ee.compiler.compileEventQuery(pattern1)
     val s1 = ee.query(q1)
     // here, since the arg isn't optional, we will not match the trigger as a standalone match, only the arg
-    numMatches(s1) should be (1)
+    numMatches(s1) should be(1)
     // argument
-    existsMatchWithSpan(results, doc = 0, start = 2, end = 3) should be (true)
+    existsMatchWithSpan(results, doc = 0, start = 2, end = 3) should be(true)
   }
 
   // []* -- FIXME
@@ -81,7 +82,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
     val nameCapturedVal = matchval.namedCaptures.head.capturedMatch
     nameCapturedVal.start shouldEqual (2)
     nameCapturedVal.end shouldEqual (3)
-    // check what 
-    existsMatchWithSpan(results, doc = 0, start = 3, end = 4) should be (true)
+    // check what
+    existsMatchWithSpan(results, doc = 0, start = 3, end = 4) should be(true)
   }
 }

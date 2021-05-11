@@ -26,6 +26,7 @@ import ai.lum.odinson.{Document => OdinsonDocument}
 class OdinsonIndexWriter(
   val directory: Directory,
   val vocabulary: Vocabulary,
+  val settings: IndexSettings,
   val documentIdField: String,
   val sentenceIdField: String,
   val sentenceLengthField: String,
@@ -33,7 +34,6 @@ class OdinsonIndexWriter(
   val addToNormalizedField: Set[String],
   val incomingTokenField: String,
   val outgoingTokenField: String,
-  val sortedDocValuesFieldMaxSize: Int,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
   val storeAllFields: Boolean,
@@ -65,6 +65,7 @@ class OdinsonIndexWriter(
     writer.addDocuments(block)
   }
 
+
   def indexDocuments(block: Seq[lucenedoc.Document]): Unit = {
     indexDocuments(block.asJava)
   }
@@ -81,19 +82,20 @@ class OdinsonIndexWriter(
     */
   def addFile(f: File, storeName: Boolean = true): Unit = {
     val origDoc = Document.fromJson(f)
-    val block = if (storeName) {
-      // keep track of file name to retrieve sentence JSON,
-      // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
-      // NOTE: this assumes all files are located immediately under `odinson.docsDir`
-      // With large document collections, it may be necessary to split documents across many subdirectories
-      // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
-      val fileField: Field =
-      StringField(name = "fileName", string = f.getName)
-      val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
-      mkDocumentBlock(doc)
-    } else {
-      mkDocumentBlock(origDoc)
-    }
+    val block =
+      if (storeName) {
+        // keep track of file name to retrieve sentence JSON,
+        // but ignore the path to the docs directory to avoid issues encountered when moving `odinson.dataDir`.
+        // NOTE: this assumes all files are located immediately under `odinson.docsDir`
+        // With large document collections, it may be necessary to split documents across many subdirectories
+        // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
+        val fileField: Field =
+          StringField(name = "fileName", string = f.getName)
+        val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
+        mkDocumentBlock(doc)
+      } else {
+        mkDocumentBlock(origDoc)
+      }
     // Add the document block
     addDocuments(block)
   }
@@ -113,6 +115,9 @@ class OdinsonIndexWriter(
     }
     using(directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
       stream.writeString(BuildInfo.toJson)
+    }
+    using(directory.createOutput(SETTINGSINFO_FILENAME, new IOContext)) { stream =>
+      stream.writeString(settings.dump)
     }
     writer.close()
   }
@@ -174,16 +179,14 @@ class OdinsonIndexWriter(
         val incomingEdges = f.mkIncomingEdges(s.numTokens)
         val outgoingEdges = f.mkOutgoingEdges(s.numTokens)
         val roots = f.roots.toArray
-        val in  = new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(incomingEdges))
-        val out = new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(outgoingEdges))
-        val bytes = UnsafeSerializer.graphToBytes(mkDirectedGraph(incomingEdges, outgoingEdges, roots))
-        if (bytes.length <= sortedDocValuesFieldMaxSize) {
-          val graph = new lucenedoc.SortedDocValuesField(f.name, new BytesRef(bytes))
-          Seq(graph, in, out)
-        } else {
-          logger.warn(s"serialized dependencies too big for storage: ${bytes.length.display} > ${sortedDocValuesFieldMaxSize.display} bytes")
-          Seq.empty
-        }
+        val in =
+          new lucenedoc.TextField(incomingTokenField, new DependencyTokenStream(incomingEdges))
+        val out =
+          new lucenedoc.TextField(outgoingTokenField, new DependencyTokenStream(outgoingEdges))
+        val bytes =
+          UnsafeSerializer.graphToBytes(mkDirectedGraph(incomingEdges, outgoingEdges, roots))
+        val graph = new BinaryDocValuesField(f.name, new BytesRef(bytes))
+        Seq(graph, in, out)
       case f =>
         // fallback to the lucene fields that don't require sentence information
         mkLuceneFields(f)
@@ -192,7 +195,7 @@ class OdinsonIndexWriter(
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
   def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
-    val mustStore = storeAllFields || f.name == displayField
+    val mustStore = settings.storedFields.contains(f.name)
     f match {
       case f: DateField =>
         val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
@@ -240,9 +243,8 @@ class OdinsonIndexWriter(
   //         Helper Methods
   // ---------------------------------
 
-  /**
-    * Validate a string, replacing it if invalid.
-     * @param s: String to be validated
+  /** Validate a string, replacing it if invalid.
+    * @param s: String to be validated
     * @return valid String (original or replaced)
     */
   private def validate(s: String): String = {
@@ -250,6 +252,7 @@ class OdinsonIndexWriter(
     // characters that are problematic for Lucene
     replaceControlCharacterString(s)
   }
+
   // Helper method to apply the validation to each String in a sequence
   private def validate(ss: Seq[String]): Seq[String] = ss.map(validate)
 
@@ -261,11 +264,11 @@ class OdinsonIndexWriter(
 
 }
 
-
 object OdinsonIndexWriter {
 
   val VOCABULARY_FILENAME = "dependencies.txt"
   val BUILDINFO_FILENAME = "buildinfo.json"
+  val SETTINGSINFO_FILENAME = "settingsinfo.json"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
