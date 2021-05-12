@@ -25,6 +25,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.BinaryDocValuesField
+import ai.lum.odinson.{Document => OdinsonDocument}
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -39,15 +40,25 @@ class OdinsonIndexWriter(
   val outgoingTokenField: String,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
-  val displayField: String
+  val displayField: String,
+  val incremental: Boolean = false
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
 
   val analyzer = new WhitespaceAnalyzer()
-  val writerConfig = new IndexWriterConfig(analyzer)
-  writerConfig.setOpenMode(OpenMode.CREATE)
+  val writerConfig = {
+    val writerConf = new IndexWriterConfig(analyzer)
+    if (!incremental) writerConf.setOpenMode( OpenMode.CREATE )
+    else writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
+    writerConf
+  }
+
   val writer = new IndexWriter(directory, writerConfig)
+
+  def addDocument(doc: OdinsonDocument): Unit = {
+    indexDocuments(mkDocumentBlock(doc))
+  }
 
   def addDocuments(block: Seq[lucenedoc.Document]): Unit = {
     addDocuments(block.asJava)
@@ -55,6 +66,15 @@ class OdinsonIndexWriter(
 
   def addDocuments(block: Collection[lucenedoc.Document]): Unit = {
     writer.addDocuments(block)
+  }
+
+  def indexDocuments(block: Seq[lucenedoc.Document]): Unit = {
+    indexDocuments(block.asJava)
+  }
+
+  def indexDocuments(block: Collection[lucenedoc.Document]): Unit = {
+    writer.addDocuments(block)
+    if (incremental) commit()
   }
 
   /** Add an Odinson Document to the index, where the Document is stored in a File.
@@ -81,9 +101,16 @@ class OdinsonIndexWriter(
     addDocuments(block)
   }
 
-  def commit(): Unit = writer.commit()
+  def commit(): Unit = {
+    writer.flush()
+    writer.commit()
+  }
 
   def close(): Unit = {
+    if (directory.listAll().contains(VOCABULARY_FILENAME)) directory.deleteFile(VOCABULARY_FILENAME)
+    if (directory.listAll().contains(BUILDINFO_FILENAME)) directory.deleteFile(BUILDINFO_FILENAME)
+    if (directory.listAll().contains(SETTINGSINFO_FILENAME)) directory.deleteFile(SETTINGSINFO_FILENAME)
+
     // FIXME: is this the correct instantiation of IOContext?
     using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
       stream.writeString(vocabulary.dump)
@@ -277,6 +304,8 @@ object OdinsonIndexWriter {
     if (!storedFields.contains(displayField)) {
       throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
+
+    val incremental = config[Boolean]("odinson.index.incremental")
     val settings = IndexSettings(storedFields)
     new OdinsonIndexWriter(
       directory,
@@ -291,7 +320,8 @@ object OdinsonIndexWriter {
       outgoingTokenField,
       maxNumberOfTokensPerSentence,
       invalidCharacterReplacement,
-      displayField
+      displayField,
+      incremental
     )
   }
 

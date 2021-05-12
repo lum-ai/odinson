@@ -2,23 +2,25 @@ package ai.lum.odinson.foundations
 
 // test imports
 import java.nio.file.Files
-
 import ai.lum.odinson._
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
+import org.apache.lucene.index.{DirectoryReader, IndexReader}
 import org.apache.lucene.store.FSDirectory
+import org.scalatest.BeforeAndAfterEach
 // lum imports
 import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.{Document => OdinsonDocument}
 // file imports
 import java.io.File
 
 import scala.reflect.io.Directory
 import scala.collection.JavaConverters._
 
-class TestOdinsonIndexWriter extends OdinsonTest {
+class TestOdinsonIndexWriter extends OdinsonTest with BeforeAndAfterEach {
   type Fixture = OdinsonIndexWriter
 
   val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
@@ -27,33 +29,30 @@ class TestOdinsonIndexWriter extends OdinsonTest {
   val testConfig: Config = {
     defaultConfig
       // re-compute the index and docs path's
-      .withValue(
-        "odinson.indexDir",
-        ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath)
-      )
+      .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
   }
 
-  def deleteIndex = {
-    val dir = new Directory(indexDir)
-    dir.deleteRecursively()
+  override def beforeEach( ) : Unit = deleteIndex()
+
+  def deleteIndex() : Unit = {
+    val index = new Directory(indexDir)
+    if(index.exists)index.deleteRecursively()
   }
 
-  def getOdinsonIndexWriter: OdinsonIndexWriter = {
-    deleteIndex
-    OdinsonIndexWriter.fromConfig(testConfig)
+  def getOdinsonIndexWriter(config : Config = testConfig): OdinsonIndexWriter = {
+    OdinsonIndexWriter.fromConfig(config)
   }
 
   "OdinsonIndexWriter" should "object should return index from config correctly" in {
     // get index writer
-    val indexWriter = getOdinsonIndexWriter
+    val indexWriter = getOdinsonIndexWriter()
     // make sure the folder was created with only the locker inside
     indexWriter.directory.listAll.head should be("write.lock")
     indexWriter.close
-    deleteIndex
   }
 
   it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
-    val indexWriter = getOdinsonIndexWriter
+    val indexWriter = getOdinsonIndexWriter()
     // Initialize fild of type DateField
     var field =
       """{"$type":"ai.lum.odinson.DateField","name":"smth","date":"1993-03-28"}"""
@@ -72,7 +71,58 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     luceneStringField.head.name shouldEqual ("smth")
     // TODO: should we test more stuff
     indexWriter.close()
-    deleteIndex
+  }
+
+  it should "incrementally append to a new index" in {
+    val appendConf = testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
+    val indexer = getOdinsonIndexWriter(appendConf)
+    var reader : IndexReader = null
+
+    // add one doc...
+    val docOne : OdinsonDocument = getDocument("alien-species")
+    indexer.addDocument(docOne)
+
+    reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+    reader.numDocs shouldBe 2 // number of lucene entries, not documents
+    reader.close()
+
+    val docTwo = getDocument("ninja-turtles")
+    indexer.addDocument(docTwo)
+
+    reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+    reader.numDocs() shouldBe 5 // number of lucene entries, not documents
+
+    reader.close()
+    indexer.close()
+  }
+
+  it should "incrementally append to an existing index" in {
+    val appendConf = testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
+    var indexer : OdinsonIndexWriter = getOdinsonIndexWriter(appendConf)
+    var reader : IndexReader = null
+
+    // add one doc...
+    val docOne : OdinsonDocument = getDocument("alien-species")
+    indexer.addDocument(docOne)
+
+    reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+
+    reader.numDocs shouldBe 2 // number of lucene entries, not documents
+    reader.close()
+    indexer.close()
+
+    // reopen the index...
+    indexer = getOdinsonIndexWriter(appendConf)
+    reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+
+    val docTwo = getDocument("ninja-turtles")
+    indexer.addDocument(docTwo)
+
+    reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
+    reader.numDocs() shouldBe 5 // number of lucene entries, not documents
+
+    reader.close()
+    indexer.close()
   }
 
   it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
@@ -115,7 +165,6 @@ class TestOdinsonIndexWriter extends OdinsonTest {
       "kiwi",
       indexWriter.displayField
     )
-    deleteIndex
   }
 
   it should "store stored fields and not others" in {
@@ -178,7 +227,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     // Yes, in fact the deps field is above the previous threshold
     val incomingEdges = graph.mkIncomingEdges(numTokens)
     val outgoingEdges = graph.mkOutgoingEdges(numTokens)
-    val indexWriter = getOdinsonIndexWriter
+    val indexWriter = getOdinsonIndexWriter()
 
     val directedGraph = indexWriter.mkDirectedGraph(incomingEdges, outgoingEdges, roots.toArray)
     val bytes = UnsafeSerializer.graphToBytes(directedGraph)
