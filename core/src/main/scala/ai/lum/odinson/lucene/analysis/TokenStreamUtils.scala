@@ -2,23 +2,40 @@ package ai.lum.odinson.lucene.analysis
 
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
-import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.document.Document
+import org.apache.lucene.index.{ Fields, IndexReader }
 import org.apache.lucene.search.highlight.TokenSources
 
 object TokenStreamUtils {
 
-  def getTokens(
+  def getDoc(docID: Int, fieldNames: Set[String], indexReader: IndexReader): Document = {
+    indexReader.document(docID, fieldNames.asJava)
+  }
+
+  def getTokensFromMultipleFields(
     docID: Int,
+    fieldNames: Set[String],
+    indexReader: IndexReader,
+    analyzer: Analyzer
+  ): Map[String, Array[String]] = {
+    val doc = getDoc(docID, fieldNames, indexReader)
+    val tvs = indexReader.getTermVectors(docID)
+    fieldNames
+      .map(field => (field, getTokens(doc, tvs, field, analyzer)))
+      .toMap
+  }
+
+  def getTokens(
+    doc: Document,
+    tvs: Fields,
     fieldName: String,
-    indexSearcher: IndexSearcher,
     analyzer: Analyzer
   ): Array[String] = {
-    val doc = indexSearcher.doc(docID)
-    val tvs = indexSearcher.getIndexReader().getTermVectors(docID)
     val field = doc.getField(fieldName)
     if (field == null) throw new OdinsonException(
       s"Attempted to getTokens from field that was not stored: $fieldName"

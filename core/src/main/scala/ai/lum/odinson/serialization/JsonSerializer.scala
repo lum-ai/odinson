@@ -1,18 +1,18 @@
 package ai.lum.odinson.serialization
 
+import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson._
-import ai.lum.odinson.serialization.JsonSerializer._
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ujson.Value
 
 class JsonSerializer(
   verbose: VerboseLevels.Verbosity = VerboseLevels.Minimal,
   indent: Int = 4,
-  engine: Option[ExtractorEngine] = None
+  dataGathererOpt: Option[DataGatherer] = None
 ) {
 
-  // Ensure a valid verbosity level and compatible engine
-  checkEngine(verbose, engine)
+  // Ensure a valid verbosity level and compatible dataGatherer
+  checkDataGatherer(verbose, dataGathererOpt)
 
   // Json String
 
@@ -188,28 +188,21 @@ class JsonSerializer(
   }
 
   private def mkVerboseContent(m: Mention): Value = {
-    val json = ujson.Obj()
-    json("mention") = ujson.Obj()
-    json("document") = ujson.Obj()
-
-    // Determine which fields to include, given the specified level of verbosity
-    // Note that since we already checked the validity of verbose and engine,
-    // calling `get` here on the engine should not be a problem.
-    val fieldsToInclude = verbose match {
-      case VerboseLevels.Minimal => Seq.empty
-      case VerboseLevels.Display => Seq(engine.get.displayField)
-      case VerboseLevels.All     => engine.get.indexSettings.storedFields
+    // Check that the mention is populated at the desired level
+    if (!m.hasFieldsPopulated(verbose)) {
+      m.populateFields(verbose, dataGathererOpt)
     }
 
-    // Retrieve the tokens for each included field
-    for (field <- fieldsToInclude) {
-      val mentionTokens = engine.get.getTokensForSpan(m, field)
-      json("mention")(field) = mentionTokens.toSeq
-      val documentTokens = engine.get.getTokens(m.luceneDocId, field)
-      json("document")(field) = documentTokens.toSeq
-    }
-
-    json
+    val fieldsToInclude = dataGathererOpt.get.fieldsToInclude(verbose)
+    ujson.Obj(
+      "text" -> m.text,
+      "mention" -> m.mentionFields
+        .filterKeys(key => fieldsToInclude.contains(key))
+        .mapValues(_.toSeq),
+      "document" -> m.documentFields
+        .filterKeys(key => fieldsToInclude.contains(key))
+        .mapValues(_.toSeq)
+    )
   }
 
   def stringOrNull(s: Option[String]): Value = {
@@ -269,7 +262,9 @@ class JsonSerializer(
     val sentId = json("sentId").str
     val idGetter = new KnownIdGetter(docId, sentId)
 
-    new Mention(
+    //TODO -- deserialize the detail content from Mentions, don't depend on datagatherer
+
+    val out = new Mention(
       odinsonMatch,
       label,
       luceneDocId,
@@ -277,8 +272,26 @@ class JsonSerializer(
       luceneSegmentDocBase,
       idGetter,
       foundBy,
-      arguments
+      arguments,
+      dataGathererOpt
     )
+
+    // Check to see if there was verbose content stored
+    val detail = json.obj.value.get("detail")
+    detail match {
+      case None          => () // if no content was serialized, do nothing
+      case Some(content) =>
+        // Otherwise, add the serialized content
+        val text = content("text").str
+        val docFields = content("document").obj.map { case (key, value) =>
+          (key, value.arr.map(_.str).toArray)
+        }
+        val mentionFields = content("mention").obj.map { case (key, value) =>
+          (key, value.arr.map(_.str).toArray)
+        }
+        out.manuallyPopulate(text, docFields.toMap, mentionFields.toMap)
+    }
+    out
   }
 
   def deserializeMatch(json: Value): OdinsonMatch = {
@@ -382,27 +395,15 @@ class JsonSerializer(
   //        HELPER METHODS
   // -------------------------------------
 
-  def checkEngine(verbose: VerboseLevels.Verbosity, engine: Option[ExtractorEngine]): Unit = {
-    if (verbose != VerboseLevels.Minimal && engine.isEmpty) {
+  def checkDataGatherer(
+    verbose: VerboseLevels.Verbosity,
+    dataGathererOpt: Option[DataGatherer]
+  ): Unit = {
+    if (verbose != VerboseLevels.Minimal && dataGathererOpt.isEmpty) {
       throw new OdinsonException(
         "Cannot request verbose serialization without providing an ExtractorEngine."
       )
     }
-  }
-
-}
-
-object JsonSerializer {
-
-  // Enum to handle the supported levels of verbosity of Mentions.
-  //  - Minimal:  No additional text included
-  //  - Display:  Display field included
-  //  - All:      All stored fields included
-  object VerboseLevels extends Enumeration {
-    type Verbosity = Value
-
-    val Minimal, Display, All = Value
-
   }
 
 }

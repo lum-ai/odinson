@@ -10,10 +10,20 @@ import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.{ IdGetter, LazyIdGetter, Mention, NamedCapture, OdinsonMatch, StateMatch }
+import ai.lum.odinson.utils.IndexSettings
+import ai.lum.odinson.{
+  DataGatherer,
+  IdGetter,
+  LazyIdGetter,
+  Mention,
+  NamedCapture,
+  OdinsonMatch,
+  StateMatch
+}
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.apache.lucene.search.IndexSearcher
+import org.apache.lucene.store.Directory
 
 class IdProvider(protected var id: Int = 0) {
 
@@ -105,7 +115,8 @@ object SqlResultItem {
     docId: Int,
     label: Option[String],
     readItems: ArrayBuffer[ReadNode],
-    idGetter: IdGetter
+    idGetter: IdGetter,
+    dataGathererOpt: Option[DataGatherer]
   ): Mention = {
     val iterator = readItems.reverseIterator
     val first = iterator.next
@@ -136,7 +147,8 @@ object SqlResultItem {
       docId, // luceneSegmentDocId
       docBase, // luceneSegmentDocBase
       idGetter,
-      first.name // foundBy
+      first.name, // foundBy,
+      dataGathererOpt
     )
   }
 
@@ -149,7 +161,8 @@ class SqlState protected (
   protected val stateIndex: Long,
   val persistOnClose: Boolean = false,
   val persistFile: Option[File] = None,
-  indexSearcher: OdinsonIndexSearcher
+  indexSearcher: OdinsonIndexSearcher,
+  dataGathererOpt: Option[DataGatherer]
 ) extends State {
 
   if (persistOnClose) require(persistFile.isDefined)
@@ -310,7 +323,14 @@ class SqlState protected (
         readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
           val idGetter = LazyIdGetter(indexSearcher, docId)
-          mentions += SqlResultItem.fromReadNodes(docBase, docId, Some(label), readNodes, idGetter)
+          mentions += SqlResultItem.fromReadNodes(
+            docBase,
+            docId,
+            Some(label),
+            readNodes,
+            idGetter,
+            dataGathererOpt
+          )
           readNodes.clear()
         }
       }
@@ -372,7 +392,11 @@ class SqlState protected (
 object SqlState {
   protected var count: AtomicLong = new AtomicLong
 
-  def apply(config: Config, indexSearcher: OdinsonIndexSearcher): SqlState = {
+  def apply(
+    config: Config,
+    indexSearcher: OdinsonIndexSearcher,
+    indexDirOpt: Option[Directory]
+  ): SqlState = {
     val persistOnClose = config[Boolean]("odinson.state.sql.persistOnClose")
     val stateFile = config.get[File]("odinson.state.sql.persistFile")
     val jdbcUrl = config[String]("odinson.state.sql.url")
@@ -390,13 +414,20 @@ object SqlState {
       new HikariDataSource(config)
     }
 
+    val displayField = config[String]("odinson.displayField")
+    val dataGathererOpt =
+      indexDirOpt.map(indexDir =>
+        DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
+      )
+
     new SqlState(
       dataSource.getConnection,
       count.getAndIncrement,
       count.getAndIncrement,
       persistOnClose,
       stateFile,
-      indexSearcher
+      indexSearcher,
+      dataGathererOpt
     )
   }
 
