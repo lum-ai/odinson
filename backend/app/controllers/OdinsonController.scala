@@ -85,11 +85,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   class FrequencyTable(minIdx: Int, maxIdx: Int, reverse: Boolean) {
 
-//    class FrequencyRow[T](content: (T, Long))
-//
-//    case class SingleTermFrequencyRow(content: (String, Long)) extends FrequencyRow[String](content=content)
-//    case class DoubleTermFrequencyRow(content: ((String, String), Long)) extends FrequencyRow[(String, String)](content=content)
-
     private var freqs: List[(String, Long)] = Nil
 
     private def greaterThanOrEqualTo(reverse: Boolean)(first: Long, second: Long) =
@@ -269,8 +264,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
               Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
           }
         }
-
-        Json.arr(jsonObjs).format(pretty)
+        Json.toJson(jsonObjs).format(pretty)
       } else {
         // the requested field isn't in this index
         Json.obj().format(pretty)
