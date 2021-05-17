@@ -50,8 +50,8 @@ class OdinsonIndexWriter(
 
   val writerConfig = {
     val writerConf = new IndexWriterConfig(analyzer)
-    if (!incremental) writerConf.setOpenMode(OpenMode.CREATE)
-    else writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
+    if (incremental) writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
+    else writerConf.setOpenMode(OpenMode.CREATE)
     writerConf
   }
 
@@ -74,7 +74,7 @@ class OdinsonIndexWriter(
   }
 
   def indexDocuments(block: Collection[lucenedoc.Document]): Unit = {
-    writer.addDocuments(block)
+    addDocuments(block)
     if (incremental) commit()
   }
 
