@@ -10,7 +10,8 @@ class MentionsIterator(
   labelOpt: Option[String],
   nameOpt: Option[String],
   odinResults: OdinResults,
-  mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
+  mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter],
+  dataGathererOpt: Option[DataGatherer]
 ) extends Iterator[Mention] {
   val scoreDocs: Array[OdinsonScoreDoc] = odinResults.scoreDocs
 
@@ -44,7 +45,8 @@ class MentionsIterator(
         scoreDoc.segmentDocId,
         scoreDoc.segmentDocBase,
         idGetter,
-        nameOpt.getOrElse("")
+        nameOpt.getOrElse(""),
+        dataGathererOpt
       )
     } else {
       scoreDocsIndex += 1
@@ -62,8 +64,10 @@ object MentionsIterator {
     labelOpt: Option[String],
     nameOpt: Option[String],
     odinResults: OdinResults,
-    mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
-  ): MentionsIterator = new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter)
+    mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter],
+    dataGathererOpt: Option[DataGatherer]
+  ): MentionsIterator =
+    new MentionsIterator(labelOpt, nameOpt, odinResults, mruIdGetter, dataGathererOpt)
 
   def concatenate(iterators: Seq[Iterator[Mention]]): Iterator[Mention] = {
     iterators.foldLeft(emptyMentionIterator)(_ ++ _)
