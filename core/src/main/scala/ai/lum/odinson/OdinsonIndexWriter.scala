@@ -107,6 +107,7 @@ class OdinsonIndexWriter(
   }
 
   def close(): Unit = {
+    // the Lucene API will not let you overwrite or merge existing files, so we need to rewrite the files with updated content before the writer is closed
     if (directory.listAll().contains(VOCABULARY_FILENAME)) directory.deleteFile(VOCABULARY_FILENAME)
     if (directory.listAll().contains(BUILDINFO_FILENAME)) directory.deleteFile(BUILDINFO_FILENAME)
     if (directory.listAll().contains(SETTINGSINFO_FILENAME)) directory.deleteFile(SETTINGSINFO_FILENAME)

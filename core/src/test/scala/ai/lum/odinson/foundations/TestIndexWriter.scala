@@ -1,21 +1,23 @@
 package ai.lum.odinson.foundations
 
-// test imports
+import java.io.File
 import java.nio.file.Files
+
+import com.typesafe.config.{Config, ConfigValueFactory}
+
+// lum imports
 import ai.lum.odinson._
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigValueFactory}
+import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.{Document => OdinsonDocument}
+
 import org.apache.lucene.index.{DirectoryReader, IndexReader}
 import org.apache.lucene.store.FSDirectory
 import org.scalatest.BeforeAndAfterEach
-// lum imports
-import ai.lum.odinson.OdinsonIndexWriter
-import ai.lum.odinson.{Document => OdinsonDocument}
-// file imports
-import java.io.File
+
 
 import scala.reflect.io.Directory
 import scala.collection.JavaConverters._
