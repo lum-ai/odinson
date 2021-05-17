@@ -25,7 +25,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.BinaryDocValuesField
-import ai.lum.odinson.{Document => OdinsonDocument}
+import ai.lum.odinson.{ Document => OdinsonDocument }
 
 class OdinsonIndexWriter(
   val directory: Directory,
@@ -47,9 +47,10 @@ class OdinsonIndexWriter(
   import OdinsonIndexWriter._
 
   val analyzer = new WhitespaceAnalyzer()
+
   val writerConfig = {
     val writerConf = new IndexWriterConfig(analyzer)
-    if (!incremental) writerConf.setOpenMode( OpenMode.CREATE )
+    if (!incremental) writerConf.setOpenMode(OpenMode.CREATE)
     else writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
     writerConf
   }
@@ -110,7 +111,8 @@ class OdinsonIndexWriter(
     // the Lucene API will not let you overwrite or merge existing files, so we need to rewrite the files with updated content before the writer is closed
     if (directory.listAll().contains(VOCABULARY_FILENAME)) directory.deleteFile(VOCABULARY_FILENAME)
     if (directory.listAll().contains(BUILDINFO_FILENAME)) directory.deleteFile(BUILDINFO_FILENAME)
-    if (directory.listAll().contains(SETTINGSINFO_FILENAME)) directory.deleteFile(SETTINGSINFO_FILENAME)
+    if (directory.listAll().contains(SETTINGSINFO_FILENAME))
+      directory.deleteFile(SETTINGSINFO_FILENAME)
 
     // FIXME: is this the correct instantiation of IOContext?
     using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>

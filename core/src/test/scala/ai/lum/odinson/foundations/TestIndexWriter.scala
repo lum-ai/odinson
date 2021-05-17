@@ -3,7 +3,7 @@ package ai.lum.odinson.foundations
 import java.io.File
 import java.nio.file.Files
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 
 // lum imports
 import ai.lum.odinson._
@@ -12,12 +12,11 @@ import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.OdinsonIndexWriter
-import ai.lum.odinson.{Document => OdinsonDocument}
+import ai.lum.odinson.{ Document => OdinsonDocument }
 
-import org.apache.lucene.index.{DirectoryReader, IndexReader}
+import org.apache.lucene.index.{ DirectoryReader, IndexReader }
 import org.apache.lucene.store.FSDirectory
 import org.scalatest.BeforeAndAfterEach
-
 
 import scala.reflect.io.Directory
 import scala.collection.JavaConverters._
@@ -34,14 +33,14 @@ class TestOdinsonIndexWriter extends OdinsonTest with BeforeAndAfterEach {
       .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
   }
 
-  override def beforeEach( ) : Unit = deleteIndex()
+  override def beforeEach(): Unit = deleteIndex()
 
-  def deleteIndex() : Unit = {
+  def deleteIndex(): Unit = {
     val index = new Directory(indexDir)
-    if(index.exists)index.deleteRecursively()
+    if (index.exists) index.deleteRecursively()
   }
 
-  def getOdinsonIndexWriter(config : Config = testConfig): OdinsonIndexWriter = {
+  def getOdinsonIndexWriter(config: Config = testConfig): OdinsonIndexWriter = {
     OdinsonIndexWriter.fromConfig(config)
   }
 
@@ -76,12 +75,13 @@ class TestOdinsonIndexWriter extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "incrementally append to a new index" in {
-    val appendConf = testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
+    val appendConf =
+      testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
     val indexer = getOdinsonIndexWriter(appendConf)
-    var reader : IndexReader = null
+    var reader: IndexReader = null
 
     // add one doc...
-    val docOne : OdinsonDocument = getDocument("alien-species")
+    val docOne: OdinsonDocument = getDocument("alien-species")
     indexer.addDocument(docOne)
 
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
@@ -99,12 +99,13 @@ class TestOdinsonIndexWriter extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "incrementally append to an existing index" in {
-    val appendConf = testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
-    var indexer : OdinsonIndexWriter = getOdinsonIndexWriter(appendConf)
-    var reader : IndexReader = null
+    val appendConf =
+      testConfig.withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(true))
+    var indexer: OdinsonIndexWriter = getOdinsonIndexWriter(appendConf)
+    var reader: IndexReader = null
 
     // add one doc...
-    val docOne : OdinsonDocument = getDocument("alien-species")
+    val docOne: OdinsonDocument = getDocument("alien-species")
     indexer.addDocument(docOne)
 
     reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath))
