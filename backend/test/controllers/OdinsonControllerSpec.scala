@@ -1,11 +1,11 @@
 package controllers
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
 import java.nio.file.Files
 
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.scalatestplus.play.guice._
 import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
@@ -239,25 +239,26 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       // check that the response is valid in form
       val rowsResult = json.validate(readSingletonRows)
-      rowsResult.isSuccess must be (true)
+      rowsResult.isSuccess must be(true)
 
       // check that 10 results are returned by default
       val rows: Seq[SingletonRow] = rowsResult match {
         case r: JsResult[SingletonRows] => r.get
-        case _ => Nil
+        case _                          => Nil
       }
 
       rows must have length (10)
 
       // check for ordering (greatest to least)
       val freqs = rows.map(_.frequency)
-      freqs.zip(freqs.tail).foreach{ case(freq1, freq2) =>
-          freq1 must be >= freq2
+      freqs.zip(freqs.tail).foreach { case (freq1, freq2) =>
+        freq1 must be >= freq2
       }
     }
 
     "respond with grouped token-based frequencies using the /term-freq endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/term-freq?field=tag&group=raw&min=0&max=4")).get
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=tag&group=raw&min=0&max=4")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -270,27 +271,30 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       // check that the response is of a valid form
       val rowsResult = json.validate(readGroupedRows)
-      rowsResult.isSuccess must be (true)
+      rowsResult.isSuccess must be(true)
 
       // check that we have the right number of results
       val rows: Seq[GroupedRow] = rowsResult match {
         case r: JsResult[GroupedRows] => r.get
-        case _ => Nil
+        case _                        => Nil
       }
       // important to save ordering
       val termOrder = rows.map(_.term).distinct.zipWithIndex.toMap
-      val rowsForTerm = rows.groupBy(_.term).toSeq.sortBy{ case (term, frequencies) => termOrder(term) }
+      val rowsForTerm = rows.groupBy(_.term).toSeq.sortBy { case (term, frequencies) =>
+        termOrder(term)
+      }
       rowsForTerm must have length (5)
 
       // check for ordering among `term`s (greatest to least)
-      val termFreqs = rowsForTerm.map{ case (term, rows) => rows.map(_.frequency).sum }
-      termFreqs.zip(termFreqs.tail).foreach{ case(freq1, freq2) =>
+      val termFreqs = rowsForTerm.map { case (term, rows) => rows.map(_.frequency).sum }
+      termFreqs.zip(termFreqs.tail).foreach { case (freq1, freq2) =>
         freq1 must be >= freq2
       }
     }
 
     "respond to order and reverse variables in /term-freq endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/term-freq?field=word&order=alpha&reverse=true")).get
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=word&order=alpha&reverse=true")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -302,17 +306,17 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       // check that the response is valid in form
       val rowsResult = json.validate(readSingletonRows)
-      rowsResult.isSuccess must be (true)
+      rowsResult.isSuccess must be(true)
 
       // check that 10 results are returned by default
       val rows: Seq[SingletonRow] = rowsResult match {
         case r: JsResult[SingletonRows] => r.get
-        case _ => Nil
+        case _                          => Nil
       }
 
       // check for ordering (reverse Unicode sort)
       val terms = rows.map(_.term)
-      terms.zip(terms.tail).foreach{ case(term1, term2) =>
+      terms.zip(terms.tail).foreach { case (term1, term2) =>
         // no overlap because terms must be distinct
         term1 must be > term2
       }
@@ -332,21 +336,21 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       // check that the response is valid in form
       val rowsResult = json.validate(readSingletonRows)
-      rowsResult.isSuccess must be (true)
+      rowsResult.isSuccess must be(true)
 
       val rows: Seq[SingletonRow] = rowsResult match {
         case r: JsResult[SingletonRows] => r.get
-        case _ => Nil
+        case _                          => Nil
       }
 
       // regex is `^t` and is meant to be unanchored (on the right) and case sensitive
       // check that all terms begin with lowercase t, and that there's at least one term that isn't
       // just `t`
       val terms = rows.map(_.term)
-      terms.foreach{ term =>
+      terms.foreach { term =>
         term.startsWith("th") mustBe (true)
       }
-      terms.exists{ term =>
+      terms.exists { term =>
         term.length > 1
       } mustBe (true)
     }
