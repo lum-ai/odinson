@@ -118,7 +118,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   }
 
-  /** For a given term fied, find the terms ranked min to max (inclusive, 0-indexed)
+  /** For a given term field, find the terms ranked min to max (inclusive, 0-indexed)
     * @param field The field to count (e.g., raw, token, lemma, tag, etc.)
     * @param group Optional second field to condition the field counts on.
     * @param filter Optional regular expression filter for terms within `field`
@@ -142,132 +142,158 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      // cutoff the results to the requested ranks
-      val defaultMin = 0
-      val defaultMax = 9
+      try {
+        // cutoff the results to the requested ranks
+        val defaultMin = 0
+        val defaultMax = 9
 
-      val minIdx = min.getOrElse(defaultMin)
-      val maxIdx = max.getOrElse(defaultMax)
+        val minIdx = min.getOrElse(defaultMin)
+        val maxIdx = max.getOrElse(defaultMax)
 
-      val extractorEngine: ExtractorEngine = newEngine()
-      // ensure that the requested field exists in the index
-      val fields = MultiFields.getFields(extractorEngine.indexReader)
-      val fieldNames = fields.iterator.asScala.toList
-      // if the field exists, find the frequencies of each term
-      if (fieldNames contains field) {
-        // find the frequency of all terms in this field
-        val terms = fields.terms(field)
-        val termsEnum =
-          if (filter.nonEmpty) {
+        val extractorEngine: ExtractorEngine = newEngine()
+        // ensure that the requested field exists in the index
+        val fields = MultiFields.getFields(extractorEngine.indexReader)
+        val fieldNames = fields.iterator.asScala.toList
+        // if the field exists, find the frequencies of each term
+        if (fieldNames contains field) {
+          // find the frequency of all terms in this field
+          val terms = fields.terms(field)
+          val termsEnum = filter match {
+
             // get filtered terms only
-            val automaton = new RegExp(filter.get).toAutomaton
-            new CompiledAutomaton(automaton).getTermsEnum(terms)
-          } else {
-            // just go through all terms
-            terms.iterator
+            case Some(filterString) =>
+              // check for proper regex
+              val valid = {
+                filterString.r // throws exception if invalid Scala regex (superset of Lucene regex)
+                true
+              }
+
+              if (valid) {
+                // NB: This is Lucene regex, *not* Perl-compatible
+                // see https://www.elastic.co/guide/en/elasticsearch/reference/5.6/query-dsl-regexp-query.html#regexp-syntax
+                // TODO: unify regex type with ruleFreq filter
+                val automaton = new RegExp(filter.get).toAutomaton
+                new CompiledAutomaton(automaton).getTermsEnum(terms)
+              } else terms.iterator
+
+            case _ =>
+              // just go through all terms
+              terms.iterator
+
           }
 
-        val firstLevel = order match {
-          // alphanumeric order as defined by Lucene's term order
-          case Some("alpha") =>
-            reverse match {
-              // we must cycle through the whole set of terms and just keep the tail
-              case Some(true) =>
-                // we don't know where the end is in advance, so we queue each freq as we go
-                val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
+          val firstLevel = order match {
+            // alphanumeric order as defined by Lucene's term order
+            case Some("alpha") =>
+              reverse match {
+                // we must cycle through the whole set of terms and just keep the tail
+                case Some(true) =>
+                  // we don't know where the end is in advance, so we queue each freq as we go
+                  val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
 
-                while (termsEnum.next() != null) {
-                  val term = termsEnum.term.utf8ToString
-                  termFreqs.enqueue((term, termsEnum.totalTermFreq))
-                  // if we exceed the size we need, just throw the oldest away
-                  if (termFreqs.size > maxIdx) termFreqs.dequeue()
-                }
-                termFreqs
-                  .toIndexedSeq
-                  .reverse
-                  .slice(minIdx, maxIdx + 1)
+                  while (termsEnum.next() != null) {
+                    val term = termsEnum.term.utf8ToString
+                    termFreqs.enqueue((term, termsEnum.totalTermFreq))
+                    // if we exceed the size we need, just throw the oldest away
+                    if (termFreqs.size > maxIdx) termFreqs.dequeue()
+                  }
+                  termFreqs
+                    .toIndexedSeq
+                    .reverse
+                    .slice(minIdx, maxIdx + 1)
 
-              // just take the first (max + 1) items, since they are stored in that order
-              case _ =>
-                val termFreqs = new FrequencyTable(
-                  minIdx,
-                  maxIdx,
-                  reverse.getOrElse(false)
-                )
+                // just take the first (max + 1) items, since they are stored in that order
+                case _ =>
+                  val termFreqs = new FrequencyTable(
+                    minIdx,
+                    maxIdx,
+                    reverse.getOrElse(false)
+                  )
 
-                var i = 0
-                while (termsEnum.next() != null && i <= maxIdx) {
-                  val term = termsEnum.term.utf8ToString
-                  termFreqs.update(term, termsEnum.totalTermFreq)
-                  i += 1
-                }
-                termFreqs.get
+                  var i = 0
+                  while (termsEnum.next() != null && i <= maxIdx) {
+                    val term = termsEnum.term.utf8ToString
+                    termFreqs.update(term, termsEnum.totalTermFreq)
+                    i += 1
+                  }
+                  termFreqs.get
+              }
+            // if not alphanumeric (hence frequency), we go through all terms and compare frequencies
+            case _ =>
+              val termFreqs = new FrequencyTable(
+                minIdx,
+                maxIdx,
+                reverse.getOrElse(false)
+              )
+
+              while (termsEnum.next() != null) {
+                val term = termsEnum.term.utf8ToString
+                // println(term)
+                termFreqs.update(term, termsEnum.totalTermFreq)
+              }
+              termFreqs.get
+          }
+
+          // count instances of each pairing of `field` and `group` terms
+          val groupedTerms =
+            if (group.nonEmpty && fieldNames.contains(group.get)) {
+              // this is O(awful) but will only be costly when (max - min) is large
+              val pairs = for {
+                (term1, _) <- firstLevel
+                odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
+                results = extractorEngine.query(odinsonQuery)
+                scoreDoc <- results.scoreDocs
+                eachMatch <- scoreDoc.matches
+                term2 = extractorEngine.dataGatherer.getTokensForSpan(
+                  scoreDoc.doc,
+                  eachMatch,
+                  group.get
+                ).head
+              } yield (term1, term2)
+              // count instances of this pair of terms from `field` and `group`, respectively
+              pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
+            } else firstLevel
+
+          // order again if there's a secondary grouping variable
+          val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
+            ser match {
+              case singleTerm: String =>
+                (firstLevel.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
+              case (term1: String, _: String) =>
+                // find the total frequency of the term (ignoring group condition)
+                val totalFreq = firstLevel.find(_._1 == term1).get._2
+                (firstLevel.indexOf((term1, totalFreq)), -conditionedFreq)
             }
-          // if not alphanumeric (hence frequency), we go through all terms and compare frequencies
-          case _ =>
-            val termFreqs = new FrequencyTable(
-              minIdx,
-              maxIdx,
-              reverse.getOrElse(false)
-            )
+          }
 
-            while (termsEnum.next() != null) {
-              val term = termsEnum.term.utf8ToString
-              termFreqs.update(term, termsEnum.totalTermFreq)
+          // transform the frequencies as requested, preserving order
+          val scaled = scale match {
+            case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
+            case Some("percent") =>
+              val countTotal = terms.getSumTotalTermFreq
+              reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
+            case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
+          }
+
+          // rearrange data into a Seq of Maps for Jsonization
+          val jsonObjs = scaled.map { case (termGroup, freq) =>
+            termGroup match {
+              case singleTerm: String =>
+                Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
+              case (term1: String, term2: String) =>
+                Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
             }
-            termFreqs.get
-        }
-
-        // count instances of each pairing of `field` and `group` terms
-        val groupedTerms =
-          if (group.nonEmpty && fieldNames.contains(group.get)) {
-            // this is O(awful) but will only be costly when (max - min) is large
-            val pairs = for {
-              (term1, _) <- firstLevel
-              odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
-              results = extractorEngine.query(odinsonQuery)
-              scoreDoc <- results.scoreDocs
-              eachMatch <- scoreDoc.matches
-              term2 = extractorEngine.getTokensForSpan(scoreDoc.doc, eachMatch, group.get).head
-            } yield (term1, term2)
-            // count instances of this pair of terms from `field` and `group`, respectively
-            pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
-          } else firstLevel
-
-        // order again if there's a secondary grouping variable
-        val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
-          ser match {
-            case singleTerm: String =>
-              (firstLevel.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
-            case (term1: String, _: String) =>
-              // find the total frequency of the term (ignoring group condition)
-              val totalFreq = firstLevel.find(_._1 == term1).get._2
-              (firstLevel.indexOf((term1, totalFreq)), -conditionedFreq)
           }
+          Json.toJson(jsonObjs).format(pretty)
+        } else {
+          // the requested field isn't in this index
+          Json.obj().format(pretty)
         }
-
-        // transform the frequencies as requested, preserving order
-        val scaled = scale match {
-          case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
-          case Some("percent") =>
-            val countTotal = terms.getSumTotalTermFreq
-            reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
-          case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
-        }
-
-        // rearrange data into a Seq of Maps for Jsonization
-        val jsonObjs = scaled.map { case (termGroup, freq) =>
-          termGroup match {
-            case singleTerm: String =>
-              Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
-            case (term1: String, term2: String) =>
-              Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
-          }
-        }
-        Json.toJson(jsonObjs).format(pretty)
-      } else {
-        // the requested field isn't in this index
-        Json.obj().format(pretty)
+      } catch {
+        case NonFatal(e) =>
+          val stackTrace = ExceptionUtils.getStackTrace(e)
+          val json = Json.toJson(Json.obj("error" -> stackTrace))
+          Status(400)(json)
       }
     }
   }
@@ -353,6 +379,8 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         // collect the instances of each rule's results
         .groupBy(identity)
         // filter the rules by name, if a filter was passed
+        // NB: this is Scala style anchored regex, *not* Lucene's RegExp
+        // TODO: unify regex style with that of termFreq's filter
         .filter { case (ruleName, ms) => isMatch(ruleName, filter) }
         // count how many matches for each rule
         .map { case (k, v) => k -> v.length }
@@ -362,7 +390,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val ordered = order match {
         // alphabetical
         case Some("alpha") => ruleFreqs.sortBy { case (ruleName, _) => ruleName }
-        // frequency
+        // frequency (default)
         case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
       }
 
@@ -372,6 +400,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         case _          => ordered
       }
 
+      // Count instances of every rule
       val countTotal = reversed.map(_._2).sum
 
       // cutoff the results to the requested ranks
@@ -1008,7 +1037,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val extractorEngine: ExtractorEngine = newEngine()
     //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
     // We want **all** tokens for the sentence
-    val tokens = extractorEngine.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
     // odinsonMatch: OdinsonMatch,
     Json.obj(
       "sentenceId" -> mention.luceneDocId,

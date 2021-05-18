@@ -13,35 +13,30 @@ import org.scalatest.TestData
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import org.scalatestplus.play._
 import play.api.test._
 
 import scala.reflect.io.Directory
 
-/** Add your spec here.
-  * You can mock out a whole application including requests, plugins etc.
-  *
-  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
-  */
-
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
+  // for testing `term-freq` endpoint
   case class SingletonRow(term: String, frequency: Double)
   type SingletonRows = Seq[SingletonRow]
   implicit val singletonRowFormat: Format[SingletonRow] = Json.format[SingletonRow]
   implicit val readSingletonRows: Reads[Seq[SingletonRow]] = Reads.seq(singletonRowFormat)
 
+  // for testing `term-freq` endpoint
   case class GroupedRow(term: String, group: String, frequency: Double)
   type GroupedRows = Seq[GroupedRow]
   implicit val groupedRowFormat: Format[GroupedRow] = Json.format[GroupedRow]
   implicit val readGroupedRows: Reads[Seq[GroupedRow]] = Reads.seq(groupedRowFormat)
 
-  val defaultconfig = ConfigFactory.load()
+  val defaultConfig: Config = ConfigFactory.load()
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
+  val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile
   val srcDir: File = new File(getClass.getResource("/").getFile)
 
   try {
@@ -56,7 +51,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   val docsDir = new File(tmpFolder, "docs").getAbsolutePath
 
   val testConfig: Config = {
-    defaultconfig
+    defaultConfig
       .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))
       // re-compute the index and docs path's
       .withValue(
@@ -246,7 +241,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       val rowsResult = json.validate(readSingletonRows)
       rowsResult.isSuccess must be (true)
 
-      // check that default indices are 0 and 9
+      // check that 10 results are returned by default
       val rows: Seq[SingletonRow] = rowsResult match {
         case r: JsResult[SingletonRows] => r.get
         case _ => Nil
@@ -309,21 +304,23 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       val rowsResult = json.validate(readSingletonRows)
       rowsResult.isSuccess must be (true)
 
-      // check that default indices are 0 and 9
+      // check that 10 results are returned by default
       val rows: Seq[SingletonRow] = rowsResult match {
         case r: JsResult[SingletonRows] => r.get
         case _ => Nil
       }
 
-      // check for ordering (reverse Unicode sort) -- no overlap because terms must be distinct
+      // check for ordering (reverse Unicode sort)
       val terms = rows.map(_.term)
       terms.zip(terms.tail).foreach{ case(term1, term2) =>
+        // no overlap because terms must be distinct
         term1 must be > term2
       }
     }
 
     "filter terms in /term-freq endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/term-freq?field=lemma&filter=the")).get
+      // filter: `th.*`
+      val response = route(app, FakeRequest(GET, "/api/term-freq?field=lemma&filter=th.*")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -342,11 +339,16 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         case _ => Nil
       }
 
-      // check that all terms have the right contents
+      // regex is `^t` and is meant to be unanchored (on the right) and case sensitive
+      // check that all terms begin with lowercase t, and that there's at least one term that isn't
+      // just `t`
       val terms = rows.map(_.term)
       terms.foreach{ term =>
-        term.contains("the")
+        term.startsWith("th") mustBe (true)
       }
+      terms.exists{ term =>
+        term.length > 1
+      } mustBe (true)
     }
 
     val expandedRules =
