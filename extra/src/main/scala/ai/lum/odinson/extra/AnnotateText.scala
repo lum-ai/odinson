@@ -21,9 +21,10 @@ object AnnotateText extends App with LazyLogging {
   if (args.length > 0) {
     val dirPath = args(0)
 
-    val processor = if (args.length == 2) args(1) else config[String]("odinson.extra.processorType")
+    val processor =
+      if (args.length == 2) args(1) else config.apply[String]("odinson.extra.processorType")
 
-    logger.info(s"Received dataDir as a parameter <${dirPath}>")
+    logger.info(s"Received dataDir as a parameter <$dirPath>")
     // receive the path from the arguments
     config = config
       .withValue(
@@ -41,9 +42,9 @@ object AnnotateText extends App with LazyLogging {
       )
   }
 
-  val textDir: File = config[File]("odinson.textDir")
-  val docsDir: File = config[File]("odinson.docsDir")
-  val processorType = config[String]("odinson.extra.processorType")
+  val textDir = config.apply[File]("odinson.textDir")
+  val docsDir = config.apply[File]("odinson.docsDir")
+  val processorType = config.apply[String]("odinson.extra.processorType")
 
   val processor: Processor = getProcessor(processorType)
 

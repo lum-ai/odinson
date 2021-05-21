@@ -645,14 +645,14 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[File]("odinson.indexDir").toPath
+    val indexPath = config.apply[File]("odinson.indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }
 
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
+    val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
     fromDirectory(config, indexDir, indexSearcher)
   }
@@ -662,12 +662,12 @@ object ExtractorEngine {
     indexDir: Directory,
     indexSearcher: OdinsonIndexSearcher
   ): ExtractorEngine = {
-    val displayField = config[String]("odinson.displayField")
+    val displayField = config.apply[String]("odinson.displayField")
     val dataGatherer = DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher, indexDir)
-    val parentDocIdField = config[String]("odinson.index.documentIdField")
+    val parentDocIdField = config.apply[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,

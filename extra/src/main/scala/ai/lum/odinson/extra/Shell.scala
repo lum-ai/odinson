@@ -37,12 +37,12 @@ object Shell extends App {
 
   // read config parameters
   val config = ConfigFactory.load()
-  var maxMatchesDisplay = config[Int]("odinson.shell.maxMatchesDisplay")
-  val prompt = config[String]("odinson.shell.prompt")
-  val displayField = config[String]("odinson.displayField")
-  val history = new FileHistory(config[File]("odinson.shell.history"))
+  var maxMatchesDisplay = config.apply[Int]("odinson.shell.maxMatchesDisplay")
+  val prompt = config.apply[String]("odinson.shell.prompt")
+  val displayField = config.apply[String]("odinson.displayField")
+  val history = new FileHistory(config.apply[File]("odinson.shell.history"))
 
-  lazy val processor: Processor = getProcessor(config[String]("odinson.extra.processorType"))
+  lazy val processor = getProcessor(config.apply[String]("odinson.extra.processorType"))
 
   // we must flush the history before exiting
   sys.addShutdownHook {
@@ -159,7 +159,7 @@ object Shell extends App {
   }
 
   def printSettings(): Unit = printSettings(config)
-  def printSettings(s: String): Unit = printSettings(config[Config](s))
+  def printSettings(s: String): Unit = printSettings(config.apply[Config](s))
   def printSettings(c: Config): Unit = println(c.root().render())
 
   /** Print the json of the Odinson Document for the string */

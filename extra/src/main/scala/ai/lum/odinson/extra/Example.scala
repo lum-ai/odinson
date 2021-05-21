@@ -40,8 +40,8 @@ object Example extends App with LazyLogging {
 
   // Specify paths and settings in the local config file
   val config = ConfigFactory.load()
-  val outputFile: File = config[File]("odinson.extra.outputFile")
-  val rulesFile: String = config[String]("odinson.extra.rulesFile")
+  val outputFile = config.apply[File]("odinson.extra.outputFile")
+  val rulesFile = config.apply[String]("odinson.extra.rulesFile")
   val rulesStream = SituatedStream.fromResource(rulesFile)
 
   // Initialize the extractor engine, using the index specified in the config

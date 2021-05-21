@@ -28,7 +28,7 @@ object FileState {
 
   def apply(config: Config): FileState = {
     // whether or not to persist the state after the engine is closed
-    val saveOnClose = config[Boolean]("state.saveOnClose")
+    val saveOnClose = config.apply[Boolean]("state.saveOnClose")
     val saveTo = config.get[File]("state.saveTo")
     new FileState()
   }
