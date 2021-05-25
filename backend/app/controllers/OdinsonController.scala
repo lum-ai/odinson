@@ -54,6 +54,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   val SENTENCE_ID_FIELD = config[String]("odinson.index.sentenceIdField")
   val WORD_TOKEN_FIELD  = config[String]("odinson.displayField")
   val pageSize          = config[Int]   ("odinson.pageSize")
+  val posTagTokenField  = config[String]("odinson.index.posTagTokenField")
   // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
@@ -764,7 +765,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Future {
       // get ready to fail if tags aren't reachable
       try {
-        val tags = fieldVocabulary("tag")
+        val tags = fieldVocabulary(posTagTokenField)
         val json = Json.toJson(tags)
         json.format(pretty)
       } catch {
