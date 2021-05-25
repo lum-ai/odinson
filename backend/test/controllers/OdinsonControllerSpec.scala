@@ -470,6 +470,42 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       Helpers.contentAsString(response) must include("y")
     }
 
+    "respond with corpus information using the /corpus endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/corpus")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val responseString = Helpers.contentAsString(response)
+      responseString must include("numDocs")
+      responseString must include("corpus")
+      responseString must include("distinctDependencyRelations")
+      responseString must include("tokenFields")
+      responseString must include("docFields")
+    }
+
+    "respond with dependencies list using the /dependencies-vocabulary endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/dependencies-vocabulary")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val json = Helpers.contentAsJson(response)
+      val deps = json.as[Array[String]]
+      deps must not be empty
+    }
+
+    "respond with dependencies list using the /tags-vocabulary endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/tags-vocabulary")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val json = Helpers.contentAsJson(response)
+      val tags = json.as[Array[String]]
+      tags must not be empty
+    }
+
   }
 
 }

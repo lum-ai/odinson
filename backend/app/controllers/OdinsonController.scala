@@ -2,9 +2,7 @@ package controllers
 
 import java.io.File
 import java.nio.file.Path
-
 import javax.inject._
-
 import scala.math._
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -34,6 +32,7 @@ import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, Odinso
 import com.typesafe.config.Config
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 
 @Singleton
 class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
@@ -734,6 +733,46 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val vocab = vocabulary.terms.toList.sorted
       val json = Json.toJson(vocab)
       json.format(pretty)
+    }
+  }
+
+  /** Return all terms for a given field in orthographic order.   *
+    * @param field A token field such as word, lemma, or tag.
+    * @return The complete [[List]] of terms in this field for the current index.
+    */
+  private def fieldVocabulary(field: String): List[String] = {
+    // get terms from the requested field (error if it doesn't exist)
+    val extractorEngine: ExtractorEngine = newEngine()
+    val fields = MultiFields.getFields(extractorEngine.indexReader)
+    val terms = fields.terms(field)
+    val termsEnum = terms.iterator
+    // add terms to our return list one at a time
+    val termsBuffer = new ArrayBuffer[String]()
+    while (termsEnum.next() != null) {
+      val term = termsEnum.term.utf8ToString
+      termsBuffer.append(term)
+    }
+    // already sorted orthographically by Lucene default
+    termsBuffer.toList
+  }
+
+  /** Retrieves the POS tags for the current index (limited to extant tags).
+    * @param pretty Whether to pretty-print the JSON results.
+    * @return A JSON array of the tags in use in this index.
+    */
+  def tagsVocabulary(pretty: Option[Boolean]) = Action.async {
+    Future {
+      // get ready to fail if tags aren't reachable
+      try {
+        val tags = fieldVocabulary("tag")
+        val json = Json.toJson(tags)
+        json.format(pretty)
+      } catch {
+        case NonFatal(e) =>
+          val stackTrace = ExceptionUtils.getStackTrace(e)
+          val json = Json.toJson(Json.obj("error" -> stackTrace))
+          Status(400)(json)
+      }
     }
   }
 
