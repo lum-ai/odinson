@@ -12,26 +12,31 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.TestData
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
-
+import play.api.libs.json._
 import org.scalatestplus.play._
 import play.api.test._
 
 import scala.reflect.io.Directory
 
-/** Add your spec here.
-  * You can mock out a whole application including requests, plugins etc.
-  *
-  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
-  */
-
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
 
-  val defaultconfig = ConfigFactory.load()
+  // for testing `term-freq` endpoint
+  case class SingletonRow(term: String, frequency: Double)
+  type SingletonRows = Seq[SingletonRow]
+  implicit val singletonRowFormat: Format[SingletonRow] = Json.format[SingletonRow]
+  implicit val readSingletonRows: Reads[Seq[SingletonRow]] = Reads.seq(singletonRowFormat)
+
+  // for testing `term-freq` endpoint
+  case class GroupedRow(term: String, group: String, frequency: Double)
+  type GroupedRows = Seq[GroupedRow]
+  implicit val groupedRowFormat: Format[GroupedRow] = Json.format[GroupedRow]
+  implicit val readGroupedRows: Reads[Seq[GroupedRow]] = Reads.seq(groupedRowFormat)
+
+  val defaultConfig: Config = ConfigFactory.load()
 
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile()
+  val tmpFolder: File = Files.createTempDirectory("odinson-test").toFile
   val srcDir: File = new File(getClass.getResource("/").getFile)
 
   try {
@@ -46,7 +51,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   val docsDir = new File(tmpFolder, "docs").getAbsolutePath
 
   val testConfig: Config = {
-    defaultconfig
+    defaultConfig
       .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))
       // re-compute the index and docs path's
       .withValue(
@@ -226,9 +231,128 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("term")
+      Helpers.contentAsString(response) must include("frequency")
+
+      val json = Helpers.contentAsJson(response)
+
+      // check that the response is valid in form
+      val rowsResult = json.validate(readSingletonRows)
+      rowsResult.isSuccess must be(true)
+
+      // check that 10 results are returned by default
+      val rows: Seq[SingletonRow] = rowsResult match {
+        case r: JsResult[SingletonRows] => r.get
+        case _                          => Nil
+      }
+
+      rows must have length (10)
+
+      // check for ordering (greatest to least)
+      val freqs = rows.map(_.frequency)
+      freqs.zip(freqs.tail).foreach { case (freq1, freq2) =>
+        freq1 must be >= freq2
+      }
+    }
+
+    "respond with grouped token-based frequencies using the /term-freq endpoint" in {
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=tag&group=raw&min=0&max=4")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("term")
+      Helpers.contentAsString(response) must include("group")
+      Helpers.contentAsString(response) must include("frequency")
+
+      val json = Helpers.contentAsJson(response)
+
+      // check that the response is of a valid form
+      val rowsResult = json.validate(readGroupedRows)
+      rowsResult.isSuccess must be(true)
+
+      // check that we have the right number of results
+      val rows: Seq[GroupedRow] = rowsResult match {
+        case r: JsResult[GroupedRows] => r.get
+        case _                        => Nil
+      }
+      // important to save ordering
+      val termOrder = rows.map(_.term).distinct.zipWithIndex.toMap
+      val rowsForTerm = rows.groupBy(_.term).toSeq.sortBy { case (term, frequencies) =>
+        termOrder(term)
+      }
+      rowsForTerm must have length (5)
+
+      // check for ordering among `term`s (greatest to least)
+      val termFreqs = rowsForTerm.map { case (term, rows) => rows.map(_.frequency).sum }
+      termFreqs.zip(termFreqs.tail).foreach { case (freq1, freq2) =>
+        freq1 must be >= freq2
+      }
+    }
+
+    "respond to order and reverse variables in /term-freq endpoint" in {
+      val response =
+        route(app, FakeRequest(GET, "/api/term-freq?field=word&order=alpha&reverse=true")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
       // println(Helpers.contentAsString(response))
       Helpers.contentAsString(response) must include("term")
       Helpers.contentAsString(response) must include("frequency")
+
+      val json = Helpers.contentAsJson(response)
+
+      // check that the response is valid in form
+      val rowsResult = json.validate(readSingletonRows)
+      rowsResult.isSuccess must be(true)
+
+      // check that 10 results are returned by default
+      val rows: Seq[SingletonRow] = rowsResult match {
+        case r: JsResult[SingletonRows] => r.get
+        case _                          => Nil
+      }
+
+      // check for ordering (reverse Unicode sort)
+      val terms = rows.map(_.term)
+      terms.zip(terms.tail).foreach { case (term1, term2) =>
+        // no overlap because terms must be distinct
+        term1 must be > term2
+      }
+    }
+
+    "filter terms in /term-freq endpoint" in {
+      // filter: `th.*`
+      val response = route(app, FakeRequest(GET, "/api/term-freq?field=lemma&filter=th.*")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      Helpers.contentAsString(response) must include("term")
+      Helpers.contentAsString(response) must include("frequency")
+
+      val json = Helpers.contentAsJson(response)
+
+      // check that the response is valid in form
+      val rowsResult = json.validate(readSingletonRows)
+      rowsResult.isSuccess must be(true)
+
+      val rows: Seq[SingletonRow] = rowsResult match {
+        case r: JsResult[SingletonRows] => r.get
+        case _                          => Nil
+      }
+
+      // regex is `^t` and is meant to be unanchored (on the right) and case sensitive
+      // check that all terms begin with lowercase t, and that there's at least one term that isn't
+      // just `t`
+      val terms = rows.map(_.term)
+      terms.foreach { term =>
+        term.startsWith("th") mustBe (true)
+      }
+      terms.exists { term =>
+        term.length > 1
+      } mustBe (true)
     }
 
     val expandedRules =
