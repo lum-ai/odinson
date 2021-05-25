@@ -690,13 +690,17 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
-      val fields = MultiFields.getFields(extractorEngine.indexReader)
-      val fieldNames = fields.iterator.asScala.toList
+      val tokenFields = extractorEngine.dataGatherer.storedFields
+      val allFields = MultiFields.getFields(extractorEngine.indexReader)
+      val allFieldNames = allFields.iterator.asScala.toList
+      val docFields = allFieldNames diff tokenFields
+
       val json = Json.obj(
         "numDocs" -> numDocs,
         "corpus" -> corpusDir,
         "distinctDependencyRelations" -> depsVocabSize,
-        "fields" -> fieldNames
+        "tokenFields" -> tokenFields,
+        "docFields" -> docFields
       )
       json.format(pretty)
     }
@@ -1055,7 +1059,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val extractorEngine: ExtractorEngine = newEngine()
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
-    val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
     Json.obj(
       "sentenceId" -> odinsonScoreDoc.doc,
       "score" -> odinsonScoreDoc.score,
