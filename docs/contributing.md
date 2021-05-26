@@ -23,7 +23,7 @@ Before a pull request can be accepted, all automated CI checks must pass. These 
 Before opening a new pull request, ensure that ...
 1. You've added tests for any new functionality.
 2. All tests pass locally via `sbt test`.
-3. Linting is performed by running `sbt scalafmtAll && sbt scalafmtCheckAll`.  
+3. Linting is performed by running `sbt scalafmtAll scalafmtCheckAll`.  
    - You may want to [configure your code editor or IDE to format all code according the project style when saving](https://scalameta.org/scalafmt/docs/installation.html#format-on-save).
    - For some formatting tips, please see the next section.
 4. You've updated [CHANGES.md](https://github.com/lum-ai/odinson/blob/master/CHANGES.md#unreleased) with a description of your contribution.
@@ -36,13 +36,15 @@ Automatic formatting is not always optimal.  If you notice formatting that it is
 
 Please consider use of these options to be recommendations.  They may be ruled out during the pull request process.  You may want to search for formatting comments in the code to familiarize yourself with their limited usage.  Here is one particularly good example for guidance:
 ```scala
-// format: off
-case (Some(min), Some(max), _) if min > max => Fail
-case (None,      maxOption, "}")  => Pass(GreedyQuantifier(  0, maxOption))
-case (Some(min), maxOption, "}")  => Pass(GreedyQuantifier(min, maxOption))
-case (None,      maxOption, "}?") => Pass(LazyQuantifier  (  0, maxOption))
-case (Some(min), maxOption, "}?") => Pass(LazyQuantifier  (min, maxOption))
-// format: on
+def fancyFormattedQuantifiers(min, max) = {
+  // format: off
+  case (Some(min), Some(max), _) if min > max => Fail
+  case (None,      maxOption, "}")  => Pass(GreedyQuantifier(  0, maxOption))
+  case (Some(min), maxOption, "}")  => Pass(GreedyQuantifier(min, maxOption))
+  case (None,      maxOption, "}?") => Pass(LazyQuantifier  (  0, maxOption))
+  case (Some(min), maxOption, "}?") => Pass(LazyQuantifier  (min, maxOption))
+  // format: on
+}
 ```
 
 # Contributor Covenant Code of Conduct
