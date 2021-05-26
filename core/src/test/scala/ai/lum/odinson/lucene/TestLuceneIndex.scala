@@ -24,8 +24,8 @@ class TestLuceneIndex extends FlatSpecLike with Matchers with BeforeAndAfterEach
         if ( indexDir.exists() ) new Directory( indexDir ).deleteRecursively()
     }
 
-    "Incremental Lucene Index" should "add a document" in {
-        val index : LuceneIndex = new IncrementalLuceneIndex( FSDirectory.open( indexDir.toPath ), 100 )
+    "Incremental Lucene Index" should "be able to incrementally search documents as they are added" in {
+        val index : LuceneIndex = new IncrementalLuceneIndex( FSDirectory.open( indexDir.toPath ), 750 )
 
         // lucene field mappings
         val docIdField = "id"
@@ -51,14 +51,14 @@ class TestLuceneIndex extends FlatSpecLike with Matchers with BeforeAndAfterEach
 
         // write the first doc to the index and wait for the searcher refresh to run in the background
         index.write( Seq( firstDoc ).asJava )
-        index.refresh() // force the index to read any pending updates
+        Thread.sleep( 1000 )
         val query : Query = new QueryParser( fieldName, new WhitespaceAnalyzer ).parse( "michael" )
         val firstDocResults = index.search( query )
         firstDocResults.totalHits shouldBe 1
 
         // now do the second doc and check
         index.write( Seq( secondDoc ).asJava )
-        index.refresh() // force a call to tell index to read in updates
+        Thread.sleep( 1000 )
         val incrementalResults = index.search( query ) // reuse the same query
 
         incrementalResults.totalHits shouldBe 2

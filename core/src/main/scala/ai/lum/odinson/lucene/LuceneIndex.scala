@@ -11,6 +11,7 @@ import org.apache.lucene.store.Directory
 import java.util.Collection
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 
 trait LuceneIndex {
@@ -73,6 +74,9 @@ class IncrementalLuceneIndex( val directory : Directory, refreshMs : Long = 1000
             println( "refreshing index searchers with updated data" )
             Thread.sleep( refreshMs )
             refresh()
+        } onComplete {
+            case Success( _ ) => refreshPeriodically()
+            case Failure( e : Throwable ) => ???
         }
     }
 }
