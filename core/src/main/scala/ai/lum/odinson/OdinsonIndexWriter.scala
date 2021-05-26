@@ -24,7 +24,7 @@ import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.BinaryDocValuesField
 
-import java.nio.file.Path
+import java.nio.file.Paths
 import java.util
 
 class OdinsonIndexWriter(
@@ -272,7 +272,7 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.empty
         (dir, vocab)
       case path =>
-        val dir = FSDirectory.open(Path.of(path))
+        val dir = FSDirectory.open(Paths.get(path))
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
