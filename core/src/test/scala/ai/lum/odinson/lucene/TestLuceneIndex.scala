@@ -55,6 +55,7 @@ class TestLuceneIndex extends FlatSpecLike with Matchers with BeforeAndAfterEach
         val query : Query = new QueryParser( fieldName, new WhitespaceAnalyzer ).parse( "michael" )
         val firstDocResults = index.search( query )
         firstDocResults.totalHits shouldBe 1
+        index.numDocs() shouldBe 1
 
         // now do the second doc and check
         index.write( Seq( secondDoc ).asJava )
@@ -62,6 +63,7 @@ class TestLuceneIndex extends FlatSpecLike with Matchers with BeforeAndAfterEach
         val incrementalResults = index.search( query ) // reuse the same query
 
         incrementalResults.totalHits shouldBe 2
+        index.numDocs() shouldBe 2
     }
 
 

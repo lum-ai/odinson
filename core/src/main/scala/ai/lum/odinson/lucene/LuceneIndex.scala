@@ -26,6 +26,8 @@ trait LuceneIndex {
 
     def search( query : Query, limit : Int = 1000000000 ) : TopDocs
 
+    def numDocs( ) : Int
+
     def refresh( ) : Unit
 
 }
@@ -67,6 +69,17 @@ class IncrementalLuceneIndex( val directory : Directory, val computeTotalHits : 
         manager.maybeRefresh()
     }
 
+    override def numDocs( ) : Int = {
+        var searcher : IndexSearcher = null
+        try {
+            searcher = acquireSearcher()
+            searcher.getIndexReader.numDocs()
+        } catch {
+            case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
+        }
+        finally releaseSearcher( searcher )
+    }
+
     private def acquireSearcher( ) : IndexSearcher = manager.acquire()
 
     private def releaseSearcher( searcher : IndexSearcher ) : Unit = manager.release( searcher )
@@ -81,4 +94,5 @@ class IncrementalLuceneIndex( val directory : Directory, val computeTotalHits : 
             case Failure( e : Throwable ) => ???
         }
     }
+
 }
