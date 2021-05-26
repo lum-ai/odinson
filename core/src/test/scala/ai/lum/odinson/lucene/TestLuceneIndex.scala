@@ -25,7 +25,7 @@ class TestLuceneIndex extends FlatSpecLike with Matchers with BeforeAndAfterEach
     }
 
     "Incremental Lucene Index" should "be able to incrementally search documents as they are added" in {
-        val index : LuceneIndex = new IncrementalLuceneIndex( FSDirectory.open( indexDir.toPath ), 750 )
+        val index : LuceneIndex = new IncrementalLuceneIndex( directory = FSDirectory.open( indexDir.toPath ), computeTotalHits = true, refreshMs = 750 )
 
         // lucene field mappings
         val docIdField = "id"

@@ -20,6 +20,8 @@ trait LuceneIndex {
 
     protected val directory : Directory
 
+    protected val computeTotalHits : Boolean
+
     def write( block : Collection[ Document ] ) : Unit
 
     def search( query : Query, limit : Int = 1000000000 ) : TopDocs
@@ -28,7 +30,7 @@ trait LuceneIndex {
 
 }
 
-class IncrementalLuceneIndex( val directory : Directory, refreshMs : Long = 1000 ) extends LuceneIndex {
+class IncrementalLuceneIndex( val directory : Directory, val computeTotalHits : Boolean, refreshMs : Long = 1000 ) extends LuceneIndex {
 
     private implicit val ec : ExecutionContext = ExecutionContext.global
 
@@ -38,7 +40,7 @@ class IncrementalLuceneIndex( val directory : Directory, refreshMs : Long = 1000
         new IndexWriter( this.directory, config )
     }
 
-    private val manager : SearcherManager = new SearcherManager( writer, null )
+    private val manager : SearcherManager = new SearcherManager( writer, new OdinsonSearcherFactory( computeTotalHits ) )
 
     refreshPeriodically()
 
