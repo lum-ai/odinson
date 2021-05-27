@@ -397,9 +397,9 @@ object SqlState {
     indexSearcher: OdinsonIndexSearcher,
     indexDirOpt: Option[Directory]
   ): SqlState = {
-    val persistOnClose = config[Boolean]("odinson.state.sql.persistOnClose")
+    val persistOnClose = config.apply[Boolean]("odinson.state.sql.persistOnClose")
     val stateFile = config.get[File]("odinson.state.sql.persistFile")
-    val jdbcUrl = config[String]("odinson.state.sql.url")
+    val jdbcUrl = config.apply[String]("odinson.state.sql.url")
     val dataSource: HikariDataSource = {
       val config = new HikariConfig
       config.setJdbcUrl(jdbcUrl)
@@ -414,7 +414,7 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    val displayField = config[String]("odinson.displayField")
+    val displayField = config.apply[String]("odinson.displayField")
     val dataGathererOpt =
       indexDirOpt.map(indexDir =>
         DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)

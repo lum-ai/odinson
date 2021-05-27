@@ -39,10 +39,10 @@ object IndexDocuments extends App with LazyLogging {
       )
   }
   //
-  val docsDir = config[File]("odinson.docsDir")
+  val docsDir = config.apply[File]("odinson.docsDir")
 
   val synchronizeOrderWithDocumentId =
-    config[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
+    config.apply[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
 
   //
   val writer = OdinsonIndexWriter.fromConfig(config)
