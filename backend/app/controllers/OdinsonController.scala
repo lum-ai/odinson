@@ -40,10 +40,10 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 ) extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
 
-  private val indexPath = config[File]("odinson.indexDir").toPath
+  private val indexPath = config.apply[File]("odinson.indexDir").toPath
   private val indexDir = FSDirectory.open(indexPath)
   private val indexReader = DirectoryReader.open(indexDir)
-  private val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
+  private val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
   private val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
 
   def newEngine(): ExtractorEngine = ExtractorEngine.fromDirectory(config, indexDir, indexSearcher)
@@ -686,7 +686,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Future {
       val extractorEngine: ExtractorEngine = newEngine()
       val numDocs = extractorEngine.indexReader.numDocs
-      val corpusDir = config[File]("odinson.indexDir").getName
+      val corpusDir = config.apply[File]("odinson.indexDir").getName
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
@@ -720,7 +720,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   }
 
   def loadVocabulary: Vocabulary = {
-    val indexPath = config[Path]("odinson.indexDir")
+    val indexPath = config.apply[Path]("odinson.indexDir")
     val indexDir = FSDirectory.open(indexPath)
     Vocabulary.fromDirectory(indexDir)
   }

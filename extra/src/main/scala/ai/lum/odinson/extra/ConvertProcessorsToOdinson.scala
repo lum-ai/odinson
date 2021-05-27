@@ -12,8 +12,8 @@ import ai.lum.odinson.Document
 object ConvertProcessorsToOdinson extends App with LazyLogging {
 
   val config = ConfigFactory.load()
-  val docsDir = config[File]("odinson.docsDir")
-  val procDir = config[File]("odinson.procDir")
+  val docsDir = config.apply[File]("odinson.docsDir")
+  val procDir = config.apply[File]("odinson.procDir")
 
   logger.info(s"processors documents at $procDir")
   logger.info(s"odinson documents at $docsDir")
