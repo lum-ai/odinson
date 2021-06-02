@@ -4,15 +4,13 @@ import java.io.File
 
 import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.ConfigValueFactory
 import org.clulab.processors.Processor
-import org.clulab.processors.clu.CluProcessor
-import org.clulab.processors.fastnlp.FastNLPProcessor
 import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.odinson.Document
-import ai.lum.odinson.extra.ProcessorsUtils.{ getProcessor, initializeDyNet }
+import ai.lum.odinson.extra.ProcessorsUtils.getProcessor
 
 object AnnotateText extends App with LazyLogging {
 
@@ -66,7 +64,13 @@ object AnnotateText extends App with LazyLogging {
 
   // NOTE parses the documents in parallel
   for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
-    val docFile = new File(docsDir, f.getBaseName() + ".json.gz")
+    val relFile = textDir.toPath.relativize(f.toPath)
+
+    // replicate the directory structure under textDir under docsDir
+    val inputFileInDocsDir = docsDir.toPath.resolve(relFile)
+    val docFile = inputFileInDocsDir.getParent
+      .resolve(inputFileInDocsDir.getFileName.toFile.getBaseName() + ".json.gz").toFile
+    Ensuring(docFile.toPath.getParent.toFile.mkdirs)
 
     if (docFile.exists) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")
