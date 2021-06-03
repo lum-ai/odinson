@@ -70,7 +70,8 @@ object AnnotateText extends App with LazyLogging {
     val inputFileInDocsDir = docsDir.toPath.resolve(relFile)
     val docFile = inputFileInDocsDir.getParent
       .resolve(inputFileInDocsDir.getFileName.toFile.getBaseName() + ".json.gz").toFile
-    Ensuring(docFile.toPath.getParent.toFile.mkdirs)
+    docFile.toPath.getParent.toFile.mkdirs
+    Ensuring(docFile.toPath.getParent.toFile.exists())
 
     if (docFile.exists) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")
