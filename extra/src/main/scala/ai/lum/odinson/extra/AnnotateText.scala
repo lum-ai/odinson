@@ -12,7 +12,7 @@ import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.odinson.Document
-import ai.lum.odinson.extra.ProcessorsUtils.{ getProcessor, initializeDyNet }
+import ai.lum.odinson.extra.ProcessorsUtils.getProcessor
 
 object AnnotateText extends App with LazyLogging {
 
