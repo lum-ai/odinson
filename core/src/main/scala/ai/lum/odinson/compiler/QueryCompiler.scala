@@ -609,18 +609,19 @@ object QueryCompiler {
 
   def apply(config: Config, vocabulary: Vocabulary): QueryCompiler = {
     new QueryCompiler(
-      allTokenFields = config[List[String]]("odinson.compiler.allTokenFields"),
-      defaultTokenField = config[String]("odinson.compiler.defaultTokenField"),
-      sentenceLengthField = config[String]("odinson.compiler.sentenceLengthField"),
-      dependenciesField = config[String]("odinson.compiler.dependenciesField"),
-      incomingTokenField = config[String]("odinson.compiler.incomingTokenField"),
-      outgoingTokenField = config[String]("odinson.compiler.outgoingTokenField"),
+      allTokenFields = config.apply[List[String]]("odinson.compiler.allTokenFields"),
+      defaultTokenField = config.apply[String]("odinson.compiler.defaultTokenField"),
+      sentenceLengthField = config.apply[String]("odinson.compiler.sentenceLengthField"),
+      dependenciesField = config.apply[String]("odinson.compiler.dependenciesField"),
+      incomingTokenField = config.apply[String]("odinson.compiler.incomingTokenField"),
+      outgoingTokenField = config.apply[String]("odinson.compiler.outgoingTokenField"),
       dependenciesVocabulary = vocabulary,
       aggressiveNormalizationToDefaultField =
-        config[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
-      documentIdField = config[String]("odinson.index.documentIdField"),
-      parentDocFieldType = config[String]("odinson.index.parentDocFieldType"),
-      parentDocField = config[String]("odinson.index.parentDocField")
+        config.apply[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
+      documentIdField = config.apply[String]("odinson.index.documentIdField"),
+      parentDocFieldType = config.apply[String]("odinson.index.parentDocFieldType"),
+      parentDocField = config.apply[String]("odinson.index.parentDocField")
+
     )
   }
 

@@ -25,14 +25,14 @@ object ProcessorsUtils {
   // load field names from config
   val config = ConfigFactory.load()
   // format: off
-  val documentIdField   = config[String]("odinson.index.documentIdField")
-  val rawTokenField     = config[String]("odinson.index.rawTokenField")
-  val wordTokenField    = config[String]("odinson.index.wordTokenField")
-  val lemmaTokenField   = config[String]("odinson.index.lemmaTokenField")
-  val posTagTokenField  = config[String]("odinson.index.posTagTokenField")
-  val chunkTokenField   = config[String]("odinson.index.chunkTokenField")
-  val entityTokenField  = config[String]("odinson.index.entityTokenField")
-  val dependenciesField = config[String]("odinson.index.dependenciesField")
+  val documentIdField   = config.apply[String]("odinson.index.documentIdField")
+  val rawTokenField     = config.apply[String]("odinson.index.rawTokenField")
+  val wordTokenField    = config.apply[String]("odinson.index.wordTokenField")
+  val lemmaTokenField   = config.apply[String]("odinson.index.lemmaTokenField")
+  val posTagTokenField  = config.apply[String]("odinson.index.posTagTokenField")
+  val chunkTokenField   = config.apply[String]("odinson.index.chunkTokenField")
+  val entityTokenField  = config.apply[String]("odinson.index.entityTokenField")
+  val dependenciesField = config.apply[String]("odinson.index.dependenciesField")
   // format: on
 
   def getProcessor(processorType: String): Processor = {

@@ -24,6 +24,7 @@ class TestOdinsonTest extends OdinsonTest {
   // Daisy ate macaroni at her house.
   // Gus's pets include cats, dogs, parakeets, ponies, and unicorns.
   val ee = mkExtractorEngine("chopsticks-spoon")
+  val dg = Some(ee.dataGatherer)
 
   behavior of "OdinsonTest"
 
@@ -60,13 +61,15 @@ class TestOdinsonTest extends OdinsonTest {
         ),
       doc
     )
-    eeFoobar.displayField should equal("foobar")
+    eeFoobar.dataGatherer.displayField should equal("foobar")
   }
 
   it should "getMentionsFromRule" in {
 
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     // def getSingleMentionFromRule(ms: Seq[Mention], rulename: String): Mention = {
@@ -85,8 +88,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "get mentions with given label" in {
     //def getMentionsWithLabel(ms: Seq[Mention], label: String): Seq[Mention] = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     getMentionsWithLabel(mentions, "foobar") should contain theSameElementsAs (Seq(m1, m2))
@@ -94,8 +99,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "get mentions with string value" in {
     //def getMentionsWithStringValue(ms: Seq[Mention], s: String, engine: ExtractorEngine): Seq[Mention] = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule")
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
     val mentions = Seq(m1, m2)
 
     getMentionsWithStringValue(mentions, "foobar", ee) shouldBe empty
@@ -104,8 +111,10 @@ class TestOdinsonTest extends OdinsonTest {
 
   it should "determine if two mentions are equal" in {
     //def mentionsShouldBeEqual(a: Mention, b: Mention): Boolean = {
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule")
-    val m2 = new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule")
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    val m2 =
+      new Mention(new NGramMatch(4, 5), Some("foobar"), 1, 1, 1, nullIdGetter, "FoobarRule", dg)
 
     mentionsShouldBeEqual(m1, m1) should be(true)
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy mentionsShouldBeEqual(
@@ -241,8 +250,10 @@ class TestOdinsonTest extends OdinsonTest {
   it should "test mention contents" in {
     //def testMention(m: Mention, desiredMentionText: String, desiredArgs: Seq[Argument], engine: ExtractorEngine): Unit = {
     // non event without args
-    val m1 = new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule")
-    noException should be thrownBy testMention(m1, "ramen", Seq(), ee)
+    val m1 =
+      new Mention(new NGramMatch(2, 3), Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    m1.populateFields()
+    noException should be thrownBy testMention(m1, "ramen", Seq())
 
     // non event with args
     val m2 = new Mention(
@@ -253,9 +264,11 @@ class TestOdinsonTest extends OdinsonTest {
       0,
       nullIdGetter,
       "FoobarRule",
-      Map("food" -> Array(m1))
+      Map("food" -> Array(m1)),
+      dg
     )
-    noException should be thrownBy testMention(m2, "John", Seq(Argument("food", "ramen")), ee)
+    m2.populateFields()
+    noException should be thrownBy testMention(m2, "John", Seq(Argument("food", "ramen")))
 
     // event, where the span of the mention is the trigger
     val eventMatch = new EventMatch(
@@ -263,38 +276,34 @@ class TestOdinsonTest extends OdinsonTest {
       Array(NamedCapture("food", Some("Label"), new NGramMatch(2, 3))),
       Array(ArgumentMetadata("food", 1, Some(2), false))
     )
-    val m3 = new Mention(eventMatch, Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule")
-    noException should be thrownBy testMention(m3, "John", Seq(Argument("food", "ramen")), ee)
+    val m3 = new Mention(eventMatch, Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    m3.populateFields()
+    noException should be thrownBy testMention(m3, "John", Seq(Argument("food", "ramen")))
 
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "Jacob",
-      Seq(Argument("food", "ramen")),
-      ee
+      Seq(Argument("food", "ramen"))
     )
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "John",
-      Seq(Argument("drink", "ramen")),
-      ee
+      Seq(Argument("drink", "ramen"))
     )
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "John",
-      Seq(Argument("food", "candy")),
-      ee
+      Seq(Argument("food", "candy"))
     )
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "John",
-      Seq(Argument("food", "ramen"), Argument("food", "candy")),
-      ee
+      Seq(Argument("food", "ramen"), Argument("food", "candy"))
     )
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m3,
       "John",
-      Seq(),
-      ee
+      Seq()
     )
 
     // event, with multiple args
@@ -306,26 +315,24 @@ class TestOdinsonTest extends OdinsonTest {
       ),
       Array(ArgumentMetadata("food", 1, Some(2), false))
     )
-    val m4 = new Mention(eventMatch2, Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule")
+    val m4 = new Mention(eventMatch2, Some("foobar"), 0, 0, 0, nullIdGetter, "FoobarRule", dg)
+    m4.populateFields()
     noException should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "ramen"), Argument("food", "chopsticks")),
-      ee
+      Seq(Argument("food", "ramen"), Argument("food", "chopsticks"))
     )
     // diff order of args provided
     noException should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "chopsticks"), Argument("food", "ramen")),
-      ee
+      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"))
     )
     // repeated
     an[org.scalatest.exceptions.TestFailedException] should be thrownBy testMention(
       m4,
       "John",
-      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"), Argument("food", "ramen")),
-      ee
+      Seq(Argument("food", "chopsticks"), Argument("food", "ramen"), Argument("food", "ramen"))
     )
   }
 
@@ -366,7 +373,7 @@ class TestOdinsonTest extends OdinsonTest {
 
   }
 
-  it should "test  arguments by offsets" in {
+  it should "test arguments by offsets" in {
     //def testArguments(m: OdinsonMatch, desiredArgs: Seq[ArgumentOffsets]): Unit = {
     // event, with multiple args
     val eventMatch = new EventMatch(

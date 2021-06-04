@@ -108,7 +108,7 @@ object MemoryState {
   case class BaseLabel(docBase: Int, label: String)
 
   def apply(config: Config): MemoryState = {
-    val persistOnClose = config[Boolean]("odinson.state.memory.persistOnClose")
+    val persistOnClose = config.apply[Boolean]("odinson.state.memory.persistOnClose")
     val saveTo = config.get[File]("odinson.state.memory.stateDir")
     new MemoryState(persistOnClose, saveTo)
   }

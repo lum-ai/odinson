@@ -88,7 +88,7 @@ class GraphTraversalQuery(
       val srcSpans = srcWeight.getSpans(context, requiredPostings)
       val traversalSpans = fullTraversal.getSpans(context, requiredPostings)
       if (srcSpans == null || traversalSpans == null) return null
-      val graphPerDoc = reader.getSortedDocValues(dependenciesField)
+      val graphPerDoc = reader.getBinaryDocValues(dependenciesField)
       val numWordsPerDoc = reader.getNumericDocValues(sentenceLengthField)
       val subSpans = srcSpans :: traversalSpans.subSpans
       new GraphTraversalSpans(
@@ -108,7 +108,7 @@ class GraphTraversalSpans(
   val subSpans: Array[OdinsonSpans],
   val srcSpans: OdinsonSpans,
   val fullTraversal: FullTraversalSpans,
-  val graphPerDoc: SortedDocValues,
+  val graphPerDoc: BinaryDocValues,
   val numWordsPerDoc: NumericDocValues
 ) extends ConjunctionSpans {
 

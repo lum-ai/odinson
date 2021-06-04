@@ -2,7 +2,7 @@ package ai.lum.odinson.serialization
 
 import java.util
 
-import ai.lum.odinson.serialization.JsonSerializer.VerboseLevels
+import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
@@ -27,13 +27,25 @@ class TestJsonSerialization extends OdinsonTest {
   val mentions = engine.extractNoState(extractors).toArray
 
   val jsonSerializer =
-    new JsonSerializer(verbose = VerboseLevels.Minimal, indent = 4, engine = Some(engine))
+    new JsonSerializer(
+      verbose = VerboseLevels.Minimal,
+      indent = 4,
+      dataGathererOpt = Some(engine.dataGatherer)
+    )
 
   val displaySerializer =
-    new JsonSerializer(verbose = VerboseLevels.Display, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(
+      verbose = VerboseLevels.Display,
+      indent = 4,
+      dataGathererOpt = Some(verboseEngine.dataGatherer)
+    )
 
   val allSerializer =
-    new JsonSerializer(verbose = VerboseLevels.All, indent = 4, engine = Some(verboseEngine))
+    new JsonSerializer(
+      verbose = VerboseLevels.All,
+      indent = 4,
+      dataGathererOpt = Some(verboseEngine.dataGatherer)
+    )
 
   "JsonSerializer" should "handle NGramMentions" in {
     val m = getSingleMentionFromRule(mentions, "NGram")
@@ -229,7 +241,7 @@ class TestJsonSerialization extends OdinsonTest {
     mentionsShouldBeEqual(m, deserializedPretty) should be(true)
   }
 
-  it should "properly serialize and deserialized using json lines" in {
+  it should "properly serialize and deserialize using json lines" in {
     val m1 = getSingleMentionFromRule(mentions, "Or")
     val m2 = getSingleMentionFromRule(mentions, "Named")
     val jsonLines = jsonSerializer.asJsonLines(Seq(m1, m2))
@@ -261,6 +273,23 @@ class TestJsonSerialization extends OdinsonTest {
     detail("tag").arr.map(_.str) should contain inOrderOnly ("NNS", "VBP", "JJ")
 
     a[java.util.NoSuchElementException] should be thrownBy json("watermelon")
+  }
+
+  it should "deserialize mentions populated with previous content" in {
+    val nonevent = getSingleMentionFromRule(mentions, "MultipleWords")
+    val json = allSerializer.asJsonValue(nonevent)
+    val emptySerializer = new JsonSerializer() // doesn't point to anything
+    val deserialized = emptySerializer.deserializeMention(json)
+    deserialized.text should be("Rainbows shine bright")
+    deserialized.documentFields("raw") shouldBe Array(
+      "Rainbows",
+      "shine",
+      "bright",
+      "bright",
+      "bright",
+      "."
+    )
+    deserialized.mentionFields("tag") should contain inOrderOnly ("NNS", "VBP", "JJ")
   }
 
 }

@@ -32,7 +32,7 @@ class TestDocumentationWalkthrough extends OdinsonTest {
     """.stripMargin
 
   val extractors = extractorEngine.compileRuleString(rules)
-  val mentions = extractorEngine.extractMentions(extractors).toSeq
+  val mentions = extractorEngine.extractAndPopulate(extractors).toVector
 
   behavior of "documentation"
 
@@ -52,8 +52,7 @@ class TestDocumentationWalkthrough extends OdinsonTest {
     testMention(
       adoptions.head,
       "adopted",
-      Seq(Argument("adopter", "Sally"), Argument("pet", "cat")),
-      extractorEngine
+      Seq(Argument("adopter", "Sally"), Argument("pet", "cat"))
     )
   }
 

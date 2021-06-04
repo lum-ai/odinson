@@ -2,7 +2,6 @@ package ai.lum.odinson
 
 import java.io.File
 
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{
   BooleanClause => LuceneBooleanClause,
@@ -15,13 +14,14 @@ import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
+import ai.lum.odinson.DataGatherer.VerboseLevels
+import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.utils.{ IndexSettings, MostRecentlyUsed }
+import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 import scala.collection.mutable.ArrayBuffer
@@ -29,14 +29,13 @@ import scala.collection.mutable.ArrayBuffer
 class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
-  val displayField: String,
-  val indexSettings: IndexSettings,
+  val dataGatherer: DataGatherer,
   val state: State, // todo: should this be private?
   val parentDocIdField: String
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
-  val analyzer = new WhitespaceAnalyzer()
+  val analyzer = dataGatherer.analyzer
 
   val indexReader = indexSearcher.getIndexReader()
 
@@ -265,7 +264,13 @@ class ExtractorEngine private (
     mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
   ): Iterator[Mention] = {
     val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
-    new MentionsIterator(extractor.label, Some(extractor.name), odinResults, mruIdGetter)
+    new MentionsIterator(
+      extractor.label,
+      Some(extractor.name),
+      odinResults,
+      mruIdGetter,
+      Some(dataGatherer)
+    )
   }
 
   /** Execute all rules in a grammar without populating the state.
@@ -495,75 +500,20 @@ class ExtractorEngine private (
     } yield mention
   }
 
-  @deprecated(
-    message =
-      "This signature of getString is deprecated and will be removed in a future release. Use getStringForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getString(docID: Int, m: OdinsonMatch): String = {
-    getTokens(docID, m).mkString(" ")
-  }
-
-  def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
-    getTokensForSpan(docID, m).mkString(" ")
-  }
-
-  def getArgument(mention: Mention, name: String): String = {
-    getStringForSpan(mention.luceneDocId, mention.arguments(name).head.odinsonMatch)
-  }
-
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(m: Mention) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(m: Mention): Array[String] = {
-    getTokens(m.luceneDocId, m.odinsonMatch)
-  }
-
-  def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
-  }
-
-  def getTokensForSpan(m: Mention, fieldName: String): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, fieldName)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokensForSpan(docID, displayField, m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
-    getTokensForSpan(docID, fieldName, m.start, m.end)
-  }
-
-  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = {
-    getTokensForSpan(docID, displayField, start, end)
-  }
-
-  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
-    getTokens(docID, fieldName).slice(start, end)
-  }
-
-  @deprecated(
-    message =
-      "This signature of getTokens is deprecated and will be removed in a future release. Use getTokensForSpan(docID: Int, m: OdinsonMatch) instead.",
-    since = "https://github.com/lum-ai/odinson/commit/89ceb72095d603cf61d27decc7c42c5eea50c87a"
-  )
-  def getTokens(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokens(docID, displayField).slice(m.start, m.end)
-  }
-
-  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
-    getTokens(scoreDoc.doc, displayField)
-  }
-
-  def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
-    getTokens(scoreDoc.doc, fieldName)
-  }
-
-  def getTokens(docID: Int, fieldName: String): Array[String] = {
-    TokenStreamUtils.getTokens(docID, fieldName, indexSearcher, analyzer)
+  def extractAndPopulate(
+    extractors: Seq[Extractor],
+    numSentences: Int = numDocs(),
+    allowTriggerOverlaps: Boolean = false,
+    disableMatchSelector: Boolean = false,
+    level: Verbosity = VerboseLevels.Display
+  ): Iterator[Mention] = {
+    val mentions =
+      extractMentions(extractors, numSentences, allowTriggerOverlaps, disableMatchSelector)
+    // Each mention populates itself in place, returns for new iterator
+    mentions.map { m =>
+      m.populateFields(level)
+      m
+    }
   }
 
   /** Close the open resources.
@@ -609,6 +559,82 @@ class ExtractorEngine private (
     }
   }
 
+  // Methods to access DataGatherer
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getStringForSpan",
+    since = "0.3.2"
+  )
+  def getStringForSpan(docID: Int, m: OdinsonMatch): String =
+    dataGatherer.getStringForSpan(docID, m)
+
+  @deprecated(
+    message = "This method is deprecated, please use the `text()` method of the argument Mention",
+    since = "0.3.2"
+  )
+  def getArgument(mention: Mention, name: String): String = dataGatherer.getArgument(mention, name)
+
+  @deprecated(
+    message = "This method is deprecated, please use Mention.mentionFields",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(m: Mention): Array[String] = dataGatherer.getTokensForSpan(m)
+
+  @deprecated(
+    message = "This method is deprecated, please use Mention.mentionFields",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(m: Mention, fieldName: String): Array[String] =
+    dataGatherer.getTokensForSpan(m, fieldName)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] =
+    dataGatherer.getTokensForSpan(docID, m)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] =
+    dataGatherer.getTokensForSpan(docID, m, fieldName)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] =
+    dataGatherer.getTokensForSpan(docID, start, end)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokensForSpan",
+    since = "0.3.2"
+  )
+  def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] =
+    dataGatherer.getTokensForSpan(docID, fieldName, start, end)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
+    since = "0.3.2"
+  )
+  def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = dataGatherer.getTokens(scoreDoc)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
+    since = "0.3.2"
+  )
+  def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] =
+    dataGatherer.getTokens(scoreDoc, fieldName)
+
+  @deprecated(
+    message = "This method is deprecated, please use ai.lum.odinson.DataGatherer.getTokens",
+    since = "0.3.2"
+  )
+  def getTokens(docID: Int, fieldName: String): Array[String] =
+    dataGatherer.getTokens(docID, fieldName)
+
 }
 
 object ExtractorEngine {
@@ -619,26 +645,33 @@ object ExtractorEngine {
   }
 
   def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config[File]("odinson.indexDir").toPath
+    val indexPath = config.apply[File]("odinson.indexDir").toPath
     val indexDir = FSDirectory.open(indexPath)
     fromDirectory(config, indexDir)
   }
 
   def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
     val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config[Boolean]("odinson.computeTotalHits")
-    val displayField = config[String]("odinson.displayField")
+    val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
     val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
+    fromDirectory(config, indexDir, indexSearcher)
+  }
+
+  def fromDirectory(
+    config: Config,
+    indexDir: Directory,
+    indexSearcher: OdinsonIndexSearcher
+  ): ExtractorEngine = {
+    val displayField = config.apply[String]("odinson.displayField")
+    val dataGatherer = DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
     val vocabulary = Vocabulary.fromDirectory(indexDir)
-    val indexSettings = IndexSettings.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
-    val state = State(config, indexSearcher)
-    val parentDocIdField = config[String]("odinson.index.documentIdField")
+    val state = State(config, indexSearcher, indexDir)
+    val parentDocIdField = config.apply[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
-      displayField,
-      indexSettings,
+      dataGatherer,
       state,
       parentDocIdField
     )

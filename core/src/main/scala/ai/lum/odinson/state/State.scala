@@ -6,6 +6,7 @@ import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.Mention
 import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
 import com.typesafe.config.Config
+import org.apache.lucene.store.Directory
 
 trait State {
 
@@ -52,11 +53,11 @@ trait State {
 
 object State {
 
-  def apply(config: Config, indexSearcher: OdinsonIndexSearcher): State = {
-    val provider = config[String]("odinson.state.provider")
+  def apply(config: Config, indexSearcher: OdinsonIndexSearcher, indexDir: Directory): State = {
+    val provider = config.apply[String]("odinson.state.provider")
     val state = provider match {
       // The SQL state needs an IndexSearcher to get the docIds from the
-      case "sql"    => SqlState(config, indexSearcher)
+      case "sql"    => SqlState(config, indexSearcher, Some(indexDir))
       case "file"   => FileState(config)
       case "memory" => MemoryState(config)
       case "mock"   => MockState

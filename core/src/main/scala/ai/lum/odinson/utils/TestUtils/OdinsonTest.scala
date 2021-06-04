@@ -19,7 +19,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   lazy val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](NullIdGetter.apply)
 
   val defaultConfig = ConfigFactory.load()
-  val rawTokenField: String = defaultConfig[String]("odinson.index.rawTokenField")
+  val rawTokenField = defaultConfig.apply[String]("odinson.index.rawTokenField")
 
   def getDocumentFromJson(json: String): Document = Document.fromJson(json)
   def getDocument(id: String): Document = getDocumentFromJson(ExampleDocs.json(id))
@@ -58,7 +58,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param value config value to replace the default value or serve as value to new key
     * @return
     */
-  def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
+  def extractorEngineWithConfigValue(doc: Document, key: String, value: Any): ExtractorEngine = {
     val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
     mkExtractorEngine(newConfig, doc)
   }
@@ -324,22 +324,20 @@ class OdinsonTest extends FlatSpec with Matchers {
     * @param m
     * @param desiredMentionText the text that the Mention should consist of (for events, this is the trigger)
     * @param desiredArgs  the Arguments that should be found in the event
-    * @param engine ExtractorEngine
     */
   def testMention(
     m: Mention,
     desiredMentionText: String,
-    desiredArgs: Seq[Argument],
-    engine: ExtractorEngine
+    desiredArgs: Seq[Argument]
   ): Unit = {
     // Check that the trigger is as desired
-    engine.getStringForSpan(m.luceneDocId, m.odinsonMatch) shouldEqual (desiredMentionText)
+    m.text shouldEqual (desiredMentionText)
 
     // extract match arguments from the mathing objects
     val matchArgs = for {
       (argName, argMentions) <- m.arguments
       mention <- argMentions
-    } yield Argument(argName, engine.getStringForSpan(m.luceneDocId, mention.odinsonMatch))
+    } yield Argument(argName, mention.text)
 
     // all desired args should be there, in the right number
     val groupedMatched = matchArgs.groupBy(_.name)
