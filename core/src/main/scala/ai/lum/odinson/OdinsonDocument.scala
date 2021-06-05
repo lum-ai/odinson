@@ -143,7 +143,7 @@ object DateField {
   }
 
   def fromDate(name: String, date: Date, store: Boolean = false): DateField = {
-    val localDate = date.toInstant.atZone(ZoneId.systemDefault).toLocalDate
+    val localDate = date.toInstant.atZone(ZoneId.of("UTC")).toLocalDate
     fromLocalDate(name, localDate)
   }
 
