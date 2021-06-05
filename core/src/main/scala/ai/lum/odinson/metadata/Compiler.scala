@@ -104,12 +104,12 @@ object Compiler {
                 localDate.toEpochDay
 
             case Seq(year: Ast.NumberValue, month: Ast.StringValue) =>
-                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase()), 1).getTime()
+                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase), 1).getTime()
                 val localDate = date.toInstant.atZone(ZoneId.of("UTC")).toLocalDate
                 localDate.toEpochDay
 
             case Seq(year: Ast.NumberValue, month: Ast.StringValue, day: Ast.NumberValue) =>
-                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase()), day.n.toInt).getTime()
+                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase), day.n.toInt).getTime()
                 val localDate = date.toInstant.atZone(ZoneId.of("UTC")).toLocalDate
                 localDate.toEpochDay
         }
