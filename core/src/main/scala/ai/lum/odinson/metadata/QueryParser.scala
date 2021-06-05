@@ -61,7 +61,7 @@ object MetadataQueryParser {
         }
     }
 
-    def cmp_op[_: P]: P[String] = StringIn("==", "!=", ">", "<", ">=", "<=").!
+    def cmp_op[_: P]: P[String] = StringIn(">", "<", ">=", "<=", "==", "!=").!
 
     def mk_compare(lhs: Ast.Value, op: String, rhs: Ast.Value): Ast.BoolExpression = {
         op match {
@@ -89,7 +89,7 @@ object MetadataQueryParser {
     }
 
     def numberValue[_: P]: P[Ast.Value] = {
-        Literals.unsignedInt.map(Ast.NumberValue)
+        Literals.unsignedInt.map(n => Ast.NumberValue(n))
     }
 
 }
