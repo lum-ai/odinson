@@ -75,20 +75,20 @@ object MetadataQueryParser {
     }
 
     def value[_: P]: P[Ast.Value] = {
-        P(funCall | stringValue | numberValue)
+        P(fun_call | string_value | number_value)
     }
 
-    def funCall[_: P]: P[Ast.Value] = {
+    def fun_call[_: P]: P[Ast.Value] = {
         P(Literals.identifier ~ "(" ~ value.rep(sep = ",") ~ ")").map {
             case (name, args) => Ast.FunCall(name, args)
         }
     }
 
-    def stringValue[_: P]: P[Ast.Value] = {
+    def string_value[_: P]: P[Ast.Value] = {
         Literals.string.map(Ast.StringValue)
     }
 
-    def numberValue[_: P]: P[Ast.Value] = {
+    def number_value[_: P]: P[Ast.Value] = {
         Literals.unsignedInt.map(n => Ast.NumberValue(n))
     }
 
