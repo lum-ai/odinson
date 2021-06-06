@@ -42,10 +42,8 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            // greater than
                             LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
                         } else {
-                            // less than
                             LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
                         }
                 }
@@ -55,10 +53,8 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            // greater than or equal
                             LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
                         } else {
-                            // less than or equal
                             LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
                         }
                 }
@@ -68,10 +64,8 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            // less than
                             LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
                         } else {
-                            // greater than
                             LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
                         }
                 }
@@ -81,10 +75,8 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            // less than or equal
                             LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
                         } else {
-                            // greater than or equal
                             LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
                         }
                 }
