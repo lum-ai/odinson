@@ -17,5 +17,6 @@ object Ast {
     case class NumberValue(n: Long) extends Value
     case class StringValue(s: String) extends Value
     case class FunCall(name: String, args: Seq[Value]) extends Value
+    case class FieldValue(name: String) extends Value
 
 }
