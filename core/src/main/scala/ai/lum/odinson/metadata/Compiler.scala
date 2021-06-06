@@ -1,13 +1,17 @@
 package ai.lum.odinson.metadata
 
+import java.lang.Math
 import java.time.ZoneId
 import java.time.LocalDate
 import java.text.DateFormat
 import java.util.GregorianCalendar
+import org.apache.lucene.index.Term
 import org.apache.lucene.search.Query
+import org.apache.lucene.search.TermQuery
 import org.apache.lucene.search.BooleanQuery
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.MatchAllDocsQuery
+import org.apache.lucene.document.LongPoint
 
 object Compiler {
 
@@ -34,34 +38,89 @@ object Compiler {
                 builder.build()
 
             case Ast.LessThan(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                value match {
+                    case value: Ast.NumberValue =>
+                        if (flipped) {
+                            // greater than
+                            LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
+                        } else {
+                            // less than
+                            LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
+                        }
+                }
 
             case Ast.LessThanOrEqual(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                value match {
+                    case value: Ast.NumberValue =>
+                        if (flipped) {
+                            // greater than or equal
+                            LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
+                        } else {
+                            // less than or equal
+                            LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
+                        }
+                }
 
             case Ast.GreaterThan(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                value match {
+                    case value: Ast.NumberValue =>
+                        if (flipped) {
+                            // less than
+                            LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
+                        } else {
+                            // greater than
+                            LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
+                        }
+                }
 
             case Ast.GreaterThanOrEqual(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                value match {
+                    case value: Ast.NumberValue =>
+                        if (flipped) {
+                            // less than or equal
+                            LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
+                        } else {
+                            // greater than or equal
+                            LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
+                        }
+                }
 
             case Ast.Equal(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                value match {
+                    case value: Ast.NumberValue =>
+                        LongPoint.newExactQuery(field.name, value.n)
+                    case value: Ast.StringValue =>
+                        new TermQuery(new Term(field.name, value.s))
+                }
 
             case Ast.NotEqual(lhs, rhs) =>
-                val l = evalValue(lhs)
-                val r = evalValue(rhs)
-                ???
+                val (field, value, flipped) = handleArgs(lhs, rhs)
+                val query = value match {
+                    case value: Ast.NumberValue =>
+                        LongPoint.newExactQuery(field.name, value.n)
+                    case value: Ast.StringValue =>
+                        new TermQuery(new Term(field.name, value.s))
+                }
+                val builder = new BooleanQuery.Builder
+                builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.MUST))
+                builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
+                builder.build()
+        }
+    }
+
+    def handleArgs(lhs: Ast.Value, rhs: Ast.Value): (Ast.FieldValue, Ast.Value, Boolean) = {
+        val l = evalValue(lhs)
+        val r = evalValue(rhs)
+        (l, r) match {
+            case (l:Ast.FieldValue, r:Ast.FieldValue) => ???
+            case (l:Ast.FieldValue, r:Ast.Value) => (l, r, false)
+            case (l:Ast.Value, r:Ast.FieldValue) => (r, l, true)
+            case (l:Ast.Value, r:Ast.Value) => ???
         }
     }
 
