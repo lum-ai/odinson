@@ -75,7 +75,7 @@ object MetadataQueryParser {
     }
 
     def value[_: P]: P[Ast.Value] = {
-        P(fun_call | string_value | number_value)
+        P(fun_call | string_value | number_value | field_value)
     }
 
     def fun_call[_: P]: P[Ast.Value] = {
@@ -90,6 +90,10 @@ object MetadataQueryParser {
 
     def number_value[_: P]: P[Ast.Value] = {
         Literals.unsignedInt.map(n => Ast.NumberValue(n))
+    }
+
+    def field_value[_: P]: P[Ast.Value] = {
+        P("@" ~ Literals.identifier).map(Ast.FieldValue)
     }
 
 }
