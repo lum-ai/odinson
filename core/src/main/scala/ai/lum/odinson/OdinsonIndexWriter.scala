@@ -22,8 +22,7 @@ import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import org.apache.lucene.document.BinaryDocValuesField
-
+import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint }
 import java.nio.file.Paths
 import java.util
 
@@ -108,23 +107,33 @@ class OdinsonIndexWriter(
         logger.warn(s"skipping sentence with ${s.numTokens.display} tokens")
       }
     }
-    block += mkMetadataDoc(d)
-    block
+    block ++ mkMetadataDocs(d)
   }
 
-  def mkMetadataDoc(d: Document): lucenedoc.Document = {
+  def mkMetadataDocs(d: Document): Seq[lucenedoc.Document] = {
+    val (nested, other) = d.metadata.partition(_.isInstanceOf[NestedField])
+
+    // convert the nested fields into a document
+    val nestedMetadata = nested.collect{ case n: NestedField => n }.map(mkNestedDocument)
+
+    // Metadata for parent document
     val metadata = new lucenedoc.Document
     metadata.add(new lucenedoc.StringField("type", "metadata", Store.NO))
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
+
     for {
-      odinsonField <- d.metadata
+      odinsonField <- other
       luceneField <- mkLuceneFields(odinsonField)
     } metadata.add(luceneField)
-    metadata
+
+    nestedMetadata ++ Seq(metadata)
   }
 
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
     val sent = new lucenedoc.Document
+    // TODO: add something like this:
+    //  nestedMetadata.add(new lucenedoc.StringField("type", "metadata_nested", Store.NO))
+    //  eventually check for this instead of ! metadata in querying
     // add sentence metadata
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
     sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
@@ -173,13 +182,25 @@ class OdinsonIndexWriter(
   def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
     val mustStore = settings.storedFields.contains(f.name)
     f match {
+      // Separate StoredField because of Lucene API for LongPoint:
+      // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/LongPoint.html
       case f: DateField =>
-        val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
+        val doubleField = new lucenedoc.DoublePoint(f.name, f.localDate.toEpochDay)
         if (mustStore) {
           val storedField = new lucenedoc.StoredField(f.name, f.date)
-          Seq(longField, storedField)
+          Seq(doubleField, storedField)
         } else {
-          Seq(longField)
+          Seq(doubleField)
+        }
+      case f: NumberField =>
+        // Separate StoredField because of Lucene API for DoublePoint:
+        // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/DoublePoint.html
+        val doubleField = new DoublePoint(f.name, f.value)
+        if (mustStore) {
+          val storedField = new lucenedoc.StoredField(f.name, f.value)
+          Seq(doubleField, storedField)
+        } else {
+          Seq(doubleField)
         }
       case f: StringField =>
         val store = if (mustStore) Store.YES else Store.NO
@@ -187,6 +208,8 @@ class OdinsonIndexWriter(
         val stringField = new lucenedoc.StringField(f.name, string, store)
         Seq(stringField)
       case f: TokensField if mustStore =>
+        // Separate handling when storing/not storing bc only the
+        // non-TokenSteam API allows for storing flag
         val validatedTokens = validate(f.tokens)
         val text = validatedTokens.mkString(" ").normalizeUnicode
         val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
@@ -198,6 +221,19 @@ class OdinsonIndexWriter(
         val tokensField = new lucenedoc.TextField(f.name, tokenStream)
         Seq(tokensField)
     }
+  }
+
+  def mkNestedDocument(nested: NestedField): lucenedoc.Document = {
+    val nestedMetadata = new lucenedoc.Document
+    // FIXME: from config
+    nestedMetadata.add(new lucenedoc.StringField("type", "metadata_nested", Store.NO))
+
+    for {
+      odinsonField <- nested.fields
+      luceneField <- mkLuceneFields(odinsonField)
+    } nestedMetadata.add(luceneField)
+
+    nestedMetadata
   }
 
   def mkDirectedGraph(

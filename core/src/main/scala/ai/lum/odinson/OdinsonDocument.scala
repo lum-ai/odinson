@@ -60,7 +60,9 @@ object Field {
       TokensField.rw,
       GraphField.rw,
       StringField.rw,
-      DateField.rw
+      DateField.rw,
+      NumberField.rw,
+      NestedField.rw
     )
   }
 
@@ -149,6 +151,30 @@ object DateField {
 
   def fromLocalDate(name: String, date: LocalDate, store: Boolean = false): DateField = {
     DateField(name, date.toString)
+  }
+
+}
+
+case class NumberField(name: String, value: Double) extends Field
+
+object NumberField {
+
+  implicit val rw: ReadWriter[NumberField] = macroRW
+
+  def fromJson(data: String): NumberField = {
+    read[NumberField](data)
+  }
+
+}
+
+case class NestedField(name: String, fields: Seq[Field]) extends Field
+
+object NestedField {
+
+  implicit val rw: ReadWriter[NestedField] = macroRW
+
+  def fromJson(data: String): NestedField = {
+    read[NestedField](data)
   }
 
 }

@@ -4,14 +4,13 @@ import org.apache.lucene.index._
 import org.apache.lucene.search._
 import org.apache.lucene.search.join._
 import org.apache.lucene.search.spans._
-import org.apache.lucene.queryparser.classic.{ QueryParser => LuceneQueryParser }
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
+import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class QueryCompiler(
@@ -26,9 +25,6 @@ class QueryCompiler(
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
-
-  /** query parser for parent doc queries */
-  val queryParser = new LuceneQueryParser("docId", new WhitespaceAnalyzer)
 
   // FIXME temporary entrypoint
   def compileEventQuery(pattern: String): OdinsonQuery = {
@@ -47,11 +43,11 @@ class QueryCompiler(
     compile(pattern)
   }
 
-  def mkParentQuery(parentPattern: String): Query = queryParser.parse(parentPattern)
+  def mkParentQuery(parentPattern: String): Query = MetadataCompiler.mkQuery(parentPattern)
 
   def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
     val query = compile(pattern)
-    val parentQuery = queryParser.parse(parentPattern)
+    val parentQuery = MetadataCompiler.mkQuery(parentPattern)
     mkQuery(query, parentQuery)
   }
 
@@ -61,16 +57,22 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentPattern: String): OdinsonQuery = {
-    val parentQuery = queryParser.parse(parentPattern)
+    val parentQuery = MetadataCompiler.mkQuery(parentPattern)
     mkQuery(query, parentQuery)
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
     // FIXME the strings "type" and "parent" should probably be defined in the config
-    val termQuery = new TermQuery(new Term("type", "parent"))
+    val termQuery = new TermQuery(new Term("type", "metadata"))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
     new OdinsonFilteredQuery(query, filter)
+  }
+
+  def mkNestedFilterQuery(childQuery: Query): Query = {
+    val termQuery = new TermQuery(new Term("type", "metadata"))
+    val parentFilter = new QueryBitSetProducer(termQuery)
+    new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
   }
 
   /** Constructs an OdinsonQuery from an AST. */

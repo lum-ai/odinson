@@ -3,10 +3,7 @@ package ai.lum.odinson
 import java.io.File
 
 import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{
-  BooleanClause => LuceneBooleanClause,
-  BooleanQuery => LuceneBooleanQuery
-}
+import org.apache.lucene.search.{ Query, BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
 import org.apache.lucene.store.{ Directory, FSDirectory }
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
@@ -222,6 +219,23 @@ class ExtractorEngine private (
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
+  }
+
+  // Metadata queries
+  def mkFilteredQuery(query: String, metadataFilter: String): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: String, metadataFilter: Query): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: OdinsonQuery, metadataFilter: String): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: OdinsonQuery, metadataFilter: Query): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
   }
 
   // Access methods

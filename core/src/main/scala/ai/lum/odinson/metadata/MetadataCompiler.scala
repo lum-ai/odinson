@@ -1,19 +1,25 @@
 package ai.lum.odinson.metadata
 
-import java.lang.Math
 import java.time.ZoneId
 import java.time.LocalDate
 import java.text.DateFormat
 import java.util.GregorianCalendar
+
+import ai.lum.odinson.metadata.MetadataCompiler.compile
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.Query
 import org.apache.lucene.search.TermQuery
 import org.apache.lucene.search.BooleanQuery
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.MatchAllDocsQuery
-import org.apache.lucene.document.LongPoint
+import org.apache.lucene.document.DoublePoint
 
-object Compiler {
+object MetadataCompiler {
+
+    def mkQuery(pattern: String): Query = {
+        val expression = MetadataQueryParser.parseQuery(pattern).get.value
+        compile(expression)
+    }
 
     def compile(expr: Ast.BoolExpression): Query = {
         expr match {
@@ -32,19 +38,17 @@ object Compiler {
                 builder.build()
 
             case Ast.NotExpression(expr) =>
-                val builder = new BooleanQuery.Builder
-                builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.MUST))
-                builder.add(new BooleanClause(compile(expr), BooleanClause.Occur.MUST_NOT))
-                builder.build()
+                buildNegation(compile(expr))
+
 
             case Ast.LessThan(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
+                            DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
                         } else {
-                            LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
+                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
                         }
                 }
 
@@ -53,9 +57,9 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
+                            DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
                         } else {
-                            LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
+                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
                         }
                 }
 
@@ -64,9 +68,9 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            LongPoint.newRangeQuery(field.name, Long.MinValue, Math.addExact(value.n, -1))
+                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
                         } else {
-                            LongPoint.newRangeQuery(field.name, Math.addExact(value.n, 1), Long.MaxValue)
+                            DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
                         }
                 }
 
@@ -75,9 +79,9 @@ object Compiler {
                 value match {
                     case value: Ast.NumberValue =>
                         if (flipped) {
-                            LongPoint.newRangeQuery(field.name, Long.MinValue, value.n)
+                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
                         } else {
-                            LongPoint.newRangeQuery(field.name, value.n, Long.MaxValue)
+                            DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
                         }
                 }
 
@@ -85,7 +89,7 @@ object Compiler {
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
                     case value: Ast.NumberValue =>
-                        LongPoint.newExactQuery(field.name, value.n)
+                        DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
                         new TermQuery(new Term(field.name, value.s))
                 }
@@ -94,14 +98,11 @@ object Compiler {
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 val query = value match {
                     case value: Ast.NumberValue =>
-                        LongPoint.newExactQuery(field.name, value.n)
+                        DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
                         new TermQuery(new Term(field.name, value.s))
                 }
-                val builder = new BooleanQuery.Builder
-                builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.MUST))
-                builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
-                builder.build()
+                buildNegation(query)
         }
     }
 
@@ -166,5 +167,13 @@ object Compiler {
         }
         Ast.NumberValue(n)
     }
+
+  def buildNegation(query: Query): Query = {
+      val builder = new BooleanQuery.Builder
+      builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
+      builder.add(new BooleanClause(new TermQuery(new Term("type", "metadata")), BooleanClause.Occur.MUST))
+      builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
+      builder.build()
+  }
 
 }
