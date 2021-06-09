@@ -29,9 +29,13 @@ object ConvertProcessorsToOdinson extends App with LazyLogging {
       val procName = f.getName
       val odinsonName = if (procName.endsWith(".gz")) procName else procName + ".gz"
       val newFile = new File(newDir, odinsonName)
-      val processorsDoc = JSONSerializer.toDocument(f.readString())
-      val odinsonDoc = ProcessorsUtils.convertDocument(processorsDoc)
-      newFile.writeString(odinsonDoc.toJson)
+      if (!newFile.exists) {
+        val processorsDoc = JSONSerializer.toDocument(f.readString())
+        val odinsonDoc = ProcessorsUtils.convertDocument(processorsDoc)
+        newFile.writeString(odinsonDoc.toJson)
+      } else {
+        logger.info(s"skipping ${f.getName} because it was already processed")
+      }
     } match {
       case Success(_) => logger.info(s"converted ${f.getName}")
       case Failure(e) => logger.error(s"failed to convert ${f.getName}", e)
