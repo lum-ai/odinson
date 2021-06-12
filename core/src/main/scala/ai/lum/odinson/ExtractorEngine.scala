@@ -1,16 +1,12 @@
 package ai.lum.odinson
 
 import java.io.File
-
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{
-  BooleanClause => LuceneBooleanClause,
-  BooleanQuery => LuceneBooleanQuery
-}
-import org.apache.lucene.store.{ Directory, FSDirectory }
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.search.{BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
+import org.apache.lucene.store.{Directory, FSDirectory}
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.StringUtils._
@@ -19,8 +15,9 @@ import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{ MockState, State }
+import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.plugins.motd.MOTDFactory
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
@@ -33,6 +30,12 @@ class ExtractorEngine private (
   val state: State, // todo: should this be private?
   val parentDocIdField: String
 ) {
+
+  {
+    // Just show an example of it happening.
+    val motd = MOTDFactory.get()
+    motd.show(System.out)
+  }
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
   val analyzer = dataGatherer.analyzer

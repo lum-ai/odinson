@@ -14,8 +14,11 @@ lazy val commonSettings = Seq(
   excludeDependencies += "commons-logging" % "commons-logging",
 )
 
+lazy val motd = project
+
 lazy val core = project
   .enablePlugins(BuildInfoPlugin)
+  .dependsOn(motd)
   .settings(commonSettings)
   .settings(
     buildInfoPackage := "ai.lum.odinson",
