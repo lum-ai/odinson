@@ -9,7 +9,16 @@ object MOTDFactory {
   def get(): MOTD = {
     val motds = config
         .apply[List[String]]("odinson.plugins.motd.providers")
-        .map(Class.forName(_).newInstance.asInstanceOf[MOTD])
+        .flatMap { name =>
+          Option {
+            try {
+              Class.forName(name)
+            }
+            catch {
+              case _: Throwable => null
+            }
+          }.map(_.newInstance.asInstanceOf[MOTD])
+        }
 
     new MultiMOTD(new MockMOTD +: motds)
   }
