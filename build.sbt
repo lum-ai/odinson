@@ -18,6 +18,7 @@ lazy val motd = project
 
 lazy val core = project
   .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(motd)
   .settings(commonSettings)
   .settings(
