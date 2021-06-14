@@ -6,7 +6,9 @@ import ai.lum.odinson.compiler.Literals
 
 object MetadataQueryParser {
 
-    def parseQuery(query: String) = {
+  // TODO: enforce strings need quotes
+
+    def parseQuery(query: String): Parsed[Ast.BoolExpression] = {
         parse(query, top(_))
     }
 
@@ -29,7 +31,13 @@ object MetadataQueryParser {
     }
 
     def atomic_expression[_: P]: P[Ast.BoolExpression] = {
-        P(cmp_expression | group_expression)
+        P(cmp_expression | group_expression | nested_expression)
+    }
+
+    def nested_expression[_: P]: P[Ast.BoolExpression] = {
+        P(Literals.identifier ~ "{" ~ or_expression ~ "}").map {
+            case (name, expr) => Ast.NestedExpression(name, expr)
+        }
     }
 
     // only a group_expression can be negated,

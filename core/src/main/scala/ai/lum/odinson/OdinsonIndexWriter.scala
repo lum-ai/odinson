@@ -107,6 +107,7 @@ class OdinsonIndexWriter(
         logger.warn(s"skipping sentence with ${s.numTokens.display} tokens")
       }
     }
+    // sentence docs, then the nested metadata documents, then the parent doc
     block ++ mkMetadataDocs(d)
   }
 
@@ -225,6 +226,7 @@ class OdinsonIndexWriter(
 
   def mkNestedDocument(nested: NestedField): lucenedoc.Document = {
     val nestedMetadata = new lucenedoc.Document
+    nestedMetadata.add(new lucenedoc.StringField("name", nested.name, Store.NO))
     // FIXME: from config
     nestedMetadata.add(new lucenedoc.StringField("type", "metadata_nested", Store.NO))
 

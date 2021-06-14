@@ -13,6 +13,7 @@ import org.apache.lucene.search.BooleanQuery
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.MatchAllDocsQuery
 import org.apache.lucene.document.DoublePoint
+import org.apache.lucene.search.join.{QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery}
 
 object MetadataCompiler {
 
@@ -103,6 +104,17 @@ object MetadataCompiler {
                         new TermQuery(new Term(field.name, value.s))
                 }
                 buildNegation(query)
+
+            case Ast.NestedExpression(name, expr) =>
+                // build child query as specified by user
+                val builder = new BooleanQuery.Builder
+                builder.add(new BooleanClause(compile(expr), BooleanClause.Occur.MUST))
+                builder.add(new BooleanClause(new TermQuery(new Term("name", name)), BooleanClause.Occur.MUST))
+                val childQuery = builder.build()
+                // parentTermQuery gets the parent document for the nested document
+                val parentTermQuery = new TermQuery(new Term("type", "metadata"))
+                val parentFilter = new QueryBitSetProducer(parentTermQuery)
+                new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
         }
     }
 
@@ -168,12 +180,12 @@ object MetadataCompiler {
         Ast.NumberValue(n)
     }
 
-  def buildNegation(query: Query): Query = {
-      val builder = new BooleanQuery.Builder
-      builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
-      builder.add(new BooleanClause(new TermQuery(new Term("type", "metadata")), BooleanClause.Occur.MUST))
-      builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
-      builder.build()
-  }
+    def buildNegation(query: Query): Query = {
+        val builder = new BooleanQuery.Builder
+        builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
+        builder.add(new BooleanClause(new TermQuery(new Term("type", "metadata")), BooleanClause.Occur.MUST))
+        builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
+        builder.build()
+    }
 
 }

@@ -6,6 +6,7 @@ import ai.lum.odinson.metadata.MetadataCompiler.mkQuery
 
 class TestMetadataFilter extends OdinsonTest {
 
+
   // All documents have text: "Becky ate gummy bears."
 
   // pubdate = 2000-05-25
@@ -27,8 +28,13 @@ class TestMetadataFilter extends OdinsonTest {
   // pubdate = 2020-05-25
   // citations = 5
   val doc6 = """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":5.0},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2020-05-25"}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
+  // author = {first: "Agnes", last: "Moorehead"}
+  val doc7 = """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.StringField","name":"first","string":"Agnes"},{"$type":"ai.lum.odinson.StringField","name":"last","string":"Moorehead"}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
+  // author = {first: "Agnes", last: "Mertz"}
+  // citations = 3
+  val doc8 = """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3.0},{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.StringField","name":"first","string":"Agnes"},{"$type":"ai.lum.odinson.StringField","name":"last","string":"Mertz"}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}"""
 
-  val ee = ExtractorEngine.inMemory(Seq(doc1, doc2, doc3, doc4, doc5, doc6).map(Document.fromJson))
+  val ee = ExtractorEngine.inMemory(Seq(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8).map(Document.fromJson))
   val query = ee.compiler.compile("[word=gummy]")
 
   behavior of "MetadataFilters"
@@ -145,8 +151,28 @@ class TestMetadataFilter extends OdinsonTest {
     ee.query(filteredQuery).scoreDocs.length shouldBe(4)
   }
 
-  // todo: nested
+  // Tests for the nested documents for metadata
+  val yummyQuery = ee.compiler.compile("[word=yummy]")
+  it should "restrict by nested fields" in {
+    val filter = "author{@first==Agnes}"
+    val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe(2)
+  }
+
+  it should "restrict by nested fields again" in {
+    val filter = "author{@first==Agnes && @last==Moorehead}"
+    val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe(1)
+  }
+
+  it should "restrict by nested fields and something else" in {
+    val filter = "author{@first==Agnes} && @citations == 3"
+    val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe(1)
+  }
+
   // todo: junctions eventually?
   // todo: support in the Extractors and then in extractMentions
+  // todo: maybe sentence doc have a type and alldocs query checks for that type
 
 }

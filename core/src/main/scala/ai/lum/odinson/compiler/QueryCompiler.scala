@@ -69,12 +69,6 @@ class QueryCompiler(
     new OdinsonFilteredQuery(query, filter)
   }
 
-  def mkNestedFilterQuery(childQuery: Query): Query = {
-    val termQuery = new TermQuery(new Term("type", "metadata"))
-    val parentFilter = new QueryBitSetProducer(termQuery)
-    new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
-  }
-
   /** Constructs an OdinsonQuery from an AST. */
   def mkOdinsonQuery(ast: Ast.Pattern): Option[OdinsonQuery] = ast match {
 

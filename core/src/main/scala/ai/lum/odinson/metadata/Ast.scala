@@ -12,6 +12,7 @@ object Ast {
     case class GreaterThanOrEqual(lhs: Value, rhs: Value) extends BoolExpression
     case class Equal(lhs: Value, rhs: Value) extends BoolExpression
     case class NotEqual(lhs: Value, rhs: Value) extends BoolExpression
+    case class NestedExpression(name: String, expr: BoolExpression) extends BoolExpression
 
     sealed trait Value
     case class NumberValue(n: Double) extends Value
