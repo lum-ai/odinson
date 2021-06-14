@@ -44,109 +44,109 @@ class TestMetadataFilter extends OdinsonTest {
   }
 
   it should "restrict open ended dates" in {
-    val filter = mkQuery("@pubdate > date(2006, 01, 01)")
+    val filter = mkQuery("pubdate > date(2006, 01, 01)")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(4)
 
-    val filter2 = mkQuery("date(2006, 01, 01) > @pubdate")
+    val filter2 = mkQuery("date(2006, 01, 01) > pubdate")
     val filteredQuery2 = ee.mkFilteredQuery(query, filter2)
     ee.query(filteredQuery2).scoreDocs.length shouldBe(2)
   }
 
   it should "restrict by closed date range" in {
-    val filter = mkQuery("date(2003, 01, 01) < @pubdate < date(2006, 01, 01)")
+    val filter = mkQuery("date(2003, 01, 01) < pubdate < date(2006, 01, 01)")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
   }
 
   it should "restrict by exact date" in {
-    val filter = mkQuery("@pubdate == date(2015, 05, 25)")
+    val filter = mkQuery("pubdate == date(2015, 05, 25)")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(2)
   }
 
   it should "handle not equal to date" in {
-    val filter = mkQuery("@pubdate != date(2015, 05, 25)")
+    val filter = mkQuery("pubdate != date(2015, 05, 25)")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(4)
   }
 
   it should "allow dates as strings" in {
-    val filter = mkQuery("@pubdate == date(2015, Mar, 25)")
+    val filter = mkQuery("pubdate == date(2015, 'Mar', 25)")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(0)
 
-    val filter2 = mkQuery("@pubdate == date(2015, May, 25)")
+    val filter2 = mkQuery("pubdate == date(2015, 'May', 25)")
     val filteredQuery2 = ee.mkFilteredQuery(query, filter2)
     ee.query(filteredQuery2).scoreDocs.length shouldBe(2)
 
-    val filter3 = mkQuery("@pubdate >= date(2015, March, 25)")
+    val filter3 = mkQuery("pubdate >= date(2015, 'March', 25)")
     val filteredQuery3 = ee.mkFilteredQuery(query, filter3)
     ee.query(filteredQuery3).scoreDocs.length shouldBe(3)
   }
 
   it should "restrict open ended number ranges" in {
-    val filter = mkQuery("@citations > 3")
+    val filter = mkQuery("citations > 3")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
 
-    val filter2 = mkQuery("@citations >= 3")
+    val filter2 = mkQuery("citations >= 3")
     val filteredQuery2 = ee.mkFilteredQuery(query, filter2)
     ee.query(filteredQuery2).scoreDocs.length shouldBe(2)
   }
 
   it should "restrict by closed number range" in {
-    val filter = mkQuery("3 <= @citations < 5")
+    val filter = mkQuery("3 <= citations < 5")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
   }
 
   it should "restrict by exact number" in {
-    val filter = mkQuery("@citations == 5")
+    val filter = mkQuery("citations == 5")
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
 
-    val filter2 = mkQuery("@citations != 5")
+    val filter2 = mkQuery("citations != 5")
     val filteredQuery2 = ee.mkFilteredQuery(query, filter2)
     ee.query(filteredQuery2).scoreDocs.length shouldBe(5)
   }
 
   it should "restrict keyword" in {
-    val filter = "@doctype == article"
+    val filter = "doctype == 'article'"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(3)
 
-    val filter2 = "@doctype == website"
+    val filter2 = "doctype == 'website'"
     val filteredQuery2 = ee.mkFilteredQuery(query, filter2)
     ee.query(filteredQuery2).scoreDocs.length shouldBe(2)
   }
 
   it should "restrict with AND" in {
-    val filter = "@doctype == article && (date(1999, 01, 01) < @pubdate < date(2012, 01, 01))"
+    val filter = "doctype == 'article' && (date(1999, 01, 01) < pubdate < date(2012, 01, 01))"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(2)
   }
 
   it should "restrict with OR" in {
-    val filter = "@doctype == article || @doctype == website"
+    val filter = "doctype == 'article' || doctype == 'website'"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(5)
   }
 
   it should "restrict by OR and AND" in {
-    val filter = "(@doctype == article || @doctype == website) && @pubdate < date(2014)"
+    val filter = "(doctype == 'article' || doctype == 'website') && pubdate < date(2014)"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(3)
   }
 
   it should "restrict with negation" in {
-    val filter = "!(@doctype == website)"
+    val filter = "!(doctype == 'website')"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(4)
   }
 
   it should "restrict with not equal" in {
-    val filter = "@doctype != website"
+    val filter = "doctype != 'website'"
     val filteredQuery = ee.mkFilteredQuery(query, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(4)
   }
@@ -154,19 +154,19 @@ class TestMetadataFilter extends OdinsonTest {
   // Tests for the nested documents for metadata
   val yummyQuery = ee.compiler.compile("[word=yummy]")
   it should "restrict by nested fields" in {
-    val filter = "author{@first==Agnes}"
+    val filter = "author{first=='Agnes'}"
     val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(2)
   }
 
   it should "restrict by nested fields again" in {
-    val filter = "author{@first==Agnes && @last==Moorehead}"
+    val filter = "author{first=='Agnes' && last=='Moorehead'}"
     val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
   }
 
   it should "restrict by nested fields and something else" in {
-    val filter = "author{@first==Agnes} && @citations == 3"
+    val filter = "author{first=='Agnes'} && citations == 3"
     val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe(1)
   }

@@ -6,8 +6,6 @@ import ai.lum.odinson.compiler.Literals
 
 object MetadataQueryParser {
 
-  // TODO: enforce strings need quotes
-
     def parseQuery(query: String): Parsed[Ast.BoolExpression] = {
         parse(query, top(_))
     }
@@ -49,6 +47,7 @@ object MetadataQueryParser {
         }
     }
 
+    // comparison expression
     def cmp_expression[_: P]: P[Ast.BoolExpression] = {
         P(value ~ cmp_op ~ value ~ (cmp_op ~ value).rep).map {
             case (lhs, op, rhs, Seq()) =>
@@ -93,7 +92,7 @@ object MetadataQueryParser {
     }
 
     def string_value[_: P]: P[Ast.Value] = {
-        Literals.string.map(Ast.StringValue)
+        Literals.quotedString.map(Ast.StringValue)
     }
 
     def number_value[_: P]: P[Ast.Value] = {
@@ -101,7 +100,7 @@ object MetadataQueryParser {
     }
 
     def field_value[_: P]: P[Ast.Value] = {
-        P("@" ~ Literals.identifier).map(Ast.FieldValue)
+        Literals.identifier.map(Ast.FieldValue)
     }
 
 }
