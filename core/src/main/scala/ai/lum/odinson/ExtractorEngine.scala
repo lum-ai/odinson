@@ -211,9 +211,11 @@ class ExtractorEngine private (
   def getParentDoc(docId: String): LuceneDocument = {
     val sterileDocID = docId.escapeJava
     val booleanQuery = new LuceneBooleanQuery.Builder()
+    // This particular docID
     val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    val q2 = new QueryParser("type", analyzer).parse("metadata")
+    // Only consider docs of type: Parent
+    val q2 = new QueryParser(OdinsonIndexWriter.TYPE, analyzer).parse(OdinsonIndexWriter.PARENT_TYPE)
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))

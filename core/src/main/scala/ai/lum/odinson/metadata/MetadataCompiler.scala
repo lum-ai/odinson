@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.text.DateFormat
 import java.util.GregorianCalendar
 
+import ai.lum.odinson.OdinsonIndexWriter
 import ai.lum.odinson.metadata.MetadataCompiler.compile
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.Query
@@ -109,10 +110,12 @@ object MetadataCompiler {
                 // build child query as specified by user
                 val builder = new BooleanQuery.Builder
                 builder.add(new BooleanClause(compile(expr), BooleanClause.Occur.MUST))
-                builder.add(new BooleanClause(new TermQuery(new Term("name", name)), BooleanClause.Occur.MUST))
+              // A field by this name
+                builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.NAME, name)), BooleanClause.Occur.MUST))
                 val childQuery = builder.build()
                 // parentTermQuery gets the parent document for the nested document
-                val parentTermQuery = new TermQuery(new Term("type", "metadata"))
+                // a field of type: metadata
+                val parentTermQuery = new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE))
                 val parentFilter = new QueryBitSetProducer(parentTermQuery)
                 new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
         }
@@ -183,7 +186,7 @@ object MetadataCompiler {
     def buildNegation(query: Query): Query = {
         val builder = new BooleanQuery.Builder
         builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
-        builder.add(new BooleanClause(new TermQuery(new Term("type", "metadata")), BooleanClause.Occur.MUST))
+        builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)), BooleanClause.Occur.MUST))
         builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
         builder.build()
     }

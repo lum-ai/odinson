@@ -119,7 +119,7 @@ class OdinsonIndexWriter(
 
     // Metadata for parent document
     val metadata = new lucenedoc.Document
-    metadata.add(new lucenedoc.StringField("type", "metadata", Store.NO))
+    metadata.add(new lucenedoc.StringField(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE, Store.NO))
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
 
     for {
@@ -132,9 +132,6 @@ class OdinsonIndexWriter(
 
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
     val sent = new lucenedoc.Document
-    // TODO: add something like this:
-    //  nestedMetadata.add(new lucenedoc.StringField("type", "metadata_nested", Store.NO))
-    //  eventually check for this instead of ! metadata in querying
     // add sentence metadata
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
     sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
@@ -226,9 +223,8 @@ class OdinsonIndexWriter(
 
   def mkNestedDocument(nested: NestedField): lucenedoc.Document = {
     val nestedMetadata = new lucenedoc.Document
-    nestedMetadata.add(new lucenedoc.StringField("name", nested.name, Store.NO))
-    // FIXME: from config
-    nestedMetadata.add(new lucenedoc.StringField("type", "metadata_nested", Store.NO))
+    nestedMetadata.add(new lucenedoc.StringField(OdinsonIndexWriter.NAME, nested.name, Store.NO))
+    nestedMetadata.add(new lucenedoc.StringField(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.NESTED_TYPE, Store.NO))
 
     for {
       odinsonField <- nested.fields
@@ -283,6 +279,13 @@ object OdinsonIndexWriter {
   val VOCABULARY_FILENAME = "dependencies.txt"
   val BUILDINFO_FILENAME = "buildinfo.json"
   val SETTINGSINFO_FILENAME = "settingsinfo.json"
+
+  // Constants for building the queries for metadata documents -- both the parent as well as the
+  // nested metadata
+  val TYPE = "type"
+  val PARENT_TYPE = "metadata"
+  val NESTED_TYPE = "metadata_nested"
+  val NAME = "name"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())

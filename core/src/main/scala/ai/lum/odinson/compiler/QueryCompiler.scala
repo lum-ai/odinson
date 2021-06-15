@@ -7,6 +7,7 @@ import org.apache.lucene.search.spans._
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
+import ai.lum.odinson.OdinsonIndexWriter
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._
@@ -62,8 +63,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentQuery: Query): OdinsonQuery = {
-    // FIXME the strings "type" and "parent" should probably be defined in the config
-    val termQuery = new TermQuery(new Term("type", "metadata"))
+    val termQuery = new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE))
     val parentFilter = new QueryBitSetProducer(termQuery)
     val filter = new ToChildBlockJoinQuery(parentQuery, parentFilter)
     new OdinsonFilteredQuery(query, filter)
