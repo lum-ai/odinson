@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+### Changed
+
+## [0.4.0] - 2021-06-07
+### Added
 - Added a histogram endpoint for term frequencies.
 - Enhanced term-freq endpoint to allow filtering as well as grouping by a second field.
 - Added ability to Mentions to populate their lexical content ([#274](https://github.com/lum-ai/odinson/pull/274))
