@@ -1,0 +1,3930 @@
+{
+  "id": "tp-briggs",
+  "metadata": [
+    {
+      "$type": "ai.lum.odinson.TokensField",
+      "name": "show",
+      "tokens": ["Twin", "Peaks"]
+    },
+    {
+      "$type": "ai.lum.odinson.TokensField",
+      "name": "actor",
+      "tokens": ["Don", "S.", "Davis"]
+    },
+    {
+      "$type": "ai.lum.odinson.TokensField",
+      "name": "character",
+      "tokens": ["Major", "Garland", "Briggs"]
+    },
+    {
+      "$type": "ai.lum.odinson.TokensField",
+      "name": "title",
+      "tokens": ["May", "the", "Giant", "Be", "with", "You"]
+    }
+  ],
+  "sentences": [
+    {
+      "numTokens": 30,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "A",
+            "vision",
+            "I",
+            "had",
+            "in",
+            "my",
+            "sleep",
+            "last",
+            "night",
+            "-",
+            "as",
+            "distinguished",
+            "from",
+            "a",
+            "dream",
+            "which",
+            "is",
+            "mere",
+            "sorting",
+            "and",
+            "cataloguing",
+            "of",
+            "the",
+            "day",
+            "'s",
+            "events",
+            "by",
+            "the",
+            "subconscious",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "A",
+            "vision",
+            "I",
+            "had",
+            "in",
+            "my",
+            "sleep",
+            "last",
+            "night",
+            "-",
+            "as",
+            "distinguished",
+            "from",
+            "a",
+            "dream",
+            "which",
+            "is",
+            "mere",
+            "sorting",
+            "and",
+            "cataloguing",
+            "of",
+            "the",
+            "day",
+            "'s",
+            "events",
+            "by",
+            "the",
+            "subconscious",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "DT",
+            "NN",
+            "PRP",
+            "VBD",
+            "IN",
+            "PRP$",
+            "NN",
+            "JJ",
+            "NN",
+            ":",
+            "RB",
+            "VBN",
+            "IN",
+            "DT",
+            "NN",
+            "WDT",
+            "VBZ",
+            "JJ",
+            "NN",
+            "CC",
+            "NN",
+            "IN",
+            "DT",
+            "NN",
+            "POS",
+            "NNS",
+            "IN",
+            "DT",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "a",
+            "vision",
+            "i",
+            "have",
+            "in",
+            "my",
+            "sleep",
+            "last",
+            "night",
+            "-",
+            "as",
+            "distinguish",
+            "from",
+            "a",
+            "dream",
+            "which",
+            "be",
+            "mere",
+            "sort",
+            "and",
+            "catalogue",
+            "of",
+            "the",
+            "day",
+            "s",
+            "event",
+            "by",
+            "the",
+            "subconscious",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "I-NP",
+            "O",
+            "B-SBAR",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              0,
+              "det"
+            ],
+            [
+              1,
+              3,
+              "acl:relcl"
+            ],
+            [
+              1,
+              29,
+              "punct"
+            ],
+            [
+              3,
+              1,
+              "nsubj"
+            ],
+            [
+              3,
+              6,
+              "nmod_in"
+            ],
+            [
+              3,
+              8,
+              "nmod:tmod"
+            ],
+            [
+              3,
+              11,
+              "dep"
+            ],
+            [
+              3,
+              2,
+              "nsubj"
+            ],
+            [
+              6,
+              4,
+              "case"
+            ],
+            [
+              6,
+              5,
+              "nmod:poss"
+            ],
+            [
+              8,
+              9,
+              "punct"
+            ],
+            [
+              8,
+              7,
+              "amod"
+            ],
+            [
+              11,
+              14,
+              "nmod_from"
+            ],
+            [
+              11,
+              10,
+              "advmod"
+            ],
+            [
+              14,
+              18,
+              "acl:relcl"
+            ],
+            [
+              14,
+              12,
+              "case"
+            ],
+            [
+              14,
+              13,
+              "det"
+            ],
+            [
+              18,
+              20,
+              "conj"
+            ],
+            [
+              18,
+              19,
+              "cc"
+            ],
+            [
+              18,
+              15,
+              "nsubj"
+            ],
+            [
+              18,
+              25,
+              "nmod_of"
+            ],
+            [
+              18,
+              16,
+              "cop"
+            ],
+            [
+              18,
+              17,
+              "amod"
+            ],
+            [
+              23,
+              22,
+              "det"
+            ],
+            [
+              23,
+              24,
+              "case"
+            ],
+            [
+              25,
+              21,
+              "case"
+            ],
+            [
+              25,
+              28,
+              "nmod_by"
+            ],
+            [
+              25,
+              23,
+              "nmod:poss"
+            ],
+            [
+              28,
+              26,
+              "case"
+            ],
+            [
+              28,
+              27,
+              "det"
+            ]
+          ],
+          "roots": []
+        }
+      ]
+    },
+    {
+      "numTokens": 20,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "This",
+            "was",
+            "a",
+            "vision",
+            ",",
+            "fresh",
+            "and",
+            "clear",
+            "as",
+            "a",
+            "mountain",
+            "stream",
+            "-",
+            "the",
+            "mind",
+            "revealing",
+            "itself",
+            "to",
+            "itself",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "This",
+            "was",
+            "a",
+            "vision",
+            ",",
+            "fresh",
+            "and",
+            "clear",
+            "as",
+            "a",
+            "mountain",
+            "stream",
+            "-",
+            "the",
+            "mind",
+            "revealing",
+            "itself",
+            "to",
+            "itself",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "DT",
+            "VBD",
+            "DT",
+            "NN",
+            ",",
+            "JJ",
+            "CC",
+            "JJ",
+            "IN",
+            "DT",
+            "NN",
+            "NN",
+            ":",
+            "DT",
+            "NN",
+            "VBG",
+            "PRP",
+            "TO",
+            "PRP",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "this",
+            "be",
+            "a",
+            "vision",
+            ",",
+            "fresh",
+            "and",
+            "clear",
+            "as",
+            "a",
+            "mountain",
+            "stream",
+            "-",
+            "the",
+            "mind",
+            "reveal",
+            "itself",
+            "to",
+            "itself",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "O",
+            "B-ADJP",
+            "I-ADJP",
+            "I-ADJP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "B-VP",
+            "B-NP",
+            "B-PP",
+            "B-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              3,
+              1,
+              "cop"
+            ],
+            [
+              3,
+              4,
+              "punct"
+            ],
+            [
+              3,
+              11,
+              "nmod_as"
+            ],
+            [
+              3,
+              12,
+              "punct"
+            ],
+            [
+              3,
+              0,
+              "nsubj"
+            ],
+            [
+              3,
+              15,
+              "acl"
+            ],
+            [
+              3,
+              5,
+              "amod"
+            ],
+            [
+              3,
+              6,
+              "cc"
+            ],
+            [
+              3,
+              2,
+              "det"
+            ],
+            [
+              3,
+              19,
+              "punct"
+            ],
+            [
+              5,
+              7,
+              "conj"
+            ],
+            [
+              11,
+              8,
+              "case"
+            ],
+            [
+              11,
+              10,
+              "compound"
+            ],
+            [
+              11,
+              9,
+              "det"
+            ],
+            [
+              14,
+              13,
+              "det"
+            ],
+            [
+              15,
+              18,
+              "nmod_to"
+            ],
+            [
+              15,
+              14,
+              "nsubj"
+            ],
+            [
+              15,
+              16,
+              "dobj"
+            ],
+            [
+              18,
+              17,
+              "case"
+            ]
+          ],
+          "roots": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 21,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "In",
+            "my",
+            "vision",
+            ",",
+            "I",
+            "was",
+            "on",
+            "the",
+            "veranda",
+            "of",
+            "a",
+            "vast",
+            "estate",
+            ",",
+            "a",
+            "palazzo",
+            "of",
+            "some",
+            "fantastic",
+            "proportion",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "In",
+            "my",
+            "vision",
+            ",",
+            "I",
+            "was",
+            "on",
+            "the",
+            "veranda",
+            "of",
+            "a",
+            "vast",
+            "estate",
+            ",",
+            "a",
+            "palazzo",
+            "of",
+            "some",
+            "fantastic",
+            "proportion",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "IN",
+            "PRP$",
+            "NN",
+            ",",
+            "PRP",
+            "VBD",
+            "IN",
+            "DT",
+            "NN",
+            "IN",
+            "DT",
+            "JJ",
+            "NN",
+            ",",
+            "DT",
+            "NN",
+            "IN",
+            "DT",
+            "JJ",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "in",
+            "my",
+            "vision",
+            ",",
+            "i",
+            "be",
+            "on",
+            "the",
+            "veranda",
+            "of",
+            "a",
+            "vast",
+            "estate",
+            ",",
+            "a",
+            "palazzo",
+            "of",
+            "some",
+            "fantastic",
+            "proportion",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              2,
+              1,
+              "nmod:poss"
+            ],
+            [
+              2,
+              0,
+              "case"
+            ],
+            [
+              8,
+              3,
+              "punct"
+            ],
+            [
+              8,
+              4,
+              "nsubj"
+            ],
+            [
+              8,
+              20,
+              "punct"
+            ],
+            [
+              8,
+              7,
+              "det"
+            ],
+            [
+              8,
+              5,
+              "cop"
+            ],
+            [
+              8,
+              6,
+              "case"
+            ],
+            [
+              8,
+              2,
+              "nmod_in"
+            ],
+            [
+              8,
+              12,
+              "nmod_of"
+            ],
+            [
+              12,
+              15,
+              "appos"
+            ],
+            [
+              12,
+              11,
+              "amod"
+            ],
+            [
+              12,
+              9,
+              "case"
+            ],
+            [
+              12,
+              10,
+              "det"
+            ],
+            [
+              12,
+              13,
+              "punct"
+            ],
+            [
+              15,
+              14,
+              "det"
+            ],
+            [
+              15,
+              19,
+              "nmod_of"
+            ],
+            [
+              19,
+              17,
+              "det"
+            ],
+            [
+              19,
+              16,
+              "case"
+            ],
+            [
+              19,
+              18,
+              "amod"
+            ]
+          ],
+          "roots": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 16,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "There",
+            "seemed",
+            "to",
+            "emanate",
+            "from",
+            "it",
+            "a",
+            "light",
+            "from",
+            "within",
+            "-",
+            "this",
+            "gleaming",
+            "radiant",
+            "marble",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "There",
+            "seemed",
+            "to",
+            "emanate",
+            "from",
+            "it",
+            "a",
+            "light",
+            "from",
+            "within",
+            "-",
+            "this",
+            "gleaming",
+            "radiant",
+            "marble",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "EX",
+            "VBD",
+            "TO",
+            "VB",
+            "IN",
+            "PRP",
+            "DT",
+            "NN",
+            "IN",
+            "IN",
+            ":",
+            "DT",
+            "VBG",
+            "JJ",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "there",
+            "seem",
+            "to",
+            "emanate",
+            "from",
+            "it",
+            "a",
+            "light",
+            "from",
+            "within",
+            "-",
+            "this",
+            "gleam",
+            "radiant",
+            "marble",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "I-VP",
+            "I-VP",
+            "B-PP",
+            "B-NP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-PP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              15,
+              "punct"
+            ],
+            [
+              1,
+              3,
+              "xcomp"
+            ],
+            [
+              1,
+              0,
+              "expl"
+            ],
+            [
+              3,
+              2,
+              "mark"
+            ],
+            [
+              3,
+              7,
+              "dobj"
+            ],
+            [
+              3,
+              5,
+              "nmod_from"
+            ],
+            [
+              5,
+              4,
+              "case"
+            ],
+            [
+              7,
+              9,
+              "nmod_from"
+            ],
+            [
+              7,
+              6,
+              "det"
+            ],
+            [
+              7,
+              10,
+              "punct"
+            ],
+            [
+              9,
+              8,
+              "case"
+            ],
+            [
+              14,
+              12,
+              "amod"
+            ],
+            [
+              14,
+              13,
+              "amod"
+            ],
+            [
+              14,
+              11,
+              "det"
+            ]
+          ],
+          "roots": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 6,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "I",
+            "had",
+            "known",
+            "this",
+            "place",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "I",
+            "had",
+            "known",
+            "this",
+            "place",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            "VBN",
+            "DT",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "i",
+            "have",
+            "know",
+            "this",
+            "place",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "I-VP",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              2,
+              1,
+              "aux"
+            ],
+            [
+              2,
+              4,
+              "dobj"
+            ],
+            [
+              2,
+              0,
+              "nsubj"
+            ],
+            [
+              2,
+              5,
+              "punct"
+            ],
+            [
+              4,
+              3,
+              "det"
+            ]
+          ],
+          "roots": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 10,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "I",
+            "had",
+            "in",
+            "fact",
+            "been",
+            "born",
+            "and",
+            "raised",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "I",
+            "had",
+            "in",
+            "fact",
+            "been",
+            "born",
+            "and",
+            "raised",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            "IN",
+            "NN",
+            "VBN",
+            "VBN",
+            "CC",
+            "VBN",
+            "RB",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "i",
+            "have",
+            "in",
+            "fact",
+            "be",
+            "bear",
+            "and",
+            "raise",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "B-VP",
+            "I-VP",
+            "O",
+            "B-VP",
+            "B-ADVP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              3,
+              2,
+              "case"
+            ],
+            [
+              5,
+              1,
+              "aux"
+            ],
+            [
+              5,
+              3,
+              "nmod_in"
+            ],
+            [
+              5,
+              4,
+              "auxpass"
+            ],
+            [
+              5,
+              9,
+              "punct"
+            ],
+            [
+              5,
+              6,
+              "cc"
+            ],
+            [
+              5,
+              7,
+              "conj"
+            ],
+            [
+              5,
+              0,
+              "nsubjpass"
+            ],
+            [
+              7,
+              3,
+              "nmod_in"
+            ],
+            [
+              7,
+              8,
+              "advmod"
+            ],
+            [
+              7,
+              0,
+              "nsubjpass"
+            ]
+          ],
+          "roots": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 16,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "This",
+            "was",
+            "my",
+            "first",
+            "return",
+            ",",
+            "a",
+            "reunion",
+            "with",
+            "the",
+            "deepest",
+            "wellsprings",
+            "of",
+            "my",
+            "being",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "This",
+            "was",
+            "my",
+            "first",
+            "return",
+            ",",
+            "a",
+            "reunion",
+            "with",
+            "the",
+            "deepest",
+            "wellsprings",
+            "of",
+            "my",
+            "being",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "DT",
+            "VBD",
+            "PRP$",
+            "JJ",
+            "NN",
+            ",",
+            "DT",
+            "NN",
+            "IN",
+            "DT",
+            "JJS",
+            "NNS",
+            "IN",
+            "PRP$",
+            "VBG",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "this",
+            "be",
+            "my",
+            "first",
+            "return",
+            ",",
+            "a",
+            "reunion",
+            "with",
+            "the",
+            "deepest",
+            "wellspring",
+            "of",
+            "my",
+            "be",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              4,
+              1,
+              "cop"
+            ],
+            [
+              4,
+              15,
+              "punct"
+            ],
+            [
+              4,
+              2,
+              "nmod:poss"
+            ],
+            [
+              4,
+              0,
+              "nsubj"
+            ],
+            [
+              4,
+              3,
+              "amod"
+            ],
+            [
+              4,
+              7,
+              "appos"
+            ],
+            [
+              4,
+              5,
+              "punct"
+            ],
+            [
+              7,
+              11,
+              "nmod_with"
+            ],
+            [
+              7,
+              6,
+              "det"
+            ],
+            [
+              11,
+              14,
+              "acl"
+            ],
+            [
+              11,
+              13,
+              "nmod_of"
+            ],
+            [
+              11,
+              8,
+              "case"
+            ],
+            [
+              11,
+              10,
+              "amod"
+            ],
+            [
+              11,
+              9,
+              "det"
+            ],
+            [
+              13,
+              12,
+              "case"
+            ]
+          ],
+          "roots": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 14,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "Wandering",
+            "about",
+            ",",
+            "I",
+            "was",
+            "happy",
+            "that",
+            "the",
+            "house",
+            "had",
+            "been",
+            "immaculately",
+            "maintained",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "Wandering",
+            "about",
+            ",",
+            "I",
+            "was",
+            "happy",
+            "that",
+            "the",
+            "house",
+            "had",
+            "been",
+            "immaculately",
+            "maintained",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "VBG",
+            "RB",
+            ",",
+            "PRP",
+            "VBD",
+            "JJ",
+            "IN",
+            "DT",
+            "NN",
+            "VBD",
+            "VBN",
+            "RB",
+            "VBN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "wander",
+            "about",
+            ",",
+            "i",
+            "be",
+            "happy",
+            "that",
+            "the",
+            "house",
+            "have",
+            "be",
+            "immaculately",
+            "maintain",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-VP",
+            "B-PRT",
+            "O",
+            "B-NP",
+            "B-VP",
+            "B-ADJP",
+            "B-SBAR",
+            "B-NP",
+            "I-NP",
+            "B-VP",
+            "I-VP",
+            "I-VP",
+            "I-VP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              0,
+              1,
+              "advmod"
+            ],
+            [
+              5,
+              12,
+              "ccomp"
+            ],
+            [
+              5,
+              3,
+              "nsubj"
+            ],
+            [
+              5,
+              13,
+              "punct"
+            ],
+            [
+              5,
+              2,
+              "punct"
+            ],
+            [
+              5,
+              4,
+              "cop"
+            ],
+            [
+              5,
+              0,
+              "advcl"
+            ],
+            [
+              8,
+              7,
+              "det"
+            ],
+            [
+              12,
+              8,
+              "nsubjpass"
+            ],
+            [
+              12,
+              11,
+              "advmod"
+            ],
+            [
+              12,
+              9,
+              "aux"
+            ],
+            [
+              12,
+              6,
+              "mark"
+            ],
+            [
+              12,
+              10,
+              "auxpass"
+            ]
+          ],
+          "roots": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 30,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "There",
+            "had",
+            "been",
+            "added",
+            "a",
+            "number",
+            "of",
+            "additional",
+            "rooms",
+            ",",
+            "but",
+            "in",
+            "a",
+            "way",
+            "it",
+            "blended",
+            "so",
+            "seamlessly",
+            "with",
+            "the",
+            "original",
+            "construction",
+            ",",
+            "one",
+            "would",
+            "never",
+            "detect",
+            "any",
+            "difference",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "There",
+            "had",
+            "been",
+            "added",
+            "a",
+            "number",
+            "of",
+            "additional",
+            "rooms",
+            ",",
+            "but",
+            "in",
+            "a",
+            "way",
+            "it",
+            "blended",
+            "so",
+            "seamlessly",
+            "with",
+            "the",
+            "original",
+            "construction",
+            ",",
+            "one",
+            "would",
+            "never",
+            "detect",
+            "any",
+            "difference",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "EX",
+            "VBD",
+            "VBN",
+            "VBN",
+            "DT",
+            "NN",
+            "IN",
+            "JJ",
+            "NNS",
+            ",",
+            "CC",
+            "IN",
+            "DT",
+            "NN",
+            "PRP",
+            "VBD",
+            "RB",
+            "RB",
+            "IN",
+            "DT",
+            "JJ",
+            "NN",
+            ",",
+            "PRP",
+            "MD",
+            "RB",
+            "VB",
+            "DT",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "there",
+            "have",
+            "be",
+            "add",
+            "a",
+            "number",
+            "of",
+            "additional",
+            "room",
+            ",",
+            "but",
+            "in",
+            "a",
+            "way",
+            "it",
+            "blend",
+            "so",
+            "seamlessly",
+            "with",
+            "the",
+            "original",
+            "construction",
+            ",",
+            "one",
+            "would",
+            "never",
+            "detect",
+            "any",
+            "difference",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "I-VP",
+            "I-VP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "O",
+            "O",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "B-VP",
+            "B-ADVP",
+            "I-ADVP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "B-VP",
+            "I-VP",
+            "I-VP",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              3,
+              10,
+              "cc"
+            ],
+            [
+              3,
+              13,
+              "nmod_in"
+            ],
+            [
+              3,
+              2,
+              "auxpass"
+            ],
+            [
+              3,
+              1,
+              "aux"
+            ],
+            [
+              3,
+              5,
+              "dobj"
+            ],
+            [
+              3,
+              26,
+              "conj"
+            ],
+            [
+              3,
+              23,
+              "nsubj"
+            ],
+            [
+              3,
+              9,
+              "punct"
+            ],
+            [
+              3,
+              0,
+              "expl"
+            ],
+            [
+              3,
+              29,
+              "punct"
+            ],
+            [
+              5,
+              8,
+              "nmod_of"
+            ],
+            [
+              5,
+              4,
+              "det"
+            ],
+            [
+              8,
+              6,
+              "case"
+            ],
+            [
+              8,
+              7,
+              "amod"
+            ],
+            [
+              13,
+              11,
+              "case"
+            ],
+            [
+              13,
+              12,
+              "det"
+            ],
+            [
+              13,
+              15,
+              "acl:relcl"
+            ],
+            [
+              15,
+              17,
+              "advmod"
+            ],
+            [
+              15,
+              14,
+              "nsubj"
+            ],
+            [
+              15,
+              21,
+              "nmod_with"
+            ],
+            [
+              17,
+              16,
+              "advmod"
+            ],
+            [
+              21,
+              18,
+              "case"
+            ],
+            [
+              21,
+              19,
+              "det"
+            ],
+            [
+              21,
+              20,
+              "amod"
+            ],
+            [
+              26,
+              24,
+              "aux"
+            ],
+            [
+              26,
+              25,
+              "neg"
+            ],
+            [
+              26,
+              23,
+              "nsubj"
+            ],
+            [
+              26,
+              28,
+              "dobj"
+            ],
+            [
+              26,
+              13,
+              "nmod_in"
+            ],
+            [
+              26,
+              22,
+              "punct"
+            ],
+            [
+              28,
+              27,
+              "det"
+            ]
+          ],
+          "roots": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 16,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "Returning",
+            "to",
+            "the",
+            "house",
+            "'s",
+            "grand",
+            "foyer",
+            ",",
+            "there",
+            "came",
+            "a",
+            "knock",
+            "at",
+            "the",
+            "door",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "Returning",
+            "to",
+            "the",
+            "house",
+            "'s",
+            "grand",
+            "foyer",
+            ",",
+            "there",
+            "came",
+            "a",
+            "knock",
+            "at",
+            "the",
+            "door",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "VBG",
+            "TO",
+            "DT",
+            "NN",
+            "POS",
+            "JJ",
+            "NN",
+            ",",
+            "EX",
+            "VBD",
+            "DT",
+            "NN",
+            "IN",
+            "DT",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "return",
+            "to",
+            "the",
+            "house",
+            "s",
+            "grand",
+            "foyer",
+            ",",
+            "there",
+            "come",
+            "a",
+            "knock",
+            "at",
+            "the",
+            "door",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              0,
+              6,
+              "nmod_to"
+            ],
+            [
+              3,
+              4,
+              "case"
+            ],
+            [
+              3,
+              2,
+              "det"
+            ],
+            [
+              6,
+              1,
+              "case"
+            ],
+            [
+              6,
+              5,
+              "amod"
+            ],
+            [
+              6,
+              3,
+              "nmod:poss"
+            ],
+            [
+              9,
+              11,
+              "nsubj"
+            ],
+            [
+              9,
+              8,
+              "expl"
+            ],
+            [
+              9,
+              15,
+              "punct"
+            ],
+            [
+              9,
+              0,
+              "advcl"
+            ],
+            [
+              9,
+              7,
+              "punct"
+            ],
+            [
+              11,
+              10,
+              "det"
+            ],
+            [
+              11,
+              14,
+              "nmod_at"
+            ],
+            [
+              14,
+              12,
+              "case"
+            ],
+            [
+              14,
+              13,
+              "det"
+            ]
+          ],
+          "roots": [
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 6,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "My",
+            "son",
+            "was",
+            "standing",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "My",
+            "son",
+            "was",
+            "standing",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP$",
+            "NN",
+            "VBD",
+            "VBG",
+            "RB",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "my",
+            "son",
+            "be",
+            "stand",
+            "there",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "I-NP",
+            "B-VP",
+            "I-VP",
+            "B-ADVP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              0,
+              "nmod:poss"
+            ],
+            [
+              3,
+              1,
+              "nsubj"
+            ],
+            [
+              3,
+              4,
+              "advmod"
+            ],
+            [
+              3,
+              2,
+              "aux"
+            ],
+            [
+              3,
+              5,
+              "punct"
+            ]
+          ],
+          "roots": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 16,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "He",
+            "was",
+            "happy",
+            "and",
+            "care-free",
+            ",",
+            "clearly",
+            "living",
+            "a",
+            "life",
+            "of",
+            "deep",
+            "harmony",
+            "and",
+            "joy",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "He",
+            "was",
+            "happy",
+            "and",
+            "care-free",
+            ",",
+            "clearly",
+            "living",
+            "a",
+            "life",
+            "of",
+            "deep",
+            "harmony",
+            "and",
+            "joy",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            "JJ",
+            "CC",
+            "JJ",
+            ",",
+            "RB",
+            "VBG",
+            "DT",
+            "NN",
+            "IN",
+            "JJ",
+            "NN",
+            "CC",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "he",
+            "be",
+            "happy",
+            "and",
+            "care-free",
+            ",",
+            "clearly",
+            "live",
+            "a",
+            "life",
+            "of",
+            "deep",
+            "harmony",
+            "and",
+            "joy",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-ADJP",
+            "I-ADJP",
+            "I-ADJP",
+            "O",
+            "B-ADVP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              2,
+              1,
+              "cop"
+            ],
+            [
+              2,
+              7,
+              "advcl"
+            ],
+            [
+              2,
+              15,
+              "punct"
+            ],
+            [
+              2,
+              0,
+              "nsubj"
+            ],
+            [
+              2,
+              5,
+              "punct"
+            ],
+            [
+              2,
+              4,
+              "conj"
+            ],
+            [
+              2,
+              3,
+              "cc"
+            ],
+            [
+              7,
+              6,
+              "advmod"
+            ],
+            [
+              7,
+              9,
+              "dobj"
+            ],
+            [
+              9,
+              8,
+              "det"
+            ],
+            [
+              9,
+              12,
+              "nmod_of"
+            ],
+            [
+              12,
+              13,
+              "cc"
+            ],
+            [
+              12,
+              11,
+              "amod"
+            ],
+            [
+              12,
+              10,
+              "case"
+            ],
+            [
+              12,
+              14,
+              "conj"
+            ]
+          ],
+          "roots": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 12,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "We",
+            "embraced",
+            "-",
+            "a",
+            "warm",
+            "and",
+            "loving",
+            "embrace",
+            ",",
+            "nothing",
+            "withheld",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "We",
+            "embraced",
+            "-",
+            "a",
+            "warm",
+            "and",
+            "loving",
+            "embrace",
+            ",",
+            "nothing",
+            "withheld",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            ":",
+            "DT",
+            "JJ",
+            "CC",
+            "JJ",
+            "NN",
+            ",",
+            "NN",
+            "VBD",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "we",
+            "embrace",
+            "-",
+            "a",
+            "warm",
+            "and",
+            "love",
+            "embrace",
+            ",",
+            "nothing",
+            "withhold",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "B-VP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              10,
+              "parataxis"
+            ],
+            [
+              1,
+              7,
+              "dobj"
+            ],
+            [
+              1,
+              0,
+              "nsubj"
+            ],
+            [
+              1,
+              2,
+              "punct"
+            ],
+            [
+              1,
+              8,
+              "punct"
+            ],
+            [
+              1,
+              11,
+              "punct"
+            ],
+            [
+              4,
+              5,
+              "cc"
+            ],
+            [
+              4,
+              6,
+              "conj"
+            ],
+            [
+              7,
+              3,
+              "det"
+            ],
+            [
+              7,
+              4,
+              "amod"
+            ],
+            [
+              10,
+              9,
+              "nsubj"
+            ]
+          ],
+          "roots": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 7,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "We",
+            "were",
+            "in",
+            "this",
+            "moment",
+            "one",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "We",
+            "were",
+            "in",
+            "this",
+            "moment",
+            "one",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            "IN",
+            "DT",
+            "NN",
+            "CD",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "we",
+            "be",
+            "in",
+            "this",
+            "moment",
+            "one",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              4,
+              2,
+              "case"
+            ],
+            [
+              4,
+              5,
+              "nummod"
+            ],
+            [
+              4,
+              1,
+              "cop"
+            ],
+            [
+              4,
+              0,
+              "nsubj"
+            ],
+            [
+              4,
+              3,
+              "det"
+            ],
+            [
+              4,
+              6,
+              "punct"
+            ]
+          ],
+          "roots": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 4,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "My",
+            "vision",
+            "ended",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "My",
+            "vision",
+            "ended",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP$",
+            "NN",
+            "VBD",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "my",
+            "vision",
+            "end",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "I-NP",
+            "B-VP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              0,
+              "nmod:poss"
+            ],
+            [
+              2,
+              1,
+              "nsubj"
+            ],
+            [
+              2,
+              3,
+              "punct"
+            ]
+          ],
+          "roots": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 15,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "I",
+            "awoke",
+            "with",
+            "a",
+            "tremendous",
+            "of",
+            "optimism",
+            "and",
+            "confidence",
+            "in",
+            "you",
+            "and",
+            "your",
+            "future",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "I",
+            "awoke",
+            "with",
+            "a",
+            "tremendous",
+            "of",
+            "optimism",
+            "and",
+            "confidence",
+            "in",
+            "you",
+            "and",
+            "your",
+            "future",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBD",
+            "IN",
+            "DT",
+            "JJ",
+            "IN",
+            "NN",
+            "CC",
+            "NN",
+            "IN",
+            "PRP",
+            "CC",
+            "PRP$",
+            "NN",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "i",
+            "awake",
+            "with",
+            "a",
+            "tremendous",
+            "of",
+            "optimism",
+            "and",
+            "confidence",
+            "in",
+            "you",
+            "and",
+            "your",
+            "future",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "B-PP",
+            "B-NP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              14,
+              "punct"
+            ],
+            [
+              1,
+              7,
+              "cc"
+            ],
+            [
+              1,
+              4,
+              "nmod_with"
+            ],
+            [
+              1,
+              0,
+              "nsubj"
+            ],
+            [
+              4,
+              2,
+              "case"
+            ],
+            [
+              4,
+              6,
+              "nmod_of"
+            ],
+            [
+              4,
+              3,
+              "det"
+            ],
+            [
+              6,
+              8,
+              "conj"
+            ],
+            [
+              6,
+              5,
+              "case"
+            ],
+            [
+              8,
+              10,
+              "nmod_in"
+            ],
+            [
+              10,
+              9,
+              "case"
+            ],
+            [
+              10,
+              13,
+              "conj"
+            ],
+            [
+              10,
+              11,
+              "cc"
+            ],
+            [
+              13,
+              12,
+              "nmod:poss"
+            ]
+          ],
+          "roots": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 10,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "That",
+            "was",
+            "my",
+            "vision",
+            ";",
+            "it",
+            "was",
+            "of",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "That",
+            "was",
+            "my",
+            "vision",
+            ";",
+            "it",
+            "was",
+            "of",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "DT",
+            "VBD",
+            "PRP$",
+            "NN",
+            ":",
+            "PRP",
+            "VBD",
+            "IN",
+            "PRP",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "that",
+            "be",
+            "my",
+            "vision",
+            ";",
+            "it",
+            "be",
+            "of",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "I-NP",
+            "O",
+            "B-NP",
+            "B-VP",
+            "B-PP",
+            "B-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              3,
+              1,
+              "cop"
+            ],
+            [
+              3,
+              4,
+              "punct"
+            ],
+            [
+              3,
+              2,
+              "nmod:poss"
+            ],
+            [
+              3,
+              0,
+              "nsubj"
+            ],
+            [
+              3,
+              9,
+              "punct"
+            ],
+            [
+              3,
+              8,
+              "parataxis"
+            ],
+            [
+              8,
+              6,
+              "cop"
+            ],
+            [
+              8,
+              5,
+              "nsubj"
+            ],
+            [
+              8,
+              7,
+              "case"
+            ]
+          ],
+          "roots": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 15,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "I",
+            "'m",
+            "so",
+            "glad",
+            "to",
+            "have",
+            "had",
+            "this",
+            "opportunity",
+            "to",
+            "share",
+            "it",
+            "with",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "I",
+            "am",
+            "so",
+            "glad",
+            "to",
+            "have",
+            "had",
+            "this",
+            "opportunity",
+            "to",
+            "share",
+            "it",
+            "with",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBP",
+            "RB",
+            "JJ",
+            "TO",
+            "VB",
+            "VBN",
+            "DT",
+            "NN",
+            "TO",
+            "VB",
+            "PRP",
+            "IN",
+            "PRP",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "i",
+            "be",
+            "so",
+            "glad",
+            "to",
+            "have",
+            "have",
+            "this",
+            "opportunity",
+            "to",
+            "share",
+            "it",
+            "with",
+            "you",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-ADJP",
+            "I-ADJP",
+            "B-VP",
+            "I-VP",
+            "I-VP",
+            "B-NP",
+            "I-NP",
+            "B-VP",
+            "I-VP",
+            "B-NP",
+            "B-PP",
+            "B-NP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              3,
+              6,
+              "xcomp"
+            ],
+            [
+              3,
+              14,
+              "punct"
+            ],
+            [
+              3,
+              1,
+              "cop"
+            ],
+            [
+              3,
+              0,
+              "nsubj"
+            ],
+            [
+              3,
+              2,
+              "advmod"
+            ],
+            [
+              6,
+              4,
+              "mark"
+            ],
+            [
+              6,
+              8,
+              "dobj"
+            ],
+            [
+              6,
+              0,
+              "nsubj"
+            ],
+            [
+              6,
+              5,
+              "aux"
+            ],
+            [
+              8,
+              7,
+              "det"
+            ],
+            [
+              8,
+              10,
+              "acl"
+            ],
+            [
+              10,
+              11,
+              "dobj"
+            ],
+            [
+              10,
+              9,
+              "mark"
+            ],
+            [
+              10,
+              13,
+              "nmod_with"
+            ],
+            [
+              13,
+              12,
+              "case"
+            ]
+          ],
+          "roots": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "numTokens": 11,
+      "fields": [
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "raw",
+          "tokens": [
+            "I",
+            "wish",
+            "you",
+            "nothing",
+            "but",
+            "the",
+            "very",
+            "best",
+            ",",
+            "always",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "word",
+          "tokens": [
+            "I",
+            "wish",
+            "you",
+            "nothing",
+            "but",
+            "the",
+            "very",
+            "best",
+            ",",
+            "always",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "tag",
+          "tokens": [
+            "PRP",
+            "VBP",
+            "PRP",
+            "NN",
+            "CC",
+            "DT",
+            "RB",
+            "JJS",
+            ",",
+            "RB",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "lemma",
+          "tokens": [
+            "i",
+            "wish",
+            "you",
+            "nothing",
+            "but",
+            "the",
+            "very",
+            "best",
+            ",",
+            "alway",
+            "."
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "entity",
+          "tokens": [
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.TokensField",
+          "name": "chunk",
+          "tokens": [
+            "B-NP",
+            "B-VP",
+            "B-NP",
+            "B-NP",
+            "O",
+            "B-NP",
+            "I-NP",
+            "I-NP",
+            "O",
+            "B-ADVP",
+            "O"
+          ]
+        },
+        {
+          "$type": "ai.lum.odinson.GraphField",
+          "name": "dependencies",
+          "edges": [
+            [
+              1,
+              9,
+              "advmod"
+            ],
+            [
+              1,
+              3,
+              "dobj"
+            ],
+            [
+              1,
+              4,
+              "cc"
+            ],
+            [
+              1,
+              0,
+              "nsubj"
+            ],
+            [
+              1,
+              8,
+              "punct"
+            ],
+            [
+              1,
+              10,
+              "punct"
+            ],
+            [
+              3,
+              7,
+              "conj"
+            ],
+            [
+              3,
+              2,
+              "nsubj"
+            ],
+            [
+              7,
+              6,
+              "advmod"
+            ],
+            [
+              7,
+              5,
+              "det"
+            ]
+          ],
+          "roots": [
+            1
+          ]
+        }
+      ]
+    }
+  ]
+}

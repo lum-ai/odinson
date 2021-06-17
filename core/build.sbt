@@ -12,6 +12,8 @@ libraryDependencies ++= {
     "org.apache.lucene" % "lucene-core" % luceneVersion,
     "org.apache.lucene" % "lucene-queryparser" % luceneVersion,
     "org.apache.lucene" % "lucene-highlighter" % luceneVersion,
+    // used for metadata queries
+    "org.apache.lucene" % "lucene-join" % luceneVersion,
     "com.zaxxer" % "HikariCP" % "3.3.1",
     "com.h2database" % "h2" % "1.4.198",
     "com.lihaoyi" %% "upickle" % "0.7.5",
