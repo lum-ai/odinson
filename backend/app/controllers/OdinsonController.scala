@@ -56,7 +56,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   val PARENT_DOC_FILE_NAME   = config.apply[String]("odinson.index.parentDocFieldFileName")
   val WORD_TOKEN_FIELD       = config.apply[String]("odinson.displayField")
   val pageSize               = config.apply[Int]("odinson.pageSize")
-
   // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
