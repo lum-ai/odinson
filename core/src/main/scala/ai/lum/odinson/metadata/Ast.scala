@@ -1,5 +1,7 @@
 package ai.lum.odinson.metadata
 
+import ai.lum.common.StringUtils._
+
 object Ast {
 
     sealed trait BoolExpression
@@ -16,7 +18,10 @@ object Ast {
 
     sealed trait Value
     case class NumberValue(n: Double) extends Value
-    case class StringValue(s: String) extends Value
+    case class StringValue(s: String) extends Value {
+      // for the metadata we want to normalize with case folding, remove diacritics, etc.
+      val norm: String = s.normalizeUnicodeAggressively
+    }
     case class FunCall(name: String, args: Seq[Value]) extends Value
     case class FieldValue(name: String) extends Value
 

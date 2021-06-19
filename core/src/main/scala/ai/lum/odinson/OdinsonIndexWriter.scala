@@ -212,7 +212,11 @@ class OdinsonIndexWriter(
       case f: TokensField =>
         val validated = validate(f.tokens)
         val tokens =
-          if (isMetadata) OdinsonIndexWriter.START_TOKEN +: validated :+ OdinsonIndexWriter.END_TOKEN
+          if (isMetadata) {
+            // for the metadata we want to casefold, remove diacritics etc.
+            val normalized = validated.map(_.normalizeUnicodeAggressively)
+            OdinsonIndexWriter.START_TOKEN +: normalized :+ OdinsonIndexWriter.END_TOKEN
+          }
           else validated
         val tokenStream = new NormalizedTokenStream(Seq(tokens))
         val tokensField = new lucenedoc.TextField(f.name, tokenStream)

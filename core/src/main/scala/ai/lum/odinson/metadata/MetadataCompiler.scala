@@ -1,20 +1,13 @@
 package ai.lum.odinson.metadata
 
 import java.time.ZoneId
-import java.time.LocalDate
-import java.text.DateFormat
 import java.util.GregorianCalendar
 
 import ai.lum.odinson.OdinsonIndexWriter
-import ai.lum.odinson.lucene.search.DocStartQuery
-import ai.lum.odinson.metadata.Ast.NestedExpression
-import ai.lum.odinson.metadata.MetadataCompiler.compile
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.{BooleanClause, BooleanQuery, MatchAllDocsQuery, PhraseQuery, Query, TermQuery}
 import org.apache.lucene.document.DoublePoint
-import org.apache.lucene.queryparser.flexible.standard.builders.PhraseQueryNodeBuilder
 import org.apache.lucene.search.join.{QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery}
-import org.apache.lucene.search.spans.SpanNearQuery
 
 object MetadataCompiler {
 
@@ -92,7 +85,7 @@ object MetadataCompiler {
                     case value: Ast.StringValue =>
                         // to enforce the exact match of the whole field, add special tokens for the start and end
                         val builder = new PhraseQuery.Builder()
-                        val tokens = value.s.split("\\s+")
+                        val tokens = value.norm.split("\\s+")
                         builder.add(new Term(field.name, OdinsonIndexWriter.START_TOKEN))
                         tokens foreach { token =>
                             builder.add(new Term(field.name, token))
@@ -115,7 +108,7 @@ object MetadataCompiler {
                 new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
 
             case Ast.Contains(field, value) =>
-                val tokens = value.s.split("\\s+")
+                val tokens = value.norm.split("\\s+")
                 val builder = new PhraseQuery.Builder()
                 tokens foreach { token =>
                     // add each token in order
@@ -176,12 +169,12 @@ object MetadataCompiler {
                 localDate.toEpochDay
 
             case Seq(year: Ast.NumberValue, month: Ast.StringValue) =>
-                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase), 1).getTime()
+                val date = new GregorianCalendar(year.n.toInt, months(month.norm), 1).getTime()
                 val localDate = date.toInstant.atZone(ZoneId.of("UTC")).toLocalDate
                 localDate.toEpochDay
 
             case Seq(year: Ast.NumberValue, month: Ast.StringValue, day: Ast.NumberValue) =>
-                val date = new GregorianCalendar(year.n.toInt, months(month.s.toLowerCase), day.n.toInt).getTime()
+                val date = new GregorianCalendar(year.n.toInt, months(month.norm), day.n.toInt).getTime()
                 val localDate = date.toInstant.atZone(ZoneId.of("UTC")).toLocalDate
                 localDate.toEpochDay
         }
