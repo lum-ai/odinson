@@ -51,45 +51,37 @@ object MetadataCompiler {
             case Ast.LessThan(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
+                    case value: Ast.NumberValue if flipped =>
+                        DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
                     case value: Ast.NumberValue =>
-                        if (flipped) {
-                            DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
-                        } else {
-                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
-                        }
+                        DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
                 }
 
             case Ast.LessThanOrEqual(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
+                    case value: Ast.NumberValue if flipped =>
+                        DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
                     case value: Ast.NumberValue =>
-                        if (flipped) {
-                            DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
-                        } else {
-                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
-                        }
+                        DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
                 }
 
             case Ast.GreaterThan(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
+                    case value: Ast.NumberValue if flipped =>
+                        DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
                     case value: Ast.NumberValue =>
-                        if (flipped) {
-                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n - 1)
-                        } else {
-                            DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
-                        }
+                        DoublePoint.newRangeQuery(field.name, value.n + 1, Double.MaxValue)
                 }
 
             case Ast.GreaterThanOrEqual(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
                 value match {
+                    case value: Ast.NumberValue if flipped =>
+                        DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
                     case value: Ast.NumberValue =>
-                        if (flipped) {
-                            DoublePoint.newRangeQuery(field.name, Double.MinValue, value.n)
-                        } else {
-                            DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
-                        }
+                        DoublePoint.newRangeQuery(field.name, value.n, Double.MaxValue)
                 }
 
             case Ast.Equal(lhs, rhs) =>
