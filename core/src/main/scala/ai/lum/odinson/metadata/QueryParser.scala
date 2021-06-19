@@ -29,7 +29,14 @@ object MetadataQueryParser {
     }
 
     def atomic_expression[_: P]: P[Ast.BoolExpression] = {
-        P(cmp_expression | group_expression | nested_expression)
+        P(cmp_expression | group_expression | nested_expression | contains_expression)
+    }
+
+    def contains_expression[_: P]: P[Ast.BoolExpression] = {
+      P(string_value ~ "not".!.? ~ "in" ~ field_value).map {
+          case (value, None, field) => Ast.Contains(field, value)
+          case (value, Some(negated), field) => Ast.NotContains(field, value)
+      }
     }
 
     def nested_expression[_: P]: P[Ast.BoolExpression] = {
@@ -91,15 +98,15 @@ object MetadataQueryParser {
         }
     }
 
-    def string_value[_: P]: P[Ast.Value] = {
+    def string_value[_: P]: P[Ast.StringValue] = {
         Literals.quotedString.map(Ast.StringValue)
     }
 
-    def number_value[_: P]: P[Ast.Value] = {
+    def number_value[_: P]: P[Ast.NumberValue] = {
         Literals.unsignedInt.map(n => Ast.NumberValue(n))
     }
 
-    def field_value[_: P]: P[Ast.Value] = {
+    def field_value[_: P]: P[Ast.FieldValue] = {
         Literals.identifier.map(Ast.FieldValue)
     }
 

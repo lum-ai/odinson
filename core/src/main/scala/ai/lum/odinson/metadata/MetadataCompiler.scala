@@ -6,41 +6,41 @@ import java.text.DateFormat
 import java.util.GregorianCalendar
 
 import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.lucene.search.DocStartQuery
+import ai.lum.odinson.metadata.Ast.NestedExpression
 import ai.lum.odinson.metadata.MetadataCompiler.compile
 import org.apache.lucene.index.Term
-import org.apache.lucene.search.Query
-import org.apache.lucene.search.TermQuery
-import org.apache.lucene.search.BooleanQuery
-import org.apache.lucene.search.BooleanClause
-import org.apache.lucene.search.MatchAllDocsQuery
+import org.apache.lucene.search.{BooleanClause, BooleanQuery, MatchAllDocsQuery, PhraseQuery, Query, TermQuery}
 import org.apache.lucene.document.DoublePoint
+import org.apache.lucene.queryparser.flexible.standard.builders.PhraseQueryNodeBuilder
 import org.apache.lucene.search.join.{QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery}
+import org.apache.lucene.search.spans.SpanNearQuery
 
 object MetadataCompiler {
 
     def mkQuery(pattern: String): Query = {
         val expression = MetadataQueryParser.parseQuery(pattern).get.value
-        compile(expression)
+        compile(expression, isNested = false)
     }
 
-    def compile(expr: Ast.BoolExpression): Query = {
+    def compile(expr: Ast.BoolExpression, isNested: Boolean): Query = {
         expr match {
             case Ast.OrExpression(clauses) =>
                 val builder = new BooleanQuery.Builder
                 for (c <- clauses) {
-                    builder.add(new BooleanClause(compile(c), BooleanClause.Occur.SHOULD))
+                    builder.add(new BooleanClause(compile(c, isNested), BooleanClause.Occur.SHOULD))
                 }
                 builder.build()
 
             case Ast.AndExpression(clauses) =>
                 val builder = new BooleanQuery.Builder
                 for (c <- clauses) {
-                    builder.add(new BooleanClause(compile(c), BooleanClause.Occur.MUST))
+                    builder.add(new BooleanClause(compile(c, isNested), BooleanClause.Occur.MUST))
                 }
                 builder.build()
 
             case Ast.NotExpression(expr) =>
-                buildNegation(compile(expr))
+                buildNegation(compile(expr, isNested), isNested)
 
 
             case Ast.LessThan(lhs, rhs) =>
@@ -93,7 +93,7 @@ object MetadataCompiler {
                     case value: Ast.NumberValue =>
                         DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
-                        new TermQuery(new Term(field.name, value.s))
+                        buildExactMatch(field.name, value.s)
                 }
 
             case Ast.NotEqual(lhs, rhs) =>
@@ -102,15 +102,15 @@ object MetadataCompiler {
                     case value: Ast.NumberValue =>
                         DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
-                        new TermQuery(new Term(field.name, value.s))
+                        buildExactMatch(field.name, value.s)
                 }
-                buildNegation(query)
+                buildNegation(query, isNested)
 
             case Ast.NestedExpression(name, expr) =>
                 // build child query as specified by user
                 val builder = new BooleanQuery.Builder
-                builder.add(new BooleanClause(compile(expr), BooleanClause.Occur.MUST))
-              // A field by this name
+                builder.add(new BooleanClause(compile(expr, isNested = true), BooleanClause.Occur.MUST))
+                // A field by this name
                 builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.NAME, name)), BooleanClause.Occur.MUST))
                 val childQuery = builder.build()
                 // parentTermQuery gets the parent document for the nested document
@@ -118,6 +118,12 @@ object MetadataCompiler {
                 val parentTermQuery = new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE))
                 val parentFilter = new QueryBitSetProducer(parentTermQuery)
                 new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
+
+            case Ast.Contains(field, value) =>
+                buildContains(field.name, value.s)
+
+            case Ast.NotContains(field, value) =>
+              buildNegation(buildContains(field.name, value.s), isNested)
         }
     }
 
@@ -183,12 +189,39 @@ object MetadataCompiler {
         Ast.NumberValue(n)
     }
 
-    def buildNegation(query: Query): Query = {
+    def buildNegation(query: Query, isNested: Boolean): Query = {
         val builder = new BooleanQuery.Builder
-        builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
-        builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)), BooleanClause.Occur.MUST))
+        builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.MUST))
+        // add the constraint for the type of metadata document
+        if (isNested) {
+          builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.NESTED_TYPE)), BooleanClause.Occur.MUST))
+        } else {
+          builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)), BooleanClause.Occur.MUST))
+        }
         builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
         builder.build()
+    }
+
+    // to enforce the exact match of the whole field, add special tokens for the start and end
+    def buildExactMatch(field: String, value: String): Query = {
+      val builder = new PhraseQuery.Builder()
+      val tokens = value.split("\\s+")
+      builder.add(new Term(field, OdinsonIndexWriter.START_TOKEN))
+      tokens foreach { token =>
+        builder.add(new Term(field, token))
+      }
+      builder.add(new Term(field, OdinsonIndexWriter.END_TOKEN))
+      builder.build()
+    }
+
+    def buildContains(field: String, value: String): Query = {
+      val tokens = value.split("\\s+")
+      val builder = new PhraseQuery.Builder()
+      tokens foreach { token =>
+        // add each token in order
+        builder.add(new Term(field, token))
+      }
+      builder.build()
     }
 
 }

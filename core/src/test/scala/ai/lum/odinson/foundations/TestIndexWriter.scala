@@ -60,7 +60,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     //
     val dateField = DateField.fromJson(field)
     // DateField
-    val luceneDateField = indexWriter.mkLuceneFields(dateField)
+    val luceneDateField = indexWriter.mkLuceneFields(dateField, false)
     // test
     luceneDateField.head.name shouldEqual ("smth")
     // Initialize field of type StringField
@@ -68,7 +68,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
       """{"$type":"ai.lum.odinson.StringField","name":"smth","string":"foo"}"""
     // StringField
     val stringField = StringField.fromJson(field)
-    val luceneStringField = indexWriter.mkLuceneFields(stringField)
+    val luceneStringField = indexWriter.mkLuceneFields(stringField, false)
     luceneStringField.head.name shouldEqual ("smth")
     // TODO: should we test more stuff
     indexWriter.close()

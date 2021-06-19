@@ -22,7 +22,7 @@ import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint }
+import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint, StoredField }
 import java.nio.file.Paths
 import java.util
 
@@ -124,7 +124,7 @@ class OdinsonIndexWriter(
 
     for {
       odinsonField <- other
-      luceneField <- mkLuceneFields(odinsonField)
+      luceneField <- mkLuceneFields(odinsonField, isMetadata = true)
     } metadata.add(luceneField)
 
     nestedMetadata ++ Seq(metadata)
@@ -172,12 +172,13 @@ class OdinsonIndexWriter(
         Seq(graph, in, out)
       case f =>
         // fallback to the lucene fields that don't require sentence information
-        mkLuceneFields(f)
+        // note that if we have a Sentence, it's never metadata
+        mkLuceneFields(f, false)
     }
   }
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
-  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
+  def mkLuceneFields(f: Field, isMetadata: Boolean): Seq[lucenedoc.Field] = {
     val mustStore = settings.storedFields.contains(f.name)
     f match {
       // Separate StoredField because of Lucene API for LongPoint:
@@ -190,6 +191,7 @@ class OdinsonIndexWriter(
         } else {
           Seq(doubleField)
         }
+
       case f: NumberField =>
         // Separate StoredField because of Lucene API for DoublePoint:
         // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/DoublePoint.html
@@ -200,24 +202,27 @@ class OdinsonIndexWriter(
         } else {
           Seq(doubleField)
         }
+
       case f: StringField =>
         val store = if (mustStore) Store.YES else Store.NO
         val string = f.string.normalizeUnicode
         val stringField = new lucenedoc.StringField(f.name, string, store)
         Seq(stringField)
-      case f: TokensField if mustStore =>
-        // Separate handling when storing/not storing bc only the
-        // non-TokenSteam API allows for storing flag
-        val validatedTokens = validate(f.tokens)
-        val text = validatedTokens.mkString(" ").normalizeUnicode
-        val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
-        Seq(tokensField)
+
       case f: TokensField =>
-        // Make sure there are no invalid tokens
         val validated = validate(f.tokens)
-        val tokenStream = new NormalizedTokenStream(Seq(validated))
+        val tokens =
+          if (isMetadata) OdinsonIndexWriter.START_TOKEN +: validated :+ OdinsonIndexWriter.END_TOKEN
+          else validated
+        val tokenStream = new NormalizedTokenStream(Seq(tokens))
         val tokensField = new lucenedoc.TextField(f.name, tokenStream)
-        Seq(tokensField)
+        if (mustStore) {
+          val text = validated.mkString(" ").normalizeUnicode
+          val storedField = new StoredField(f.name, text)
+          Seq(tokensField, storedField)
+        } else {
+          Seq(tokensField)
+        }
     }
   }
 
@@ -228,7 +233,8 @@ class OdinsonIndexWriter(
 
     for {
       odinsonField <- nested.fields
-      luceneField <- mkLuceneFields(odinsonField)
+      // NestedField is always metadata
+      luceneField <- mkLuceneFields(odinsonField, true)
     } nestedMetadata.add(luceneField)
 
     nestedMetadata
@@ -286,6 +292,10 @@ object OdinsonIndexWriter {
   val PARENT_TYPE = "metadata"
   val NESTED_TYPE = "metadata_nested"
   val NAME = "name"
+
+  // Special start and end tokens for metadata exact match queries
+  val START_TOKEN = "[[XX_START]]"
+  val END_TOKEN = "[[XX_END]]"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
