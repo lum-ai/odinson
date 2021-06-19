@@ -40,13 +40,13 @@ object MetadataCompiler {
                 builder.build()
 
             case Ast.NotExpression(expr) =>
-				val builder = new BooleanQuery.Builder
-				builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
-				// add the constraint for the type of metadata document
-				val fieldType = if (isNested) OdinsonIndexWriter.NESTED_TYPE else OdinsonIndexWriter.PARENT_TYPE
-				builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, fieldType)), BooleanClause.Occur.MUST))
-				builder.add(new BooleanClause(compile(expr, isNested), BooleanClause.Occur.MUST_NOT))
-				builder.build()
+                val builder = new BooleanQuery.Builder
+                builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
+                // add the constraint for the type of metadata document
+                val fieldType = if (isNested) OdinsonIndexWriter.NESTED_TYPE else OdinsonIndexWriter.PARENT_TYPE
+                builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, fieldType)), BooleanClause.Occur.MUST))
+                builder.add(new BooleanClause(compile(expr, isNested), BooleanClause.Occur.MUST_NOT))
+                builder.build()
 
             case Ast.LessThan(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
@@ -98,15 +98,15 @@ object MetadataCompiler {
                     case value: Ast.NumberValue =>
                         DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
-						// to enforce the exact match of the whole field, add special tokens for the start and end
-						val builder = new PhraseQuery.Builder()
-						val tokens = value.s.split("\\s+")
-						builder.add(new Term(field.name, OdinsonIndexWriter.START_TOKEN))
-						tokens foreach { token =>
-							builder.add(new Term(field.name, token))
-						}
-						builder.add(new Term(field.name, OdinsonIndexWriter.END_TOKEN))
-						builder.build()
+                        // to enforce the exact match of the whole field, add special tokens for the start and end
+                        val builder = new PhraseQuery.Builder()
+                        val tokens = value.s.split("\\s+")
+                        builder.add(new Term(field.name, OdinsonIndexWriter.START_TOKEN))
+                        tokens foreach { token =>
+                            builder.add(new Term(field.name, token))
+                        }
+                        builder.add(new Term(field.name, OdinsonIndexWriter.END_TOKEN))
+                        builder.build()
                 }
 
             case Ast.NestedExpression(name, expr) =>
@@ -123,13 +123,13 @@ object MetadataCompiler {
                 new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
 
             case Ast.Contains(field, value) =>
-				val tokens = value.s.split("\\s+")
-				val builder = new PhraseQuery.Builder()
-				tokens foreach { token =>
-					// add each token in order
-					builder.add(new Term(field.name, token))
-				}
-				builder.build()
+                val tokens = value.s.split("\\s+")
+                val builder = new PhraseQuery.Builder()
+                tokens foreach { token =>
+                    // add each token in order
+                    builder.add(new Term(field.name, token))
+                }
+                builder.build()
 
         }
     }
