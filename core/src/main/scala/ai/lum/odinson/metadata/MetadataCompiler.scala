@@ -40,8 +40,13 @@ object MetadataCompiler {
                 builder.build()
 
             case Ast.NotExpression(expr) =>
-                buildNegation(compile(expr, isNested), isNested)
-
+				val builder = new BooleanQuery.Builder
+				builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
+				// add the constraint for the type of metadata document
+				val fieldType = if (isNested) OdinsonIndexWriter.NESTED_TYPE else OdinsonIndexWriter.PARENT_TYPE
+				builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, fieldType)), BooleanClause.Occur.MUST))
+				builder.add(new BooleanClause(compile(expr, isNested), BooleanClause.Occur.MUST_NOT))
+				builder.build()
 
             case Ast.LessThan(lhs, rhs) =>
                 val (field, value, flipped) = handleArgs(lhs, rhs)
@@ -93,18 +98,16 @@ object MetadataCompiler {
                     case value: Ast.NumberValue =>
                         DoublePoint.newExactQuery(field.name, value.n)
                     case value: Ast.StringValue =>
-                        buildExactMatch(field.name, value.s)
+						// to enforce the exact match of the whole field, add special tokens for the start and end
+						val builder = new PhraseQuery.Builder()
+						val tokens = value.s.split("\\s+")
+						builder.add(new Term(field.name, OdinsonIndexWriter.START_TOKEN))
+						tokens foreach { token =>
+							builder.add(new Term(field.name, token))
+						}
+						builder.add(new Term(field.name, OdinsonIndexWriter.END_TOKEN))
+						builder.build()
                 }
-
-            case Ast.NotEqual(lhs, rhs) =>
-                val (field, value, flipped) = handleArgs(lhs, rhs)
-                val query = value match {
-                    case value: Ast.NumberValue =>
-                        DoublePoint.newExactQuery(field.name, value.n)
-                    case value: Ast.StringValue =>
-                        buildExactMatch(field.name, value.s)
-                }
-                buildNegation(query, isNested)
 
             case Ast.NestedExpression(name, expr) =>
                 // build child query as specified by user
@@ -120,10 +123,14 @@ object MetadataCompiler {
                 new ToParentBlockJoinQuery(childQuery, parentFilter, ScoreMode.None)
 
             case Ast.Contains(field, value) =>
-                buildContains(field.name, value.s)
+				val tokens = value.s.split("\\s+")
+				val builder = new PhraseQuery.Builder()
+				tokens foreach { token =>
+					// add each token in order
+					builder.add(new Term(field.name, token))
+				}
+				builder.build()
 
-            case Ast.NotContains(field, value) =>
-              buildNegation(buildContains(field.name, value.s), isNested)
         }
     }
 
@@ -187,41 +194,6 @@ object MetadataCompiler {
                 localDate.toEpochDay
         }
         Ast.NumberValue(n)
-    }
-
-    def buildNegation(query: Query, isNested: Boolean): Query = {
-        val builder = new BooleanQuery.Builder
-        builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.MUST))
-        // add the constraint for the type of metadata document
-        if (isNested) {
-          builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.NESTED_TYPE)), BooleanClause.Occur.MUST))
-        } else {
-          builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)), BooleanClause.Occur.MUST))
-        }
-        builder.add(new BooleanClause(query, BooleanClause.Occur.MUST_NOT))
-        builder.build()
-    }
-
-    // to enforce the exact match of the whole field, add special tokens for the start and end
-    def buildExactMatch(field: String, value: String): Query = {
-      val builder = new PhraseQuery.Builder()
-      val tokens = value.split("\\s+")
-      builder.add(new Term(field, OdinsonIndexWriter.START_TOKEN))
-      tokens foreach { token =>
-        builder.add(new Term(field, token))
-      }
-      builder.add(new Term(field, OdinsonIndexWriter.END_TOKEN))
-      builder.build()
-    }
-
-    def buildContains(field: String, value: String): Query = {
-      val tokens = value.split("\\s+")
-      val builder = new PhraseQuery.Builder()
-      tokens foreach { token =>
-        // add each token in order
-        builder.add(new Term(field, token))
-      }
-      builder.build()
     }
 
 }

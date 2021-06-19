@@ -35,7 +35,7 @@ object MetadataQueryParser {
     def contains_expression[_: P]: P[Ast.BoolExpression] = {
       P(string_value ~ "not".!.? ~ "in" ~ field_value).map {
           case (value, None, field) => Ast.Contains(field, value)
-          case (value, Some(negated), field) => Ast.NotContains(field, value)
+          case (value, Some(negated), field) => Ast.NotExpression(Ast.Contains(field, value))
       }
     }
 
@@ -84,7 +84,7 @@ object MetadataQueryParser {
             case ">=" => Ast.GreaterThanOrEqual(lhs, rhs)
             case "<=" => Ast.LessThanOrEqual(lhs, rhs)
             case "==" => Ast.Equal(lhs, rhs)
-            case "!=" => Ast.NotEqual(lhs, rhs)
+            case "!=" => Ast.NotExpression(Ast.Equal(lhs, rhs))
         }
     }
 
