@@ -18,11 +18,13 @@ class QueryCompiler(
   val allTokenFields: Seq[String],
   val defaultTokenField: String,
   val sentenceLengthField: String,
+  // FIXME: Consider renaming to graphField
   val dependenciesField: String,
   val incomingTokenField: String,
   val outgoingTokenField: String,
   val dependenciesVocabulary: Vocabulary,
-  val aggressiveNormalizationToDefaultField: Boolean
+  val aggressiveNormalizationToDefaultField: Boolean,
+  val documentIdField: String
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
@@ -48,7 +50,7 @@ class QueryCompiler(
 
   def mkQuery(pattern: String, parentPattern: String): OdinsonQuery = {
     val query = compile(pattern)
-    val parentQuery = MetadataCompiler.mkQuery(parentPattern)
+    val parentQuery = mkParentQuery(parentPattern)
     mkQuery(query, parentQuery)
   }
 
@@ -58,7 +60,7 @@ class QueryCompiler(
   }
 
   def mkQuery(query: OdinsonQuery, parentPattern: String): OdinsonQuery = {
-    val parentQuery = MetadataCompiler.mkQuery(parentPattern)
+    val parentQuery = mkParentQuery(parentPattern)
     mkQuery(query, parentQuery)
   }
 
@@ -550,7 +552,7 @@ class QueryCompiler(
       Some(odinQuery)
     case Concatenation(traversals) => mkStartConstraint(traversals.head)
     case Union(traversals) =>
-      traversals.map(mkStartConstraint).flatten.distinct match {
+      traversals.flatMap(mkStartConstraint).distinct match {
         case Seq()       => None
         case Seq(clause) => Some(clause)
         case clauses     => Some(new OdinOrQuery(clauses, defaultTokenField))
@@ -602,14 +604,18 @@ object QueryCompiler {
 
   def apply(config: Config, vocabulary: Vocabulary): QueryCompiler = {
     new QueryCompiler(
-      config.apply[List[String]]("odinson.compiler.allTokenFields"),
-      config.apply[String]("odinson.compiler.defaultTokenField"),
-      config.apply[String]("odinson.compiler.sentenceLengthField"),
-      config.apply[String]("odinson.compiler.dependenciesField"),
-      config.apply[String]("odinson.compiler.incomingTokenField"),
-      config.apply[String]("odinson.compiler.outgoingTokenField"),
-      vocabulary,
-      config.apply[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField")
+      // format: off
+      allTokenFields         = config.apply[List[String]]("odinson.compiler.allTokenFields"),
+      defaultTokenField      = config.apply[String]("odinson.compiler.defaultTokenField"),
+      sentenceLengthField    = config.apply[String]("odinson.compiler.sentenceLengthField"),
+      dependenciesField      = config.apply[String]("odinson.compiler.dependenciesField"),
+      incomingTokenField     = config.apply[String]("odinson.compiler.incomingTokenField"),
+      outgoingTokenField     = config.apply[String]("odinson.compiler.outgoingTokenField"),
+      dependenciesVocabulary = vocabulary,
+      aggressiveNormalizationToDefaultField =
+        config.apply[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
+      documentIdField        = config.apply[String]("odinson.index.documentIdField")
+      // format: on
     )
   }
 

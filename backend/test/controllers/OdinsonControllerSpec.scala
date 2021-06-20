@@ -65,6 +65,19 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
   }
 
+  def hasResults(resp: JsValue): Boolean = (resp \ "scoreDocs") match {
+    // scoreDocs exists, but what is its type?
+    case JsDefined(jsval) => jsval match {
+        // if our query matched, we should have a non-empty array here
+        case JsArray(array) => array.nonEmpty
+        case _              => false
+      }
+    // scoreDocs not found! :(
+    case _ => false
+  }
+
+  def noResults(resp: JsValue): Boolean = hasResults(resp) == false
+
   def deleteIndex = {
     val dir = new Directory(indexDir)
     dir.deleteRecursively()
@@ -95,9 +108,9 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
-    "process a pattern query using the runQuery method" in {
+    "process a pattern query using the runQuery method without a parentQuery" in {
 
-      val pattern = controller.runQuery(
+      val res = controller.runQuery(
         odinsonQuery = "[lemma=be] []",
         parentQuery = None,
         label = None,
@@ -108,10 +121,45 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         pretty = None
       ).apply(FakeRequest(GET, "/pattern"))
 
-      status(pattern) mustBe OK
-      contentType(pattern) mustBe Some("application/json")
-      Helpers.contentAsString(pattern) must include("core")
+      status(res) mustBe OK
+      contentType(res) mustBe Some("application/json")
+      Helpers.contentAsString(res) must include("core")
 
+    }
+
+    "process a pattern query using the runQuery method with a parentQuery" in {
+
+      val res1 = controller.runQuery(
+        odinsonQuery = "[lemma=pie]",
+        parentQuery = Some("'Major' in character"),
+        label = None,
+        commit = None,
+        prevDoc = None,
+        prevScore = None,
+        enriched = false,
+        pretty = None
+      ).apply(FakeRequest(GET, "/pattern"))
+
+      status(res1) mustBe OK
+      contentType(res1) mustBe Some("application/json")
+      //println(contentAsJson(res1))
+      noResults(contentAsJson(res1)) mustBe true
+
+      val res2 = controller.runQuery(
+        odinsonQuery = "[lemma=pie]",
+        // See http://www.lucenetutorial.com/lucene-query-syntax.html
+        parentQuery = Some("'Special Agent' in character"),
+        label = None,
+        commit = None,
+        prevDoc = None,
+        prevScore = None,
+        enriched = false,
+        pretty = None
+      ).apply(FakeRequest(GET, "/pattern"))
+
+      status(res2) mustBe OK
+      contentType(res2) mustBe Some("application/json")
+      hasResults(contentAsJson(res2)) mustBe true
     }
 
     "process a pattern query by accessing the /pattern endpoint" in {
@@ -136,19 +184,24 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
            |   label: GrammaticalSubject
            |   type: event
            |   pattern: |
-           |       trigger = [lemma=have]
-           |       subject  = >nsubj []
+           |     trigger  = [tag=/VB.*/]
+           |     subject  = >nsubj []
            |
         """.stripMargin
 
-      val body =
-        Json.obj("grammar" -> ruleString, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
+      val body = Json.obj(
+        // format: off
+        "grammar"              -> ruleString,
+        "pageSize"             -> 10,
+        "allowTriggerOverlaps" -> false
+        // format: on
+      )
 
       val response =
         controller.executeGrammar().apply(FakeRequest(POST, "/grammar").withJsonBody(body))
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
-      Helpers.contentAsString(response) must include("adults")
+      Helpers.contentAsString(response) must include("vision")
 
     }
 
@@ -161,19 +214,24 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
            |   label: GrammaticalSubject
            |   type: event
            |   pattern: |
-           |       trigger = [lemma=have]
-           |       subject  = >nsubj []
+           |     trigger  = [tag=/VB.*/]
+           |     subject  = >nsubj []
            |
         """.stripMargin
 
-      val body =
-        Json.obj("grammar" -> ruleString, "pageSize" -> 10, "allowTriggerOverlaps" -> false)
+      val body = Json.obj(
+        // format: off
+        "grammar"              -> ruleString,
+        "pageSize"             -> 10,
+        "allowTriggerOverlaps" -> false
+        // format: on
+      )
 
       val response = route(app, FakeRequest(POST, "/api/execute/grammar").withJsonBody(body)).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
-      Helpers.contentAsString(response) must include("adults")
+      Helpers.contentAsString(response) must include("vision")
     }
 
     "not persist state across uses of the /grammar endpoint" in {
@@ -464,6 +522,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
         controller.ruleHist().apply(FakeRequest(POST, "/api/rule-hist").withJsonBody(body))
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
+      //println(Helpers.contentAsString(response))
       // println(Helpers.contentAsString(response))
       Helpers.contentAsString(response) must include("w")
       Helpers.contentAsString(response) must include("x")

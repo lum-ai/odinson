@@ -50,11 +50,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def newEngine(): ExtractorEngine = ExtractorEngine.fromDirectory(config, indexDir, indexSearcher)
 
   // format: off
-  val docsDir           = config.apply[File]  ("odinson.docsDir")
-  val DOC_ID_FIELD      = config.apply[String]("odinson.index.documentIdField")
-  val SENTENCE_ID_FIELD = config.apply[String]("odinson.index.sentenceIdField")
-  val WORD_TOKEN_FIELD  = config.apply[String]("odinson.displayField")
-  val pageSize          = config.apply[Int]   ("odinson.pageSize")
+  val docsDir                = config.apply[File]("odinson.docsDir")
+  val DOC_ID_FIELD           = config.apply[String]("odinson.index.documentIdField")
+  val SENTENCE_ID_FIELD      = config.apply[String]("odinson.index.sentenceIdField")
+  val PARENT_DOC_FILE_NAME   = config.apply[String]("odinson.index.parentDocFieldFileName")
+  val WORD_TOKEN_FIELD       = config.apply[String]("odinson.displayField")
+  val pageSize               = config.apply[Int]("odinson.pageSize")
   // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
@@ -358,8 +359,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
       val composedExtractors = parentQuery match {
         case Some(pq) =>
-          val cpq = extractorEngine.compiler.mkParentQuery(pq)
-          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
         case None => baseExtractors
       }
 
@@ -642,8 +642,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
       val composedExtractors = parentQuery match {
         case Some(pq) =>
-          val cpq = extractorEngine.compiler.mkParentQuery(pq)
-          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
         case None => baseExtractors
       }
 
@@ -769,7 +768,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   /** Queries the index.
     *
-    * @param odisonQuery An OdinsonQuery
+    * @param odinsonQuery An OdinsonQuery
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
     * @param prevScore The score of the last Document see on the previous page (required if retrieving page 2+).
     * @return JSON of matches
@@ -827,8 +826,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
       val composedExtractors = parentQuery match {
         case Some(pq) =>
-          val cpq = extractorEngine.compiler.mkParentQuery(pq)
-          baseExtractors.map(be => be.copy(query = extractorEngine.compiler.mkQuery(be.query, cpq)))
+          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
         case None => baseExtractors
       }
       val start = System.currentTimeMillis()
@@ -1007,11 +1005,13 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     }
 
     Json.obj(
+      // format: off
       "odinsonQuery" -> odinsonQuery,
-      "parentQuery" -> parentQuery,
-      "duration" -> duration,
-      "totalHits" -> results.totalHits,
-      "scoreDocs" -> scoreDocs
+      "parentQuery"  -> parentQuery,
+      "duration"     -> duration,
+      "totalHits"    -> results.totalHits,
+      "scoreDocs"    -> scoreDocs
+      // format: on
     )
   }
 
@@ -1026,10 +1026,12 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val mentionsJson: JsValue = Json.arr(mentions.map(mkJson): _*)
 
     Json.obj(
-      "parentQuery" -> parentQuery,
-      "duration" -> duration,
+      // format: off
+      "parentQuery"          -> parentQuery,
+      "duration"             -> duration,
       "allowTriggerOverlaps" -> allowTriggerOverlaps,
-      "mentions" -> mentionsJson
+      "mentions"             -> mentionsJson
+      // format: on
     )
   }
 
@@ -1040,14 +1042,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
     // odinsonMatch: OdinsonMatch,
     Json.obj(
-      "sentenceId" -> mention.luceneDocId,
+      // format: off
+      "sentenceId"    -> mention.luceneDocId,
       // "score"         -> odinsonScoreDoc.score,
-      "label" -> mention.label,
-      "documentId" -> getDocId(mention.luceneDocId),
+      "label"         -> mention.label,
+      "documentId"    -> getDocId(mention.luceneDocId),
       "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
-      "words" -> JsArray(tokens.map(JsString)),
-      "foundBy" -> mention.foundBy,
-      "match" -> Json.arr(mkJson(mention.odinsonMatch))
+      "words"         -> JsArray(tokens.map(JsString)),
+      "foundBy"       -> mention.foundBy,
+      "match"         -> Json.arr(mkJson(mention.odinsonMatch))
+      // format: on
     )
   }
 
@@ -1055,14 +1059,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     val extractorEngine: ExtractorEngine = newEngine()
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
-    val tokens = extractorEngine.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
     Json.obj(
-      "sentenceId" -> odinsonScoreDoc.doc,
-      "score" -> odinsonScoreDoc.score,
-      "documentId" -> getDocId(odinsonScoreDoc.doc),
+      // format: off
+      "sentenceId"    -> odinsonScoreDoc.doc,
+      "score"         -> odinsonScoreDoc.score,
+      "documentId"    -> getDocId(odinsonScoreDoc.doc),
       "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "words" -> JsArray(tokens.map(JsString)),
-      "matches" -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+      "words"         -> JsArray(tokens.map(JsString)),
+      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+      // format: on
     )
   }
 
@@ -1079,12 +1085,14 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   def mkJsonWithEnrichedResponse(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
     Json.obj(
-      "sentenceId" -> odinsonScoreDoc.doc,
-      "score" -> odinsonScoreDoc.score,
-      "documentId" -> getDocId(odinsonScoreDoc.doc),
+      // format: off
+      "sentenceId"    -> odinsonScoreDoc.doc,
+      "score"         -> odinsonScoreDoc.score,
+      "documentId"    -> getDocId(odinsonScoreDoc.doc),
       "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "sentence" -> mkAbridgedSentence(odinsonScoreDoc.doc),
-      "matches" -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+      "sentence"      -> mkAbridgedSentence(odinsonScoreDoc.doc),
+      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+      // format: on
     )
   }
 
@@ -1094,7 +1102,7 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
-    val odinsonDocFile = new File(docsDir, parentDoc.getField("fileName").stringValue)
+    val odinsonDocFile = new File(docsDir, parentDoc.getField(PARENT_DOC_FILE_NAME).stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }
 

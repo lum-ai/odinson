@@ -27,8 +27,7 @@ class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val dataGatherer: DataGatherer,
-  val state: State, // todo: should this be private?
-  val parentDocIdField: String
+  val state: State // todo: should this be private?
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -212,7 +211,7 @@ class ExtractorEngine private (
     val sterileDocID = docId.escapeJava
     val booleanQuery = new LuceneBooleanQuery.Builder()
     // This particular docID
-    val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
+    val q1 = new QueryParser(OdinsonIndexWriter.PARENT_TYPE, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
     // Only consider docs of type: Parent
     val q2 = new QueryParser(OdinsonIndexWriter.TYPE, analyzer).parse(OdinsonIndexWriter.PARENT_TYPE)
@@ -683,13 +682,11 @@ object ExtractorEngine {
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher, indexDir)
-    val parentDocIdField = config.apply[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       dataGatherer,
-      state,
-      parentDocIdField
+      state
     )
   }
 
