@@ -27,7 +27,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val odinsonQuery: OdinsonQuery = ee.compiler.mkQuery(pattern)
+    val odinsonQuery: OdinsonQuery = ee.mkQuery(pattern)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1

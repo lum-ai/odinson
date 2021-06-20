@@ -58,7 +58,7 @@ class TestMetadataFilter extends OdinsonTest {
   )
 
   val ee = ExtractorEngine.inMemory(docs.map(Document.fromJson))
-  val query = ee.compiler.compile("[word=gummy]")
+  val query = ee.mkQuery("[word=gummy]")
 
   behavior of "MetadataFilters"
 
@@ -179,7 +179,7 @@ class TestMetadataFilter extends OdinsonTest {
   }
 
   // Tests for the nested documents for metadata
-  val yummyQuery = ee.compiler.compile("[word=yummy]")
+  val yummyQuery = ee.mkQuery("[word=yummy]")
   it should "restrict by nested fields" in {
     val filter = "author{first=='Agnes'}"
     val filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
@@ -280,7 +280,7 @@ class TestMetadataFilter extends OdinsonTest {
   }
 
   // Tests for tokensfields / textfield
-  val chummyQuery = ee.compiler.compile("[word=chummy]")
+  val chummyQuery = ee.mkQuery("[word=chummy]")
 
   it should "filter against independent strings/tags" in {
     var filter = "'food' in keywords"

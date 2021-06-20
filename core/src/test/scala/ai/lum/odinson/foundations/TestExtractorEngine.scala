@@ -16,7 +16,7 @@ class TestExtractorEngine extends OdinsonTest {
   val ee = ExtractorEngine.inMemory(Seq(doc1, doc2))
 
   "Odinson ExtractorEngine" should "run a simple query correctly" in {
-    val q = ee.compiler.mkQuery("causes")
+    val q = ee.mkQuery("causes")
     val results = ee.query(q, 1)
     results.totalHits should equal(2)
   }

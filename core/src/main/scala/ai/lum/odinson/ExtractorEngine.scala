@@ -222,6 +222,11 @@ class ExtractorEngine private (
     docs.head
   }
 
+  // Basic Queries
+  def mkQuery(pattern: String): OdinsonQuery = {
+    compiler.mkQuery(pattern)
+  }
+
   // Metadata queries
   def mkFilteredQuery(query: String, metadataFilter: String): OdinsonQuery = {
     compiler.mkQuery(query, metadataFilter)

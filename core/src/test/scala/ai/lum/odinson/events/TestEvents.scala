@@ -181,7 +181,7 @@ class TestEvents extends OdinsonTest {
   }
 
   it should "populate the state with NPs" in {
-    val query = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    val query = ee.mkQuery("[chunk=B-NP][chunk=I-NP]*")
     val results = ee.query(query)
     results.totalHits should equal(1)
     results.scoreDocs.head.matches should have size 2
@@ -189,7 +189,7 @@ class TestEvents extends OdinsonTest {
   }
 
   it should "find event with mentions from the state when the state is populated" in {
-    val q1 = ee.compiler.mkQuery("[chunk=B-NP][chunk=I-NP]*")
+    val q1 = ee.mkQuery("[chunk=B-NP][chunk=I-NP]*")
     val q2 = ee.compiler.compileEventQuery(pattern)
 
     // The ee.query no longer adds to the state on its own, so this helper is being used.

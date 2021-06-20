@@ -82,7 +82,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
     val pattern = "complex <nsubj phosphorylate >dobj []"
     val expectedMatches = Array("AKT1")
 
-    val query = ee.compiler.mkQuery(pattern)
+    val query = ee.mkQuery(pattern)
     val results = ee.query(query, 1)
     results.totalHits should equal(1)
 
