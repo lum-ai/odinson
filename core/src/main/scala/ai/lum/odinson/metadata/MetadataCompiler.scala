@@ -5,7 +5,7 @@ import java.util.GregorianCalendar
 
 import ai.lum.odinson.OdinsonIndexWriter
 import org.apache.lucene.index.Term
-import org.apache.lucene.search.{BooleanClause, BooleanQuery, MatchAllDocsQuery, PhraseQuery, Query, TermQuery}
+import org.apache.lucene.search.{BooleanClause, BooleanQuery, PhraseQuery, Query, TermQuery}
 import org.apache.lucene.document.DoublePoint
 import org.apache.lucene.search.join.{QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery}
 
@@ -34,7 +34,6 @@ object MetadataCompiler {
 
             case Ast.NotExpression(expr) =>
                 val builder = new BooleanQuery.Builder
-                builder.add(new BooleanClause(new MatchAllDocsQuery, BooleanClause.Occur.SHOULD))
                 // add the constraint for the type of metadata document
                 val fieldType = if (isNested) OdinsonIndexWriter.NESTED_TYPE else OdinsonIndexWriter.PARENT_TYPE
                 builder.add(new BooleanClause(new TermQuery(new Term(OdinsonIndexWriter.TYPE, fieldType)), BooleanClause.Occur.MUST))
