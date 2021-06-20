@@ -1,7 +1,7 @@
 package ai.lum.odinson.foundations
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.{Document, ExtractorEngine, Sentence, TokensField, utils}
+import ai.lum.odinson.{ Document, ExtractorEngine, Sentence, TokensField, utils }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
 class TestExtractorEngine extends OdinsonTest {
@@ -36,12 +36,15 @@ class TestExtractorEngine extends OdinsonTest {
         |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = getMentionsWithLabel(ee.extractAndPopulate(extractors, level = VerboseLevels.All).toSeq, "Test")
+    val mentions = getMentionsWithLabel(
+      ee.extractAndPopulate(extractors, level = VerboseLevels.All).toSeq,
+      "Test"
+    )
     mentions should have size (1)
 
     val mention = mentions.head
 
-    mention.text should be ("ate")
+    mention.text should be("ate")
     mention.mentionFields("lemma") should contain only ("eat")
 
   }

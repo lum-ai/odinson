@@ -3,7 +3,11 @@ package ai.lum.odinson
 import java.io.File
 
 import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{ Query, BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery }
+import org.apache.lucene.search.{
+  Query,
+  BooleanClause => LuceneBooleanClause,
+  BooleanQuery => LuceneBooleanQuery
+}
 import org.apache.lucene.store.{ Directory, FSDirectory }
 import org.apache.lucene.index.DirectoryReader
 import org.apache.lucene.queryparser.classic.QueryParser
@@ -214,7 +218,8 @@ class ExtractorEngine private (
     val q1 = new QueryParser(OdinsonIndexWriter.PARENT_TYPE, analyzer).parse(s""""$sterileDocID"""")
     booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
     // Only consider docs of type: Parent
-    val q2 = new QueryParser(OdinsonIndexWriter.TYPE, analyzer).parse(OdinsonIndexWriter.PARENT_TYPE)
+    val q2 =
+      new QueryParser(OdinsonIndexWriter.TYPE, analyzer).parse(OdinsonIndexWriter.PARENT_TYPE)
     booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
     val q = booleanQuery.build
     val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))

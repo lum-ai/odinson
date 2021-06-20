@@ -115,11 +115,15 @@ class OdinsonIndexWriter(
     val (nested, other) = d.metadata.partition(_.isInstanceOf[NestedField])
 
     // convert the nested fields into a document
-    val nestedMetadata = nested.collect{ case n: NestedField => n }.map(mkNestedDocument)
+    val nestedMetadata = nested.collect { case n: NestedField => n }.map(mkNestedDocument)
 
     // Metadata for parent document
     val metadata = new lucenedoc.Document
-    metadata.add(new lucenedoc.StringField(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE, Store.NO))
+    metadata.add(new lucenedoc.StringField(
+      OdinsonIndexWriter.TYPE,
+      OdinsonIndexWriter.PARENT_TYPE,
+      Store.NO
+    ))
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
 
     for {
@@ -216,8 +220,7 @@ class OdinsonIndexWriter(
             // for the metadata we want to casefold, remove diacritics etc.
             val normalized = validated.map(_.normalizeUnicodeAggressively)
             OdinsonIndexWriter.START_TOKEN +: normalized :+ OdinsonIndexWriter.END_TOKEN
-          }
-          else validated
+          } else validated
         val tokenStream = new NormalizedTokenStream(Seq(tokens))
         val tokensField = new lucenedoc.TextField(f.name, tokenStream)
         if (mustStore) {
@@ -233,7 +236,11 @@ class OdinsonIndexWriter(
   def mkNestedDocument(nested: NestedField): lucenedoc.Document = {
     val nestedMetadata = new lucenedoc.Document
     nestedMetadata.add(new lucenedoc.StringField(OdinsonIndexWriter.NAME, nested.name, Store.NO))
-    nestedMetadata.add(new lucenedoc.StringField(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.NESTED_TYPE, Store.NO))
+    nestedMetadata.add(new lucenedoc.StringField(
+      OdinsonIndexWriter.TYPE,
+      OdinsonIndexWriter.NESTED_TYPE,
+      Store.NO
+    ))
 
     for {
       odinsonField <- nested.fields
