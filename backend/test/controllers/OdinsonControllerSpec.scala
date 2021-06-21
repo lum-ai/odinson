@@ -131,7 +131,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       val res1 = controller.runQuery(
         odinsonQuery = "[lemma=pie]",
-        parentQuery = Some("'Major' in character"),
+        parentQuery = Some("character contains '/Maj.*/'"),
         label = None,
         commit = None,
         prevDoc = None,
@@ -148,7 +148,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       val res2 = controller.runQuery(
         odinsonQuery = "[lemma=pie]",
         // See http://www.lucenetutorial.com/lucene-query-syntax.html
-        parentQuery = Some("'Special Agent' in character"),
+        parentQuery = Some("character contains 'Special Agent'"),
         label = None,
         commit = None,
         prevDoc = None,

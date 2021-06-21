@@ -33,14 +33,14 @@ object MetadataQueryParser {
   }
 
   def contains_expression[_: P]: P[Ast.BoolExpression] = {
-    P(field_value ~ "not".!.? ~ "contains" ~ string_value).map {
+    P(field_value ~ "not".!.? ~ "contains"./ ~ string_value).map {
       case (field, None, value)          => Ast.Contains(field, value)
       case (field, Some(negated), value) => Ast.NotExpression(Ast.Contains(field, value))
     }
   }
 
   def nested_expression[_: P]: P[Ast.BoolExpression] = {
-    P(Literals.identifier ~ "{" ~ or_expression ~ "}").map {
+    P(Literals.identifier ~ "{"./ ~ or_expression ~ "}").map {
       case (name, expr) => Ast.NestedExpression(name, expr)
     }
   }
@@ -56,7 +56,7 @@ object MetadataQueryParser {
 
   // comparison expression
   def cmp_expression[_: P]: P[Ast.BoolExpression] = {
-    P(value ~ cmp_op ~ value ~ (cmp_op ~ value).rep).map {
+    P(value ~ cmp_op./ ~ value ~ (cmp_op./ ~ value).rep).map {
       case (lhs, op, rhs, Seq()) =>
         mk_compare(lhs, op, rhs)
       case (lhs, op, rhs, rest) =>
@@ -93,7 +93,7 @@ object MetadataQueryParser {
   }
 
   def fun_call[_: P]: P[Ast.Value] = {
-    P(Literals.identifier ~ "(" ~ value.rep(sep = ",") ~ ")").map {
+    P(Literals.identifier ~ "("./ ~ value.rep(sep = ",") ~ ")").map {
       case (name, args) => Ast.FunCall(name, args)
     }
   }
@@ -107,7 +107,17 @@ object MetadataQueryParser {
   }
 
   def field_value[_: P]: P[Ast.FieldValue] = {
+    field_attribute_value | field_base_value
+  }
+
+  def field_base_value[_: P]: P[Ast.FieldValue] = {
     Literals.identifier.map(Ast.FieldValue)
+  }
+
+  def field_attribute_value[_: P]: P[Ast.FieldValue] = {
+    P(Literals.identifier ~~ "."./ ~~ Literals.identifier).map {
+      case (field, attribute) => Ast.FieldValue(s"$field.$attribute")
+    }
   }
 
 }

@@ -18,7 +18,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
     // a simple Odinson pattern
     val pattern = "[lemma=pie]"
     // a query (using Lucene query syntax) that is executed against the document metadata
-    val parentQuery: String = "'Major' in character"
+    val parentQuery: String = "character contains 'NotAWord'"
     val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
@@ -35,7 +35,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds and parent query succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String = "'Special Agent' in character"
+    val parentQuery: String = "character contains '/S.*/ Agent'"
     val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1

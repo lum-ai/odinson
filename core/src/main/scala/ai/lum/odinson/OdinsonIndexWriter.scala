@@ -185,15 +185,21 @@ class OdinsonIndexWriter(
   def mkLuceneFields(f: Field, isMetadata: Boolean): Seq[lucenedoc.Field] = {
     val mustStore = settings.storedFields.contains(f.name)
     f match {
-      // Separate StoredField because of Lucene API for LongPoint:
-      // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/LongPoint.html
+      // Separate StoredField because of Lucene API for DoublePoint:
+      // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/DoublePoint.html
       case f: DateField =>
-        val doubleField = new lucenedoc.DoublePoint(f.name, f.localDate.toEpochDay)
+        // todo: do we want more fields: String s'${f.name}.month'
+        val fields = Seq(
+          // the whole date
+          new lucenedoc.DoublePoint(f.name, f.localDate.toEpochDay),
+          // just the year for simplifying queries (syntactic sugar)
+          new lucenedoc.DoublePoint(attributeName(f.name, YEAR), f.localDate.getYear)
+        )
         if (mustStore) {
           val storedField = new lucenedoc.StoredField(f.name, f.date)
-          Seq(doubleField, storedField)
+          fields ++ Seq(storedField)
         } else {
-          Seq(doubleField)
+          fields
         }
 
       case f: NumberField =>
@@ -289,6 +295,8 @@ class OdinsonIndexWriter(
     else s
   }
 
+  private def attributeName(field: String, attribute: String): String = s"$field.$attribute"
+
 }
 
 object OdinsonIndexWriter {
@@ -303,6 +311,7 @@ object OdinsonIndexWriter {
   val PARENT_TYPE = "metadata"
   val NESTED_TYPE = "metadata_nested"
   val NAME = "name"
+  val YEAR = "year"
 
   // Special start and end tokens for metadata exact match queries
   val START_TOKEN = "[[XX_START]]"

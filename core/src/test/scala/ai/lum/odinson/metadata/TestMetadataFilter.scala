@@ -8,7 +8,8 @@ import ai.lum.odinson.metadata.MetadataCompiler.mkQuery
 class TestMetadataFilter extends OdinsonTest {
 
   val docs = List(
-    // First 6 documents have text: "Becky ate gummy bears."
+
+    // These documents have the sentence: "Becky ate gummy bears."
 
     // pubdate = 2000-05-25
     // doctype = article
@@ -29,7 +30,8 @@ class TestMetadataFilter extends OdinsonTest {
     // pubdate = 2020-05-25
     // citations = 5
     """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":5.0},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2020-05-25"}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","gummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","gummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
-    // These two documents have the sentence: "Becky ate yummy bears."
+
+    // These documents have the sentence: "Becky ate yummy bears."
 
     // author = {first: "Agnes", last: "Moorehead"}
     """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.TokensField","name":"first","tokens":["Agnes"]},{"$type":"ai.lum.odinson.TokensField","name":"last","tokens":["Moorehead"]}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","yummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
@@ -38,11 +40,12 @@ class TestMetadataFilter extends OdinsonTest {
     """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3.0},{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.TokensField","name":"first","tokens":["Agnes"]},{"$type":"ai.lum.odinson.TokensField","name":"last","tokens":["Mertz"]}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","yummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
     // author = {first: "Jose Manuel", last: "Mertz"}
     """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3.0},{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.TokensField","name":"first","tokens":["Jose", "Manuel"]},{"$type":"ai.lum.odinson.TokensField","name":"last","tokens":["Mertz"]}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","yummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
-    // todo author = {first: "Agnes", last: "Valenzuela Escárcega"}
     // author = {first: "Sinbad", last: "Valenzuela Escárcega"}
     // citations = 3
     """{"id":"testdoc","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3.0},{"$type":"ai.lum.odinson.NestedField","name":"author","fields":[{"$type":"ai.lum.odinson.TokensField","name":"first","tokens":["Sinbad"]},{"$type":"ai.lum.odinson.TokensField","name":"last","tokens":["Valenzuela", "Escárcega"]}]}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","yummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","yummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
+
     // These documents have the sentence: Becky ate chummy bears
+
     // keywords: "food", "silly", "outrageous"
     // citations = 3
     """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3.0},{"$type":"ai.lum.odinson.TokensField","name":"keywords","tokens":["food", "silly", "outrageous"]},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2000-05-25"}],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","chummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","chummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","chummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""",
@@ -288,8 +291,8 @@ class TestMetadataFilter extends OdinsonTest {
     filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
-    // todo: if/when supported in the language
-    // filter = "'food' & 'silly' in keywords"
+    // TODO: if/when supported in the language
+    // filter = "keywords contains 'food' & 'silly'"
 
     filter = "keywords contains 'unknown-words' || keywords contains 'silly'"
     filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
@@ -297,6 +300,56 @@ class TestMetadataFilter extends OdinsonTest {
 
   }
 
-  // todo: syntactic sugar for dates
+  it should "allow for comparison of date attributes" in {
+    // year
+    var filter = "pubdate.year > 2010"
+    var filteredQuery = ee.mkFilteredQuery(query, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (3)
+
+    filter = "pubdate.year == 2020"
+    filteredQuery = ee.mkFilteredQuery(query, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (1)
+
+    filter = "2010 < pubdate.year < 2020"
+    filteredQuery = ee.mkFilteredQuery(query, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (2)
+
+    filter = "2010 < pubdate.year < 2020 || citations == 3"
+    filteredQuery = ee.mkFilteredQuery(query, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (3)
+
+    // add others?
+  }
+
+  it should "work with regex tokens" in {
+    var filter = "author{first=='/a.*/'}"
+    var filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    val f = filteredQuery.asInstanceOf[OdinsonFilteredQuery].filter
+    println(filteredQuery)
+    println(f)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (2)
+
+    // Should be ok with capitalization too
+    filter = "author{first=='/A.*/'}"
+    filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (2)
+
+    // should with with multiple terms
+    filter = "author{first == 'Jose /Ma.*/'}"
+    filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (1)
+
+    filter = "author{first contains '/J.*/ /Ma.*/'}"
+    filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (1)
+
+    filter = "author{first=='/A.*/' && last=='/m.*/'}"
+    filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (2)
+
+    filter = "keywords contains '/foo./' && keywords contains 'silly'"
+    filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
+    ee.query(filteredQuery).scoreDocs.length shouldBe (1)
+  }
 
 }
