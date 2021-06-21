@@ -215,63 +215,63 @@ class TestMetadataFilter extends OdinsonTest {
 
   it should "restrict with contains match text fields" in {
 
-    var filter = "author{'Jose' in first}"
+    var filter = "author{first contains 'Jose'}"
     var filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
-    filter = "author{'Jose Manuel' in first}"
+    filter = "author{first contains 'Jose Manuel'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
-    filter = "author{'Jose Manuel Eduardo' in first}"
+    filter = "author{first contains 'Jose Manuel Eduardo'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (0)
 
-    filter = "author{'Jose Manuel Eduardo' not in first}"
+    filter = "author{first not contains 'Jose Manuel Eduardo'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (4)
 
-    filter = "author{'Jose' not in first}"
+    filter = "author{first not contains 'Jose'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (3)
 
-    filter = "author{'Jose Manuel' in first}"
+    filter = "author{first contains 'Jose Manuel'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
-    filter = "author{'Manuel Jose' in first}"
+    filter = "author{first contains 'Manuel Jose'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (0)
 
-    filter = "author{'Agnes' not in first}"
+    filter = "author{first not contains 'Agnes'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (2)
 
-    filter = "author{'Manuel' not in first}"
+    filter = "author{first not contains 'Manuel'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (3)
 
-    filter = "author{'Manuel Jose' not in first}"
+    filter = "author{first not contains 'Manuel Jose'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (4)
 
     // case shouldn't matter:
-    filter = "author{'jose' in first}"
+    filter = "author{first contains 'jose'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
     // even weird case... :)
-    filter = "author{'jOsE' in first}"
+    filter = "author{first contains 'jOsE'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
   }
 
   it should "handle unicode in strings" in {
-    var filter = "author{'Valenzuela Escárcega' in last}"
+    var filter = "author{last contains 'Valenzuela Escárcega'}"
     var filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
-    filter = "author{'Valenzuela Escarcega' in last}"
+    filter = "author{last contains 'Valenzuela Escarcega'}"
     filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
   }
@@ -280,24 +280,23 @@ class TestMetadataFilter extends OdinsonTest {
   val chummyQuery = ee.mkQuery("[word=chummy]")
 
   it should "filter against independent strings/tags" in {
-    var filter = "'food' in keywords"
+    var filter = "keywords contains 'food'"
     var filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (2)
 
-    filter = "'food' in keywords && 'silly' in keywords"
+    filter = "keywords contains 'food' && keywords contains 'silly'"
     filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
 
     // todo: if/when supported in the language
     // filter = "'food' & 'silly' in keywords"
 
-    filter = "'unknown-words' in keywords || 'silly' not in keywords"
+    filter = "keywords contains 'unknown-words' || keywords contains 'silly'"
     filteredQuery = ee.mkFilteredQuery(chummyQuery, filter)
     ee.query(filteredQuery).scoreDocs.length shouldBe (2)
 
   }
 
-  // todo: unicode norm in the metadata queries
   // todo: syntactic sugar for dates
 
 }
