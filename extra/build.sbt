@@ -4,7 +4,7 @@ resolvers += "Artifactory" at "http://artifactory.cs.arizona.edu:8081/artifactor
 
 libraryDependencies ++= {
 
-  val procVersion = "8.3.6"
+  val procVersion = "8.4.1"
 
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
