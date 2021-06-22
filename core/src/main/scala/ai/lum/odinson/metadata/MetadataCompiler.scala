@@ -6,6 +6,7 @@ import java.util.GregorianCalendar
 import ai.lum.common.RegexUtils._
 import ai.lum.odinson.OdinsonIndexWriter
 import ai.lum.odinson.metadata.Ast.StringValue
+import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.{ BooleanClause, BooleanQuery, Query, RegexpQuery, TermQuery }
 import org.apache.lucene.document.DoublePoint
@@ -98,6 +99,10 @@ object MetadataCompiler {
             // exact span, not a sub-span
             val tokens = mkTokens(value, exactSpan = true)
             mkQueryFromTokens(field.name, tokens)
+          case _ =>
+            throw new OdinsonException(
+              s"The equal comparison is only valid with NumberValues and StringValues (passed: ${value.getClass})"
+            )
         }
 
       case Ast.NestedExpression(name, expr) =>
@@ -181,10 +186,12 @@ object MetadataCompiler {
     val l = evalValue(lhs)
     val r = evalValue(rhs)
     (l, r) match {
-      case (l: Ast.FieldValue, r: Ast.FieldValue) => ???
-      case (l: Ast.FieldValue, r: Ast.Value)      => (l, r, false)
-      case (l: Ast.Value, r: Ast.FieldValue)      => (r, l, true)
-      case (l: Ast.Value, r: Ast.Value)           => ???
+      // format: off
+      case (l: Ast.FieldValue, r: Ast.FieldValue) => throw new OdinsonException("Cannot compare two Fields")
+      case (l: Ast.FieldValue, r: Ast.Value) => (l, r, false)
+      case (l: Ast.Value, r: Ast.FieldValue) => (r, l, true)
+      case (l: Ast.Value, r: Ast.Value)      => throw new OdinsonException("Cannot compare two Values")
+      // format: on
     }
   }
 

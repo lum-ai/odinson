@@ -236,6 +236,8 @@ class OdinsonIndexWriter(
         } else {
           Seq(tokensField)
         }
+
+      case _ => throw new OdinsonException(s"Unsupported Field: ${f.getClass}")
     }
   }
 
