@@ -693,11 +693,19 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
       }
       val fields = MultiFields.getFields(extractorEngine.indexReader)
       val fieldNames = fields.iterator.asScala.toList
+      val storedFields =
+        if (extractorEngine.numDocs < 1) {
+          Nil
+        } else {
+          val firstDoc = extractorEngine.doc(0)
+          firstDoc.iterator.asScala.map(_.name).toList
+        }
       val json = Json.obj(
         "numDocs" -> numDocs,
         "corpus" -> corpusDir,
         "distinctDependencyRelations" -> depsVocabSize,
-        "fields" -> fieldNames
+        "fields" -> fieldNames,
+        "storedFields" -> storedFields
       )
       json.format(pretty)
     }
@@ -922,10 +930,14 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   ) = Action.async {
     Future {
       try {
-        val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
-        val json: JsValue = Json.parse(od.toJson)("metadata")
+        val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
+        val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
       } catch {
+        case _: NullPointerException =>
+          InternalServerError(
+            "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
+          )
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
           val json = Json.toJson(Json.obj("error" -> stackTrace))
@@ -941,12 +953,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Future {
       try {
         val extractorEngine: ExtractorEngine = newEngine()
-        val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
+        val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
-        val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
-        val json: JsValue = Json.parse(od.toJson)("metadata")
+        val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
+        val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
       } catch {
+        case _: NullPointerException =>
+          InternalServerError(
+            "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
+          )
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
           val json = Json.toJson(Json.obj("error" -> stackTrace))
@@ -962,12 +978,16 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     Future {
       try {
         val extractorEngine: ExtractorEngine = newEngine()
-        val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
+        val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
         val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
-        val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
-        val json: JsValue = Json.parse(od.toJson)
+        val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
+        val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
       } catch {
+        case _: NullPointerException =>
+          InternalServerError(
+            "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+          )
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
           val json = Json.toJson(Json.obj("error" -> stackTrace))
@@ -986,6 +1006,10 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
         val json: JsValue = Json.parse(odinsonDoc.toJson)
         json.format(pretty)
       } catch {
+        case _: NullPointerException =>
+          InternalServerError(
+            "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+          )
         case NonFatal(e) =>
           val stackTrace = ExceptionUtils.getStackTrace(e)
           val json = Json.toJson(Json.obj("error" -> stackTrace))
@@ -1101,8 +1125,6 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
     val extractorEngine: ExtractorEngine = newEngine()
-    //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
-    //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
     val odinsonDocFile = new File(docsDir, parentDoc.getField(PARENT_DOC_FILE_NAME).stringValue)
