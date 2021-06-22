@@ -33,7 +33,6 @@ import com.typesafe.config.Config
 import utils.LuceneHelpers._
 
 import scala.annotation.tailrec
-import scala.collection.mutable.ArrayBuffer
 
 @Singleton
 class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
