@@ -40,7 +40,9 @@ class OdinsonIndexWriter(
   val outgoingTokenField: String,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
-  val displayField: String
+  val displayField: String,
+  val parentDocFieldType: String,
+  val parentDocField: String
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
@@ -114,7 +116,7 @@ class OdinsonIndexWriter(
 
   def mkMetadataDoc(d: Document): lucenedoc.Document = {
     val metadata = new lucenedoc.Document
-    metadata.add(new lucenedoc.StringField("type", "metadata", Store.NO))
+    metadata.add(new lucenedoc.StringField(parentDocFieldType, parentDocField, Store.NO))
     metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
     for {
       odinsonField <- d.metadata
@@ -251,20 +253,20 @@ object OdinsonIndexWriter {
   }
 
   def fromConfig(config: Config): OdinsonIndexWriter = {
-    val indexDir = config.apply[String]("odinson.indexDir")
-    val documentIdField = config.apply[String]("odinson.index.documentIdField")
-    val sentenceIdField = config.apply[String]("odinson.index.sentenceIdField")
-    val sentenceLengthField = config.apply[String]("odinson.index.sentenceLengthField")
+    // format: off
+    val indexDir             = config.apply[String]("odinson.indexDir")
+    val documentIdField      = config.apply[String]("odinson.index.documentIdField")
+    val sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField")
+    val sentenceLengthField  = config.apply[String]("odinson.index.sentenceLengthField")
     val normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField")
     val addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField")
-    val incomingTokenField = config.apply[String]("odinson.index.incomingTokenField")
-    val outgoingTokenField = config.apply[String]("odinson.index.outgoingTokenField")
-    val maxNumberOfTokensPerSentence =
-      config.apply[Int]("odinson.index.maxNumberOfTokensPerSentence")
-    val invalidCharacterReplacement =
-      config.apply[String]("odinson.index.invalidCharacterReplacement")
-    val storedFields = config.apply[List[String]]("odinson.index.storedFields")
-    val displayField = config.apply[String]("odinson.displayField")
+    val incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField")
+    val outgoingTokenField   = config.apply[String]("odinson.index.outgoingTokenField")
+    val maxNumberOfTokensPerSentence = config.apply[Int]("odinson.index.maxNumberOfTokensPerSentence")
+    val invalidCharacterReplacement  = config.apply[String]("odinson.index.invalidCharacterReplacement")
+    val storedFields         = config.apply[List[String]]("odinson.index.storedFields")
+    val displayField         = config.apply[String]("odinson.displayField")
+    // format: on
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
@@ -276,25 +278,30 @@ object OdinsonIndexWriter {
         val vocab = Vocabulary.fromDirectory(dir)
         (dir, vocab)
     }
+
     // Always store the display field, also store these additional fields
     if (!storedFields.contains(displayField)) {
       throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
     val settings = IndexSettings(storedFields)
     new OdinsonIndexWriter(
-      directory,
-      vocabulary,
-      settings,
-      documentIdField,
-      sentenceIdField,
-      sentenceLengthField,
-      normalizedTokenField,
-      addToNormalizedField.toSet,
-      incomingTokenField,
-      outgoingTokenField,
-      maxNumberOfTokensPerSentence,
-      invalidCharacterReplacement,
-      displayField
+      // format: off
+      directory            = directory, 
+      vocabulary           = vocabulary,
+      settings             = IndexSettings(storedFields),
+      documentIdField      = config.apply[String]("odinson.index.documentIdField"),
+      sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField"),
+      sentenceLengthField  = config.apply[String]("odinson.index.sentenceLengthField"),
+      normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField"),
+      addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField").toSet,
+      incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField"),
+      outgoingTokenField   = config.apply[String]("odinson.index.outgoingTokenField"),
+      maxNumberOfTokensPerSentence = config.apply[Int]("odinson.index.maxNumberOfTokensPerSentence"),
+      invalidCharacterReplacement  = config.apply[String]("odinson.index.invalidCharacterReplacement"),
+      displayField         = config.apply[String]("odinson.displayField"),
+      parentDocFieldType   = config.apply[String]("odinson.index.parentDocFieldType"),
+      parentDocField       = config.apply[String]("odinson.index.parentDocField")
+      // format: on
     )
   }
 
