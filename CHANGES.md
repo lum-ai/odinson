@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added tests for metadata and parent API calls in backend.
 ### Changed
+- Parent document filenames are stored by default.
 
 ## [0.4.0] - 2021-06-07
 ### Added
@@ -14,12 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Enhanced term-freq endpoint to allow filtering as well as grouping by a second field.
 - Added ability to Mentions to populate their lexical content ([#274](https://github.com/lum-ai/odinson/pull/274))
 - Added tests for parent queries in core and backend.
-- Added tests for metadata and parent API calls in backend. 
 ### Changed
 - Dependencies now stored as BinaryDocValuesField (previously SortedDocValuesField) to allow for larger graphs ([#283](https://github.com/lum-ai/odinson/pull/283)).
 - Moved responsibility for getting lexical content from ExtractorEngine to DataGatherer ([#274](https://github.com/lum-ai/odinson/pull/274))
 - Metadata is now indexed as TokensFields instead of StringFields.
-- Parent document filenames are stored by default.
 
 ## [0.3.0] - 2021-02-18
 ### Added 
