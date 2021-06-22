@@ -7,10 +7,15 @@ import ai.lum.common.RegexUtils._
 import ai.lum.odinson.OdinsonIndexWriter
 import ai.lum.odinson.metadata.Ast.StringValue
 import org.apache.lucene.index.Term
-import org.apache.lucene.search.{BooleanClause, BooleanQuery, Query, RegexpQuery, TermQuery}
+import org.apache.lucene.search.{ BooleanClause, BooleanQuery, Query, RegexpQuery, TermQuery }
 import org.apache.lucene.document.DoublePoint
-import org.apache.lucene.search.join.{QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery}
-import org.apache.lucene.search.spans.{SpanMultiTermQueryWrapper, SpanNearQuery, SpanQuery, SpanTermQuery}
+import org.apache.lucene.search.join.{ QueryBitSetProducer, ScoreMode, ToParentBlockJoinQuery }
+import org.apache.lucene.search.spans.{
+  SpanMultiTermQueryWrapper,
+  SpanNearQuery,
+  SpanQuery,
+  SpanTermQuery
+}
 
 object MetadataCompiler {
 
@@ -120,7 +125,8 @@ object MetadataCompiler {
 
   /** Examines the content of the string and determine if it is a regex.  If so, creates a RegexpQuery,
     * else it makes a SpanQuery, which can later be combined with other SpanQueries,
-    * e.g., in a SpanNearQuery. */
+    * e.g., in a SpanNearQuery.
+    */
   def mkTermQuery(field: String, s: String): SpanQuery = {
     // make the regex to match lucene regular expressions
     val regexPattern = mkCharDelimited("/")
@@ -135,7 +141,8 @@ object MetadataCompiler {
   }
 
   /** Split the normalized form of the StringValue's string, then if you're trying to match
-    * an exact span (i.e., the whole string), wrap with the special start and end tokens */
+    * an exact span (i.e., the whole string), wrap with the special start and end tokens
+    */
   def mkTokens(value: StringValue, exactSpan: Boolean = false): Seq[String] = {
     // we don't support spaces within a token
     val tokens = value.norm.split("\\s+")
@@ -145,16 +152,18 @@ object MetadataCompiler {
   }
 
   /** SpanNearQuery needs to >= 2 subQueries, so if there is a single query, handle it directly.
-    * Else, construct the SpanNearQuery */
+    * Else, construct the SpanNearQuery
+    */
   def mkQueryFromTokens(field: String, tokens: Seq[String]): Query = {
     tokens match {
       case Seq(singleToken) => mkTermQuery(field, singleToken)
-      case multipleTokens => mkSpanNearQuery(field, multipleTokens)
+      case multipleTokens   => mkSpanNearQuery(field, multipleTokens)
     }
   }
 
   /** With slop == 0, we are using the SpanNearQuery to find adjacent/contiguous tokens.
-    * This is used instead of a PhraseQuery to support RegeexpQuery as the term queries. */
+    * This is used instead of a PhraseQuery to support RegeexpQuery as the term queries.
+    */
   def mkSpanNearQuery(field: String, tokens: Seq[String]): Query = {
     // Since we want to match contiguously, we want the tokens to appear
     // in the specified order.
