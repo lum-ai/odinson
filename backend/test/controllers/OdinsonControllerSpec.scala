@@ -284,6 +284,49 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
+    "retrieve metadata using the /metadata/by-sentence-id endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/metadata/by-sentence-id?sentenceId=2")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("ai.lum.odinson.TokensField")
+      Helpers.contentAsString(response) must include("Garland")
+    }
+
+    "retrieve metadata using the /metadata/by-document-id endpoint" in {
+      val response =
+        route(app, FakeRequest(GET, "/api/metadata/by-document-id?documentId=tp-pies")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("ai.lum.odinson.TokensField")
+      Helpers.contentAsString(response) must include("Cooper")
+    }
+
+    "retrieve the parent doc using the /parent/by-sentence-id endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/parent/by-sentence-id?sentenceId=2")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("Briggs") // metadata
+      Helpers.contentAsString(response) must include("subconscious") // this sentence
+      Helpers.contentAsString(response) must include("veranda") // other sentences in parent
+    }
+
+    "retrieve the parent doc using the /parent/by-document-id endpoint" in {
+      val response =
+        route(app, FakeRequest(GET, "/api/parent/by-document-id?documentId=tp-pies")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+
+      Helpers.contentAsString(response) must include("MacLachlan") // metadata
+      Helpers.contentAsString(response) must include("pies") // sentence info
+    }
+
     "respond with token-based frequencies using the /term-freq endpoint" in {
       val response = route(app, FakeRequest(GET, "/api/term-freq?field=word")).get
 
