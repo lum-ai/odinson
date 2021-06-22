@@ -30,6 +30,7 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+import utils.LuceneHelpers._
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -745,16 +746,9 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     // get terms from the requested field (error if it doesn't exist)
     val extractorEngine: ExtractorEngine = newEngine()
     val fields = MultiFields.getFields(extractorEngine.indexReader)
-    val terms = fields.terms(field)
-    val termsEnum = terms.iterator
-    // add terms to our return list one at a time
-    val termsBuffer = new ArrayBuffer[String]()
-    while (termsEnum.next() != null) {
-      val term = termsEnum.term.utf8ToString
-      termsBuffer.append(term)
-    }
-    // already sorted orthographically by Lucene default
-    termsBuffer.toList
+    val terms = fields.terms(field).map(_.utf8ToString).toList
+
+    terms
   }
 
   /** Retrieves the POS tags for the current index (limited to extant tags).
