@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added metadata query language.  Includes support for dates and nested objects. ([#305](https://github.com/lum-ai/odinson/pull/305))
 ### Changed
 
 ## [0.4.0] - 2021-06-07
