@@ -86,12 +86,17 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   // create index
   IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
-  implicit override def newAppForTest(testData: TestData): Application =
-    new GuiceApplicationBuilder()
-      .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
-      .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
-      .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
-      .build()
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .configure(
+      Map(
+        "odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir),
+        "odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath),
+        "odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir)
+      )
+    )
+    .build()
+
+  implicit override def newAppForTest(testData: TestData): Application = fakeApplication()
 
   val fakeApp: Application = fakeApplication()
 
