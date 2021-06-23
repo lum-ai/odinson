@@ -16,17 +16,20 @@ object LuceneHelpers {
         nextOpt = Option(nextable.next())
         next
       }
-      .getOrElse {
-        throw new RuntimeException("No more elements!")
-      }
+        .getOrElse {
+          throw new RuntimeException("No more elements!")
+        }
     }
+
   }
 
   implicit class IterableFromNextable[T](nextable: Nextable[T]) extends Iterable[T] {
     override def iterator: Iterator[T] = new IteratorFromNextable(nextable)
   }
 
-  implicit class IterableFromIteratorable[T](iteratorable: Iteratorable[Nextable[T]]) extends Iterable[T] {
+  implicit class IterableFromIteratorable[T](iteratorable: Iteratorable[Nextable[T]])
+      extends Iterable[T] {
     override def iterator: Iterator[T] = iteratorable.iterator().iterator
   }
+
 }

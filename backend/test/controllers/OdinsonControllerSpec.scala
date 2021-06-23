@@ -2,7 +2,6 @@ package controllers
 
 import java.io.{ File, IOException }
 import java.nio.file.Files
-
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
@@ -14,12 +13,12 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import org.scalatestplus.play._
+import play.api.cache.AsyncCacheApi
 import play.api.test._
 
 import scala.reflect.io.Directory
 
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
-
   // for testing `term-freq` endpoint
   case class SingletonRow(term: String, frequency: Double)
   type SingletonRows = Seq[SingletonRow]
@@ -94,7 +93,15 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
       .build()
 
-  val controller = new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
+  val fakeApp: Application = fakeApplication()
+
+  val controller =
+    new OdinsonController(
+      testConfig,
+      fakeApp.configuration,
+      fakeApp.injector.instanceOf[AsyncCacheApi],
+      cc = Helpers.stubControllerComponents()
+    )
 
   "OdinsonController" should {
 

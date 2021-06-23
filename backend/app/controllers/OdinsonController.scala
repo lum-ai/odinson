@@ -7,6 +7,8 @@ import scala.math._
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
+import play.api.Configuration
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
@@ -30,16 +32,21 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+import play.api.cache._
 import utils.LuceneHelpers._
 
 import scala.annotation.tailrec
 
 @Singleton
-class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: ControllerComponents)(
+class OdinsonController @Inject() (
+  config: Config = ConfigFactory.load(),
+  playConfig: Configuration,
+  cache: AsyncCacheApi,
+  cc: ControllerComponents
+)(
   implicit ec: ExecutionContext
 ) extends AbstractController(cc) {
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
-
   private val indexPath = config.apply[File]("odinson.indexDir").toPath
   private val indexDir = FSDirectory.open(indexPath)
   private val indexReader = DirectoryReader.open(indexDir)
@@ -49,13 +56,14 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
   def newEngine(): ExtractorEngine = ExtractorEngine.fromDirectory(config, indexDir, indexSearcher)
 
   // format: off
-  val docsDir           = config[File]  ("odinson.docsDir")
-  val DOC_ID_FIELD      = config[String]("odinson.index.documentIdField")
-  val SENTENCE_ID_FIELD = config[String]("odinson.index.sentenceIdField")
-  val PARENT_DOC_FILE_NAME   = config.apply[String]("odinson.index.parentDocFieldFileName")
-  val WORD_TOKEN_FIELD  = config[String]("odinson.displayField")
-  val pageSize          = config[Int]   ("odinson.pageSize")
-  val posTagTokenField  = config[String]("odinson.index.posTagTokenField")
+  val docsDir              = config.apply[File]  ("odinson.docsDir")
+  val DOC_ID_FIELD         = config.apply[String]("odinson.index.documentIdField")
+  val SENTENCE_ID_FIELD    = config.apply[String]("odinson.index.sentenceIdField")
+  val PARENT_DOC_FILE_NAME = config.apply[String]("odinson.index.parentDocFieldFileName")
+  val WORD_TOKEN_FIELD     = config.apply[String]("odinson.displayField")
+  val pageSize             = config.apply[Int]   ("odinson.pageSize")
+  val posTagTokenField     = config.apply[String]("odinson.index.posTagTokenField")
+  val vocabularyExpiry     = playConfig.get[Duration]("play.cache.vocabularyExpiry")
   // format: on
 
   //  val extractorEngine = opm.extractorEngineProvider()
@@ -756,18 +764,19 @@ class OdinsonController @Inject() (config: Config = ConfigFactory.load(), cc: Co
     * @return A JSON array of the tags in use in this index.
     */
   def tagsVocabulary(pretty: Option[Boolean]) = Action.async {
-    Future {
-      // get ready to fail if tags aren't reachable
-      try {
+    // get ready to fail if tags aren't reachable
+    try {
+      cache.getOrElseUpdate[JsValue]("vocabulary.tags", vocabularyExpiry) {
         val tags = fieldVocabulary(posTagTokenField)
         val json = Json.toJson(tags)
-        json.format(pretty)
-      } catch {
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+        Future(json)
+      }.map { json => json.format(pretty) }
+
+    } catch {
+      case NonFatal(e) =>
+        val stackTrace = ExceptionUtils.getStackTrace(e)
+        val json = Json.toJson(Json.obj("error" -> stackTrace))
+        Future(Status(400)(json))
     }
   }
 
