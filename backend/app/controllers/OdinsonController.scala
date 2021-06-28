@@ -57,10 +57,10 @@ class OdinsonController @Inject() (
 
   // format: off
   val docsDir              = config.apply[File]  ("odinson.docsDir")
-  val DOC_ID_FIELD         = config.apply[String]("odinson.index.documentIdField")
-  val SENTENCE_ID_FIELD    = config.apply[String]("odinson.index.sentenceIdField")
-  val PARENT_DOC_FILE_NAME = config.apply[String]("odinson.index.parentDocFieldFileName")
-  val WORD_TOKEN_FIELD     = config.apply[String]("odinson.displayField")
+  val docIdField           = config.apply[String]("odinson.index.documentIdField")
+  val sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField")
+  val parentDocFileName    = config.apply[String]("odinson.index.parentDocFieldFileName")
+  val wordTokenField       = config.apply[String]("odinson.displayField")
   val pageSize             = config.apply[Int]   ("odinson.pageSize")
   val posTagTokenField     = config.apply[String]("odinson.index.posTagTokenField")
   val vocabularyExpiry     = playConfig.get[Duration]("play.cache.vocabularyExpiry")
@@ -718,7 +718,7 @@ class OdinsonController @Inject() (
   def getDocId(luceneDocId: Int): String = {
     val extractorEngine: ExtractorEngine = newEngine()
     val doc: LuceneDocument = extractorEngine.indexReader.document(luceneDocId)
-    doc.getValues(DOC_ID_FIELD).head
+    doc.getValues(docIdField).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
@@ -988,7 +988,7 @@ class OdinsonController @Inject() (
       try {
         val extractorEngine: ExtractorEngine = newEngine()
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
-        val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
+        val documentId = luceneDoc.getValues(docIdField).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(od.toJson)("metadata")
         json.format(pretty)
@@ -1009,7 +1009,7 @@ class OdinsonController @Inject() (
       try {
         val extractorEngine: ExtractorEngine = newEngine()
         val luceneDoc: LuceneDocument = extractorEngine.indexReader.document(sentenceId)
-        val documentId = luceneDoc.getValues(DOC_ID_FIELD).head
+        val documentId = luceneDoc.getValues(docIdField).head
         val od: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(od.toJson)
         json.format(pretty)
