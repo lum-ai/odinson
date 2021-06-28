@@ -563,7 +563,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       // println(Helpers.contentAsString(response))
       val json = Helpers.contentAsJson(response)
       val deps = json.as[Array[String]]
-      deps must not be empty
+      deps must contain("nsubj")
+      deps must contain("nmod_from")
     }
 
     "respond with dependencies list using the /tags-vocabulary endpoint" in {
@@ -574,7 +575,8 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       // println(Helpers.contentAsString(response))
       val json = Helpers.contentAsJson(response)
       val tags = json.as[Array[String]]
-      tags must not be empty
+      tags must contain("VBG")
+      tags must contain("WRB")
     }
 
   }

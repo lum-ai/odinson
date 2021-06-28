@@ -553,6 +553,7 @@ paths:
                 type: array
                 items:
                   type: string
+                  example: nsubj
                   description: A dependency relation.
 
   /api/tags-vocabulary:
@@ -571,6 +572,7 @@ paths:
                 type: array
                 items:
                   type: string
+                  example: NNPS
                   description: A part-of-speech tag.
 
   # /api/export:
