@@ -553,7 +553,27 @@ paths:
                 type: array
                 items:
                   type: string
+                  example: nsubj
                   description: A dependency relation.
+
+  /api/tags-vocabulary:
+    get:
+      tags:
+        - details
+      summary: The set of part-of-speech tags present in index.
+      description: Retrieves vocabulary of part-of-speech tags for the current index.
+      operationId: tags-vocabulary
+      responses:
+        '200':
+          description: "An array of unique POS tags."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: NNPS
+                  description: A part-of-speech tag.
 
   # /api/export:
   #   get:
@@ -1404,9 +1424,15 @@ components:
           format: int32
           description: "The number of dependency relation types indexed in the corpus."
           example: 134
-        fields:
+        tokenFields:
           type: array
           items:
             type: string
-            description: "A field available from the index."
-            example: tag
+            description: "A token field available from the index."
+            example: word
+        docFields:
+          type: array
+          items:
+            type: string
+            description: "A document metadata field available from the index."
+            example: docId
