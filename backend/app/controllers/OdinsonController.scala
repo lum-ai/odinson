@@ -725,7 +725,7 @@ class OdinsonController @Inject() (
     val extractorEngine: ExtractorEngine = newEngine()
     val doc = extractorEngine.indexReader.document(luceneDocId)
     // FIXME: this isn't safe
-    doc.getValues(SENTENCE_ID_FIELD).head.toInt
+    doc.getValues(sentenceIdField).head.toInt
   }
 
   def loadVocabulary: Vocabulary = {
@@ -1088,7 +1088,7 @@ class OdinsonController @Inject() (
     val extractorEngine: ExtractorEngine = newEngine()
     //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
     // We want **all** tokens for the sentence
-    val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
     // odinsonMatch: OdinsonMatch,
     Json.obj(
       // format: off
@@ -1108,7 +1108,7 @@ class OdinsonController @Inject() (
     val extractorEngine: ExtractorEngine = newEngine()
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
-    val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, WORD_TOKEN_FIELD)
+    val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
     Json.obj(
       // format: off
       "sentenceId"    -> odinsonScoreDoc.doc,
@@ -1151,7 +1151,7 @@ class OdinsonController @Inject() (
     //val fileName = doc.getField(fileName).stringValue
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
-    val odinsonDocFile = new File(docsDir, parentDoc.getField(PARENT_DOC_FILE_NAME).stringValue)
+    val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }
 
