@@ -2,7 +2,6 @@ package controllers
 
 import java.io.{ File, IOException }
 import java.nio.file.Files
-
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
@@ -14,12 +13,12 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import org.scalatestplus.play._
+import play.api.cache.AsyncCacheApi
 import play.api.test._
 
 import scala.reflect.io.Directory
 
 class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
-
   // for testing `term-freq` endpoint
   case class SingletonRow(term: String, frequency: Double)
   type SingletonRows = Seq[SingletonRow]
@@ -87,14 +86,27 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
   // create index
   IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
-  implicit override def newAppForTest(testData: TestData): Application =
-    new GuiceApplicationBuilder()
-      .configure("odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir))
-      .configure("odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath))
-      .configure("odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir))
-      .build()
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .configure(
+      Map(
+        "odinson.dataDir" -> ConfigValueFactory.fromAnyRef(dataDir),
+        "odinson.indexDir" -> ConfigValueFactory.fromAnyRef(indexDir.getAbsolutePath),
+        "odinson.docsDir" -> ConfigValueFactory.fromAnyRef(docsDir)
+      )
+    )
+    .build()
 
-  val controller = new OdinsonController(testConfig, cc = Helpers.stubControllerComponents())
+  implicit override def newAppForTest(testData: TestData): Application = fakeApplication()
+
+  val fakeApp: Application = fakeApplication()
+
+  val controller =
+    new OdinsonController(
+      testConfig,
+      fakeApp.configuration,
+      fakeApp.injector.instanceOf[AsyncCacheApi],
+      cc = Helpers.stubControllerComponents()
+    )
 
   "OdinsonController" should {
 
@@ -527,6 +539,44 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       Helpers.contentAsString(response) must include("w")
       Helpers.contentAsString(response) must include("x")
       Helpers.contentAsString(response) must include("y")
+    }
+
+    "respond with corpus information using the /corpus endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/corpus")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val responseString = Helpers.contentAsString(response)
+      responseString must include("numDocs")
+      responseString must include("corpus")
+      responseString must include("distinctDependencyRelations")
+      responseString must include("tokenFields")
+      responseString must include("docFields")
+    }
+
+    "respond with dependencies list using the /dependencies-vocabulary endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/dependencies-vocabulary")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val json = Helpers.contentAsJson(response)
+      val deps = json.as[Array[String]]
+      deps must contain("nsubj")
+      deps must contain("nmod_from")
+    }
+
+    "respond with dependencies list using the /tags-vocabulary endpoint" in {
+      val response = route(app, FakeRequest(GET, "/api/tags-vocabulary")).get
+
+      status(response) mustBe OK
+      contentType(response) mustBe Some("application/json")
+      // println(Helpers.contentAsString(response))
+      val json = Helpers.contentAsJson(response)
+      val tags = json.as[Array[String]]
+      tags must contain("VBG")
+      tags must contain("WRB")
     }
 
   }

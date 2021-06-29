@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added tags-vocabulary endpoint to API for index-specific part-of-speech tags.
 ### Changed
 
 ## [0.4.0] - 2021-06-07
