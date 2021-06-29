@@ -596,6 +596,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
       responseString must include("distinctDependencyRelations")
       responseString must include("tokenFields")
       responseString must include("docFields")
+      responseString must include("storedFields")
     }
 
     "respond with dependencies list using the /dependencies-vocabulary endpoint" in {
