@@ -17,6 +17,15 @@ object IndexDocuments extends App with LazyLogging {
 
   var config = ConfigFactory.load()
 
+  // Warn that the API requires parentDocFieldFileName
+  val storedFields = config.apply[List[String]]("odinson.index.storedFields")
+  val fileNameField = config.apply[String]("odinson.index.parentDocFieldFileName")
+  if (!storedFields.contains(fileNameField)) {
+    logger.warn(
+      "`odinson.index.storedFields` must contain `odinson.index.parentDocFieldFileName` to enable the Odinson API"
+    )
+  }
+
   if (args.length == 1) {
 
     val dirPath = args(0)
