@@ -66,6 +66,28 @@ class OdinsonController @Inject() (
   val vocabularyExpiry     = playConfig.get[Duration]("play.cache.vocabularyExpiry")
   // format: on
 
+  /** Generate the Result for when a throwable exception is encountered */
+  def describeNonFatal(e: Throwable): Result = {
+    val stackTrace = ExceptionUtils.getStackTrace(e)
+    val json = Json.toJson(Json.obj("error" -> stackTrace))
+    BadRequest(json)
+  }
+
+  /** Refer to the standard error handler for try blocks that throw a NonFatal exception and expect a Result. */
+  val handleNonFatal: PartialFunction[Throwable, Result] = {
+    case NonFatal(e) => describeNonFatal(e)
+  }
+
+  /** Refer to the standard error handler for try blocks that throw a NonFatal exception and expect a Future[Result]. */
+  val handleNonFatalInFuture: PartialFunction[Throwable, Future[Result]] = {
+    case NonFatal(e) => Future(describeNonFatal(e))
+  }
+
+  /** Return a standard error handler for try blocks that throw a NullPointerException and expect a Result. */
+  def mkHandleNullPointer(message: String): PartialFunction[Throwable, Result] = {
+    case _: NullPointerException => InternalServerError(message)
+  }
+
   //  val extractorEngine = opm.extractorEngineProvider()
   /** convenience methods for formatting Play 2 Json */
   implicit class JsonOps(json: JsValue) {
@@ -298,12 +320,7 @@ class OdinsonController @Inject() (
           // the requested field isn't in this index
           Json.obj().format(pretty)
         }
-      } catch {
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch handleNonFatal
     }
   }
 
@@ -432,12 +449,7 @@ class OdinsonController @Inject() (
       }
 
       Json.arr(jsonObjs).format(pretty)
-    } catch {
-      case NonFatal(e) =>
-        val stackTrace = ExceptionUtils.getStackTrace(e)
-        val json = Json.toJson(Json.obj("error" -> stackTrace))
-        Status(400)(json)
-    }
+    } catch handleNonFatal
   }
 
   /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
@@ -680,12 +692,7 @@ class OdinsonController @Inject() (
       val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
       Json.arr(jsonObjs).format(pretty)
-    } catch {
-      case NonFatal(e) =>
-        val stackTrace = ExceptionUtils.getStackTrace(e)
-        val json = Json.toJson(Json.obj("error" -> stackTrace))
-        Status(400)(json)
-    }
+    } catch handleNonFatal
   }
 
   /** Information about the current corpus. <br>
@@ -781,13 +788,7 @@ class OdinsonController @Inject() (
         val json = Json.toJson(tags)
         Future(json)
       }.map { json => json.format(pretty) }
-
-    } catch {
-      case NonFatal(e) =>
-        val stackTrace = ExceptionUtils.getStackTrace(e)
-        val json = Json.toJson(Json.obj("error" -> stackTrace))
-        Future(Status(400)(json))
-    }
+    } catch handleNonFatalInFuture
   }
 
   /** Retrieves JSON for given sentence ID. <br>
@@ -910,12 +911,7 @@ class OdinsonController @Inject() (
 
       val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
       json.format(pretty)
-    } catch {
-      case NonFatal(e) =>
-        val stackTrace = ExceptionUtils.getStackTrace(e)
-        val json = Json.toJson(Json.obj("error" -> stackTrace))
-        Status(400)(json)
-    }
+    } catch handleNonFatal
   }
 
   /** @param odinsonQuery An Odinson pattern
@@ -963,12 +959,7 @@ class OdinsonController @Inject() (
 
         val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
         json.format(pretty)
-      } catch {
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch handleNonFatal
     }
   }
 
@@ -981,16 +972,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch {
-        case _: NullPointerException =>
-          InternalServerError(
-            "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
-          )
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -1007,16 +992,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch {
-        case _: NullPointerException =>
-          InternalServerError(
-            "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
-          )
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -1032,16 +1011,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
-      } catch {
-        case _: NullPointerException =>
-          InternalServerError(
-            "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-          )
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -1054,16 +1027,10 @@ class OdinsonController @Inject() (
         val odinsonDoc = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDoc.toJson)
         json.format(pretty)
-      } catch {
-        case _: NullPointerException =>
-          InternalServerError(
-            "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-          )
-        case NonFatal(e) =>
-          val stackTrace = ExceptionUtils.getStackTrace(e)
-          val json = Json.toJson(Json.obj("error" -> stackTrace))
-          Status(400)(json)
-      }
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
