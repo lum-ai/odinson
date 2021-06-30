@@ -972,9 +972,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch
-        mkHandleNullPointer("This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved.")
-            .orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -991,9 +992,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch
-        mkHandleNullPointer("This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved.")
-            .orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -1009,9 +1011,10 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
-      } catch
-        mkHandleNullPointer("This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved.")
-            .orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
@@ -1024,9 +1027,10 @@ class OdinsonController @Inject() (
         val odinsonDoc = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDoc.toJson)
         json.format(pretty)
-      } catch
-        mkHandleNullPointer("This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved.")
-            .orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      )
+        .orElse(handleNonFatal)
     }
   }
 
