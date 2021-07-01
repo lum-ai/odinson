@@ -32,8 +32,8 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+import org.apache.lucene.index.TermsEnum
 import play.api.cache._
-import utils.LuceneHelpers._
 
 import scala.annotation.tailrec
 
@@ -86,6 +86,26 @@ class OdinsonController @Inject() (
   /** Return a standard error handler for try blocks that throw a NullPointerException and expect a Result. */
   def mkHandleNullPointer(message: String): PartialFunction[Throwable, Result] = {
     case _: NullPointerException => InternalServerError(message)
+  }
+
+  case class TermAndFreq(term: String, freq: Long)
+
+  class TermsAndFreqs(termsEnum: TermsEnum) extends Traversable[TermAndFreq] {
+
+    override def foreach[U](f: TermAndFreq => U): Unit = {
+      while (termsEnum.next() != null) {
+        val term = termsEnum.term.utf8ToString()
+        val freq = termsEnum.totalTermFreq
+
+        f(TermAndFreq(term, freq))
+      }
+    }
+
+  }
+
+  object TermsAndFreqs {
+
+    def apply(termsEnum: TermsEnum): TermsAndFreqs = new TermsAndFreqs(termsEnum)
   }
 
   //  val extractorEngine = opm.extractorEngineProvider()
@@ -222,9 +242,8 @@ class OdinsonController @Inject() (
                   // we don't know where the end is in advance, so we queue each freq as we go
                   val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
 
-                  while (termsEnum.next() != null) {
-                    val term = termsEnum.term.utf8ToString
-                    termFreqs.enqueue((term, termsEnum.totalTermFreq))
+                  TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                    termFreqs.enqueue((termAndFreq.term, termAndFreq.freq))
                     // if we exceed the size we need, just throw the oldest away
                     if (termFreqs.size > maxIdx) termFreqs.dequeue()
                   }
@@ -241,11 +260,8 @@ class OdinsonController @Inject() (
                     reverse.getOrElse(false)
                   )
 
-                  var i = 0
-                  while (termsEnum.next() != null && i <= maxIdx) {
-                    val term = termsEnum.term.utf8ToString
-                    termFreqs.update(term, termsEnum.totalTermFreq)
-                    i += 1
+                  TermsAndFreqs(termsEnum).take(maxIdx + 1).foreach { termAndFreq =>
+                    termFreqs.update(termAndFreq.term, termAndFreq.freq)
                   }
                   termFreqs.get
               }
@@ -257,10 +273,8 @@ class OdinsonController @Inject() (
                 reverse.getOrElse(false)
               )
 
-              while (termsEnum.next() != null) {
-                val term = termsEnum.term.utf8ToString
-                // println(term)
-                termFreqs.update(term, termsEnum.totalTermFreq)
+              TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                termFreqs.update(termAndFreq.term, termAndFreq.freq)
               }
               termFreqs.get
           }
@@ -604,15 +618,10 @@ class OdinsonController @Inject() (
       // if the field exists, find the frequencies of each term
       if (fieldNames contains field) {
         // find the frequency of all terms in this field
-        val terms = fields.terms(field)
-        val termsEnum = terms.iterator()
-        val termFreqs = scala.collection.mutable.HashMap[String, Long]()
-        while (termsEnum.next() != null) {
-          val term = termsEnum.term.utf8ToString
-          termFreqs.update(term, termsEnum.totalTermFreq)
-        }
-        val frequencies = termFreqs.values.toList.map(_.toDouble)
-
+        val termsEnum = fields.terms(field).iterator()
+        val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
+          termAndFreq.freq.toDouble
+        }.toList
         val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
         Json.arr(jsonObjs).format(pretty)
@@ -771,7 +780,7 @@ class OdinsonController @Inject() (
     // get terms from the requested field (error if it doesn't exist)
     val extractorEngine: ExtractorEngine = newEngine()
     val fields = MultiFields.getFields(extractorEngine.indexReader)
-    val terms = fields.terms(field).map(_.utf8ToString).toList
+    val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
 
     terms
   }
