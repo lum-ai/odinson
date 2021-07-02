@@ -22,6 +22,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
@@ -209,20 +210,11 @@ class ExtractorEngine private (
     odinResults
   }
 
-  // FIXME rewrite this
-  /** Retrieves the parent Lucene Document by docId */
-  def getParentDoc(docId: String): LuceneDocument = {
+  /** Retrieves the metadata Lucene Document by docId */
+  def getMetadataDoc(docId: String): LuceneDocument = {
     val sterileDocID = docId.escapeJava
-    val booleanQuery = new LuceneBooleanQuery.Builder()
-    // This particular docID
-    val q1 = new QueryParser(OdinsonIndexWriter.PARENT_TYPE, analyzer).parse(s""""$sterileDocID"""")
-    booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    // Only consider docs of type: Parent
-    val q2 =
-      new QueryParser(OdinsonIndexWriter.TYPE, analyzer).parse(OdinsonIndexWriter.PARENT_TYPE)
-    booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
-    val q = booleanQuery.build
-    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
+    val query = MetadataCompiler.mkQuery(s"${OdinsonIndexWriter.DOC_ID_FIELD} == $sterileDocID")
+    val docs = indexSearcher.search(query, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
   }
