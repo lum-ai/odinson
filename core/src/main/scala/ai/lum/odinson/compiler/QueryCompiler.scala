@@ -17,14 +17,12 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 class QueryCompiler(
   val allTokenFields: Seq[String],
   val defaultTokenField: String,
-  val sentenceLengthField: String,
   // FIXME: Consider renaming to graphField
   val dependenciesField: String,
   val incomingTokenField: String,
   val outgoingTokenField: String,
   val dependenciesVocabulary: Vocabulary,
-  val aggressiveNormalizationToDefaultField: Boolean,
-  val documentIdField: String
+  val aggressiveNormalizationToDefaultField: Boolean
 ) {
 
   val parser = new QueryParser(allTokenFields, defaultTokenField)
@@ -89,7 +87,7 @@ class QueryCompiler(
       Some(q)
 
     case Ast.AssertionPattern(Ast.SentenceEndAssertion) =>
-      val q = new DocEndQuery(defaultTokenField, sentenceLengthField)
+      val q = new DocEndQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD)
       Some(q)
 
     case Ast.AssertionPattern(Ast.PositiveLookaheadAssertion(pattern)) =>
@@ -99,12 +97,12 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
 
     case Ast.AssertionPattern(Ast.NegativeLookaheadAssertion(pattern)) =>
-      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val include = new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 0)
       val lookahead = mkOdinsonQuery(pattern).map(q => new LookaheadQuery(q))
       lookahead.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
     case Ast.AssertionPattern(Ast.NegativeLookbehindAssertion(pattern)) =>
-      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val include = new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 0)
       val lookbehind = mkOdinsonQuery(pattern).map(q => new LookbehindQuery(q))
       lookbehind.map(exclude => new OdinNotQuery(include, exclude, defaultTokenField))
 
@@ -141,7 +139,7 @@ class QueryCompiler(
         reqArgQueries,
         optArgQueries,
         dependenciesField,
-        sentenceLengthField
+        OdinsonIndexWriter.SENT_LENGTH_FIELD
       )
       Some(q)
 
@@ -167,14 +165,22 @@ class QueryCompiler(
           val newClauses = clauses.foldRight(List.empty[OdinsonQuery]) {
             case (c1: AllNGramsQuery, (c2: AllNGramsQuery) :: cs) =>
               // merge consecutive wildcards
-              val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
+              val c = new AllNGramsQuery(
+                defaultTokenField,
+                OdinsonIndexWriter.SENT_LENGTH_FIELD,
+                c1.n + c2.n
+              )
               c :: cs
             case (concat: OdinConcatQuery, cs) =>
               // expand nested concatenations
               (concat.clauses.last, cs.head) match {
                 case (c1: AllNGramsQuery, c2: AllNGramsQuery) =>
                   // take care of consecutive wildcards when expanding
-                  val c = new AllNGramsQuery(defaultTokenField, sentenceLengthField, c1.n + c2.n)
+                  val c = new AllNGramsQuery(
+                    defaultTokenField,
+                    OdinsonIndexWriter.SENT_LENGTH_FIELD,
+                    c1.n + c2.n
+                  )
                   concat.clauses.init ::: List(c) ::: cs.tail
                 case _ => concat.clauses ::: cs
               }
@@ -183,7 +189,8 @@ class QueryCompiler(
           // if collapsed into a single query then don't concatenate
           val query = newClauses match {
             case List(q) => q
-            case qs      => new OdinConcatQuery(qs, defaultTokenField, sentenceLengthField)
+            case qs =>
+              new OdinConcatQuery(qs, defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD)
           }
           // return resulting query
           Some(query)
@@ -218,7 +225,7 @@ class QueryCompiler(
           val q = new GraphTraversalQuery(
             defaultTokenField,
             dependenciesField,
-            sentenceLengthField,
+            OdinsonIndexWriter.SENT_LENGTH_FIELD,
             srcQuery.get,
             fullTraversal
           )
@@ -229,13 +236,14 @@ class QueryCompiler(
       }
 
     case Ast.LazyRepetitionPattern(pattern @ _, 0, Some(0)) =>
-      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val q = new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 0)
       Some(q)
 
     case Ast.LazyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q                             => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = false)
+        case q =>
+          new OdinsonOptionalQuery(q, OdinsonIndexWriter.SENT_LENGTH_FIELD, isGreedy = false)
       }
 
     case Ast.LazyRepetitionPattern(pattern, 0, None) =>
@@ -243,7 +251,11 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = false)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
+          new OdinsonOptionalQuery(
+            oneOrMore,
+            OdinsonIndexWriter.SENT_LENGTH_FIELD,
+            isGreedy = false
+          )
       }
 
     case Ast.LazyRepetitionPattern(pattern, 1, Some(1)) =>
@@ -259,7 +271,7 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q: AllNGramsQuery =>
-          new AllNGramsQuery(defaultTokenField, sentenceLengthField, q.n * n)
+          new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, q.n * n)
         case q => new OdinRepetitionQuery(q, n, m, isGreedy = false)
       }
 
@@ -268,23 +280,27 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q: AllNGramsQuery =>
           val clauses = for (i <- min to max) yield {
-            new AllNGramsQuery(defaultTokenField, sentenceLengthField, i * q.n)
+            new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, i * q.n)
           }
           new OdinOrQuery(clauses.toList, defaultTokenField)
         case q if min == 0 =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = false)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = false)
+          new OdinsonOptionalQuery(
+            oneOrMore,
+            OdinsonIndexWriter.SENT_LENGTH_FIELD,
+            isGreedy = false
+          )
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = false)
       }
 
     case Ast.GreedyRepetitionPattern(pattern @ _, 0, Some(0)) =>
-      val q = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 0)
+      val q = new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 0)
       Some(q)
 
     case Ast.GreedyRepetitionPattern(pattern, 0, Some(1)) =>
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
-        case q                             => new OdinsonOptionalQuery(q, sentenceLengthField, isGreedy = true)
+        case q                             => new OdinsonOptionalQuery(q, OdinsonIndexWriter.SENT_LENGTH_FIELD, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 0, None) =>
@@ -292,7 +308,7 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, Int.MaxValue, isGreedy = true)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, OdinsonIndexWriter.SENT_LENGTH_FIELD, isGreedy = true)
       }
 
     case Ast.GreedyRepetitionPattern(pattern, 1, Some(1)) =>
@@ -308,7 +324,7 @@ class QueryCompiler(
       mkOdinsonQuery(pattern).map {
         case q: AllNGramsQuery if q.n == 0 => q
         case q: AllNGramsQuery =>
-          new AllNGramsQuery(defaultTokenField, sentenceLengthField, q.n * n)
+          new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, q.n * n)
         case q => new OdinRepetitionQuery(q, n, m, isGreedy = true)
       }
 
@@ -317,12 +333,12 @@ class QueryCompiler(
         case q: AllNGramsQuery if q.n == 0 => q
         case q: AllNGramsQuery =>
           val clauses = for (i <- max to min by -1) yield {
-            new AllNGramsQuery(defaultTokenField, sentenceLengthField, i * q.n)
+            new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, i * q.n)
           }
           new OdinOrQuery(clauses.toList, defaultTokenField)
         case q if min == 0 =>
           val oneOrMore = new OdinRepetitionQuery(q, 1, max, isGreedy = true)
-          new OdinsonOptionalQuery(oneOrMore, sentenceLengthField, isGreedy = true)
+          new OdinsonOptionalQuery(oneOrMore, OdinsonIndexWriter.SENT_LENGTH_FIELD, isGreedy = true)
         case q => new OdinRepetitionQuery(q, min, max, isGreedy = true)
       }
 
@@ -441,12 +457,12 @@ class QueryCompiler(
       new FailQuery(defaultTokenField)
 
     case Ast.NegatedConstraint(constraint) =>
-      val include = new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
+      val include = new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 1)
       val exclude = mkConstraintQuery(constraint)
       new OdinNotQuery(include, exclude, defaultTokenField)
 
     case Ast.Wildcard =>
-      new AllNGramsQuery(defaultTokenField, sentenceLengthField, 1)
+      new AllNGramsQuery(defaultTokenField, OdinsonIndexWriter.SENT_LENGTH_FIELD, 1)
 
   }
 
@@ -607,14 +623,12 @@ object QueryCompiler {
       // format: off
       allTokenFields         = config.apply[List[String]]("odinson.compiler.allTokenFields"),
       defaultTokenField      = config.apply[String]("odinson.compiler.defaultTokenField"),
-      sentenceLengthField    = config.apply[String]("odinson.compiler.sentenceLengthField"),
       dependenciesField      = config.apply[String]("odinson.compiler.dependenciesField"),
       incomingTokenField     = config.apply[String]("odinson.compiler.incomingTokenField"),
       outgoingTokenField     = config.apply[String]("odinson.compiler.outgoingTokenField"),
       dependenciesVocabulary = vocabulary,
       aggressiveNormalizationToDefaultField =
-        config.apply[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField"),
-      documentIdField        = config.apply[String]("odinson.index.documentIdField")
+        config.apply[Boolean]("odinson.compiler.aggressiveNormalizationToDefaultField")
       // format: on
     )
   }

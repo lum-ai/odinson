@@ -24,6 +24,7 @@ import ai.lum.odinson.{
   ExtractorEngine,
   Mention,
   NamedCapture,
+  OdinsonIndexWriter,
   OdinsonMatch,
   Document => OdinsonDocument
 }
@@ -34,7 +35,6 @@ import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, Odinso
 import com.typesafe.config.Config
 import play.api.cache._
 import utils.LuceneHelpers._
-
 import scala.annotation.tailrec
 
 @Singleton
@@ -57,8 +57,6 @@ class OdinsonController @Inject() (
 
   // format: off
   val docsDir              = config.apply[File]  ("odinson.docsDir")
-  val docIdField           = config.apply[String]("odinson.index.documentIdField")
-  val sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField")
   val parentDocFileName    = config.apply[String]("odinson.index.parentDocFieldFileName")
   val wordTokenField       = config.apply[String]("odinson.displayField")
   val pageSize             = config.apply[Int]   ("odinson.pageSize")
@@ -726,14 +724,14 @@ class OdinsonController @Inject() (
   def getDocId(luceneDocId: Int): String = {
     val extractorEngine: ExtractorEngine = newEngine()
     val doc: LuceneDocument = extractorEngine.indexReader.document(luceneDocId)
-    doc.getValues(docIdField).head
+    doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
     val extractorEngine: ExtractorEngine = newEngine()
     val doc = extractorEngine.indexReader.document(luceneDocId)
     // FIXME: this isn't safe
-    doc.getValues(sentenceIdField).head.toInt
+    doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
   }
 
   def loadVocabulary: Vocabulary = {
@@ -1000,7 +998,7 @@ class OdinsonController @Inject() (
         val extractorEngine: ExtractorEngine = newEngine()
 
         val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
-        val documentId = luceneDoc.getValues(docIdField).head
+        val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
@@ -1025,7 +1023,7 @@ class OdinsonController @Inject() (
       try {
         val extractorEngine: ExtractorEngine = newEngine()
         val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
-        val documentId = luceneDoc.getValues(docIdField).head
+        val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
@@ -1172,7 +1170,7 @@ class OdinsonController @Inject() (
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
     val extractorEngine: ExtractorEngine = newEngine()
     // lucene doc containing metadata
-    val parentDoc: LuceneDocument = extractorEngine.getParentDoc(documentId)
+    val parentDoc: LuceneDocument = extractorEngine.getMetadataDoc(documentId)
     val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }

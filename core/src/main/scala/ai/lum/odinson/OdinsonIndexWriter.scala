@@ -30,9 +30,6 @@ class OdinsonIndexWriter(
   val directory: Directory,
   val vocabulary: Vocabulary,
   val settings: IndexSettings,
-  val documentIdField: String,
-  val sentenceIdField: String,
-  val sentenceLengthField: String,
   val normalizedTokenField: String,
   val addToNormalizedField: Set[String],
   val incomingTokenField: String,
@@ -124,7 +121,7 @@ class OdinsonIndexWriter(
       OdinsonIndexWriter.PARENT_TYPE,
       Store.NO
     ))
-    metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
+    metadata.add(new lucenedoc.StringField(DOC_ID_FIELD, d.id, Store.YES))
 
     for {
       odinsonField <- other
@@ -137,9 +134,9 @@ class OdinsonIndexWriter(
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
     val sent = new lucenedoc.Document
     // add sentence metadata
-    sent.add(new lucenedoc.StoredField(documentIdField, docId))
-    sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
-    sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
+    sent.add(new lucenedoc.StoredField(DOC_ID_FIELD, docId))
+    sent.add(new lucenedoc.StoredField(SENT_ID_FIELD, sentId)) // FIXME should this be a number?
+    sent.add(new lucenedoc.NumericDocValuesField(SENT_LENGTH_FIELD, s.numTokens))
     // add fields
     for {
       odinsonField <- s.fields
@@ -307,6 +304,11 @@ object OdinsonIndexWriter {
   val BUILDINFO_FILENAME = "buildinfo.json"
   val SETTINGSINFO_FILENAME = "settingsinfo.json"
 
+  // Constants for Odinson Documents
+  val DOC_ID_FIELD = "docId"
+  val SENT_ID_FIELD = "sentId"
+  val SENT_LENGTH_FIELD = "numWords"
+
   // Constants for building the queries for metadata documents -- both the parent as well as the
   // nested metadata
   val TYPE = "type"
@@ -350,9 +352,6 @@ object OdinsonIndexWriter {
       directory            = directory, 
       vocabulary           = vocabulary,
       settings             = IndexSettings(storedFields),
-      documentIdField      = config.apply[String]("odinson.index.documentIdField"),
-      sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField"),
-      sentenceLengthField  = config.apply[String]("odinson.index.sentenceLengthField"),
       normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField"),
       addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField").toSet,
       incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField"),
