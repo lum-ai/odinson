@@ -5,11 +5,12 @@ import java.io.File
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{
   Query,
+  TermQuery,
   BooleanClause => LuceneBooleanClause,
   BooleanQuery => LuceneBooleanQuery
 }
 import org.apache.lucene.store.{ Directory, FSDirectory }
-import org.apache.lucene.index.DirectoryReader
+import org.apache.lucene.index.{ DirectoryReader, Term }
 import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
@@ -25,6 +26,7 @@ import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -212,8 +214,21 @@ class ExtractorEngine private (
 
   /** Retrieves the metadata Lucene Document by docId */
   def getMetadataDoc(docId: String): LuceneDocument = {
-    val sterileDocID = docId.escapeJava
-    val query = MetadataCompiler.mkQuery(s"${OdinsonIndexWriter.DOC_ID_FIELD} == $sterileDocID")
+    val MetadataDocQueryBuilder = new LuceneBooleanQuery.Builder()
+
+    MetadataDocQueryBuilder.add(
+      new LuceneBooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)),
+        LuceneBooleanClause.Occur.MUST
+      )
+    )
+    MetadataDocQueryBuilder.add(
+      new LuceneBooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, docId)),
+        LuceneBooleanClause.Occur.MUST
+      )
+    )
+    val query = MetadataDocQueryBuilder.build()
     val docs = indexSearcher.search(query, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
