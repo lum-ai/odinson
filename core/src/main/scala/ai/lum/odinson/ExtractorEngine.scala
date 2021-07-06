@@ -214,23 +214,22 @@ class ExtractorEngine private (
 
   /** Retrieves the metadata Lucene Document by docId */
   def getMetadataDoc(docId: String): LuceneDocument = {
-    val MetadataDocQueryBuilder = new LuceneBooleanQuery.Builder()
+    val metadataDocQueryBuilder = new LuceneBooleanQuery.Builder()
 
-    MetadataDocQueryBuilder.add(
+    metadataDocQueryBuilder.add(
       new LuceneBooleanClause(
         new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)),
         LuceneBooleanClause.Occur.MUST
       )
     )
-    MetadataDocQueryBuilder.add(
+    metadataDocQueryBuilder.add(
       new LuceneBooleanClause(
         new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, docId)),
         LuceneBooleanClause.Occur.MUST
       )
     )
-    val query = MetadataDocQueryBuilder.build()
+    val query = metadataDocQueryBuilder.build()
     val docs = indexSearcher.search(query, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
-    //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
     docs.head
   }
 
