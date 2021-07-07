@@ -13,7 +13,7 @@ class TestDocumentationString extends OdinsonTest {
   // - does not need quotes
   "Odinson StringQueries from docs" should "work with - no quotes" in {
     val ee = mkExtractorEngine(doc)
-    val q = ee.compiler.mkQuery("[chunk=B-NP]")
+    val q = ee.mkQuery("[chunk=B-NP]")
 
     val s = ee.query(q)
     numMatches(s) shouldEqual (1)
@@ -21,20 +21,20 @@ class TestDocumentationString extends OdinsonTest {
   // : does not need quotes
   it should "work with : no quotes" in {
     val ee = mkExtractorEngine(doc)
-    val q = ee.compiler.mkQuery("[entity=foo:bar]")
+    val q = ee.mkQuery("[entity=foo:bar]")
     val s = ee.query(q)
     numMatches(s) shouldEqual (1)
   }
   // "3:10" to Yuma
   it should "work with quoted stuff" in {
     val ee = mkExtractorEngineFromText("lala lala 3:10 to Yuma")
-    val q = ee.compiler.mkQuery("\"3:10\" to Yuma")
+    val q = ee.mkQuery("\"3:10\" to Yuma")
     val s = ee.query(q)
     numMatches(s) shouldEqual (1)
   }
   it should "work with regex for syntax" in {
     val ee = mkExtractorEngine(doc)
-    val q = ee.compiler.mkQuery("(?<foo> [word=bears]) >/nmod_.*/ []")
+    val q = ee.mkQuery("(?<foo> [word=bears]) >/nmod_.*/ []")
     val s = ee.query(q)
     numMatches(s) shouldEqual (1)
     val matchval: OdinsonMatch = getOnlyMatch(s)

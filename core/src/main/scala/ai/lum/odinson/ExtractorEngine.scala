@@ -4,11 +4,13 @@ import java.io.File
 
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.search.{
+  Query,
+  TermQuery,
   BooleanClause => LuceneBooleanClause,
   BooleanQuery => LuceneBooleanQuery
 }
 import org.apache.lucene.store.{ Directory, FSDirectory }
-import org.apache.lucene.index.DirectoryReader
+import org.apache.lucene.index.{ DirectoryReader, Term }
 import org.apache.lucene.queryparser.classic.QueryParser
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigFactory
@@ -21,8 +23,10 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -30,8 +34,7 @@ class ExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val dataGatherer: DataGatherer,
-  val state: State, // todo: should this be private?
-  val parentDocIdField: String
+  val state: State // todo: should this be private?
 ) {
 
   /** Analyzer for parent queries.  Don't skip any stopwords. */
@@ -209,19 +212,47 @@ class ExtractorEngine private (
     odinResults
   }
 
-  // FIXME rewrite this
-  /** Retrieves the parent Lucene Document by docId */
-  def getParentDoc(docId: String): LuceneDocument = {
-    val sterileDocID = docId.escapeJava
-    val booleanQuery = new LuceneBooleanQuery.Builder()
-    val q1 = new QueryParser(parentDocIdField, analyzer).parse(s""""$sterileDocID"""")
-    booleanQuery.add(q1, LuceneBooleanClause.Occur.MUST)
-    val q2 = new QueryParser("type", analyzer).parse("metadata")
-    booleanQuery.add(q2, LuceneBooleanClause.Occur.MUST)
-    val q = booleanQuery.build
-    val docs = indexSearcher.search(q, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
-    //require(docs.size == 1, s"There should be only one parent doc for a docId, but ${docs.size} found.")
+  /** Retrieves the metadata Lucene Document by docId */
+  def getMetadataDoc(docId: String): LuceneDocument = {
+    val metadataDocQueryBuilder = new LuceneBooleanQuery.Builder()
+
+    metadataDocQueryBuilder.add(
+      new LuceneBooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.TYPE, OdinsonIndexWriter.PARENT_TYPE)),
+        LuceneBooleanClause.Occur.MUST
+      )
+    )
+    metadataDocQueryBuilder.add(
+      new LuceneBooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, docId)),
+        LuceneBooleanClause.Occur.MUST
+      )
+    )
+    val query = metadataDocQueryBuilder.build()
+    val docs = indexSearcher.search(query, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
     docs.head
+  }
+
+  // Basic Queries
+  def mkQuery(pattern: String): OdinsonQuery = {
+    compiler.mkQuery(pattern)
+  }
+
+  // Metadata queries
+  def mkFilteredQuery(query: String, metadataFilter: String): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: String, metadataFilter: Query): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: OdinsonQuery, metadataFilter: String): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
+  }
+
+  def mkFilteredQuery(query: OdinsonQuery, metadataFilter: Query): OdinsonQuery = {
+    compiler.mkQuery(query, metadataFilter)
   }
 
   // Access methods
@@ -667,13 +698,11 @@ object ExtractorEngine {
     val vocabulary = Vocabulary.fromDirectory(indexDir)
     val compiler = QueryCompiler(config, vocabulary)
     val state = State(config, indexSearcher, indexDir)
-    val parentDocIdField = config.apply[String]("odinson.index.documentIdField")
     new ExtractorEngine(
       indexSearcher,
       compiler,
       dataGatherer,
-      state,
-      parentDocIdField
+      state
     )
   }
 

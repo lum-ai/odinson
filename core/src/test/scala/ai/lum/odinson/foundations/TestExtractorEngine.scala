@@ -1,5 +1,6 @@
 package ai.lum.odinson.foundations
 
+import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.{ Document, ExtractorEngine, Sentence, TokensField, utils }
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 
@@ -13,17 +14,9 @@ class TestExtractorEngine extends OdinsonTest {
   val doc2 = Document("<TEST-ID2>", Nil, Seq(sentence))
 
   val ee = ExtractorEngine.inMemory(Seq(doc1, doc2))
-  // TODO: the compiler should be tested first
-  // bc the rest of the stuff depends on it
-  // TODO: make this a fixture
-  // Check on code cov what to test
-  //
-  // test limited query
-  // figure out how to create an OdinsonQuery
-  // ee.query()
 
   "Odinson ExtractorEngine" should "run a simple query correctly" in {
-    val q = ee.compiler.mkQuery("causes")
+    val q = ee.mkQuery("causes")
     val results = ee.query(q, 1)
     results.totalHits should equal(2)
   }
@@ -43,20 +36,17 @@ class TestExtractorEngine extends OdinsonTest {
         |      object: ^NP = >dobj []
     """.stripMargin
     val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    val mentions = getMentionsWithLabel(
+      ee.extractAndPopulate(extractors, level = VerboseLevels.All).toSeq,
+      "Test"
+    )
     mentions should have size (1)
 
     val mention = mentions.head
 
-    ee.getTokensForSpan(
-      mention.luceneSegmentDocId,
-      mention.odinsonMatch
-    ) should contain only ("ate")
-    ee.getTokensForSpan(
-      mention.luceneSegmentDocId,
-      mention.odinsonMatch,
-      fieldName = "lemma"
-    ) should contain only ("eat")
+    mention.text should be("ate")
+    mention.mentionFields("lemma") should contain only ("eat")
+
   }
 
   it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
@@ -79,7 +69,7 @@ class TestExtractorEngine extends OdinsonTest {
 
     val mention = mentions.head
 
-    an[utils.exceptions.OdinsonException] should be thrownBy ee.getTokensForSpan(
+    an[utils.exceptions.OdinsonException] should be thrownBy ee.dataGatherer.getTokensForSpan(
       mention.luceneSegmentDocId,
       mention.odinsonMatch,
       fieldName = "notAField"
@@ -93,8 +83,6 @@ class TestExtractorEngine extends OdinsonTest {
   // TODO: def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc)
 
   // TODO: def getArgument(mention: Mention, name: String)
-  // TODO: getTokens(m: Mention): Array[String]
-  // TODO: getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String]
   // TODO: ExtractorEngine.fromConfig
   // TODO: ExtractorEngine.fromConfig(path: String)
   // "Odinson ExtractorEngine" should "initialize correctly from config" in {
