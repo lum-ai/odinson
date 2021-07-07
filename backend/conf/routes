@@ -40,6 +40,7 @@ GET     /api/corpus                     controllers.OdinsonController.corpusInfo
 
 # misc
 GET     /api/dependencies-vocabulary    controllers.OdinsonController.dependenciesVocabulary(pretty: Option[Boolean])
+GET     /api/tags-vocabulary             controllers.OdinsonController.tagsVocabulary(pretty: Option[Boolean])
 
 # resources
 GET     /favicon.ico                    controllers.Assets.at(file="images/favicon.ico")

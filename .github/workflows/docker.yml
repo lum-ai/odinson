@@ -1,0 +1,98 @@
+name: Odinson docker
+
+on:
+  push:
+    branches: [master]
+  # release:
+  #   types: [created,edited]
+  # pull_request:
+  #   branches: [master]
+
+# builds and publishes docker images for the default branch.
+# images are tagged with short commit hash and latest.
+jobs:
+  setup:
+    name: setup
+    runs-on: ubuntu-latest
+    outputs:
+      sha_short: ${{ steps.sha.outputs.sha_short }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: generate short commit hash
+      id: sha
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+  docker:
+    runs-on: ubuntu-latest
+    needs: setup
+    env:
+      ORG: "lumai"
+      DOCKERFILE: "Dockerfile"
+    steps:
+    # ensure we can log in to dockerhub
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # Setup docker
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    # for multi-arch builds (ex. ARM 64)
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+    # - name: Prepare buildx builder
+    #   run: |
+    #     docker buildx create --use --name "multiarch-builder" --platform linux/amd64,linux/arm64 --driver "docker-container"
+    - name: Inspect builder
+      run: |
+        echo "Name:      ${{ steps.buildx.outputs.name }}"
+        echo "Endpoint:  ${{ steps.buildx.outputs.endpoint }}"
+        echo "Status:    ${{ steps.buildx.outputs.status }}"
+        echo "Flags:     ${{ steps.buildx.outputs.flags }}"
+        echo "Platforms: ${{ steps.buildx.outputs.platforms }}"
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v2
+    # JDK setup
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        distribution: "adopt"
+        java-version: "11"
+    # test. let's be certain that all tests pass before publishing new images
+    - name: "test"
+      run: |
+        sbt test
+    # build.
+    # we're building multi-platform images, so we'll use the native-packager plugin
+    # to generate our Dockerfiles and corresponding directories for our image builds.
+    # we'll then use buildx to generate the multi-platform images.
+    - name: "generate dockerfiles"
+      run: |
+        sbt docker:stage
+    # build, tag, and publish multiarch odinson-extras
+    - name: "build, tag, and publish `lumai/odinson-extras` image"
+      working-directory: ./extra/target/docker/stage
+      env:
+        IMAGE_NAME: "odinson-extras"
+      # --output=type=docker 
+      run: |
+        docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
+    # build, tag, and publish multiarch odinson-rest-api
+    - name: "build, tag, and publish `lumai/odinson-rest-api` image"
+      working-directory: ./backend/target/docker/stage
+      env:
+        IMAGE_NAME: "odinson-rest-api"
+      run: |
+        docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
+    # # publish
+    # - name: "Publish docker `lumai/odinson-extras` image"
+    #   env:
+    #     IMAGE_NAME: "odinson-extras"
+    #   run: docker push --all-tags "${{ env.ORG }}/${IMAGE_NAME}"
+    # - name: "Publish docker `lumai/odinson-rest-api` image"
+    #   env:
+    #     IMAGE_NAME: "odinson-rest-api"
+    #   run: docker push --all-tags "${{ env.ORG }}/${IMAGE_NAME}"

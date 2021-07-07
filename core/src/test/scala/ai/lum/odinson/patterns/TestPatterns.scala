@@ -15,7 +15,7 @@ class TestPatterns extends OdinsonTest {
     val expected = allExpected.split(";", -1)
     pattern should s"find all expected results for ${string.display}" in {
       val ee = mkExtractorEngineFromText(string)
-      val q = ee.compiler.mkQuery(pattern)
+      val q = ee.mkQuery(pattern)
       val results = ee.query(q)
       val actual = mkStrings(results, ee)
 

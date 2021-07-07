@@ -72,7 +72,7 @@ class TestDocumentationQuantifiers extends OdinsonTest {
   it should "work for '>amod []'" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val q = ee.compiler.mkQuery("(?<foo> [lemma=bar]) >amod []")
+    val q = ee.mkQuery("(?<foo> [lemma=bar]) >amod []")
     val results = ee.query(q)
     numMatches(results) shouldEqual (1)
 

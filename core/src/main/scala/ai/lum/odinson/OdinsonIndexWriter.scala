@@ -22,8 +22,7 @@ import ai.lum.odinson.digraph.{ DirectedGraph, Vocabulary }
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import org.apache.lucene.document.BinaryDocValuesField
-
+import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint, StoredField }
 import java.nio.file.Paths
 import java.util
 
@@ -31,18 +30,13 @@ class OdinsonIndexWriter(
   val directory: Directory,
   val vocabulary: Vocabulary,
   val settings: IndexSettings,
-  val documentIdField: String,
-  val sentenceIdField: String,
-  val sentenceLengthField: String,
   val normalizedTokenField: String,
   val addToNormalizedField: Set[String],
   val incomingTokenField: String,
   val outgoingTokenField: String,
   val maxNumberOfTokensPerSentence: Int,
   val invalidCharacterReplacement: String,
-  val displayField: String,
-  val parentDocFieldType: String,
-  val parentDocField: String
+  val displayField: String
 ) extends LazyLogging {
 
   import OdinsonIndexWriter._
@@ -110,27 +104,39 @@ class OdinsonIndexWriter(
         logger.warn(s"skipping sentence with ${s.numTokens.display} tokens")
       }
     }
-    block += mkMetadataDoc(d)
-    block
+    // sentence docs, then the nested metadata documents, then the parent doc
+    block ++ mkMetadataDocs(d)
   }
 
-  def mkMetadataDoc(d: Document): lucenedoc.Document = {
+  def mkMetadataDocs(d: Document): Seq[lucenedoc.Document] = {
+    val (nested, other) = d.metadata.partition(_.isInstanceOf[NestedField])
+
+    // convert the nested fields into a document
+    val nestedMetadata = nested.collect { case n: NestedField => n }.map(mkNestedDocument)
+
+    // Metadata for parent document
     val metadata = new lucenedoc.Document
-    metadata.add(new lucenedoc.StringField(parentDocFieldType, parentDocField, Store.NO))
-    metadata.add(new lucenedoc.StringField(documentIdField, d.id, Store.YES))
+    metadata.add(new lucenedoc.StringField(
+      OdinsonIndexWriter.TYPE,
+      OdinsonIndexWriter.PARENT_TYPE,
+      Store.NO
+    ))
+    metadata.add(new lucenedoc.StringField(DOC_ID_FIELD, d.id, Store.YES))
+
     for {
-      odinsonField <- d.metadata
-      luceneField <- mkLuceneFields(odinsonField)
+      odinsonField <- other
+      luceneField <- mkLuceneFields(odinsonField, isMetadata = true)
     } metadata.add(luceneField)
-    metadata
+
+    nestedMetadata ++ Seq(metadata)
   }
 
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): lucenedoc.Document = {
     val sent = new lucenedoc.Document
     // add sentence metadata
-    sent.add(new lucenedoc.StoredField(documentIdField, docId))
-    sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
-    sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
+    sent.add(new lucenedoc.StoredField(DOC_ID_FIELD, docId))
+    sent.add(new lucenedoc.StoredField(SENT_ID_FIELD, sentId)) // FIXME should this be a number?
+    sent.add(new lucenedoc.NumericDocValuesField(SENT_LENGTH_FIELD, s.numTokens))
     // add fields
     for {
       odinsonField <- s.fields
@@ -167,39 +173,87 @@ class OdinsonIndexWriter(
         Seq(graph, in, out)
       case f =>
         // fallback to the lucene fields that don't require sentence information
-        mkLuceneFields(f)
+        // note that if we have a Sentence, it's never metadata
+        mkLuceneFields(f, false)
     }
   }
 
   /** returns a sequence of lucene fields corresponding to the provided odinson field */
-  def mkLuceneFields(f: Field): Seq[lucenedoc.Field] = {
+  def mkLuceneFields(f: Field, isMetadata: Boolean): Seq[lucenedoc.Field] = {
     val mustStore = settings.storedFields.contains(f.name)
     f match {
+      // Separate StoredField because of Lucene API for DoublePoint:
+      // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/DoublePoint.html
       case f: DateField =>
-        val longField = new lucenedoc.LongPoint(f.name, f.localDate.toEpochDay)
+        // todo: do we want more fields: String s'${f.name}.month'
+        val fields = Seq(
+          // the whole date
+          new lucenedoc.DoublePoint(f.name, f.localDate.toEpochDay),
+          // just the year for simplifying queries (syntactic sugar)
+          new lucenedoc.DoublePoint(attributeName(f.name, YEAR), f.localDate.getYear)
+        )
         if (mustStore) {
           val storedField = new lucenedoc.StoredField(f.name, f.date)
-          Seq(longField, storedField)
+          fields ++ Seq(storedField)
         } else {
-          Seq(longField)
+          fields
         }
+
+      case f: NumberField =>
+        // Separate StoredField because of Lucene API for DoublePoint:
+        // https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/document/DoublePoint.html
+        val doubleField = new DoublePoint(f.name, f.value)
+        if (mustStore) {
+          val storedField = new lucenedoc.StoredField(f.name, f.value)
+          Seq(doubleField, storedField)
+        } else {
+          Seq(doubleField)
+        }
+
       case f: StringField =>
         val store = if (mustStore) Store.YES else Store.NO
         val string = f.string.normalizeUnicode
         val stringField = new lucenedoc.StringField(f.name, string, store)
         Seq(stringField)
-      case f: TokensField if mustStore =>
-        val validatedTokens = validate(f.tokens)
-        val text = validatedTokens.mkString(" ").normalizeUnicode
-        val tokensField = new lucenedoc.TextField(f.name, text, Store.YES)
-        Seq(tokensField)
+
       case f: TokensField =>
-        // Make sure there are no invalid tokens
         val validated = validate(f.tokens)
-        val tokenStream = new NormalizedTokenStream(Seq(validated))
+        val tokens =
+          if (isMetadata) {
+            // for the metadata we want to casefold, remove diacritics etc.
+            val normalized = validated.map(_.normalizeUnicodeAggressively)
+            OdinsonIndexWriter.START_TOKEN +: normalized :+ OdinsonIndexWriter.END_TOKEN
+          } else validated
+        val tokenStream = new NormalizedTokenStream(Seq(tokens))
         val tokensField = new lucenedoc.TextField(f.name, tokenStream)
-        Seq(tokensField)
+        if (mustStore) {
+          val text = validated.mkString(" ").normalizeUnicode
+          val storedField = new StoredField(f.name, text)
+          Seq(tokensField, storedField)
+        } else {
+          Seq(tokensField)
+        }
+
+      case _ => throw new OdinsonException(s"Unsupported Field: ${f.getClass}")
     }
+  }
+
+  def mkNestedDocument(nested: NestedField): lucenedoc.Document = {
+    val nestedMetadata = new lucenedoc.Document
+    nestedMetadata.add(new lucenedoc.StringField(OdinsonIndexWriter.NAME, nested.name, Store.NO))
+    nestedMetadata.add(new lucenedoc.StringField(
+      OdinsonIndexWriter.TYPE,
+      OdinsonIndexWriter.NESTED_TYPE,
+      Store.NO
+    ))
+
+    for {
+      odinsonField <- nested.fields
+      // NestedField is always metadata
+      luceneField <- mkLuceneFields(odinsonField, true)
+    } nestedMetadata.add(luceneField)
+
+    nestedMetadata
   }
 
   def mkDirectedGraph(
@@ -240,6 +294,8 @@ class OdinsonIndexWriter(
     else s
   }
 
+  private def attributeName(field: String, attribute: String): String = s"$field.$attribute"
+
 }
 
 object OdinsonIndexWriter {
@@ -248,25 +304,30 @@ object OdinsonIndexWriter {
   val BUILDINFO_FILENAME = "buildinfo.json"
   val SETTINGSINFO_FILENAME = "settingsinfo.json"
 
+  // Constants for Odinson Documents
+  val DOC_ID_FIELD = "docId"
+  val SENT_ID_FIELD = "sentId"
+  val SENT_LENGTH_FIELD = "numWords"
+
+  // Constants for building the queries for metadata documents -- both the parent as well as the
+  // nested metadata
+  val TYPE = "type"
+  val PARENT_TYPE = "metadata"
+  val NESTED_TYPE = "metadata_nested"
+  val NAME = "name"
+  val YEAR = "year"
+
+  // Special start and end tokens for metadata exact match queries
+  val START_TOKEN = "[[XX_START]]"
+  val END_TOKEN = "[[XX_END]]"
+
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
   }
 
   def fromConfig(config: Config): OdinsonIndexWriter = {
-    // format: off
-    val indexDir             = config.apply[String]("odinson.indexDir")
-    val documentIdField      = config.apply[String]("odinson.index.documentIdField")
-    val sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField")
-    val sentenceLengthField  = config.apply[String]("odinson.index.sentenceLengthField")
-    val normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField")
-    val addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField")
-    val incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField")
-    val outgoingTokenField   = config.apply[String]("odinson.index.outgoingTokenField")
-    val maxNumberOfTokensPerSentence = config.apply[Int]("odinson.index.maxNumberOfTokensPerSentence")
-    val invalidCharacterReplacement  = config.apply[String]("odinson.index.invalidCharacterReplacement")
-    val storedFields         = config.apply[List[String]]("odinson.index.storedFields")
-    val displayField         = config.apply[String]("odinson.displayField")
-    // format: on
+
+    val indexDir = config.apply[String]("odinson.indexDir")
     val (directory, vocabulary) = indexDir match {
       case ":memory:" =>
         // memory index is supported in the configuration file
@@ -279,28 +340,25 @@ object OdinsonIndexWriter {
         (dir, vocab)
     }
 
+    val storedFields = config.apply[List[String]]("odinson.index.storedFields")
+    val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
     if (!storedFields.contains(displayField)) {
       throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
-    val settings = IndexSettings(storedFields)
+
     new OdinsonIndexWriter(
       // format: off
       directory            = directory, 
       vocabulary           = vocabulary,
       settings             = IndexSettings(storedFields),
-      documentIdField      = config.apply[String]("odinson.index.documentIdField"),
-      sentenceIdField      = config.apply[String]("odinson.index.sentenceIdField"),
-      sentenceLengthField  = config.apply[String]("odinson.index.sentenceLengthField"),
       normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField"),
       addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField").toSet,
       incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField"),
       outgoingTokenField   = config.apply[String]("odinson.index.outgoingTokenField"),
       maxNumberOfTokensPerSentence = config.apply[Int]("odinson.index.maxNumberOfTokensPerSentence"),
       invalidCharacterReplacement  = config.apply[String]("odinson.index.invalidCharacterReplacement"),
-      displayField         = config.apply[String]("odinson.displayField"),
-      parentDocFieldType   = config.apply[String]("odinson.index.parentDocFieldType"),
-      parentDocField       = config.apply[String]("odinson.index.parentDocField")
+      displayField
       // format: on
     )
   }

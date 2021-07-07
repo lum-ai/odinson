@@ -16,28 +16,28 @@ class TestFields extends OdinsonTest {
   val ee = mkExtractorEngine(doc)
 
   "Odinson" should "be case insensitive on the norm field (implicitly)" in {
-    val q = ee.compiler.mkQuery("ATE")
+    val q = ee.mkQuery("ATE")
     val results = ee.query(q)
     results.totalHits should equal(1)
     results.scoreDocs.head.matches should have size 1
   }
 
   it should "be case insensitive on the norm field (explicitly)" in {
-    val q = ee.compiler.mkQuery("[norm=ATE]")
+    val q = ee.mkQuery("[norm=ATE]")
     val results = ee.query(q)
     results.totalHits should equal(1)
     results.scoreDocs.head.matches should have size 1
   }
 
   it should "match with correct case on the raw field" in {
-    val q = ee.compiler.mkQuery("[raw=ate]")
+    val q = ee.mkQuery("[raw=ate]")
     val results = ee.query(q)
     results.totalHits should equal(1)
     results.scoreDocs.head.matches should have size 1
   }
 
   it should "not match with wrong case on the raw field" in {
-    val q = ee.compiler.mkQuery("[raw=ATE]")
+    val q = ee.mkQuery("[raw=ATE]")
     val results = ee.query(q)
     results.totalHits should equal(0)
   }
@@ -88,7 +88,7 @@ class TestFields extends OdinsonTest {
   }
 
   it should "throw an exception if pattern is written against arbitrary fields not indexed" in {
-    a[java.lang.Exception] shouldBe thrownBy(ee.compiler.compile("[other = buzz]"))
+    a[java.lang.Exception] shouldBe thrownBy(ee.mkQuery("[other = buzz]"))
   }
 
 }
