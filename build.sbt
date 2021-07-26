@@ -65,7 +65,7 @@ lazy val generalDockerSettings = {
     parallelExecution in ThisBuild := false,
     // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
     daemonUserUid in Docker := None,
-    daemonUser in Docker    := "lumai",
+    daemonUser in Docker    := "root",
     dockerUsername := Some("lumai"),
     dockerAliases ++= Seq(
       dockerAlias.value.withTag(Option("latest")),

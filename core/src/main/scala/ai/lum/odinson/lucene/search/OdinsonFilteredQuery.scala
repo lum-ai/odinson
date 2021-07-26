@@ -17,7 +17,7 @@ class OdinsonFilteredQuery(
 
   override def hashCode: Int = (query, filter).##
 
-  def toString(field: String): String = s"FiltereqQuery($query)"
+  def toString(field: String): String = s"FilteredQuery($query)"
 
   def getField(): String = query.getField()
 

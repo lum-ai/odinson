@@ -19,7 +19,7 @@ class TestDocumentationBasicQueries extends OdinsonTest {
   "Documentation-BasicQueries" should "work for 'surface patterns'" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val q = ee.compiler.mkQuery("[tag=/N.*/] and [lemma=dog]")
+    val q = ee.mkQuery("[tag=/N.*/] and [lemma=dog]")
     val results = ee.query(q)
     numMatches(results) shouldEqual (1)
     existsMatchWithSpan(results, doc = 0, start = 0, end = 3) should be(true)
@@ -29,7 +29,7 @@ class TestDocumentationBasicQueries extends OdinsonTest {
   it should "work for 'named captures'" in {
     val ee = mkExtractorEngine(doc)
     // what is there should match
-    val q = ee.compiler.mkQuery("(?<animal> [tag=/N.*/]) and [lemma=dog]")
+    val q = ee.mkQuery("(?<animal> [tag=/N.*/]) and [lemma=dog]")
     val s = ee.query(q)
     val matchval: OdinsonMatch = s.scoreDocs.head.matches.head
     matchval.namedCaptures.length shouldEqual 1
@@ -43,7 +43,7 @@ class TestDocumentationBasicQueries extends OdinsonTest {
   it should "work for 'named captures with syntax'" in {
     val ee = mkExtractorEngine(doc1)
     // what is there should match
-    val q = ee.compiler.mkQuery(
+    val q = ee.mkQuery(
       "(?<controller> [entity=PROTEIN]) <nsubj phosphorilates >dobj (?<theme> [entity=PROTEIN])"
     )
     val s = ee.query(q)
