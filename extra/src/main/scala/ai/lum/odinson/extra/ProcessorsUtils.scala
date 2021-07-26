@@ -13,6 +13,7 @@ import ai.lum.common.ConfigUtils._
 import org.clulab.dynet.Utils.initializeDyNet
 import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
+import org.clulab.struct.GraphMap
 import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.collection.mutable
@@ -73,9 +74,19 @@ object ProcessorsUtils {
     val maybeLemma = s.lemmas.map(lemmas => TokensField(lemmaTokenField, lemmas))
     val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
-    // graph that merges ENHANCED_SEMANTIC_ROLES and UNIVERSAL_ENHANCED
-    val maybeDeps =
-      s.hybridDependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
+    // graph that merges ENHANCED_SEMANTIC_ROLES and UNIVERSAL_ENHANCED, if available
+    val maybeDeps = {
+      val graphs = s.graphs match {
+        case hybridCollapsed if hybridCollapsed.contains(GraphMap.HYBRID_DEPENDENCIES) =>
+          hybridCollapsed.get(GraphMap.HYBRID_DEPENDENCIES)
+        case collapsed if collapsed.contains(GraphMap.UNIVERSAL_ENHANCED) =>
+          collapsed.get(GraphMap.UNIVERSAL_ENHANCED)
+        case basic if basic.contains(GraphMap.UNIVERSAL_BASIC) =>
+          basic.get(GraphMap.UNIVERSAL_BASIC)
+        case _ => None
+      }
+      graphs.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
+    }
     val fields =
       Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
     OdinsonSentence(s.size, fields.flatten)
