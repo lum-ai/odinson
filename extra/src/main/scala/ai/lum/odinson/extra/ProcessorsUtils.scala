@@ -74,7 +74,8 @@ object ProcessorsUtils {
     val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
     // graph that merges ENHANCED_SEMANTIC_ROLES and UNIVERSAL_ENHANCED
-    val maybeDeps = s.hybridDependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
+    val maybeDeps =
+      s.hybridDependencies.map(g => GraphField(dependenciesField, g.allEdges, g.roots))
     val fields =
       Some(raw) :: Some(word) :: List(maybeTag, maybeLemma, maybeEntity, maybeChunk, maybeDeps)
     OdinsonSentence(s.size, fields.flatten)
