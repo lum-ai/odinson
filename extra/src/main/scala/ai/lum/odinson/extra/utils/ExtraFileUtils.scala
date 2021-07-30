@@ -16,7 +16,7 @@ object ExtraFileUtils {
     val parent = resolved.getParentFile
     // make a new name from the basename and the new extension
     val baseName = resolved.getBaseName()
-    new File(parent, s"$baseName.$ext")
+    new File(parent, s"$baseName$ext")
   }
 
   def resolveFile(f: File, relativizeFromDir: File, resolveToDir: File): File = {

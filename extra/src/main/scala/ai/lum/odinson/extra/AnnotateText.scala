@@ -66,7 +66,7 @@ object AnnotateText extends App with LazyLogging {
 
   // NOTE parses the documents in parallel
   for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
-    val docFile = ExtraFileUtils.resolveFileWithNewExtension(f, textDir, docsDir, "json.gz")
+    val docFile = ExtraFileUtils.resolveFileWithNewExtension(f, textDir, docsDir, ".json.gz")
     Ensuring(docFile.getParentFile.exists())
 
     if (docFile.exists) {

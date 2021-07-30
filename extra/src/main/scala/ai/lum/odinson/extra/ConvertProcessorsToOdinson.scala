@@ -23,7 +23,7 @@ object ConvertProcessorsToOdinson extends App with LazyLogging {
 
   for (f <- procDir.listFilesByWildcard(s"*$extension", recursive = true).par) {
     Try {
-      val newFile = ExtraFileUtils.resolveFileWithNewExtension(f, procDir, docsDir, "gz")
+      val newFile = ExtraFileUtils.resolveFileWithNewExtension(f, procDir, docsDir, ".gz")
       if (!newFile.exists) {
         val processorsDoc = JSONSerializer.toDocument(f.readString())
         val odinsonDoc = ProcessorsUtils.convertDocument(processorsDoc)
