@@ -1,4 +1,4 @@
-package ai.lum.odinson.extra
+package ai.lum.odinson.extra.utils
 
 import java.nio.charset.StandardCharsets.UTF_8
 

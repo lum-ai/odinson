@@ -2,7 +2,7 @@ package ai.lum.odinson.extra
 
 import java.io.File
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.ConfigValueFactory
 import org.clulab.processors.Processor
@@ -10,7 +10,9 @@ import ai.lum.common.FileUtils._
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.odinson.Document
-import ai.lum.odinson.extra.ProcessorsUtils.getProcessor
+import ai.lum.odinson.extra.utils.{ExtraFileUtils, ProcessorsUtils}
+import ai.lum.odinson.extra.utils.ProcessorsUtils.getProcessor
+import org.clulab.utils.FileUtils
 
 object AnnotateText extends App with LazyLogging {
 
@@ -64,14 +66,8 @@ object AnnotateText extends App with LazyLogging {
 
   // NOTE parses the documents in parallel
   for (f <- textDir.listFilesByWildcard("*.txt", caseInsensitive = true, recursive = true).par) {
-    val relFile = textDir.toPath.relativize(f.toPath)
-
-    // replicate the directory structure under textDir under docsDir
-    val inputFileInDocsDir = docsDir.toPath.resolve(relFile)
-    val docFile = inputFileInDocsDir.getParent
-      .resolve(inputFileInDocsDir.getFileName.toFile.getBaseName() + ".json.gz").toFile
-    docFile.toPath.getParent.toFile.mkdirs
-    Ensuring(docFile.toPath.getParent.toFile.exists())
+    val docFile = ExtraFileUtils.resolveFileWithNewExtension(f, textDir, docsDir, "json.gz")
+    Ensuring(docFile.getParentFile.exists())
 
     if (docFile.exists) {
       logger.warn(s"${docFile.getCanonicalPath} already exists")
