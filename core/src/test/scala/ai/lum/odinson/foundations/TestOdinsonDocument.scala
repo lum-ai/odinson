@@ -176,7 +176,7 @@ class TestOdinsonDocument extends OdinsonTest {
     dateField.date shouldBe ("1993-03-28")
 
     var updated = doc.addMetadata(Seq(dateField), append = false)
-    updated.metadata should have size(1)
+    updated.metadata should have size (1)
     updated.metadata.head.name should equal("smth")
 
     javaDate = formatter.parse("28/03/2000")
@@ -184,7 +184,7 @@ class TestOdinsonDocument extends OdinsonTest {
     dateField.date shouldBe ("2000-03-28")
     // add the new, don't append, should overwrite
     updated = updated.addMetadata(Seq(dateField), append = false)
-    updated.metadata should have size(1)
+    updated.metadata should have size (1)
     updated.metadata.head.name should equal("smth2")
 
     javaDate = formatter.parse("28/03/2010")
@@ -192,7 +192,7 @@ class TestOdinsonDocument extends OdinsonTest {
     dateField.date shouldBe ("2010-03-28")
     // add the new, but this time append, should not overwrite
     updated = updated.addMetadata(Seq(dateField), append = true)
-    updated.metadata should have size(2)
+    updated.metadata should have size (2)
     updated.metadata.map(_.name) should contain theSameElementsAs Seq("smth2", "smth3")
   }
 }

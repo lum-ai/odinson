@@ -2,14 +2,14 @@ package ai.lum.odinson.extra
 
 import java.io.File
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import org.clulab.serialization.json.JSONSerializer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.Document
-import ai.lum.odinson.extra.utils.{ExtraFileUtils, ProcessorsUtils}
+import ai.lum.odinson.extra.utils.{ ExtraFileUtils, ProcessorsUtils }
 
 object ConvertProcessorsToOdinson extends App with LazyLogging {
 

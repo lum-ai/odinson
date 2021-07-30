@@ -6,11 +6,10 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.extra.utils.ExtraFileUtils
-import ai.lum.odinson.{Document, MetadataWrapper}
+import ai.lum.odinson.{ Document, MetadataWrapper }
 import com.typesafe.scalalogging.LazyLogging
 
-/**
-  * App for adding metadata into the Odinson Documents that have already been created.
+/** App for adding metadata into the Odinson Documents that have already been created.
   * The metadata files should:
   *   (a) contain the id of the Odinson Document that they correspond to
   *   (b) be in a compatible json format (using ai.lum.odinson.MetadataWrapper is a good
@@ -55,7 +54,6 @@ object AddMetadataToDocuments extends LazyLogging {
 
     }
   }
-
 
   def alignFilenamesToIds(metadataFiles: Seq[File]): Map[String, Seq[File]] = {
     metadataFiles.groupBy { f =>

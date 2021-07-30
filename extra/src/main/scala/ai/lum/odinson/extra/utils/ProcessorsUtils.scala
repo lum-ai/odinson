@@ -4,13 +4,17 @@ import java.util.UUID
 
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.{Document => OdinsonDocument, Sentence => OdinsonSentence, _}
+import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence, _ }
 import org.clulab.dynet.Utils.initializeDyNet
 import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
-import org.clulab.processors.{Processor, Document => ProcessorsDocument, Sentence => ProcessorsSentence}
+import org.clulab.processors.{
+  Processor,
+  Document => ProcessorsDocument,
+  Sentence => ProcessorsSentence
+}
 import org.clulab.struct.GraphMap
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{ Logger, LoggerFactory }
 
 object ProcessorsUtils {
 

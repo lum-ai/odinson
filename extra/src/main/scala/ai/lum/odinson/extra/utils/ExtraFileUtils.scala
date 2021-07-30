@@ -5,7 +5,12 @@ import ai.lum.common.FileUtils._
 
 object ExtraFileUtils {
 
-  def resolveFileWithNewExtension(f: File, relativizeAgainst: File, resolveTo: File, ext: String): File = {
+  def resolveFileWithNewExtension(
+    f: File,
+    relativizeAgainst: File,
+    resolveTo: File,
+    ext: String
+  ): File = {
     val resolved = resolveFile(f, relativizeAgainst, resolveTo)
     // where it belongs
     val parent = resolved.getParentFile
@@ -28,6 +33,5 @@ object ExtraFileUtils {
 
     resolvedFile
   }
-
 
 }

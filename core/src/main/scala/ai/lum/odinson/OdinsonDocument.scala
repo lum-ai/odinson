@@ -22,6 +22,7 @@ case class Document(
       this.copy(metadata = metadataIn)
     }
   }
+
 }
 
 object Document {
@@ -198,4 +199,5 @@ object MetadataWrapper {
   def fromJson(data: String): MetadataWrapper = {
     read[MetadataWrapper](data)
   }
+
 }
