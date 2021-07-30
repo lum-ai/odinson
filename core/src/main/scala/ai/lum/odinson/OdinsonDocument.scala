@@ -14,6 +14,14 @@ case class Document(
 ) {
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
+
+  def addMetadata(metadataIn: Seq[Field], append: Boolean): Document = {
+    if (append) {
+      this.copy(metadata = metadata ++ metadataIn)
+    } else {
+      this.copy(metadata = metadataIn)
+    }
+  }
 }
 
 object Document {
@@ -177,4 +185,17 @@ object NestedField {
     read[NestedField](data)
   }
 
+}
+
+/** Helper class for reading and writing metadata companion files */
+case class MetadataWrapper(id: String, fields: Seq[Field]) {
+  def toJson: String = write(this)
+}
+
+object MetadataWrapper {
+  implicit val rw: ReadWriter[MetadataWrapper] = macroRW
+
+  def fromJson(data: String): MetadataWrapper = {
+    read[MetadataWrapper](data)
+  }
 }
