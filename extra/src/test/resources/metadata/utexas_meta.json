@@ -1,0 +1,1 @@
+{"id":"utexas_iit.pages_3_splitted_8500","fields":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3},{"$type":"ai.lum.odinson.TokensField","name":"keywords","tokens":["food","silly","outrageous"]},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2000-05-25"}]}
