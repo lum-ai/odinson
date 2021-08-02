@@ -1,13 +1,15 @@
 package ai.lum.odinson.extra
 
 import java.io.File
-import scala.util.{ Try, Success, Failure }
+
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import org.clulab.serialization.json.JSONSerializer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.ConfigFactory
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.Document
+import ai.lum.odinson.extra.utils.{ ExtraFileUtils, ProcessorsUtils }
 
 object ConvertProcessorsToOdinson extends App with LazyLogging {
 
@@ -21,14 +23,7 @@ object ConvertProcessorsToOdinson extends App with LazyLogging {
 
   for (f <- procDir.listFilesByWildcard(s"*$extension", recursive = true).par) {
     Try {
-      val origParent = f.getParent
-      val newDir = new File(origParent.replaceFirst(procDir.toString, docsDir.toString))
-      if (!newDir.exists()) {
-        newDir.mkdirs()
-      }
-      val procName = f.getName
-      val odinsonName = if (procName.endsWith(".gz")) procName else procName + ".gz"
-      val newFile = new File(newDir, odinsonName)
+      val newFile = ExtraFileUtils.resolveFileWithNewExtension(f, procDir, docsDir, ".gz")
       if (!newFile.exists) {
         val processorsDoc = JSONSerializer.toDocument(f.readString())
         val odinsonDoc = ProcessorsUtils.convertDocument(processorsDoc)

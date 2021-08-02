@@ -165,4 +165,34 @@ class TestOdinsonDocument extends OdinsonTest {
     dateField.localDate.getDayOfMonth shouldBe (28)
     dateField.localDate.getMonthValue shouldBe (3)
   }
+
+  "OdinsonDocument" should "add metadata" in {
+    val doc = getDocument("becky-gummy-bears")
+    doc.metadata.toArray shouldBe empty
+
+    val formatter = new SimpleDateFormat("dd/MM/yyyy")
+    var javaDate = formatter.parse("28/03/1993")
+    var dateField = DateField.fromDate("smth", javaDate, false)
+    dateField.date shouldBe ("1993-03-28")
+
+    var updated = doc.addMetadata(Seq(dateField), append = false)
+    updated.metadata should have size (1)
+    updated.metadata.head.name should equal("smth")
+
+    javaDate = formatter.parse("28/03/2000")
+    dateField = DateField.fromDate("smth2", javaDate, false)
+    dateField.date shouldBe ("2000-03-28")
+    // add the new, don't append, should overwrite
+    updated = updated.addMetadata(Seq(dateField), append = false)
+    updated.metadata should have size (1)
+    updated.metadata.head.name should equal("smth2")
+
+    javaDate = formatter.parse("28/03/2010")
+    dateField = DateField.fromDate("smth3", javaDate, false)
+    dateField.date shouldBe ("2010-03-28")
+    // add the new, but this time append, should not overwrite
+    updated = updated.addMetadata(Seq(dateField), append = true)
+    updated.metadata should have size (2)
+    updated.metadata.map(_.name) should contain theSameElementsAs Seq("smth2", "smth3")
+  }
 }

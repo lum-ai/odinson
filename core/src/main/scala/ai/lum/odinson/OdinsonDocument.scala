@@ -14,6 +14,15 @@ case class Document(
 ) {
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
+
+  def addMetadata(metadataIn: Seq[Field], append: Boolean): Document = {
+    if (append) {
+      this.copy(metadata = metadata ++ metadataIn)
+    } else {
+      this.copy(metadata = metadataIn)
+    }
+  }
+
 }
 
 object Document {
@@ -175,6 +184,26 @@ object NestedField {
 
   def fromJson(data: String): NestedField = {
     read[NestedField](data)
+  }
+
+}
+
+/** Helper class for reading and writing metadata companion files.
+  * Specifically, if you want to make a json file to store document metadata,
+  * you can create an instance of this class, ensuring that the docId matches
+  * that of the corresponding document.  Then you can serialize/deserialize
+  * easily.  Also, note that this class plays well with the app that adds the
+  * metadata to the document: ai.lum.odinson.extra.AddMetadataToDocuments
+  */
+case class MetadataWrapper(docId: String, fields: Seq[Field]) {
+  def toJson: String = write(this)
+}
+
+object MetadataWrapper {
+  implicit val rw: ReadWriter[MetadataWrapper] = macroRW
+
+  def fromJson(data: String): MetadataWrapper = {
+    read[MetadataWrapper](data)
   }
 
 }

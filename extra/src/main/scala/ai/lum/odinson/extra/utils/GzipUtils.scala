@@ -1,9 +1,10 @@
-package ai.lum.odinson.extra
+package ai.lum.odinson.extra.utils
+
+import java.io._
+import java.nio.charset.StandardCharsets
+import java.util.zip._
 
 import org.apache.commons.io.FileUtils
-import java.io._
-import java.util.zip._
-import java.nio.charset.StandardCharsets
 
 object GzipUtils {
 
