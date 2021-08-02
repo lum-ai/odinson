@@ -58,7 +58,7 @@ object AddMetadataToDocuments extends LazyLogging {
   def alignFilenamesToIds(metadataFiles: Seq[File]): Map[String, Seq[File]] = {
     metadataFiles.groupBy { f =>
       val metadata = MetadataWrapper.fromJson(f.readString())
-      metadata.id
+      metadata.docId
     }
   }
 

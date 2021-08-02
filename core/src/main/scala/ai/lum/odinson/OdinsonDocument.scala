@@ -188,8 +188,13 @@ object NestedField {
 
 }
 
-/** Helper class for reading and writing metadata companion files */
-case class MetadataWrapper(id: String, fields: Seq[Field]) {
+/** Helper class for reading and writing metadata companion files.
+  * Specifically, if you want to make a json file to store document metadata,
+  * you can create an instance of this class, ensuring that the docId matches
+  * that of the corresponding document.  Then you can serialize/deserialize
+  * easily.  Also, note that this class plays well with the app that adds the
+  * metadata to the document: ai.lum.odinson.extra.AddMetadataToDocuments */
+case class MetadataWrapper(docId: String, fields: Seq[Field]) {
   def toJson: String = write(this)
 }
 
