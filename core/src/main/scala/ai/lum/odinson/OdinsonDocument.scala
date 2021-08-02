@@ -193,7 +193,8 @@ object NestedField {
   * you can create an instance of this class, ensuring that the docId matches
   * that of the corresponding document.  Then you can serialize/deserialize
   * easily.  Also, note that this class plays well with the app that adds the
-  * metadata to the document: ai.lum.odinson.extra.AddMetadataToDocuments */
+  * metadata to the document: ai.lum.odinson.extra.AddMetadataToDocuments
+  */
 case class MetadataWrapper(docId: String, fields: Seq[Field]) {
   def toJson: String = write(this)
 }
