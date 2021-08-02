@@ -36,7 +36,9 @@ class TestAddMetadataToDocuments extends OdinsonTest {
     }
 
     // verify that the documents do not have metadata
-    for (f <- new File(s"${tmpFolder}/docs").listFiles()) {
+    val docFiles = new File(s"${tmpFolder}/docs").listFiles()
+    docFiles should have size(2)
+    for (f <- docFiles) {
       val doc = Document.fromJson(f)
       doc.metadata.toArray shouldBe empty
     }
@@ -46,13 +48,17 @@ class TestAddMetadataToDocuments extends OdinsonTest {
     AddMetadataToDocuments.usingConfigSettings(settings)
 
     // verify that the original documents still don't have metadata
-    for (f <- new File(s"${tmpFolder}/docs").listFiles()) {
+    val docFiles2 = new File(s"${tmpFolder}/docs").listFiles()
+    docFiles2 should have size(2)
+    for (f <- docFiles2) {
       val doc = Document.fromJson(f)
       doc.metadata.toArray shouldBe empty
     }
 
     // verify that the new documents now have metadata and that they're in the right place
-    for (f <- new File(s"${tmpFolder}/docsWithMetadata").listFiles()) {
+    val docFiles3 = new File(s"${tmpFolder}/docsWithMetadata").listFiles()
+    docFiles3 should have size(2)
+    for (f <- docFiles3) {
       val doc = Document.fromJson(f)
       doc.metadata.toArray shouldNot be(empty)
     }

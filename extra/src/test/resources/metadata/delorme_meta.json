@@ -1,1 +1,1 @@
-{"id":"delorme.com_shu.pages_7_splitted_142500","fields":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3},{"$type":"ai.lum.odinson.TokensField","name":"doctype","tokens":["article"]},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2000-05-25"}]}
+{"docId":"delorme.com_shu.pages_7_splitted_142500","fields":[{"$type":"ai.lum.odinson.NumberField","name":"citations","value":3},{"$type":"ai.lum.odinson.TokensField","name":"doctype","tokens":["article"]},{"$type":"ai.lum.odinson.DateField","name":"pubdate","date":"2000-05-25"}]}
