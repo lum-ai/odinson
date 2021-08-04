@@ -420,7 +420,9 @@ class RuleReader(val compiler: QueryCompiler) {
           // import rules from a file and return them
           // Parent vars passed in case we need to resolve variables in import paths
           val importVars = mkVariables(rulesData, source, parentVars)
-          importRules(rulesData, source, parentVars ++ importVars, metadataFilterOpt)
+          // resolve the metadata filters, combining with AND
+          val importFilters = mkMetadataFilter(rulesData, metadataFilterOpt)
+          importRules(rulesData, source, parentVars ++ importVars, importFilters)
         } else {
           // Otherwise, process the data as individual rules
           Seq(RuleFile(Seq(mkRule(data)), parentVars, metadataFilterOpt))
