@@ -1,8 +1,8 @@
 package ai.lum.odinson.lucene.index
 
-import ai.lum.odinson.OdinsonIndexWriter
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.{OdinsonIndexWriter, Document => OdinsonDocument}
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document => LuceneDocument}
@@ -57,6 +57,10 @@ class IncrementalOdinsonIndex( override val directory : Directory,
     private val manager : SearcherManager = new SearcherManager( luceneWriter, new OdinsonSearcherFactory( computeTotalHits ) )
 
     refreshPeriodically()
+
+    override def addOdinsonDocument( doc : OdinsonDocument ) : Unit = {
+        write( odinsonWriter.mkDocumentBlock( doc ).asJava )
+    }
 
     override def search( query : Query, limit : Int ) : TopDocs = {
         var searcher : IndexSearcher = null
@@ -165,11 +169,15 @@ class IncrementalOdinsonIndex( override val directory : Directory,
             refresh()
         } onComplete {
             case Success( _ ) => refreshPeriodically()
-            case Failure( e : Throwable ) => ???
+            case Failure( e : Throwable ) => e.printStackTrace()
         }
     }
 
-    def close( ) : Unit = {}
-
+    def close( ) : Unit = {
+        dumpSettings()
+        luceneWriter.flush()
+        luceneWriter.commit()
+        luceneWriter.close()
+    }
 
 }

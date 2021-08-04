@@ -1,67 +1,45 @@
 package ai.lum.odinson.lucene
 
 import ai.lum.odinson.lucene.index.{IncrementalOdinsonIndex, OdinsonIndex}
+import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest.BeforeAndAfterAll
 
 import java.io.File
-import java.nio.file.Files
+import scala.collection.JavaConverters._
 import scala.reflect.io.Directory
 
 class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
     type Fixture = IncrementalOdinsonIndex
 
-    val tmpFolder : File = Files.createTempDirectory( "odinson-test" ).toFile
-    val indexDir : File = new File( tmpFolder, "index" )
+    val testDataDir : File = {
+        val file = new File( "./target/incremental_index_test" )
+        file.mkdirs()
+        file
+    }
 
     val testConfig : Config = {
-        // re-compute the index and docs path's
         defaultConfig
-          .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( indexDir.getAbsolutePath ) )
+          .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( testDataDir.getCanonicalPath ) )
           .withValue( "odinson.index.incremental", ConfigValueFactory.fromAnyRef( true ) )
     }
 
-    override def afterAll( ) : Unit = {
-        val dir = new Directory( indexDir )
-        dir.deleteRecursively()
-    }
-
-    def setupOdinsonIndex( ) : OdinsonIndex = {
-        OdinsonIndex.fromConfig( testConfig )
-    }
-
-
     "OdinsonIndexWriter" should "object should return index from config correctly" in {
-        val index = setupOdinsonIndex()
+        //        val indexDir = mkTestIndexDir()
+        //        val config = testConfig.withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( indexDir.getAbsolutePath ) )
+        val index = createOdinsonIndex( testConfig )
         index.directory.listAll.head shouldBe "write.lock"
         index.close()
     }
 
-    it should "mkLuceneFields should convert Fields to lucene.Fields correctly" in {
-        //        val indexWriter = setupOdinsonIndex
-        //        // Initialize fild of type DateField
-        //        var field =
-        //            """{"$type":"ai.lum.odinson.DateField","name":"smth","date":"1993-03-28"}"""
-        //        //
-        //        val dateField = DateField.fromJson( field )
-        //        // DateField
-        //        val luceneDateField = indexWriter.mkLuceneFields( dateField, false )
-        //        // test
-        //        luceneDateField.head.name shouldEqual ( "smth" )
-        //        // Initialize field of type StringField
-        //        field =
-        //          """{"$type":"ai.lum.odinson.StringField","name":"smth","string":"foo"}"""
-        //        // StringField
-        //        val stringField = StringField.fromJson( field )
-        //        val luceneStringField = indexWriter.mkLuceneFields( stringField, false )
-        //        luceneStringField.head.name shouldEqual ( "smth" )
-        //        // TODO: should we test more stuff
-        //        indexWriter.close()
-        //        deleteIndex
+    override def afterAll( ) : Unit = {
+        val dir = new Directory( testDataDir )
+        dir.deleteRecursively()
     }
 
-    it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
+
+    it should "replace invalid characters prior to indexing to prevent off-by-one errors" ignore {
         //        val doc = getDocument( "bad-character" )
         //
         //        def ee = mkExtractorEngine( doc )
@@ -81,31 +59,17 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
     }
 
     it should "properly dump and load relevant settings" in {
-        //        val indexFile = new File( tmpFolder, "index2" )
-        //        val customConfig : Config = {
-        //            testConfig
-        //              // re-compute the index and docs path's
-        //              .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( indexFile.getAbsolutePath ) )
-        //              .withValue(
-        //                  "odinson.index.storedFields",
-        //                  ConfigValueFactory.fromAnyRef( Seq( "apple", "banana", "kiwi", "raw" ).asJava )
-        //                  )
-        //        }
-        //
-        //        val indexWriter = OdinsonIndexWriter.fromConfig( customConfig )
-        //        // close and write the settings file
-        //        indexWriter.close()
-        //        val settings = IndexSettings.fromDirectory( FSDirectory.open( indexFile.toPath ) )
-        //        settings.storedFields should contain theSameElementsAs Seq(
-        //            "apple",
-        //            "banana",
-        //            "kiwi",
-        //            indexWriter.displayField
-        //            )
-        //        deleteIndex
+        val config = {
+            testConfig
+              .withValue( "odinson.index.storedFields", ConfigValueFactory.fromAnyRef( Seq( "apple", "banana", "kiwi", "raw" ).asJava ) )
+        }
+        val index = createOdinsonIndex( config )
+        index.close()
+        val settings = IndexSettings.fromDirectory( index.directory )
+        settings.storedFields should contain theSameElementsAs Seq( "apple", "banana", "kiwi", index.displayField )
     }
 
-    it should "store stored fields and not others" in {
+    it should "store stored fields and not others" ignore {
         //        val doc = getDocument( "rainbows" )
         //        val customConfig : Config = defaultConfig
         //          .withValue(
@@ -123,12 +87,12 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
 
     }
 
-    it should "throw an exception if the displayField isn't in the storedFields" in {
+    it should "throw an exception if the displayField isn't in the storedFields" ignore {
         //        val indexFile = new File( tmpFolder, "index2" )
         //        val customConfig : Config = {
         //            testConfig
         //              // re-compute the index and docs path's
-        //              .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( indexFile.getAbsolutePath ) )
+        //              .withValue( "odinson.tmpFolder", ConfigValueFactory.fromAnyRef( indexFile.getAbsolutePath ) )
         //              .withValue(
         //                  "odinson.index.storedFields",
         //                  ConfigValueFactory.fromAnyRef( Seq( "apple", "banana", "kiwi" ).asJava )
@@ -140,7 +104,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
         //        }
     }
 
-    it should "store and retrieve large graphs" in {
+    it should "store and retrieve large graphs" ignore {
         //        val numTokens = 4000
         //        val large = Array.fill[ String ]( numTokens )( "test" )
         //        large( 0 ) = "start"
@@ -166,7 +130,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
         //        // Yes, in fact the deps field is above the previous threshold
         //        val incomingEdges = graph.mkIncomingEdges( numTokens )
         //        val outgoingEdges = graph.mkOutgoingEdges( numTokens )
-        //        val indexWriter = setupOdinsonIndex
+        //        val indexWriter = createOdinsonIndex
         //
         //        val directedGraph = indexWriter.mkDirectedGraph( incomingEdges, outgoingEdges, roots.toArray )
         //        val bytes = UnsafeSerializer.graphToBytes( directedGraph )
@@ -190,6 +154,28 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
         //        val results = ee.extractNoState( extractors ).toArray
         //        results.length should be( 1 )
         //        ee.getTokensForSpan( results.head ) should contain only "success"
+    }
+
+    it should "incrementally write to an index that remains open" in {
+        val index = createOdinsonIndex( testConfig )
+
+        val aliens = getDocument( "alien-species" )
+        index.addOdinsonDocument( aliens )
+
+        println( index.numDocs() )
+
+        val gummyBears = getDocument( "gummy-bears-consumption" )
+        index.addOdinsonDocument( gummyBears )
+
+        println( index.numDocs() )
+    }
+
+    it should "incrementally write to an index that has been previously closed" in {
+
+    }
+
+    private def createOdinsonIndex( config : Config ) : OdinsonIndex = {
+        OdinsonIndex.fromConfig( config )
     }
 
 }

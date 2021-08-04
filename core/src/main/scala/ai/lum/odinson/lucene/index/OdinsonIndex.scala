@@ -2,10 +2,10 @@ package ai.lum.odinson.lucene.index
 
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.{BuildInfo, Document => OdinsonDocument}
 import com.typesafe.config.Config
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
@@ -39,6 +39,8 @@ trait OdinsonIndex {
     val storedFields : Seq[ String ] = settings.storedFields
     val vocabulary = Vocabulary.fromDirectory( directory )
 
+    def addOdinsonDocument( doc : OdinsonDocument ) : Unit
+
     def write( block : java.util.Collection[ LuceneDocument ] ) : Unit
 
     def search( query : Query, limit : Int = 1000000000 ) : TopDocs
@@ -57,7 +59,7 @@ trait OdinsonIndex {
 
     def refresh( ) : Unit
 
-    def checkpoint( ) : Unit = {
+    def dumpSettings( ) : Unit = {
         if ( directory.listAll().contains( VOCABULARY_FILENAME ) ) directory.deleteFile( VOCABULARY_FILENAME )
         if ( directory.listAll().contains( BUILDINFO_FILENAME ) ) directory.deleteFile( BUILDINFO_FILENAME )
         if ( directory.listAll().contains( SETTINGSINFO_FILENAME ) )
@@ -126,4 +128,5 @@ object OdinsonIndex {
         }
         else ???
     }
+
 }
