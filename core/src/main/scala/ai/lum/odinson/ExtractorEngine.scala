@@ -11,11 +11,9 @@ import org.apache.lucene.search.{
 }
 import org.apache.lucene.store.{ Directory, FSDirectory }
 import org.apache.lucene.index.{ DirectoryReader, Term }
-import org.apache.lucene.queryparser.classic.QueryParser
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.Config
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
-import ai.lum.common.StringUtils._
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
@@ -23,10 +21,7 @@ import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.MostRecentlyUsed
-import ai.lum.odinson.utils.exceptions.OdinsonException
-import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -256,36 +251,86 @@ class ExtractorEngine private (
   }
 
   // Access methods
+  // ps - so many because there compileRuleFile is overloaded (String and File) so can't have
+  //      default args
   def compileRuleString(rules: String): Seq[Extractor] = {
-    compileRuleString(rules, Map.empty[String, String])
+    ruleReader.compileRuleString(rules)
   }
 
   def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleString(rules, variables)
   }
 
+  def compileRuleString(rules: String, metadataFilter: Query): Seq[Extractor] = {
+    ruleReader.compileRuleString(rules, metadataFilter)
+  }
+
+  def compileRuleString(
+    rules: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[Query]
+  ): Seq[Extractor] = {
+    ruleReader.compileRuleString(rules, variables, metadataFilterOpt)
+  }
+
   def compileRuleFile(ruleFile: File): Seq[Extractor] = {
-    compileRuleFile(ruleFile, Map.empty[String, String])
+    ruleReader.compileRuleFile(ruleFile)
   }
 
   def compileRuleFile(ruleFile: File, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleFile(ruleFile, variables)
   }
 
+  def compileRuleFile(ruleFile: File, metadataFilter: Query): Seq[Extractor] = {
+    ruleReader.compileRuleFile(ruleFile, metadataFilter)
+  }
+
+  def compileRuleFile(
+    ruleFile: File,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[Query]
+  ): Seq[Extractor] = {
+    ruleReader.compileRuleFile(ruleFile, variables, metadataFilterOpt)
+  }
+
   def compileRuleFile(rulePath: String): Seq[Extractor] = {
-    compileRuleFile(rulePath, Map.empty[String, String])
+    ruleReader.compileRuleFile(rulePath)
   }
 
   def compileRuleFile(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleFile(rulePath, variables)
   }
 
+  def compileRuleFile(rulePath: String, metadataFilter: Query): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rulePath, metadataFilter)
+  }
+
+  def compileRuleFile(
+    rulePath: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[Query]
+  ): Seq[Extractor] = {
+    ruleReader.compileRuleFile(rulePath, variables, metadataFilterOpt)
+  }
+
   def compileRuleResource(rulePath: String): Seq[Extractor] = {
-    compileRuleResource(rulePath, Map.empty[String, String])
+    ruleReader.compileRuleResource(rulePath)
   }
 
   def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
     ruleReader.compileRuleResource(rulePath, variables)
+  }
+
+  def compileRuleResource(rulePath: String, metadataFilter: Query): Seq[Extractor] = {
+    ruleReader.compileRuleResource(rulePath, metadataFilter)
+  }
+
+  def compileRuleResource(
+    rulePath: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[Query]
+  ): Seq[Extractor] = {
+    ruleReader.compileRuleResource(rulePath, variables, metadataFilterOpt)
   }
 
   private def extract(
