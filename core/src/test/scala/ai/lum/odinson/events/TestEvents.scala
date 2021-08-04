@@ -313,6 +313,54 @@ class TestEvents extends OdinsonTest {
 
   }
 
+  it should "match a prev found mention as a trigger" in {
+
+    val rules =
+      """
+        |rules:
+        |  - name: bears-rule
+        |    label: Bear
+        |    type: event
+        |    priority: 1
+        |    pattern: |
+        |      trigger = bears
+        |      bearType = >amod []
+        |
+        |  - name: eating-rule
+        |    label: Consumption
+        |    type: event
+        |    priority: 2
+        |    pattern: |
+        |      trigger = @Bear
+        |      verb = <dobj
+     """.stripMargin
+
+    ee.clearState()
+    val extractors = ee.ruleReader.compileRuleString(rules)
+    val mentions = ee.extractMentions(extractors).toArray
+
+    mentions should have size (4)
+
+    // Bear event
+    val bears = getMentionsWithLabel(mentions, "Bear")
+    bears should have size (1)
+    val bear = bears.head
+    bear.arguments.keySet should have size 1
+    val bearType = bear.arguments("bearType")
+    bearType should have size (1)
+    val desiredBearArg = Seq(ArgumentOffsets("bearType", 2, 3))
+    testArguments(bear.odinsonMatch, desiredBearArg)
+
+    // Consumption Event, which should include the Bear event above as an arg, from the State
+    val eats = getMentionsWithLabel(mentions, "Consumption")
+    eats should have size 1
+    val eat = eats.head
+    eat.arguments.keySet should have size 1
+    val vbs = eat.arguments("verb")
+    vbs should have size 1
+    ee.clearState()
+  }
+
   ee.close()
 
 }

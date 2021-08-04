@@ -396,4 +396,13 @@ class TestMetadataFilter extends OdinsonTest {
     mentions should have size (2)
 
   }
+
+  "Metadata" should "combine properly when files are imported" in {
+    ee.clearState()
+    val masterPath = "/testMetadataImports/master.yml"
+    val extractors = ee.compileRuleResource(masterPath)
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    mentions should have size (2)
+
+  }
 }
