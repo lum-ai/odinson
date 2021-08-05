@@ -26,7 +26,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
           .withValue( "odinson.index.incremental", ConfigValueFactory.fromAnyRef( true ) )
     }
 
-    "OdinsonIndexWriter" should "object should return index from config correctly" in {
+    "Odinson Incremental Index" should "object should return index from config correctly" in {
         val index = createOdinsonIndex( testConfig )
         index.directory.listAll.head shouldBe "write.lock"
         index.close()
@@ -60,21 +60,21 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
         }
     }
 
-    it should "incrementally write to an index that remains open" in {
+    it should "incrementally add Odinson Documents to an open index" in {
         val index = createOdinsonIndex( testConfig )
 
         val aliens = getDocument( "alien-species" )
         index.addOdinsonDocument( aliens )
 
-        println( index.numDocs() )
+        index.numDocs() shouldBe 2 // # of lucenen docs
 
         val gummyBears = getDocument( "gummy-bears-consumption" )
         index.addOdinsonDocument( gummyBears )
 
-        println( index.numDocs() )
+        index.numDocs() shouldBe 4 // # number of lucene docs
     }
 
-    it should "incrementally write to an index that has been previously closed" in {
+    it should "incrementally write Odinson Documents to a previously closed index" in {
 
     }
 

@@ -143,7 +143,6 @@ class IncrementalOdinsonIndex( override val directory : Directory,
 
     override def refresh( ) : Unit = {
         luceneWriter.flush()
-        luceneWriter.commit()
         manager.maybeRefresh()
     }
 
