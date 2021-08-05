@@ -349,4 +349,69 @@ class TestMetadataFilter extends OdinsonTest {
     ee.query(filteredQuery).scoreDocs.length shouldBe (1)
   }
 
+  "Metadata" should "work when in grammars as a string" in {
+    ee.clearState()
+    val rules = """
+      |metadataFilters: doctype == 'article'
+      |
+      |vars:
+      |  chunk: "[chunk=B-NP][chunk=I-NP]*"
+      |
+      |rules:
+      |  - name: testrule
+      |    type: event
+      |    label: Test
+      |    pattern: |
+      |      trigger = [lemma=eat]
+      |      subject: ^NP = >nsubj ${chunk}
+      |      object: ^NP = >dobj ${chunk}
+    """.stripMargin
+    val extractors = ee.ruleReader.compileRuleString(rules)
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    mentions should have size (3)
+
+  }
+
+  "Metadata" should "work when in grammars as a list" in {
+    ee.clearState()
+    val rules = """
+      |metadataFilters:
+      |  - doctype == 'article'
+      |  - (date(1999, 01, 01) < pubdate < date(2012, 01, 01))
+      |
+      |vars:
+      |  chunk: "[chunk=B-NP][chunk=I-NP]*"
+      |
+      |rules:
+      |  - name: testrule
+      |    type: event
+      |    label: Test
+      |    pattern: |
+      |      trigger = [lemma=eat]
+      |      subject: ^NP = >nsubj ${chunk}
+      |      object: ^NP = >dobj ${chunk}
+    """.stripMargin
+    val extractors = ee.ruleReader.compileRuleString(rules)
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    mentions should have size (2)
+
+  }
+
+  "Metadata" should "combine properly when files are imported" in {
+    ee.clearState()
+    val masterPath = "/testMetadataImports/master.yml"
+    val extractors = ee.compileRuleResource(masterPath)
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    mentions should have size (2)
+
+  }
+
+  "Metadata" should "combine properly when files are imported with filter" in {
+    ee.clearState()
+    val masterPath = "/testMetadataImports/master2.yml"
+    val extractors = ee.compileRuleResource(masterPath)
+    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    mentions should have size (2)
+
+  }
 }

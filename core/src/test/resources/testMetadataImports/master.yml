@@ -1,0 +1,5 @@
+metadataFilters:
+  - (date(1999, 01, 01) < pubdate < date(2012, 01, 01))
+
+rules:
+  - import: imported.yml
