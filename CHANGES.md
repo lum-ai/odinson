@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+### Changed
+
+## [0.5.0] - 2021-08-07
+### Added
 - Added mechanisms for adding metadata to Documents easily, including an app ([#319](https://github.com/lum-ai/odinson/pull/319))
 - Added tags-vocabulary endpoint to API for index-specific part-of-speech tags.
 - Added tests for metadata and parent API calls in backend.
