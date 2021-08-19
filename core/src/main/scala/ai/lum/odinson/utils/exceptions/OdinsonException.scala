@@ -10,6 +10,10 @@ class OdinsonException(message: String = null, cause: Throwable = null)
 
 object OdinsonException {
 
+  val METADATA_STRING_FIELD_EXCEPTION: OdinsonException = new OdinsonException(
+    "StringField metadata is not supported.  Supported types: TokensField, NumberField, DateField"
+  )
+
   def defaultMessage(message: String, cause: Throwable) =
     if (message != null) message
     else if (cause != null) cause.toString()
