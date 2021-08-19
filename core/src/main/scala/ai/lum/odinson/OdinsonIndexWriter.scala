@@ -211,7 +211,8 @@ class OdinsonIndexWriter(
         }
 
       case f: StringField =>
-        if (isMetadata) throw OdinsonException.METADATA_STRING_FIELD_EXCEPTION
+        if (isMetadata && !STRING_FIELD_EXCEPTIONS.contains(f.name))
+          logger.info(STRING_FIELD_WARNING(f.name))
         val store = if (mustStore) Store.YES else Store.NO
         val string = f.string.normalizeUnicode
         val stringField = new lucenedoc.StringField(f.name, string, store)
@@ -321,6 +322,13 @@ object OdinsonIndexWriter {
   // Special start and end tokens for metadata exact match queries
   val START_TOKEN = "[[XX_START]]"
   val END_TOKEN = "[[XX_END]]"
+
+  // User-defined metadata cannot currently be a StringField.  That said, there are StringFields in the
+  // metadata (the filename, etc.)
+  val STRING_FIELD_EXCEPTIONS = Set(DOC_ID_FIELD, OdinsonIndexWriter.TYPE)
+
+  def STRING_FIELD_WARNING(name: String) =
+    s"Metadata StringField <${name}> will not be queryable using the metadata query language"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
