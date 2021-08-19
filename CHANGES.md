@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- Added documentation about supported types of fields for metadata (and exceptions for unsupported types). ([#329](https://github.com/lum-ai/odinson/pull/329))
 ### Changed
 
 ## [0.5.0] - 2021-08-07
