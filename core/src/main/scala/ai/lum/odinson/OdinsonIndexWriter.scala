@@ -211,6 +211,7 @@ class OdinsonIndexWriter(
         }
 
       case f: StringField =>
+        if (isMetadata) throw OdinsonException.METADATA_STRING_FIELD_EXCEPTION
         val store = if (mustStore) Store.YES else Store.NO
         val string = f.string.normalizeUnicode
         val stringField = new lucenedoc.StringField(f.name, string, store)

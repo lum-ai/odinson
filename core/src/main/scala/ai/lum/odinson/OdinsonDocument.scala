@@ -6,6 +6,7 @@ import java.time.{ LocalDate, ZoneId }
 import scala.collection.mutable.ArrayBuilder
 import upickle.default._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.utils.exceptions.OdinsonException
 
 case class Document(
   id: String,
@@ -16,6 +17,8 @@ case class Document(
   def toPrettyJson: String = write(this, indent = 4)
 
   def addMetadata(metadataIn: Seq[Field], append: Boolean): Document = {
+    if (metadataIn.collect { case sf: StringField => sf }.nonEmpty)
+      throw OdinsonException.METADATA_STRING_FIELD_EXCEPTION
     if (append) {
       this.copy(metadata = metadata ++ metadataIn)
     } else {
