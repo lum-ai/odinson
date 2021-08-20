@@ -891,7 +891,7 @@ class OdinsonController @Inject() (
 
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-      val json = Json.toJson(mkJson(metadataQuery, duration, allowTriggerOverlaps, mentions))
+      val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
       json.format(pretty)
     } catch handleNonFatal
   }
