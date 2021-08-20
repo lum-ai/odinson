@@ -50,7 +50,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     deleteIndex
     // run stuff
     IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
-    // get config and ingect required values
+    // get config and inject required values
     var config = ConfigFactory.load()
     config = config
       .withValue("odinson.dataDir", ConfigValueFactory.fromAnyRef(dataDir))

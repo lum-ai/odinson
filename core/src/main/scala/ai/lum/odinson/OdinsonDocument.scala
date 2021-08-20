@@ -6,14 +6,32 @@ import java.time.{ LocalDate, ZoneId }
 import scala.collection.mutable.ArrayBuilder
 import upickle.default._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.utils.exceptions.OdinsonException
+import com.typesafe.scalalogging.LazyLogging
 
 case class Document(
   id: String,
   metadata: Seq[Field],
   sentences: Seq[Sentence]
-) {
+) extends LazyLogging {
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
+
+  def addMetadata(metadataIn: Seq[Field], append: Boolean): Document = {
+    // Warn about not-queryable StringFields
+    metadataIn
+      .collect {
+        case sf: StringField if !OdinsonIndexWriter.STRING_FIELD_EXCEPTIONS.contains(sf.name) => sf
+      }
+      .foreach { sf => logger.info(OdinsonIndexWriter.STRING_FIELD_WARNING(sf.name)) }
+
+    if (append) {
+      this.copy(metadata = metadata ++ metadataIn)
+    } else {
+      this.copy(metadata = metadataIn)
+    }
+  }
+
 }
 
 object Document {
@@ -175,6 +193,26 @@ object NestedField {
 
   def fromJson(data: String): NestedField = {
     read[NestedField](data)
+  }
+
+}
+
+/** Helper class for reading and writing metadata companion files.
+  * Specifically, if you want to make a json file to store document metadata,
+  * you can create an instance of this class, ensuring that the docId matches
+  * that of the corresponding document.  Then you can serialize/deserialize
+  * easily.  Also, note that this class plays well with the app that adds the
+  * metadata to the document: ai.lum.odinson.extra.AddMetadataToDocuments
+  */
+case class MetadataWrapper(docId: String, fields: Seq[Field]) {
+  def toJson: String = write(this)
+}
+
+object MetadataWrapper {
+  implicit val rw: ReadWriter[MetadataWrapper] = macroRW
+
+  def fromJson(data: String): MetadataWrapper = {
+    read[MetadataWrapper](data)
   }
 
 }

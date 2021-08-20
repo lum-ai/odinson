@@ -55,7 +55,6 @@ object IndexDocuments extends App with LazyLogging {
 
   //
   val writer = OdinsonIndexWriter.fromConfig(config)
-  val wildcards = Seq("*.json", "*.json.gz")
   logger.info(s"Gathering documents from $docsDir")
 
   // make this a function
@@ -63,14 +62,14 @@ object IndexDocuments extends App with LazyLogging {
     if (synchronizeOrderWithDocumentId) {
       // files ordered by the id of the document
       docsDir
-        .listFilesByWildcards(wildcards, recursive = true)
+        .listFilesByWildcards(odinsonDocsWildcards, recursive = true)
         .map(f => (Document.fromJson(f).id.toInt, f))
         .toSeq
         .sortBy(_._1)
         .map(_._2)
     } else {
       docsDir
-        .listFilesByWildcards(wildcards, recursive = true)
+        .listFilesByWildcards(odinsonDocsWildcards, recursive = true)
         .par
     }
 

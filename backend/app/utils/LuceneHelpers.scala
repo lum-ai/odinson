@@ -24,18 +24,30 @@ object LuceneHelpers {
     * @tparam T the element type of the collection.
     */
   class IteratorFromNextable[T](nextable: Nextable[T]) extends Iterator[T] {
-    protected var nextOpt: Option[T] = Option(nextable.next())
+    // This convoluted procedure is needed so that the call to hasNext(), which must
+    // call nextable.next(), can store the next value which will then be retrieved with
+    // the subsequent call to next() without that calling nextable.next() itself.  An
+    // implicit "cursor" is in play that can provide access to other values beside the
+    // current one.  The call to next() should not move the cursor away from what has
+    // just been retrieved.  The cursor has already been updated in hasNext().  For
+    // example, next() on TermsEnum can retrieve a BytesRef and then totalTermFreq() can
+    // still access the corresponding frequency from the TermsEnum outside this interface.
+    protected var hasNextOpt: Option[Boolean] = None
+    protected var nextOpt: Option[T] = None
 
-    override def hasNext: Boolean = nextOpt.isDefined
+    override def hasNext: Boolean = {
+      assert(hasNextOpt.isEmpty)
+      nextOpt = Option(nextable.next())
+      hasNextOpt = Some(nextOpt.nonEmpty)
+      hasNextOpt.get
+    }
 
     override def next(): T = {
-      nextOpt.map { next =>
-        nextOpt = Option(nextable.next())
-        next
-      }
-        .getOrElse {
-          throw new RuntimeException("No more elements!")
-        }
+      assert(hasNextOpt.contains(true))
+      val result = nextOpt.get
+      assert(result != null)
+      hasNextOpt = None
+      result
     }
 
   }

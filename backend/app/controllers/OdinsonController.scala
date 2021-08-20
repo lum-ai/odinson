@@ -33,8 +33,8 @@ import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc }
 import com.typesafe.config.Config
+import org.apache.lucene.index.TermsEnum
 import play.api.cache._
-import utils.LuceneHelpers._
 import scala.annotation.tailrec
 
 @Singleton
@@ -84,6 +84,26 @@ class OdinsonController @Inject() (
   /** Return a standard error handler for try blocks that throw a NullPointerException and expect a Result. */
   def mkHandleNullPointer(message: String): PartialFunction[Throwable, Result] = {
     case _: NullPointerException => InternalServerError(message)
+  }
+
+  case class TermAndFreq(term: String, freq: Long)
+
+  class TermsAndFreqs(termsEnum: TermsEnum) extends Traversable[TermAndFreq] {
+
+    override def foreach[U](f: TermAndFreq => U): Unit = {
+      while (termsEnum.next() != null) {
+        val term = termsEnum.term.utf8ToString()
+        val freq = termsEnum.totalTermFreq
+
+        f(TermAndFreq(term, freq))
+      }
+    }
+
+  }
+
+  object TermsAndFreqs {
+
+    def apply(termsEnum: TermsEnum): TermsAndFreqs = new TermsAndFreqs(termsEnum)
   }
 
   //  val extractorEngine = opm.extractorEngineProvider()
@@ -220,9 +240,8 @@ class OdinsonController @Inject() (
                   // we don't know where the end is in advance, so we queue each freq as we go
                   val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
 
-                  while (termsEnum.next() != null) {
-                    val term = termsEnum.term.utf8ToString
-                    termFreqs.enqueue((term, termsEnum.totalTermFreq))
+                  TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                    termFreqs.enqueue((termAndFreq.term, termAndFreq.freq))
                     // if we exceed the size we need, just throw the oldest away
                     if (termFreqs.size > maxIdx) termFreqs.dequeue()
                   }
@@ -239,11 +258,8 @@ class OdinsonController @Inject() (
                     reverse.getOrElse(false)
                   )
 
-                  var i = 0
-                  while (termsEnum.next() != null && i <= maxIdx) {
-                    val term = termsEnum.term.utf8ToString
-                    termFreqs.update(term, termsEnum.totalTermFreq)
-                    i += 1
+                  TermsAndFreqs(termsEnum).take(maxIdx + 1).foreach { termAndFreq =>
+                    termFreqs.update(termAndFreq.term, termAndFreq.freq)
                   }
                   termFreqs.get
               }
@@ -255,10 +271,8 @@ class OdinsonController @Inject() (
                 reverse.getOrElse(false)
               )
 
-              while (termsEnum.next() != null) {
-                val term = termsEnum.term.utf8ToString
-                // println(term)
-                termFreqs.update(term, termsEnum.totalTermFreq)
+              TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                termFreqs.update(termAndFreq.term, termAndFreq.freq)
               }
               termFreqs.get
           }
@@ -331,7 +345,7 @@ class OdinsonController @Inject() (
 
   case class RuleFreqRequest(
     grammar: String,
-    parentQuery: Option[String] = None,
+    metadataQuery: Option[String] = None,
     allowTriggerOverlaps: Option[Boolean] = None,
     // group: Option[String] = None,
     filter: Option[String] = None,
@@ -350,7 +364,6 @@ class OdinsonController @Inject() (
 
   /** Count how many times each rule matches from the active grammar on the active dataset.
     * @param grammar An Odinson grammar.
-    * @param parentQuery A Lucene query to filter documents (optional).
     * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
     * @param filter Optional regular expression filter for the rule name.
     * @param order "freq" for greatest-to least frequency (default), "alpha" for alphanumeric order.
@@ -366,7 +379,6 @@ class OdinsonController @Inject() (
     val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
     //println(s"GrammarRequest: ${gr}")
     val grammar = ruleFreqRequest.grammar
-    val parentQuery = ruleFreqRequest.parentQuery
     val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
     // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
     // val group = gr.group
@@ -379,16 +391,11 @@ class OdinsonController @Inject() (
     val pretty = ruleFreqRequest.pretty
     try {
       // rules -> OdinsonQuery
-      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
-      val composedExtractors = parentQuery match {
-        case Some(pq) =>
-          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
-        case None => baseExtractors
-      }
+      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
       val mentions: Seq[Mention] = {
         val iterator = extractorEngine.extractMentions(
-          composedExtractors,
+          extractors,
           numSentences = extractorEngine.numDocs(),
           allowTriggerOverlaps = allowTriggerOverlaps,
           disableMatchSelector = false
@@ -601,15 +608,10 @@ class OdinsonController @Inject() (
       // if the field exists, find the frequencies of each term
       if (fieldNames contains field) {
         // find the frequency of all terms in this field
-        val terms = fields.terms(field)
-        val termsEnum = terms.iterator()
-        val termFreqs = scala.collection.mutable.HashMap[String, Long]()
-        while (termsEnum.next() != null) {
-          val term = termsEnum.term.utf8ToString
-          termFreqs.update(term, termsEnum.totalTermFreq)
-        }
-        val frequencies = termFreqs.values.toList.map(_.toDouble)
-
+        val termsEnum = fields.terms(field).iterator()
+        val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
+          termAndFreq.freq.toDouble
+        }.toList
         val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
         Json.arr(jsonObjs).format(pretty)
@@ -622,7 +624,6 @@ class OdinsonController @Inject() (
 
   case class RuleHistRequest(
     grammar: String,
-    parentQuery: Option[String] = None,
     allowTriggerOverlaps: Option[Boolean] = None,
     bins: Option[Int],
     equalProbability: Option[Boolean],
@@ -637,7 +638,6 @@ class OdinsonController @Inject() (
 
   /** Return coordinates defining a histogram of counts/frequencies of matches of each rule.
     * @param grammar An Odinson grammar.
-    * @param parentQuery A Lucene query to filter documents (optional).
     * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
     * @param bins Number of bins to cut the rule counts into.
     * @param equalProbability Whether to make bin widths variable to make them equally probable.
@@ -649,7 +649,6 @@ class OdinsonController @Inject() (
     val extractorEngine: ExtractorEngine = newEngine()
     val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
     val grammar = ruleHistRequest.grammar
-    val parentQuery = ruleHistRequest.parentQuery
     val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
     val bins = ruleHistRequest.bins
     val equalProbability = ruleHistRequest.equalProbability
@@ -657,16 +656,11 @@ class OdinsonController @Inject() (
     val pretty = ruleHistRequest.pretty
     try {
       // rules -> OdinsonQuery
-      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
-      val composedExtractors = parentQuery match {
-        case Some(pq) =>
-          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
-        case None => baseExtractors
-      }
+      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
       val mentions: Seq[Mention] = {
         val iterator = extractorEngine.extractMentions(
-          composedExtractors,
+          extractors,
           numSentences = extractorEngine.numDocs(),
           allowTriggerOverlaps = allowTriggerOverlaps,
           disableMatchSelector = false
@@ -767,7 +761,7 @@ class OdinsonController @Inject() (
     // get terms from the requested field (error if it doesn't exist)
     val extractorEngine: ExtractorEngine = newEngine()
     val fields = MultiFields.getFields(extractorEngine.indexReader)
-    val terms = fields.terms(field).map(_.utf8ToString).toList
+    val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
 
     terms
   }
@@ -802,16 +796,16 @@ class OdinsonController @Inject() (
     *
     * @param extractorEngine An extractor whose state should be altered.
     * @param odinsonQuery An Odinson pattern.
-    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param metadataQuery A query to filter documents (optional).
     * @param label The label to use when committing matches.
     */
   def commitResults(
     extractorEngine: ExtractorEngine,
     odinsonQuery: String,
-    parentQuery: Option[String],
+    metadataQuery: Option[String],
     label: String = "Mention"
   ): Unit = {
-    val results = parentQuery match {
+    val results = metadataQuery match {
       case None =>
         val q = extractorEngine.compiler.mkQuery(odinsonQuery)
         extractorEngine.query(q)
@@ -845,7 +839,6 @@ class OdinsonController @Inject() (
 
   case class GrammarRequest(
     grammar: String,
-    parentQuery: Option[String] = None,
     pageSize: Option[Int] = None,
     allowTriggerOverlaps: Option[Boolean] = None,
     pretty: Option[Boolean] = None
@@ -859,7 +852,6 @@ class OdinsonController @Inject() (
   /** Executes the provided Odinson grammar.
     *
     * @param grammar An Odinson grammar
-    * @param parentQuery A Lucene query to filter documents (optional).
     * @param pageSize The maximum number of sentences to execute the rules against.
     * @param allowTriggerOverlaps Whether or not event arguments are permitted to overlap with the event's trigger.
     * @return JSON of matches
@@ -872,18 +864,13 @@ class OdinsonController @Inject() (
     val gr = request.body.asJson.get.as[GrammarRequest]
     //println(s"GrammarRequest: ${gr}")
     val grammar = gr.grammar
-    val parentQuery = gr.parentQuery
     val pageSize = gr.pageSize
     val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
     val pretty = gr.pretty
     try {
       // rules -> OdinsonQuery
-      val baseExtractors = extractorEngine.ruleReader.compileRuleString(grammar)
-      val composedExtractors = parentQuery match {
-        case Some(pq) =>
-          baseExtractors.map(be => be.copy(query = extractorEngine.mkFilteredQuery(be.query, pq)))
-        case None => baseExtractors
-      }
+      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
+
       val start = System.currentTimeMillis()
 
       val maxSentences: Int = pageSize match {
@@ -894,7 +881,7 @@ class OdinsonController @Inject() (
       val mentions: Seq[Mention] = {
         // FIXME: should deal in iterators to allow for, e.g., pagination...?
         val iterator = extractorEngine.extractMentions(
-          composedExtractors,
+          extractors,
           numSentences = maxSentences,
           allowTriggerOverlaps = allowTriggerOverlaps,
           disableMatchSelector = false
@@ -904,13 +891,13 @@ class OdinsonController @Inject() (
 
       val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-      val json = Json.toJson(mkJson(parentQuery, duration, allowTriggerOverlaps, mentions))
+      val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
       json.format(pretty)
     } catch handleNonFatal
   }
 
   /** @param odinsonQuery An Odinson pattern
-    * @param parentQuery A Lucene query to filter documents (optional).
+    * @param metadataQuery A Lucene query to filter documents (optional).
     * @param label The label to use when committing matches to the state.
     * @param commit Whether or not results should be committed to the state.
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
@@ -919,7 +906,7 @@ class OdinsonController @Inject() (
     */
   def runQuery(
     odinsonQuery: String,
-    parentQuery: Option[String],
+    metadataQuery: Option[String],
     label: Option[String], // FIXME: in the future, this will be decided in the grammar
     commit: Option[Boolean], // FIXME: in the future, this will be decided in the grammar
     prevDoc: Option[Int],
@@ -931,7 +918,7 @@ class OdinsonController @Inject() (
       try {
         val extractorEngine: ExtractorEngine = newEngine()
 
-        val oq = parentQuery match {
+        val oq = metadataQuery match {
           case Some(pq) =>
             extractorEngine.compiler.mkQuery(odinsonQuery, pq)
           case None =>
@@ -947,12 +934,12 @@ class OdinsonController @Inject() (
           commitResults(
             extractorEngine = extractorEngine,
             odinsonQuery = odinsonQuery,
-            parentQuery = parentQuery,
+            metadataQuery = metadataQuery,
             label = label.getOrElse("Mention")
           )
         }
 
-        val json = Json.toJson(mkJson(odinsonQuery, parentQuery, duration, results, enriched))
+        val json = Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
         json.format(pretty)
       } catch handleNonFatal
     }
@@ -1031,7 +1018,7 @@ class OdinsonController @Inject() (
 
   def mkJson(
     odinsonQuery: String,
-    parentQuery: Option[String],
+    metadataQuery: Option[String],
     duration: Float,
     results: OdinResults,
     enriched: Boolean
@@ -1045,7 +1032,7 @@ class OdinsonController @Inject() (
     Json.obj(
       // format: off
       "odinsonQuery" -> odinsonQuery,
-      "parentQuery"  -> parentQuery,
+      "metadataQuery"  -> metadataQuery,
       "duration"     -> duration,
       "totalHits"    -> results.totalHits,
       "scoreDocs"    -> scoreDocs
@@ -1055,7 +1042,7 @@ class OdinsonController @Inject() (
 
   /** Process results from executeGrammar */
   def mkJson(
-    parentQuery: Option[String],
+    metadataQuery: Option[String],
     duration: Float,
     allowTriggerOverlaps: Boolean,
     mentions: Seq[Mention]
@@ -1065,7 +1052,7 @@ class OdinsonController @Inject() (
 
     Json.obj(
       // format: off
-      "parentQuery"          -> parentQuery,
+      "metadataQuery"          -> metadataQuery,
       "duration"             -> duration,
       "allowTriggerOverlaps" -> allowTriggerOverlaps,
       "mentions"             -> mentionsJson

@@ -25,6 +25,14 @@ object MetadataCompiler {
     compile(expression, isNested = false)
   }
 
+  def combineAnd(queries: Seq[Query]): Query = {
+    val builder = new BooleanQuery.Builder
+    queries foreach { query =>
+      builder.add(query, BooleanClause.Occur.MUST)
+    }
+    builder.build()
+  }
+
   def compile(expr: Ast.BoolExpression, isNested: Boolean): Query = {
     expr match {
       case Ast.OrExpression(clauses) =>

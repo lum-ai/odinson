@@ -18,7 +18,8 @@ import ai.lum.odinson.lucene.search.highlight.ConsoleHighlighter
 import ai.lum.odinson.BuildInfo
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.digraph.Vocabulary
-import ai.lum.odinson.extra.ProcessorsUtils.getProcessor
+import ai.lum.odinson.extra.utils.ProcessorsUtils
+import ai.lum.odinson.extra.utils.ProcessorsUtils.getProcessor
 import org.clulab.processors.Processor
 
 object Shell extends App {
