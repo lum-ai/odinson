@@ -120,11 +120,11 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
-    "process a pattern query using the runQuery method without a parentQuery" in {
+    "process a pattern query using the runQuery method without a metadataQuery" in {
 
       val res = controller.runQuery(
         odinsonQuery = "[lemma=be] []",
-        parentQuery = None,
+        metadataQuery = None,
         label = None,
         commit = None,
         prevDoc = None,
@@ -139,11 +139,11 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
     }
 
-    "process a pattern query using the runQuery method with a parentQuery" in {
+    "process a pattern query using the runQuery method with a metadataQuery" in {
 
       val res1 = controller.runQuery(
         odinsonQuery = "[lemma=pie]",
-        parentQuery = Some("character contains '/Maj.*/'"),
+        metadataQuery = Some("character contains '/Maj.*/'"),
         label = None,
         commit = None,
         prevDoc = None,
@@ -159,7 +159,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
 
       val res2 = controller.runQuery(
         odinsonQuery = "[lemma=pie]",
-        parentQuery = Some("character contains 'Special Agent'"),
+        metadataQuery = Some("character contains 'Special Agent'"),
         label = None,
         commit = None,
         prevDoc = None,
