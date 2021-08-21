@@ -349,18 +349,19 @@ object OdinsonIndexWriter {
         (dir, vocab)
     }
 
-    val storedFields = config.apply[List[String]]("odinson.index.storedFields")
+    val sentenceStoredFields = config.apply[List[String]]("odinson.index.sentenceStoredFields")
+    val metadataStoredFields = config.apply[List[String]]("odinson.index.metadataStoredFields")
     val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
-    if (!storedFields.contains(displayField)) {
-      throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
+    if (!sentenceStoredFields.contains(displayField)) {
+      throw new OdinsonException("`odinson.index.sentenceStoredFields` must contain `odinson.displayField`")
     }
 
     new OdinsonIndexWriter(
       // format: off
       directory            = directory, 
       vocabulary           = vocabulary,
-      settings             = IndexSettings(storedFields),
+      settings             = IndexSettings(sentenceStoredFields, metadataStoredFields),
       normalizedTokenField = config.apply[String]("odinson.index.normalizedTokenField"),
       addToNormalizedField = config.apply[List[String]]("odinson.index.addToNormalizedField").toSet,
       incomingTokenField   = config.apply[String]("odinson.index.incomingTokenField"),

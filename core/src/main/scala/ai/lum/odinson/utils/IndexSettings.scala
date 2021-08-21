@@ -12,11 +12,14 @@ import ujson.Value
   *
   * @param storedFields the names of the fields that are stored fields in the lucene index
   */
-class IndexSettings(val storedFields: Seq[String]) {
+class IndexSettings(val sentenceStoredFields: Seq[String], val metadataStoredFields: Seq[String]) {
 
+  // All stored fields
+  val storedFields = sentenceStoredFields ++ metadataStoredFields
   def asJsonValue: Value = {
     ujson.Obj(
-      "storedFields" -> storedFields
+      "sentenceStoredFields" -> sentenceStoredFields,
+      "metadataStoredFields" -> metadataStoredFields
     )
   }
 
@@ -28,12 +31,13 @@ class IndexSettings(val storedFields: Seq[String]) {
 
 object IndexSettings {
 
-  def apply(storedFields: Seq[String]): IndexSettings = new IndexSettings(storedFields)
+  def apply(sentenceStoredFields: Seq[String], metadataStoredFields: Seq[String]): IndexSettings = new IndexSettings(sentenceStoredFields, metadataStoredFields)
 
   def load(dump: String): IndexSettings = {
     val json = ujson.read(dump)
-    val storedFields = json("storedFields").arr.map(_.str)
-    new IndexSettings(storedFields)
+    val sentenceStoredFields = json("sentenceStoredFields").arr.map(_.str)
+    val metadataStoredFields = json("metadataStoredFields").arr.map(_.str)
+    new IndexSettings(sentenceStoredFields, metadataStoredFields)
   }
 
   def fromDirectory(directory: Directory): IndexSettings =
@@ -43,7 +47,7 @@ object IndexSettings {
           IndexSettings.load(stream.readString())
       }
     } catch {
-      case e: IOException => IndexSettings(Seq())
+      case e: IOException => IndexSettings(Seq(), Seq())
     }
 
 }
