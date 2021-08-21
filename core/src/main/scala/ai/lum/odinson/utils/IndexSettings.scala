@@ -16,6 +16,7 @@ class IndexSettings(val sentenceStoredFields: Seq[String], val metadataStoredFie
 
   // All stored fields
   val storedFields = sentenceStoredFields ++ metadataStoredFields
+
   def asJsonValue: Value = {
     ujson.Obj(
       "sentenceStoredFields" -> sentenceStoredFields,
@@ -31,7 +32,8 @@ class IndexSettings(val sentenceStoredFields: Seq[String], val metadataStoredFie
 
 object IndexSettings {
 
-  def apply(sentenceStoredFields: Seq[String], metadataStoredFields: Seq[String]): IndexSettings = new IndexSettings(sentenceStoredFields, metadataStoredFields)
+  def apply(sentenceStoredFields: Seq[String], metadataStoredFields: Seq[String]): IndexSettings =
+    new IndexSettings(sentenceStoredFields, metadataStoredFields)
 
   def load(dump: String): IndexSettings = {
     val json = ujson.read(dump)

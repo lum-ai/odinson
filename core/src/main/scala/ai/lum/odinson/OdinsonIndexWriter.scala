@@ -354,7 +354,9 @@ object OdinsonIndexWriter {
     val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
     if (!sentenceStoredFields.contains(displayField)) {
-      throw new OdinsonException("`odinson.index.sentenceStoredFields` must contain `odinson.displayField`")
+      throw new OdinsonException(
+        "`odinson.index.sentenceStoredFields` must contain `odinson.displayField`"
+      )
     }
 
     new OdinsonIndexWriter(
