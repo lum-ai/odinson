@@ -35,7 +35,7 @@ class TestMention extends OdinsonTest {
 
   it should "be populated to a certain level when asked" in {
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
+    val ee = extractorEngineWithSentenceStoredFields(doc, Seq("raw", "lemma"))
     val mentions = ee.extractMentions(ee.compileRuleString(rules)).toArray
     mentions should have size (2) // the main mention and the untyped arg
     val event = mentions.filter(_.label.isDefined).head
@@ -57,7 +57,7 @@ class TestMention extends OdinsonTest {
 
   it should "populate arguments when populated" in {
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
+    val ee = extractorEngineWithSentenceStoredFields(doc, Seq("raw", "lemma"))
     val mentions = ee.extractMentions(ee.compileRuleString(rules)).toArray
     mentions should have size (2) // the main mention and the untyped arg
     val event = mentions.filter(_.label.isDefined).head
@@ -74,7 +74,7 @@ class TestMention extends OdinsonTest {
 
   it should "produce mention copies that are populated at the same level" in {
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
+    val ee = extractorEngineWithSentenceStoredFields(doc, Seq("raw", "lemma"))
     val mentions = ee.extractMentions(ee.compileRuleString(rules)).toArray
     mentions should have size (2) // the main mention and the untyped arg
     val event = mentions.filter(_.label.isDefined).head

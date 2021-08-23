@@ -56,7 +56,7 @@ class TestOdinsonTest extends OdinsonTest {
         .withValue("odinson.displayField", ConfigValueFactory.fromAnyRef("foobar"))
         // The displayField is required to be in the storedFields
         .withValue(
-          "odinson.index.storedFields",
+          "odinson.index.sentenceStoredFields",
           ConfigValueFactory.fromAnyRef(Seq("foobar").asJava)
         ),
       doc

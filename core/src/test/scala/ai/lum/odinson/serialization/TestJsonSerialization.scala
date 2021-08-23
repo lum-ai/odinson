@@ -11,15 +11,9 @@ class TestJsonSerialization extends OdinsonTest {
 
   val doc = getDocument("rainbows")
   val engine = mkExtractorEngine(doc)
-  val storedFields = util.Arrays.asList("raw", "lemma", "tag")
+  val storedFields = Seq("raw", "lemma", "tag")
 
-  val verboseEngine = mkExtractorEngine(
-    defaultConfig.withValue(
-      "odinson.index.storedFields",
-      ConfigValueFactory.fromIterable(storedFields)
-    ),
-    doc
-  )
+  val verboseEngine = extractorEngineWithSentenceStoredFields(doc, storedFields)
 
   val extractors = engine.compileRuleResource("/serialization.yml")
 

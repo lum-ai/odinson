@@ -9,7 +9,7 @@ class TestTokenStreamUtils extends OdinsonTest {
 
   it should "not get more fields than requested when accessing the Document" in {
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
+    val ee = extractorEngineWithSentenceStoredFields(doc, Seq("raw", "lemma"))
 
     val tokens =
       TokenStreamUtils.getTokensFromMultipleFields(0, Set("raw"), ee.indexReader, ee.analyzer)
