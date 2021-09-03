@@ -3,9 +3,11 @@ package ai.lum.odinson.lucene.index
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.lucene.OdinResults
+import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import ai.lum.odinson.{BuildInfo, Document => OdinsonDocument}
+import ai.lum.odinson.{BuildInfo, LazyIdGetter, Document => OdinsonDocument}
 import com.typesafe.config.Config
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
@@ -47,11 +49,17 @@ trait OdinsonIndex {
 
     def search[ CollectorType <: Collector, ResultType ]( query : Query, manager : CollectorManager[ CollectorType, ResultType ] ) : ResultType
 
+    def search( scoreDoc : OdinsonScoreDoc, query : OdinsonQuery, cappedHits : Int, disableMatchSelector : Boolean ) : OdinResults
+
     def numDocs( ) : Int
+
+    def maxDoc( ) : Int
 
     def doc( docId : Int ) : LuceneDocument
 
     def doc( docID : Int, fieldNames : Set[ String ] ) : LuceneDocument
+
+    def lazyIdGetter( luceneDocId : Int ) : LazyIdGetter
 
     def getTermVectors( docId : Int ) : Fields
 

@@ -1,8 +1,10 @@
 package ai.lum.odinson.lucene.index
 
+import ai.lum.odinson.lucene.OdinResults
+import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import ai.lum.odinson.{Document => OdinsonDocument}
+import ai.lum.odinson.{LazyIdGetter, Document => OdinsonDocument}
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document => LuceneDocument}
@@ -60,6 +62,17 @@ class IncrementalOdinsonIndex( override val directory : Directory,
 
     override def addOdinsonDocument( doc : OdinsonDocument ) : Unit = {
         write( odinsonWriter.mkDocumentBlock( doc ).asJava )
+    }
+
+    override def lazyIdGetter( luceneDocId : Int ) : LazyIdGetter = {
+        var searcher : IndexSearcher = null
+        try {
+            val searcher : OdinsonIndexSearcher = acquireSearcher().asInstanceOf[ OdinsonIndexSearcher ]
+            new LazyIdGetter( searcher, luceneDocId )
+        } catch {
+            case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
+        }
+        finally releaseSearcher( searcher )
     }
 
     override def search( query : Query, limit : Int ) : TopDocs = {
@@ -157,6 +170,17 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         finally releaseSearcher( searcher )
     }
 
+    override def maxDoc( ) : Int = {
+        var searcher : IndexSearcher = null
+        try {
+            searcher = acquireSearcher()
+            searcher.getIndexReader.maxDoc()
+        } catch {
+            case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
+        }
+        finally releaseSearcher( searcher )
+    }
+
     private def acquireSearcher( ) : IndexSearcher = manager.acquire()
 
     private def releaseSearcher( searcher : IndexSearcher ) : Unit = manager.release( searcher )
@@ -177,6 +201,11 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         luceneWriter.flush()
         luceneWriter.commit()
         luceneWriter.close()
+    }
+
+    override def search( scoreDoc : OdinsonScoreDoc, query : OdinsonQuery, cappedHits : Int, disableMatchSelector : Boolean ) : OdinResults = {
+        val manager = new OdinsonCollectorManager( scoreDoc, cappedHits, computeTotalHits, disableMatchSelector )
+        this.search( query, manager )
     }
 
 }
