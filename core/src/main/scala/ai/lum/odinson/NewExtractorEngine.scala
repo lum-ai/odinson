@@ -1,31 +1,20 @@
 package ai.lum.odinson
 
-import java.io.File
-
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{
-  Query,
-  TermQuery,
-  BooleanClause => LuceneBooleanClause,
-  BooleanQuery => LuceneBooleanQuery
-}
-import org.apache.lucene.store.{ Directory, FSDirectory }
-import org.apache.lucene.index.{ DirectoryReader, Term }
-import com.typesafe.config.Config
-import ai.lum.common.ConfigFactory
-import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.search._
-import ai.lum.odinson.state.{ MockState, State }
-import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.utils.MostRecentlyUsed
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.index.Term
+import org.apache.lucene.search.{Query, TermQuery, BooleanClause => LuceneBooleanClause, BooleanQuery => LuceneBooleanQuery}
 
+import java.io.File
 import scala.collection.mutable.ArrayBuffer
 
-class ExtractorEngine private (
+class NewExtractorEngine private (
   val indexSearcher: OdinsonIndexSearcher,
   val compiler: QueryCompiler,
   val dataGatherer: DataGatherer,
@@ -713,66 +702,4 @@ class ExtractorEngine private (
 
 }
 
-object ExtractorEngine {
-  lazy val defaultConfig: Config = ConfigFactory.load()
 
-  def fromConfig(): ExtractorEngine = {
-    fromConfig(defaultConfig)
-  }
-
-  def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config.apply[File]("odinson.indexDir").toPath
-    val indexDir = FSDirectory.open(indexPath)
-    fromDirectory(config, indexDir)
-  }
-
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
-    val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
-    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    fromDirectory(config, indexDir, indexSearcher)
-  }
-
-  def fromDirectory(
-    config: Config,
-    indexDir: Directory,
-    indexSearcher: OdinsonIndexSearcher
-  ): ExtractorEngine = {
-    val displayField = config.apply[String]("odinson.displayField")
-    val dataGatherer = DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
-    val vocabulary = Vocabulary.fromDirectory(indexDir)
-    val compiler = QueryCompiler(config, vocabulary)
-    val state = State(config, indexSearcher, indexDir)
-    new ExtractorEngine(
-      indexSearcher,
-      compiler,
-      dataGatherer,
-      state
-    )
-  }
-
-  def inMemory(doc: Document): ExtractorEngine = {
-    inMemory(Seq(doc))
-  }
-
-  def inMemory(docs: Seq[Document]): ExtractorEngine = {
-    inMemory(ConfigFactory.load(), docs)
-  }
-
-  // Expecting a config that is already inside the `odinson` namespace
-  def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
-    // make a memory index
-    val memWriter = OdinsonIndexWriter.inMemory(config)
-    // add documents to index
-    for (doc <- docs) {
-      val block = memWriter.mkDocumentBlock(doc)
-      memWriter.addDocuments(block)
-    }
-    // finalize index writer
-    memWriter.commit()
-    memWriter.close()
-    // return extractor engine
-    ExtractorEngine.fromDirectory(config, memWriter.directory)
-  }
-
-}

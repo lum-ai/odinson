@@ -6,10 +6,12 @@ import java.util.{ Collection, Map => JMap }
 import ai.lum.common.TryWithResources.using
 
 import scala.collection.JavaConverters._
+import org.apache.lucene.search.{ Query => LuceneQuery }
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene.search.OdinsonQuery
+import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.utils.{ RuleSources, SituatedStream, VariableSubstitutor }
 
@@ -19,7 +21,8 @@ import ai.lum.odinson.utils.{ RuleSources, SituatedStream, VariableSubstitutor }
   */
 case class RuleFile(
   rules: Seq[Rule],
-  variables: Map[String, String]
+  variables: Map[String, String],
+  metadataFilter: Option[LuceneQuery]
 )
 
 /** A Rule represents a single rule parsed from a yaml file.
@@ -48,7 +51,7 @@ class RuleReader(val compiler: QueryCompiler) {
 
   /** gets a rule stream and returns a sequence of extractors ready to be used */
   def compileRuleStream(input: SituatedStream): Seq[Extractor] = {
-    compileRuleStream(input, Map.empty[String, String])
+    compileRuleStream(input, Map.empty[String, String], None)
   }
 
   /** Gets a rule stream as well as a map of variables.
@@ -56,7 +59,27 @@ class RuleReader(val compiler: QueryCompiler) {
     *  The variables passed as an argument will override the variables declared in the file.
     */
   def compileRuleStream(input: SituatedStream, variables: Map[String, String]): Seq[Extractor] = {
-    val ruleFiles = parseRuleFile(input, variables)
+    compileRuleStream(input, variables, None)
+  }
+
+  /** Gets a rule stream as well as a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleStream(input: SituatedStream, metadataFilter: LuceneQuery): Seq[Extractor] = {
+    compileRuleStream(input, Map.empty, Some(metadataFilter))
+  }
+
+  /** Gets a rule stream, variables, and a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleStream(
+    input: SituatedStream,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
+    val ruleFiles = parseRuleFile(input, variables, metadataFilterOpt)
     mkExtractorsFromRuleFiles(ruleFiles, variables)
   }
 
@@ -65,7 +88,7 @@ class RuleReader(val compiler: QueryCompiler) {
     * @return extractors
     */
   def compileRuleFile(input: String): Seq[Extractor] = {
-    compileRuleFile(input, Map.empty[String, String])
+    compileRuleFile(input, Map.empty[String, String], None)
   }
 
   /** Gets the path to a rule file as well as a map of variables.
@@ -73,59 +96,144 @@ class RuleReader(val compiler: QueryCompiler) {
     *  The variables passed as an argument will override the variables declared in the file.
     */
   def compileRuleFile(input: String, variables: Map[String, String]): Seq[Extractor] = {
-    compileRuleFile(new File(input), variables)
+    compileRuleFile(new File(input), variables, None)
+  }
+
+  /** Gets the path to a rule file as well as a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleFile(input: String, metadataFilter: LuceneQuery): Seq[Extractor] = {
+    compileRuleFile(new File(input), Map.empty[String, String], Some(metadataFilter))
+  }
+
+  /** Gets the path to a rule file, a map of variables, and a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleFile(
+    input: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
+    compileRuleFile(new File(input), variables, metadataFilterOpt)
   }
 
   /** gets a rule File object and returns a sequence of extractors ready to be used */
   def compileRuleFile(input: File): Seq[Extractor] = {
-    compileRuleFile(input, Map.empty[String, String])
+    compileRuleFile(input, Map.empty[String, String], None)
   }
 
-  /** Gets a rule File object as well as a map of variables.
+  /** Gets a rule File object and a map of variables.
     *  Returns a sequence of extractors ready to be used.
     *  The variables passed as an argument will override the variables declared in the file.
     */
   def compileRuleFile(input: File, variables: Map[String, String]): Seq[Extractor] = {
-    compileRuleStream(SituatedStream.fromFile(input.getCanonicalPath), variables)
+    compileRuleStream(SituatedStream.fromFile(input.getCanonicalPath), variables, None)
+  }
+
+  /** Gets a rule File object and a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleFile(input: File, metadataFilterOpt: LuceneQuery): Seq[Extractor] = {
+    compileRuleStream(
+      SituatedStream.fromFile(input.getCanonicalPath),
+      Map.empty,
+      Some(metadataFilterOpt)
+    )
+  }
+
+  /** Gets a rule File object, a map of variables, and a metadata filter.
+    *  Returns a sequence of extractors ready to be used.
+    *  The variables passed as an argument will override the variables declared in the file.
+    */
+  def compileRuleFile(
+    input: File,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromFile(input.getCanonicalPath), variables, metadataFilterOpt)
   }
 
   /** Gets the path to a rule file in the jar resources as well as a map of variables.
     * Returns a sequence of extractors ready to be used
     */
   def compileRuleResource(rulePath: String): Seq[Extractor] = {
-    compileRuleResource(rulePath, Map.empty[String, String])
+    compileRuleResource(rulePath, Map.empty[String, String], None)
   }
 
-  /** Gets the path to a rule file in the jar resources as well as a map of variables.
+  /** Gets the path to a rule file in the jar resources and a map of variables.
     * Returns a sequence of extractors ready to be used
     */
   def compileRuleResource(rulePath: String, variables: Map[String, String]): Seq[Extractor] = {
-    compileRuleStream(SituatedStream.fromResource(rulePath), variables)
+    compileRuleStream(SituatedStream.fromResource(rulePath), variables, None)
+  }
+
+  /** Gets the path to a rule file in the jar resources and a metadata filter.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleResource(rulePath: String, metadataFilter: LuceneQuery): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromResource(rulePath), Map.empty, Some(metadataFilter))
+  }
+
+  /** Gets the path to a rule file in the jar resources, a map of variables, and a metadata filter.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleResource(
+    rulePath: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromResource(rulePath), variables, metadataFilterOpt)
   }
 
   /** Gets the actual rules content as a string.
     * Returns a sequence of extractors ready to be used
     */
   def compileRuleString(rules: String): Seq[Extractor] = {
-    compileRuleString(rules, Map.empty[String, String])
+    compileRuleString(rules, Map.empty[String, String], None)
   }
 
   /** Gets the actual rules content as a string.
     * Returns a sequence of extractors ready to be used
     */
   def compileRuleString(rules: String, variables: Map[String, String]): Seq[Extractor] = {
-    compileRuleStream(SituatedStream.fromString(rules), variables)
+    compileRuleStream(SituatedStream.fromString(rules), variables, None)
+  }
+
+  /** Gets the actual rules content as a string.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleString(rules: String, metadataFilter: LuceneQuery): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromString(rules), Map.empty, Some(metadataFilter))
+  }
+
+  /** Gets the actual rules content as a string.
+    * Returns a sequence of extractors ready to be used
+    */
+  def compileRuleString(
+    rules: String,
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
+    compileRuleStream(SituatedStream.fromString(rules), variables, metadataFilterOpt)
   }
 
   /** Parses the content of the rule file and returns a RuleFile object
     *  that contains the parsed rules and the variables declared in the file.
     *  Note that variable replacement hasn't happened yet.
     */
-  def parseRuleFile(input: SituatedStream, parentVars: Map[String, String]): Seq[RuleFile] = {
+  def parseRuleFile(
+    input: SituatedStream,
+    parentVars: Map[String, String],
+    metadataFilterOptIn: Option[LuceneQuery]
+  ): Seq[RuleFile] = {
     val master = yamlContents(input)
     // Parent vars passed in case we need to resolve variables in import paths
     val localVariables = mkVariables(master, input, parentVars) ++ parentVars
-    mkRules(master, input, localVariables)
+    val metadataFilter = mkMetadataFilter(master, metadataFilterOptIn)
+    mkRules(master, input, localVariables, metadataFilter)
   }
 
   def mkExtractorsFromRuleFiles(
@@ -137,7 +245,7 @@ class RuleReader(val compiler: QueryCompiler) {
 
   /** gets a RuleFile and returns a sequence of extractors */
   def mkExtractors(f: RuleFile): Seq[Extractor] = {
-    mkExtractors(f.rules, f.variables)
+    mkExtractors(f.rules, f.variables, f.metadataFilter)
   }
 
   /** Gets a RuleFile and a variable map and returns a sequence of extractors.
@@ -146,23 +254,31 @@ class RuleReader(val compiler: QueryCompiler) {
   def mkExtractors(f: RuleFile, variables: Map[String, String]): Seq[Extractor] = {
     // The order in which the variable maps are concatenated is important.
     // The variables provided should override the variables in the RuleFile.
-    mkExtractors(f.rules, f.variables ++ variables)
+    mkExtractors(f.rules, f.variables ++ variables, f.metadataFilter)
   }
 
   /** gets a sequence of rules and returns a sequence of extractors */
   def mkExtractors(rules: Seq[Rule]): Seq[Extractor] = {
-    mkExtractors(rules, Map.empty[String, String])
+    mkExtractors(rules, Map.empty[String, String], None)
   }
 
   /** Gets a sequence of rules as well as a variable map
     *  and returns a sequence of extractors ready to be used.
     */
-  def mkExtractors(rules: Seq[Rule], variables: Map[String, String]): Seq[Extractor] = {
+  def mkExtractors(
+    rules: Seq[Rule],
+    variables: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Seq[Extractor] = {
     val varsub = new VariableSubstitutor(variables)
-    for (rule <- rules) yield mkExtractor(rule, varsub)
+    for (rule <- rules) yield mkExtractor(rule, varsub, metadataFilterOpt)
   }
 
-  private def mkExtractor(rule: Rule, varsub: VariableSubstitutor): Extractor = {
+  private def mkExtractor(
+    rule: Rule,
+    varsub: VariableSubstitutor,
+    metadataFilterOpt: Option[LuceneQuery]
+  ): Extractor = {
     // any field in the rule may contain variables,
     // so we need to pass them through the variable substitutor
     val name = varsub(rule.name)
@@ -176,8 +292,47 @@ class RuleReader(val compiler: QueryCompiler) {
       case "event" => compiler.compileEventQuery(pattern)
       case t       => throw new OdinsonException(s"invalid rule type '$t'")
     }
-    // return an extractor
-    Extractor(name, label, priority, query)
+    // add the metadata filter if applicable, and return an extractor
+    if (metadataFilterOpt.isEmpty) {
+      Extractor(name, label, priority, query)
+    } else {
+      Extractor(name, label, priority, compiler.mkQuery(query, metadataFilterOpt.get))
+    }
+  }
+
+  private def mkMetadataFilter(
+    data: Map[String, Any],
+    parentMetadataFilter: Option[LuceneQuery]
+  ): Option[LuceneQuery] = {
+    val localFilter = data.get("metadataFilters").flatMap(parseFilter)
+    joinFilters(localFilter, parentMetadataFilter)
+  }
+
+  private def parseFilter(data: Any): Option[LuceneQuery] = {
+    data match {
+      case pattern: String => Some(MetadataCompiler.mkQuery(pattern))
+      case filters: Collection[_] =>
+        val allFilters = filters.asScala.toSeq.flatMap(parseFilter)
+        joinFilters(allFilters)
+      case _ => ???
+    }
+  }
+
+  def joinFilters(q1: Option[LuceneQuery], q2: Option[LuceneQuery]): Option[LuceneQuery] = {
+    if (q1.isEmpty) q2
+    else if (q2.isEmpty) q1
+    else {
+      // both defined
+      joinFilters(Seq(q1.get, q2.get))
+    }
+  }
+
+  def joinFilters(queries: Seq[LuceneQuery]): Option[LuceneQuery] = {
+    queries match {
+      case Seq()         => None
+      case Seq(oneQuery) => Some(oneQuery)
+      case several       => Some(MetadataCompiler.combineAnd(several))
+    }
   }
 
   // parentVars passed in case we need to resolve variables in import paths
@@ -237,13 +392,14 @@ class RuleReader(val compiler: QueryCompiler) {
   private def mkRules(
     data: Map[String, Any],
     source: SituatedStream,
-    vars: Map[String, String]
+    vars: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
   ): Seq[RuleFile] = {
     data.get("rules") match {
       case None => Seq.empty
       case Some(rules: Collection[_]) =>
         rules.asScala.toSeq.flatMap { r =>
-          makeOrImportRules(r, source, vars)
+          makeOrImportRules(r, source, vars, metadataFilterOpt)
         }
       case _ => throw new OdinsonException("invalid rules data")
     }
@@ -252,7 +408,8 @@ class RuleReader(val compiler: QueryCompiler) {
   def makeOrImportRules(
     data: Any,
     source: SituatedStream,
-    parentVars: Map[String, String]
+    parentVars: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
   ): Seq[RuleFile] = {
     data match {
       case ruleJMap: JMap[_, _] =>
@@ -263,10 +420,12 @@ class RuleReader(val compiler: QueryCompiler) {
           // import rules from a file and return them
           // Parent vars passed in case we need to resolve variables in import paths
           val importVars = mkVariables(rulesData, source, parentVars)
-          importRules(rulesData, source, parentVars ++ importVars)
+          // resolve the metadata filters, combining with AND
+          val importFilters = mkMetadataFilter(rulesData, metadataFilterOpt)
+          importRules(rulesData, source, parentVars ++ importVars, importFilters)
         } else {
           // Otherwise, process the data as individual rules
-          Seq(RuleFile(Seq(mkRule(data)), parentVars))
+          Seq(RuleFile(Seq(mkRule(data)), parentVars, metadataFilterOpt))
         }
       case _ => ???
     }
@@ -275,14 +434,15 @@ class RuleReader(val compiler: QueryCompiler) {
   private def importRules(
     data: Map[String, Any],
     source: SituatedStream,
-    importVars: Map[String, String]
+    importVars: Map[String, String],
+    metadataFilterOpt: Option[LuceneQuery]
   ): Seq[RuleFile] = {
     // get the current working directory, with ending separator
     val relativePath = data("import").toString
     // handle substitutions in path name
     val resolved = new VariableSubstitutor(importVars).apply(relativePath)
     val importStream = source.relativePathStream(resolved)
-    parseRuleFile(importStream, importVars)
+    parseRuleFile(importStream, importVars, metadataFilterOpt)
   }
 
   private def mkRule(data: Any): Rule = {

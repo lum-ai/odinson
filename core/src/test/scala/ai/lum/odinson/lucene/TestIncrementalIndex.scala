@@ -26,17 +26,16 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterAll {
           .withValue( "odinson.index.incremental", ConfigValueFactory.fromAnyRef( true ) )
     }
 
-    "Odinson Incremental Index" should "object should return index from config correctly" in {
-        val index = createOdinsonIndex( testConfig )
-        index.directory.listAll.head shouldBe "write.lock"
-        index.close()
-    }
-
     override def afterAll( ) : Unit = {
         val dir = new Directory( testDataDir )
         dir.deleteRecursively()
     }
 
+    "Odinson Incremental Index" should "object should return index from config correctly" in {
+        val index = createOdinsonIndex( testConfig )
+        index.directory.listAll.head shouldBe "write.lock"
+        index.close()
+    }
 
     it should "properly dump and load relevant settings" in {
         val config = {

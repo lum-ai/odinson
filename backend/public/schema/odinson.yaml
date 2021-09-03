@@ -51,15 +51,15 @@ paths:
           schema:
             type: string
           example: "[lemma=phosphorylate] []"
-        - name: parentQuery
+        - name: metadataQuery
           in: query
           required: false
           type: string
           schema:
             type: string
           description: |
-            A Lucene query to filter Documents before applying an Odinson pattern.
-          example: "year: 1973"
+            A query to filter Documents by their metadata before applying an Odinson pattern.
+          example: "year == 1973"
         - name: label
           in: query
           description: |
@@ -508,7 +508,7 @@ paths:
   #     operationId: most-common
   #     parameters:
   #       - $ref: '#/components/schemas/OdinsonPattern'
-  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #       - $ref: '#/components/schemas/MetadataQuery'
   #       - name: k
   #         in: query
   #         description: |
@@ -584,7 +584,7 @@ paths:
   #     operationId: export-results
   #     parameters:
   #       - $ref: '#/components/schemas/OdinsonPattern'
-  #       - $ref: '#/components/schemas/ParentDocumentQuery'
+  #       - $ref: '#/components/schemas/MetadataQuery'
   #     responses:
   #       '200':
   #         description: "A TSV file of matches. START and END are character spans relative to the beginning of the sentence."
@@ -684,11 +684,6 @@ components:
                 pattern: |
                   trigger = [lemma=have]
                   subject  = >nsubj []
-#        parentQuery:
-#          type: string
-#          description: |
-#            A Lucene query to filter Documents before applying an Odinson pattern.
-#          example: "year: 1973"
         pageSize:
           type: integer
           format: int32
@@ -737,11 +732,6 @@ components:
                 pattern: |
                   trigger = [lemma=have]
                   agent   = >nmod_by []
-#        parentQuery:
-#          type: string
-#          description: |
-#            A Lucene query to filter Documents before applying an Odinson pattern.
-#          example: "year: 1973"
         allowTriggerOverlaps:
           type: boolean
           description: |
@@ -824,11 +814,6 @@ components:
                 pattern: |
                   trigger = [lemma=have]
                   subject  = >nmod_by []
-#        parentQuery:
-#          type: string
-#          description: |
-#            A Lucene query to filter Documents before applying an Odinson pattern.
-#          example: "year: 1973"
         allowTriggerOverlaps:
           type: boolean
           description: |
@@ -919,12 +904,12 @@ components:
       description: An Odinson pattern.
       example: "[lemma=phosphorylate] []"
 
-    ParentDocumentQuery:
-      name: parentQuery
+    MetadataQuery:
+      name: metadataQuery
       type: string
       description: |
-        A Lucene query to filter Documents before applying an Odinson pattern.
-      example: "year: 1973"
+        A query to filter Documents by their metadata before applying an Odinson pattern. See https://gh.lum.ai/odinson/metadata for details.
+      example: "year == 1973"
 
     ScoredTerm:
       type: object
@@ -1042,15 +1027,15 @@ components:
       type: object
       required:
         - odinsonQuery
-        - parentQuery
+        - metadataQuery
         - duration
         - totalHits
         - scoreDocs
       properties:
         odinsonQuery:
           $ref: '#/components/schemas/OdinsonPattern'
-        parentQuery:
-          $ref: '#/components/schemas/ParentDocumentQuery'
+        metadataQuery:
+          $ref: '#/components/schemas/MetadataQuery'
         duration:
           type: number
           format: float
@@ -1068,15 +1053,15 @@ components:
       type: object
       required:
         - odinsonQuery
-        - parentQuery
+        - metadataQuery
         - duration
         - totalHits
         - scoreDocs
       properties:
         odinsonQuery:
           $ref: '#/components/schemas/OdinsonPattern'
-        parentQuery:
-          $ref: '#/components/schemas/ParentDocumentQuery'
+        metadataQuery:
+          $ref: '#/components/schemas/MetadataQuery'
         duration:
           type: number
           format: float

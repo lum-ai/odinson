@@ -2,7 +2,7 @@ package ai.lum.odinson.lucene.index
 
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import ai.lum.odinson.{OdinsonIndexWriter, Document => OdinsonDocument}
+import ai.lum.odinson.{Document => OdinsonDocument}
 import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.document.{Document => LuceneDocument}
