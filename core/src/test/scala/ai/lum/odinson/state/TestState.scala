@@ -1,7 +1,7 @@
 package ai.lum.odinson.state
 
 import ai.lum.odinson.StateMatch
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestState extends OdinsonTest {
 

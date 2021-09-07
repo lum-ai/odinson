@@ -1,22 +1,21 @@
 package ai.lum.odinson.foundations
 
 // test imports
-import java.nio.file.Files
-
 import ai.lum.odinson._
 import ai.lum.odinson.serialization.UnsafeSerializer
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.IndexSettings
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.lucene.store.FSDirectory
+
+import java.nio.file.Files
 // lum imports
 import ai.lum.odinson.OdinsonIndexWriter
 // file imports
 import java.io.File
-
-import scala.reflect.io.Directory
 import scala.collection.JavaConverters._
+import scala.reflect.io.Directory
 
 class TestOdinsonIndexWriter extends OdinsonTest {
   type Fixture = OdinsonIndexWriter

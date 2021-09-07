@@ -1,20 +1,10 @@
 package ai.lum.odinson.state
 
 import java.io.File
-
-import ai.lum.odinson.{
-  DataGatherer,
-  ExtractorEngine,
-  Mention,
-  MentionsIterator,
-  NamedCapture,
-  OdinsonMatch,
-  StateMatch
-}
+import ai.lum.odinson.{DataGatherer, ExtractorEngine, Mention, MentionsIterator, NamedCapture, OdinsonMatch, StateMatch}
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.utils.TestUtils
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.{NullIdGetter, OdinsonTest}
 import com.typesafe.config.ConfigValueFactory
 
 import scala.util.Random
@@ -211,7 +201,7 @@ class TestSqlState extends OdinsonTest {
     val random = new Random(42)
     val docId = random.nextInt()
     val docBase = random.nextInt()
-    val idGetter = new TestUtils.NullIdGetter
+    val idGetter = new NullIdGetter
 
     1.to(100).foreach { index => // Do this many tests.
       val odinResults = newRandomOdinResults(random, docId, docBase)

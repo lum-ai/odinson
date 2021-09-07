@@ -1,9 +1,8 @@
 package ai.lum.odinson.serialization
 
 import java.util
-
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
 

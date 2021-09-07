@@ -1,8 +1,8 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.{ Document, Sentence, TokensField }
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import ai.lum.odinson.test.utils.OdinsonTest
+import ai.lum.odinson.{Document, Sentence, TokensField}
+import com.typesafe.config.{Config, ConfigValueFactory}
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 

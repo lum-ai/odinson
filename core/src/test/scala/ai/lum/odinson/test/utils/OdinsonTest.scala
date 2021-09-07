@@ -1,13 +1,12 @@
-package ai.lum.odinson.utils.TestUtils
+package ai.lum.odinson.test.utils
 
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson._
 import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest._
 
 import scala.collection.JavaConverters.asJavaIterableConverter

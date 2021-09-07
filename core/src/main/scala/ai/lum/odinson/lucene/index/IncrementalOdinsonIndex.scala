@@ -1,15 +1,15 @@
 package ai.lum.odinson.lucene.index
 
 import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc}
+import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.{LazyIdGetter, Document => OdinsonDocument}
-import org.apache.lucene.analysis.TokenStream
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
+import org.apache.lucene.analysis.{Analyzer, TokenStream}
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.index.{Fields, IndexWriter, IndexWriterConfig}
+import org.apache.lucene.index.{DirectoryReader, Fields, IndexReader, IndexWriter, IndexWriterConfig}
 import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.search.{Collector, CollectorManager, IndexSearcher, Query, SearcherManager, TopDocs}
 import org.apache.lucene.store.Directory
@@ -42,6 +42,8 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         new IndexWriter( this.directory, config )
     }
 
+    private val luceneReader : IndexReader = DirectoryReader.open( luceneWriter )
+
     private val odinsonWriter : OdinsonIndexWriter = {
         new OdinsonIndexWriter( luceneWriter,
                                 directory,
@@ -60,15 +62,14 @@ class IncrementalOdinsonIndex( override val directory : Directory,
 
     refreshPeriodically()
 
-    override def addOdinsonDocument( doc : OdinsonDocument ) : Unit = {
+    override def indexOdinsonDoc( doc : OdinsonDocument ) : Unit = {
         write( odinsonWriter.mkDocumentBlock( doc ).asJava )
     }
 
     override def lazyIdGetter( luceneDocId : Int ) : LazyIdGetter = {
         var searcher : IndexSearcher = null
         try {
-            val searcher : OdinsonIndexSearcher = acquireSearcher().asInstanceOf[ OdinsonIndexSearcher ]
-            new LazyIdGetter( searcher, luceneDocId )
+            new LazyIdGetter( ???, luceneDocId )
         } catch {
             case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
         }
@@ -102,7 +103,16 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         refresh()
     }
 
-    override def doc( docId : Int ) : LuceneDocument = ???
+    override def doc( docId : Int ) : LuceneDocument = {
+        var searcher : IndexSearcher = null
+        try {
+            searcher = acquireSearcher()
+            searcher.getIndexReader.document( docId )
+        } catch {
+            case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
+        }
+        finally releaseSearcher( searcher )
+    }
 
     def doc( docId : Int, fieldNames : Set[ String ] ) : LuceneDocument = {
         var searcher : IndexSearcher = null
@@ -152,6 +162,28 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         ts.close()
 
         terms.toArray
+    }
+
+    override def getTokensFromMultipleFields( docID : Int, fieldNames : Set[ String ] ) : Map[ String, Array[ String ] ] = {
+        val luceneDoc = doc( docID, fieldNames )
+        val tvs = getTermVectors( docID )
+        fieldNames
+          .map( field => (field, getTokens( luceneDoc, tvs, field, analyzer )) )
+          .toMap
+    }
+
+    override def getTokens( doc : LuceneDocument,
+                            tvs : Fields,
+                            fieldName : String,
+                            analyzer : Analyzer ) : Array[ String ] = {
+        val field = doc.getField( fieldName )
+        if ( field == null ) throw new OdinsonException(
+            s"Attempted to getTokens from field that was not stored: $fieldName"
+            )
+        val text = field.stringValue
+        val ts = TokenSources.getTokenStream( fieldName, tvs, text, analyzer, -1 )
+        val tokens = getTokens( ts )
+        tokens
     }
 
     override def refresh( ) : Unit = {
@@ -207,5 +239,7 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         val manager = new OdinsonCollectorManager( scoreDoc, cappedHits, computeTotalHits, disableMatchSelector )
         this.search( query, manager )
     }
+
+    override def getIndexReader( ) : IndexReader = luceneReader
 
 }

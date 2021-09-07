@@ -12,7 +12,7 @@ import com.typesafe.config.Config
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{Document => LuceneDocument}
-import org.apache.lucene.index.Fields
+import org.apache.lucene.index.{Fields, IndexReader}
 import org.apache.lucene.search.{Collector, CollectorManager, Query, TopDocs}
 import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
 
@@ -29,7 +29,6 @@ trait OdinsonIndex {
     val maxNumberOfTokensPerSentence : Int
     val invalidCharacterReplacement : String
 
-
     protected val VOCABULARY_FILENAME = "dependencies.txt"
     protected val BUILDINFO_FILENAME = "buildinfo.json"
     protected val SETTINGSINFO_FILENAME = "settingsinfo.json"
@@ -41,7 +40,7 @@ trait OdinsonIndex {
     val storedFields : Seq[ String ] = settings.storedFields
     val vocabulary = Vocabulary.fromDirectory( directory )
 
-    def addOdinsonDocument( doc : OdinsonDocument ) : Unit
+    def indexOdinsonDoc( doc : OdinsonDocument ) : Unit
 
     def write( block : java.util.Collection[ LuceneDocument ] ) : Unit
 
@@ -65,7 +64,13 @@ trait OdinsonIndex {
 
     def getTokens( doc : LuceneDocument, termVectors : Fields, fieldName : String ) : Array[ String ]
 
+    def getTokens( doc : LuceneDocument, tvs : Fields, fieldName : String, analyzer : Analyzer ) : Array[ String ]
+
+    def getTokensFromMultipleFields( docID : Int, fieldNames : Set[ String ] ) : Map[ String, Array[ String ] ]
+
     def refresh( ) : Unit
+
+    def getIndexReader( ) : IndexReader
 
     def dumpSettings( ) : Unit = {
         if ( directory.listAll().contains( VOCABULARY_FILENAME ) ) directory.deleteFile( VOCABULARY_FILENAME )

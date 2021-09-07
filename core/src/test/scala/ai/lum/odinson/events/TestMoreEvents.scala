@@ -1,6 +1,7 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
+
 
 class TestMoreEvents extends OdinsonTest {
 

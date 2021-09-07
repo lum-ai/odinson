@@ -1,6 +1,6 @@
 package ai.lum.odinson
 
-import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
+import ai.lum.odinson.lucene.index.OdinsonIndex
 
 // IdGetters are intended to privide access to the docid and sent id in the *original* corpus for
 // a given Mentions (i.e., as opposed to the lucene ids).
@@ -20,8 +20,8 @@ class KnownIdGetter( docId : String, sentId : String ) extends IdGetter {
 
 // This IdGetter delays the doc/sent id lookup until the Mention is referenced or used,
 // saving computational time during extraction.
-class LazyIdGetter( indexSearcher : OdinsonIndexSearcher, documentId : Int ) extends IdGetter {
-    protected lazy val document = indexSearcher.doc( documentId )
+class LazyIdGetter( index : OdinsonIndex, documentId : Int ) extends IdGetter {
+    protected lazy val document = index.doc( documentId )
     protected lazy val docId : String = document.getField( "docId" ).stringValue
     protected lazy val sentId : String = document.getField( "sentId" ).stringValue
 
@@ -32,8 +32,6 @@ class LazyIdGetter( indexSearcher : OdinsonIndexSearcher, documentId : Int ) ext
 
 object LazyIdGetter {
 
-    def apply(indexSearcher: OdinsonIndexSearcher, docId: Int): LazyIdGetter =
-        new LazyIdGetter(indexSearcher, docId)
+    def apply( index : OdinsonIndex, docId : Int ) : LazyIdGetter = new LazyIdGetter( index, docId )
 
 }
-

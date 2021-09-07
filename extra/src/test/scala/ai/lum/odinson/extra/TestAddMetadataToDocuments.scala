@@ -1,10 +1,9 @@
 package ai.lum.odinson.extra
 
-import java.io.{ File, IOException }
+import java.io.{File, IOException}
 import java.nio.file.Files
-
 import ai.lum.odinson.Document
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.commons.io.FileUtils
 
