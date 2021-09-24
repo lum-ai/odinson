@@ -5,6 +5,7 @@ import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonScoreDoc }
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+//import org.apache.lucene.analysis.core.KeywordAnalyzer
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.store.Directory
 
@@ -18,6 +19,7 @@ class DataGatherer(
   indexSettings: IndexSettings
 ) {
 
+//  val analyzer = new KeywordAnalyzer()
   val analyzer = new WhitespaceAnalyzer()
 
   val storedFields: Seq[String] = indexSettings.storedFields
