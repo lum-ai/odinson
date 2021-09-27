@@ -1,4 +1,4 @@
-package ai.lum.odinson.foundations
+package ai.lum.odinson.lucene.index
 
 import ai.lum.odinson._
 import ai.lum.odinson.serialization.UnsafeSerializer
@@ -7,7 +7,6 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.scalatest.BeforeAndAfterEach
 // lum imports
-import ai.lum.odinson.OdinsonIndexWriter
 // file imports
 import java.io.File
 import scala.collection.JavaConverters._

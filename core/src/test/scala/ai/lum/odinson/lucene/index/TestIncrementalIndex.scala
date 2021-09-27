@@ -1,6 +1,5 @@
-package ai.lum.odinson.lucene
+package ai.lum.odinson.lucene.index
 
-import ai.lum.odinson.lucene.index.{IncrementalOdinsonIndex, OdinsonIndex}
 import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException

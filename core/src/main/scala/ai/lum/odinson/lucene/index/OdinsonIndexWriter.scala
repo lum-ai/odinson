@@ -12,9 +12,11 @@ import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.{GraphField, Sentence, DateField => OdinsonDateField, Document => OdinsonDocument, Field => OdinsonField, NestedField => OdinsonNestedField, NumberField => OdinsonNumberField, StringField => OdinsonStringField, TokensField => OdinsonTokensField}
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{BinaryDocValuesField => LuceneBinaryDocValuesField, Document => LuceneDocument, DoublePoint => LuceneDoublePoint, Field => LuceneField, NumericDocValuesField => LuceneNumericDocValuesField, StoredField => LuceneStoredField, StringField => LuceneStringField, TextField => LuceneTextField}
-import org.apache.lucene.index.{DirectoryReader, IndexReader, IndexWriter}
+import org.apache.lucene.index.IndexWriterConfig.OpenMode
+import org.apache.lucene.index.{DirectoryReader, IndexReader, IndexWriter, IndexWriterConfig}
 import org.apache.lucene.store.{Directory, FSDirectory, RAMDirectory}
 import org.apache.lucene.util.BytesRef
 
@@ -308,11 +310,11 @@ object OdinsonIndexWriter {
     val START_TOKEN = "[[XX_START]]"
     val END_TOKEN = "[[XX_END]]"
 
-    def fromConfig( ) : OdinsonIndexWriter = {
+    protected[index] def fromConfig( ) : OdinsonIndexWriter = {
         fromConfig( ConfigFactory.load() )
     }
 
-    def fromConfig( config : Config ) : OdinsonIndexWriter = {
+    protected[index] def fromConfig( config : Config ) : OdinsonIndexWriter = {
 
         val indexDir = config.apply[ String ]( "odinson.indexDir" )
         val (directory, vocabulary) = indexDir match {
@@ -334,9 +336,12 @@ object OdinsonIndexWriter {
             throw new OdinsonException( "`odinson.index.storedFields` must contain `odinson.displayField`" )
         }
 
+        val writerConf = new IndexWriterConfig( new WhitespaceAnalyzer )
+        writerConf.setOpenMode( OpenMode.CREATE_OR_APPEND )
+        val writer = new IndexWriter( directory, writerConf )
+
         new OdinsonIndexWriter(
-            ???,
-            // format: off
+            writer = writer,
             directory = directory,
             vocabulary = vocabulary,
             settings = IndexSettings( storedFields ),
@@ -349,12 +354,7 @@ object OdinsonIndexWriter {
             displayField )
     }
 
-    def inMemory : OdinsonIndexWriter = {
-        val config = ConfigFactory.load()
-        inMemory( config )
-    }
-
-    def inMemory( config : Config ) : OdinsonIndexWriter = {
+    def inMemory( config : Config = ConfigFactory.load() ) : OdinsonIndexWriter = {
         // if the user wants the index to live in memory then we override the configuration
         val newConfig = config.withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( ":memory:" ) )
         fromConfig( newConfig )

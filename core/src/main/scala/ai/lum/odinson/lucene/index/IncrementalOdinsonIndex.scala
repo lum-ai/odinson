@@ -208,7 +208,7 @@ class IncrementalOdinsonIndex( override val directory : Directory,
     }
 
     override def listFields( ) : Fields = {
-        ??? //TODO: what operation uses this call
+        ???
     }
 
     private def acquireSearcher( ) : IndexSearcher = manager.acquire()

@@ -12,7 +12,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import java.io.File
 
-class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
+class TestExtractorEngineWithPersistentIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
 
     val testDataDir = {
         val file = new File( "./target/new_extractor_engine_test" )
