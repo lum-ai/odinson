@@ -226,12 +226,12 @@ object Shell extends App {
       // println("spans: " + spans)
       // println("captures: " + captures)
       val res = ConsoleHighlighter.highlight(
-        reader = extractorEngine.indexReader,
+        index = extractorEngine.index,
         docId = hit.doc,
         field = displayField,
         spans = spans,
         captures = captures
-      )
+        )
       println(res)
       println()
     }

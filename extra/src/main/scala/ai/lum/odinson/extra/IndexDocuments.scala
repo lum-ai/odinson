@@ -1,15 +1,14 @@
 package ai.lum.odinson.extra
 
 import java.io._
-import scala.util.{ Try, Success, Failure }
+import scala.util.{Failure, Success, Try}
 import com.typesafe.scalalogging.LazyLogging
-
 import ai.lum.common.ConfigFactory
-import com.typesafe.config.{ Config, ConfigValueFactory }
-
+import com.typesafe.config.{Config, ConfigValueFactory}
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{ Document, OdinsonIndexWriter }
+import ai.lum.odinson.lucene.index.OdinsonIndex
+import ai.lum.odinson.{Document, OdinsonIndexWriter, StringField}
 
 import scala.collection.GenIterable
 
@@ -54,7 +53,7 @@ object IndexDocuments extends App with LazyLogging {
     config.apply[Boolean]("odinson.index.synchronizeOrderWithDocumentId")
 
   //
-  val writer = OdinsonIndexWriter.fromConfig(config)
+  val index = OdinsonIndex.fromConfig(config)
   logger.info(s"Gathering documents from $docsDir")
 
   // make this a function
@@ -75,19 +74,21 @@ object IndexDocuments extends App with LazyLogging {
 
   // ^ this part should be a function
   logger.info("Indexing documents")
-  indexDocuments(writer, documentFiles)
-  writer.close
+  indexDocuments(documentFiles)
+  index.close()
 
   // fin
   // Note that documentFiles may or may not be parallel, hence the GenIterable
-  def indexDocuments(
-    writer: OdinsonIndexWriter,
-    documentFiles: GenIterable[File]
-  ): Unit = {
+  def indexDocuments( documentFiles: GenIterable[File] ): Unit = {
     // index documents
     for (f <- documentFiles) {
       Try {
-        writer.addFile(f, storeName = true)
+        val filename = StringField(name = "fileName", string = f.getName)
+        val doc = {
+          val d = Document.fromJson(f)
+          d.copy(metadata = d.metadata ++ Seq(filename))
+        }
+        index.indexOdinsonDoc(doc)
       } match {
         case Success(_) =>
           logger.info(s"Indexed ${f.getName}")

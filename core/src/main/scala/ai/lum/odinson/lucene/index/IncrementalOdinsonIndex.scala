@@ -36,8 +36,6 @@ class IncrementalOdinsonIndex( override val directory : Directory,
 
     private implicit val ec : ExecutionContext = ExecutionContext.global
 
-    private var isClosed : Boolean = false
-
     private val odinsonWriter : OdinsonIndexWriter = {
         val config = new IndexWriterConfig( this.analyzer )
         config.setOpenMode( OpenMode.CREATE_OR_APPEND )
