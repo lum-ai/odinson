@@ -72,6 +72,8 @@ trait OdinsonIndex {
 
     def getIndexReader( ) : IndexReader
 
+    def listFields( ) : Fields
+
     def dumpSettings( ) : Unit = {
         if ( directory.listAll().contains( VOCABULARY_FILENAME ) ) directory.deleteFile( VOCABULARY_FILENAME )
         if ( directory.listAll().contains( BUILDINFO_FILENAME ) ) directory.deleteFile( BUILDINFO_FILENAME )
@@ -126,20 +128,24 @@ object OdinsonIndex {
         val outgoingTokenField = config.apply[ String ]( "odinson.index.outgoingTokenField" )
         val maxNumberOfTokensPerSentence = config.apply[ Int ]( "odinson.index.maxNumberOfTokensPerSentence" )
         val invalidCharacterReplacement = config.apply[ String ]( "odinson.index.invalidCharacterReplacement" )
-
-        if ( config.getBoolean( "odinson.index.incremental" ) ) {
-            new IncrementalOdinsonIndex( directory,
-                                         settings,
-                                         computeTotalHits,
-                                         displayField,
-                                         normalizedTokenField,
-                                         addToNormalizedField,
-                                         incomingTokenField,
-                                         outgoingTokenField,
-                                         maxNumberOfTokensPerSentence,
-                                         invalidCharacterReplacement )
+        val refreshMs = {
+            if ( config.apply[ Boolean ]( "odinson.index.incremental" ) ) config.apply[ Int ]( "odinson.index.refreshMs" )
+            else -1
         }
-        else ???
+
+
+        new IncrementalOdinsonIndex( directory,
+                                     settings,
+                                     computeTotalHits,
+                                     displayField,
+                                     normalizedTokenField,
+                                     addToNormalizedField,
+                                     incomingTokenField,
+                                     outgoingTokenField,
+                                     maxNumberOfTokensPerSentence,
+                                     invalidCharacterReplacement,
+                                     refreshMs )
+
     }
 
 }

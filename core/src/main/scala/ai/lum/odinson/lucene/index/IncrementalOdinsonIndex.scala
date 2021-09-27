@@ -30,22 +30,20 @@ class IncrementalOdinsonIndex( override val directory : Directory,
                                override val outgoingTokenField : String,
                                override val maxNumberOfTokensPerSentence : Int,
                                override val invalidCharacterReplacement : String,
-                               protected val refreshMs : Long = 1000 ) extends OdinsonIndex {
+                               protected val refreshMs : Int = -1 ) extends OdinsonIndex {
 
     private val LOG : Logger = LoggerFactory.getLogger( getClass )
 
     private implicit val ec : ExecutionContext = ExecutionContext.global
 
-    private val luceneWriter : IndexWriter = {
-        val config = new IndexWriterConfig( this.analyzer )
-        config.setOpenMode( OpenMode.CREATE_OR_APPEND )
-        new IndexWriter( this.directory, config )
-    }
-
-    private val luceneReader : IndexReader = DirectoryReader.open( luceneWriter )
+    private var isClosed : Boolean = false
 
     private val odinsonWriter : OdinsonIndexWriter = {
-        new OdinsonIndexWriter( luceneWriter,
+        val config = new IndexWriterConfig( this.analyzer )
+        config.setOpenMode( OpenMode.CREATE_OR_APPEND )
+        val writer = new IndexWriter( directory, config )
+
+        new OdinsonIndexWriter( writer,
                                 directory,
                                 vocabulary,
                                 settings,
@@ -56,24 +54,22 @@ class IncrementalOdinsonIndex( override val directory : Directory,
                                 maxNumberOfTokensPerSentence,
                                 invalidCharacterReplacement,
                                 displayField )
+
     }
 
-    private val manager : SearcherManager = new SearcherManager( luceneWriter, new OdinsonSearcherFactory( computeTotalHits ) )
+    // access to a singleton lucene reader that was not acquired from search manager
+    private val luceneReader : IndexReader = DirectoryReader.open( odinsonWriter.writer )
 
-    refreshPeriodically()
+    private val manager : SearcherManager = new SearcherManager( odinsonWriter.writer, new OdinsonSearcherFactory( computeTotalHits ) )
+
+    if ( refreshMs > 1 ) refreshPeriodically()
 
     override def indexOdinsonDoc( doc : OdinsonDocument ) : Unit = {
         write( odinsonWriter.mkDocumentBlock( doc ).asJava )
     }
 
     override def lazyIdGetter( luceneDocId : Int ) : LazyIdGetter = {
-        var searcher : IndexSearcher = null
-        try {
-            new LazyIdGetter( ???, luceneDocId )
-        } catch {
-            case e : Throwable => throw new RuntimeException( "what is the best way to deal with this?" )
-        }
-        finally releaseSearcher( searcher )
+        new LazyIdGetter( this, luceneDocId )
     }
 
     override def search( query : Query, limit : Int ) : TopDocs = {
@@ -187,7 +183,7 @@ class IncrementalOdinsonIndex( override val directory : Directory,
     }
 
     override def refresh( ) : Unit = {
-        luceneWriter.flush()
+        odinsonWriter.flush()
         manager.maybeRefresh()
     }
 
@@ -213,6 +209,10 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         finally releaseSearcher( searcher )
     }
 
+    override def listFields( ) : Fields = {
+        ??? //TODO: what operation uses this call
+    }
+
     private def acquireSearcher( ) : IndexSearcher = manager.acquire()
 
     private def releaseSearcher( searcher : IndexSearcher ) : Unit = manager.release( searcher )
@@ -228,11 +228,12 @@ class IncrementalOdinsonIndex( override val directory : Directory,
         }
     }
 
-    def close( ) : Unit = {
+    override def close( ) : Unit = {
         dumpSettings()
-        luceneWriter.flush()
-        luceneWriter.commit()
-        luceneWriter.close()
+        odinsonWriter.flush()
+        odinsonWriter.commit()
+        odinsonWriter.close()
+        luceneReader.close()
     }
 
     override def search( scoreDoc : OdinsonScoreDoc, query : OdinsonQuery, cappedHits : Int, disableMatchSelector : Boolean ) : OdinResults = {

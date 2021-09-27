@@ -80,19 +80,7 @@ class OdinsonIndexWriter(
 
   def commit(): Unit = writer.commit()
 
-  def close(): Unit = {
-    // FIXME: is this the correct instantiation of IOContext?
-    using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
-      stream.writeString(vocabulary.dump)
-    }
-    using(directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
-      stream.writeString(BuildInfo.toJson)
-    }
-    using(directory.createOutput(SETTINGSINFO_FILENAME, new IOContext)) { stream =>
-      stream.writeString(settings.dump)
-    }
-    writer.close()
-  }
+  def close(): Unit = writer.close()
 
   /** generates a lucenedoc document per sentence */
   def mkDocumentBlock(d: Document): Seq[lucenedoc.Document] = {

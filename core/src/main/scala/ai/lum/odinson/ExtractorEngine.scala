@@ -4,12 +4,12 @@ import ai.lum.common.ConfigFactory
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
-import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.lucene._
 import ai.lum.odinson.lucene.index.OdinsonIndex
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{MockState, State}
 import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.{Document => OdinsonDocument}
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.index.Term
@@ -588,6 +588,7 @@ class ExtractorEngine private( val index : OdinsonIndex,
     /** Close the open resources.
       */
     def close( ) : Unit = {
+        index.close()
         state.close()
     }
 
@@ -711,39 +712,43 @@ class ExtractorEngine private( val index : OdinsonIndex,
 object ExtractorEngine {
     lazy val defaultConfig : Config = ConfigFactory.load()
 
-    def fromConfig( ) : ExtractorEngine = {
-        fromConfig( defaultConfig )
-    }
-
-    def fromConfig( config : Config ) : ExtractorEngine = {
+    def fromConfig( config : Config = defaultConfig ) : ExtractorEngine = {
         val index = OdinsonIndex.fromConfig( config )
-        val dataGatherer = DataGatherer( index )
-        val vocabulary = Vocabulary.fromDirectory( index.directory )
-        val compiler = QueryCompiler( config, vocabulary )
+        val compiler = QueryCompiler( config, index.vocabulary )
         val state = State( config, index )
 
-
-        new ExtractorEngine( index,
-                             compiler,
-                             dataGatherer,
-                             state )
+        newExtractorEngine( index, compiler, state )
     }
 
-    def inMemory( doc : Document ) : ExtractorEngine = {
+    def inMemory( doc : OdinsonDocument ) : ExtractorEngine = {
         inMemory( Seq( doc ) )
     }
 
-    def inMemory( docs : Seq[ Document ] ) : ExtractorEngine = {
+    def inMemory( docs : Seq[ OdinsonDocument ] ) : ExtractorEngine = {
         inMemory( ConfigFactory.load(), docs )
     }
 
-    // Expecting a config that is already inside the `odinson` namespace
-    def inMemory( config : Config, docs : Seq[ Document ] ) : ExtractorEngine = {
-        val memConf = config.withValue( "indexDir", ConfigValueFactory.fromAnyRef( ":memory:" ) )
+    def inMemory( config : Config, docs : Seq[ OdinsonDocument ] = Seq() ) : ExtractorEngine = {
+        val memConf = {
+            config
+              .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( ":memory:" ) )
+              .withValue( "odinson.index.incremental", ConfigValueFactory.fromAnyRef( false ) )
+        }
         val memIndex = OdinsonIndex.fromConfig( memConf )
         docs.foreach( memIndex.indexOdinsonDoc )
+        memIndex.refresh()
 
-        fromConfig( memConf )
+        val compiler = QueryCompiler( config, memIndex.vocabulary )
+        val state = State( config, memIndex )
+
+        newExtractorEngine( memIndex, compiler, state )
+    }
+
+    private def newExtractorEngine( index : OdinsonIndex, compiler : QueryCompiler, state : State ) : ExtractorEngine = {
+        new ExtractorEngine( index,
+                             compiler,
+                             DataGatherer( index ),
+                             state )
     }
 
 }

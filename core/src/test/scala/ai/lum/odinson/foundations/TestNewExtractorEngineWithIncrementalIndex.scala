@@ -4,7 +4,8 @@ package ai.lum.odinson.foundations
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.index.OdinsonIndex
 import ai.lum.odinson.test.utils.OdinsonTest
-import ai.lum.odinson.{ExtractorEngine, Sentence, TokensField, Document => OdinsonDocument}
+import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.{Sentence, TokensField, Document => OdinsonDocument}
 import com.typesafe.config.ConfigValueFactory
 import org.apache.commons.io.FileUtils
 import org.scalatest.BeforeAndAfterEach
@@ -23,9 +24,10 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
         defaultConfig
           .withValue( "odinson.indexDir", ConfigValueFactory.fromAnyRef( testDataDir.getCanonicalPath ) )
           .withValue( "odinson.index.incremental", ConfigValueFactory.fromAnyRef( true ) )
+          .withValue( "odinson.index.refreshMs", ConfigValueFactory.fromAnyRef( -1 ) )
 
 
-    val docs : Seq[ OdinsonDocument ] = {
+    val testDocs : Seq[ OdinsonDocument ] = {
         val tokens = TokensField( rawTokenField, Array( "Rain", "causes", "flood" ) )
         val sentence = Sentence( tokens.tokens.length, Seq( TokensField( rawTokenField, Array( "Rain", "causes", "flood" ) ) ) )
         val doc1 = OdinsonDocument( "<TEST-ID1>", Nil, Seq( sentence ) )
@@ -33,7 +35,9 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
         Seq( doc1, doc2 )
     }
 
-    lazy val ee = ExtractorEngine.fromConfig( testConfig )
+    override def beforeEach( ) : Unit = {
+        FileUtils.deleteDirectory( new File( testConfig.getString( "odinson.indexDir" ) ) )
+    }
 
     override def afterEach( ) : Unit = {
         FileUtils.deleteDirectory( new File( testConfig.getString( "odinson.indexDir" ) ) )
@@ -45,7 +49,7 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
         indexer.close()
     }
 
-    "Odinson ExtractorEngine" should "run a simple query correctly" ignore {
+    "Odinson ExtractorEngine" should "run a simple query correctly" in {
         val docs : Seq[ OdinsonDocument ] = {
             val tokens = TokensField( rawTokenField, Array( "Rain", "causes", "flood" ) )
             val sentence = Sentence( tokens.tokens.length, Seq( TokensField( rawTokenField, Array( "Rain", "causes", "flood" ) ) ) )
@@ -53,14 +57,16 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
             val doc2 = OdinsonDocument( "<TEST-ID2>", Nil, Seq( sentence ) )
             Seq( doc1, doc2 )
         }
-
         writeTestIndex( docs )
 
-        val q = ee.mkQuery( "causes" )
-        val results = ee.query( q, 1 )
+        val extractorEngine = mkExtractorEngine( testConfig )
+        val q = extractorEngine.mkQuery( "causes" )
+        val results = extractorEngine.query( q, 1 )
 
         println( results.totalHits )
         results.totalHits should equal( 2 )
+
+        extractorEngine.close()
     }
 
     it should "getTokensFromSpan correctly from existing Field" in {
@@ -79,44 +85,49 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
               |      subject: ^NP = >nsubj []
               |      object: ^NP = >dobj []
         """.stripMargin
-        val extractors = ee.ruleReader.compileRuleString( rules )
-        val mentions = getMentionsWithLabel( ee.extractAndPopulate( extractors, level = VerboseLevels.All ).toSeq, "Test" )
+
+        val extractorEngine = mkExtractorEngine( testConfig )
+        val extractors = extractorEngine.ruleReader.compileRuleString( rules )
+        val mentions = getMentionsWithLabel( extractorEngine.extractAndPopulate( extractors, level = VerboseLevels.All ).toSeq, "Test" )
         mentions should have size ( 1 )
 
         val mention = mentions.head
 
         mention.text should be( "ate" )
         mention.mentionFields( "lemma" ) should contain only ( "eat" )
+        extractorEngine.close()
     }
 
-    //    it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
-    //        // Becky ate gummy bears.
-    //        val doc = getDocument( "becky-gummy-bears-v2" )
-    //        val ee = extractorEngineWithConfigValue( doc, "odinson.index.storedFields", Seq( "raw", "lemma" ) )
-    //        val rules =
-    //            """
-    //              |rules:
-    //              |  - name: testrule
-    //              |    type: event
-    //              |    label: Test
-    //              |    pattern: |
-    //              |      trigger = [lemma=eat]
-    //              |      subject: ^NP = >nsubj []
-    //              |      object: ^NP = >dobj []
-    //    """.stripMargin
-    //        val extractors = ee.ruleReader.compileRuleString( rules )
-    //        val mentions = getMentionsWithLabel( ee.extractMentions( extractors ).toSeq, "Test" )
-    //        mentions should have size ( 1 )
-    //
-    //        val mention = mentions.head
-    //
-    //        an[ utils.exceptions.OdinsonException ] should be thrownBy ee.dataGatherer.getTokensForSpan(
-    //            mention.luceneSegmentDocId,
-    //            mention.odinsonMatch,
-    //            fieldName = "notAField"
-    //            )
-    //    }
-    //
+    it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
+        // Becky ate gummy bears.
+        //        val ee = extractorEngineWithConfigValue( doc, "odinson.index.storedFields", Seq( "raw", "lemma" ) )
+        val rules =
+        """
+          |rules:
+          |  - name: testrule
+          |    type: event
+          |    label: Test
+          |    pattern: |
+          |      trigger = [lemma=eat]
+          |      subject: ^NP = >nsubj []
+          |      object: ^NP = >dobj []
+        """.stripMargin
+
+        val gummyBears = getDocument( "becky-gummy-bears-v2" )
+        writeTestIndex( Seq( gummyBears ) )
+
+        val extractorEngine = mkExtractorEngine( testConfig )
+        val extractors = extractorEngine.ruleReader.compileRuleString( rules )
+        val mentions = getMentionsWithLabel( extractorEngine.extractMentions( extractors ).toSeq, "Test" )
+        mentions should have size ( 1 )
+
+        val mention = mentions.head
+
+        an[ OdinsonException ] should be thrownBy extractorEngine.dataGatherer.getTokensForSpan( mention.luceneSegmentDocId, mention.odinsonMatch, fieldName = "notAField" )
+
+        extractorEngine.close()
+    }
+
     //    // TODO: implement index fixture to test the features bellow
     //    // TODO: def getParentDoc(docId: String)
     //    // TODO: def compileRules(rules: String)
@@ -124,9 +135,9 @@ class TestNewExtractorEngineWithIncrementalIndex extends OdinsonTest with Before
     //    // TODO: def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc)
     //
     //    // TODO: def getArgument(mention: Mention, name: String)
-    //    // TODO: ExtractorEngine.fromConfig
-    //    // TODO: ExtractorEngine.fromConfig(path: String)
+    //    // TODO: mkExtractorEngine
+    //    // TODO: mkExtractorEngine(path: String)
     //    // "Odinson ExtractorEngine" should "initialize correctly from config" in {
     //    // }
-    //    // TODO: ExtractorEngine.fromConfig(config: Config)
+    //    // TODO: mkExtractorEngine(config: Config)
 }

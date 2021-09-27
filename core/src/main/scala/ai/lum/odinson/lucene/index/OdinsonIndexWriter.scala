@@ -4,19 +4,18 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.DisplayUtils._
 import ai.lum.common.StringUtils._
-import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import ai.lum.odinson.{BuildInfo, GraphField, Sentence, TokensField => OdinsonTokensField, DateField => OdinsonDateField, Document => OdinsonDocument, Field => OdinsonField, NestedField => OdinsonNestedField, NumberField => OdinsonNumberField, StringField => OdinsonStringField}
+import ai.lum.odinson.{GraphField, Sentence, DateField => OdinsonDateField, Document => OdinsonDocument, Field => OdinsonField, NestedField => OdinsonNestedField, NumberField => OdinsonNumberField, StringField => OdinsonStringField, TokensField => OdinsonTokensField}
 import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{BinaryDocValuesField => LuceneBinaryDocValuesField, Document => LuceneDocument, DoublePoint => LuceneDoublePoint, Field => LuceneField, NumericDocValuesField => LuceneNumericDocValuesField, StoredField => LuceneStoredField, StringField => LuceneStringField, TextField => LuceneTextField}
-import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.store.{Directory, FSDirectory, IOContext, RAMDirectory}
+import org.apache.lucene.index.{DirectoryReader, IndexReader, IndexWriter}
+import org.apache.lucene.store.{Directory, FSDirectory, RAMDirectory}
 import org.apache.lucene.util.BytesRef
 
 import java.io.File
@@ -40,6 +39,8 @@ class OdinsonIndexWriter(
 ) extends LazyLogging {
 
     import ai.lum.odinson.OdinsonIndexWriter._
+
+    def reader( ) : IndexReader = DirectoryReader.open( writer )
 
     def addDocuments( block : Seq[ LuceneDocument ] ) : Unit = {
         addDocuments( block.asJava )
@@ -76,17 +77,11 @@ class OdinsonIndexWriter(
 
     def commit( ) : Unit = writer.commit()
 
+    def flush( ) : Unit = writer.flush()
+
     def close( ) : Unit = {
-        // FIXME: is this the correct instantiation of IOContext?
-        using( directory.createOutput( VOCABULARY_FILENAME, new IOContext ) ) { stream =>
-            stream.writeString( vocabulary.dump )
-        }
-        using( directory.createOutput( BUILDINFO_FILENAME, new IOContext ) ) { stream =>
-            stream.writeString( BuildInfo.toJson )
-        }
-        using( directory.createOutput( SETTINGSINFO_FILENAME, new IOContext ) ) { stream =>
-            stream.writeString( settings.dump )
-        }
+        flush()
+        commit()
         writer.close()
     }
 
@@ -339,21 +334,19 @@ object OdinsonIndexWriter {
             throw new OdinsonException( "`odinson.index.storedFields` must contain `odinson.displayField`" )
         }
 
-        //        new OdinsonIndexWriter(
-        //            // format: off
-        //            directory = directory,
-        //            vocabulary = vocabulary,
-        //            settings = IndexSettings( storedFields ),
-        //            normalizedTokenField = config.apply[ String ]( "odinson.index.normalizedTokenField" ),
-        //            addToNormalizedField = config.apply[ List[ String ] ]( "odinson.index.addToNormalizedField" ).toSet,
-        //            incomingTokenField = config.apply[ String ]( "odinson.index.incomingTokenField" ),
-        //            outgoingTokenField = config.apply[ String ]( "odinson.index.outgoingTokenField" ),
-        //            maxNumberOfTokensPerSentence = config.apply[ Int ]( "odinson.index.maxNumberOfTokensPerSentence" ),
-        //            invalidCharacterReplacement = config.apply[ String ]( "odinson.index.invalidCharacterReplacement" ),
-        //            displayField
-        //            // format: on
-        //            )
-        ???
+        new OdinsonIndexWriter(
+            ???,
+            // format: off
+            directory = directory,
+            vocabulary = vocabulary,
+            settings = IndexSettings( storedFields ),
+            normalizedTokenField = config.apply[ String ]( "odinson.index.normalizedTokenField" ),
+            addToNormalizedField = config.apply[ List[ String ] ]( "odinson.index.addToNormalizedField" ).toSet,
+            incomingTokenField = config.apply[ String ]( "odinson.index.incomingTokenField" ),
+            outgoingTokenField = config.apply[ String ]( "odinson.index.outgoingTokenField" ),
+            maxNumberOfTokensPerSentence = config.apply[ Int ]( "odinson.index.maxNumberOfTokensPerSentence" ),
+            invalidCharacterReplacement = config.apply[ String ]( "odinson.index.invalidCharacterReplacement" ),
+            displayField )
     }
 
     def inMemory : OdinsonIndexWriter = {

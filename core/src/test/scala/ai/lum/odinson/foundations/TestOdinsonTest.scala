@@ -43,7 +43,7 @@ class TestOdinsonTest extends OdinsonTest {
     eeSQL.state shouldBe a[SqlState]
 
     //def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
-    val eeFoobar = mkExtractorEngine(
+    val eeFoobar = mkMemoryExtractorEngine(
       defaultConfig
         .withValue("odinson.displayField", ConfigValueFactory.fromAnyRef("foobar"))
         // The displayField is required to be in the storedFields

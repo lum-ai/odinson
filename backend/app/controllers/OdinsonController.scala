@@ -6,35 +6,29 @@ import javax.inject._
 import scala.math._
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import play.api.Configuration
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.index.{ DirectoryReader, MultiFields }
-import org.apache.lucene.util.automaton.{ CompiledAutomaton, RegExp }
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.index.{DirectoryReader, MultiFields}
+import org.apache.lucene.util.automaton.{CompiledAutomaton, RegExp}
 import com.typesafe.config.ConfigRenderOptions
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.{
-  BuildInfo,
-  ExtractorEngine,
-  Mention,
-  NamedCapture,
-  OdinsonIndexWriter,
-  OdinsonMatch,
-  Document => OdinsonDocument
-}
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonIndexWriter, OdinsonMatch, Document => OdinsonDocument}
 import ai.lum.odinson.digraph.Vocabulary
 import org.apache.lucene.store.FSDirectory
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc }
+import ai.lum.odinson.lucene.index.OdinsonIndex
+import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc}
 import com.typesafe.config.Config
 import org.apache.lucene.index.TermsEnum
 import play.api.cache._
+
 import scala.annotation.tailrec
 
 @Singleton
@@ -46,6 +40,7 @@ class OdinsonController @Inject() (
 )(
   implicit ec: ExecutionContext
 ) extends AbstractController(cc) {
+
   // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
   private val indexPath = config.apply[File]("odinson.indexDir").toPath
   private val indexDir = FSDirectory.open(indexPath)
@@ -53,7 +48,9 @@ class OdinsonController @Inject() (
   private val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
   private val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
 
-  def newEngine(): ExtractorEngine = ExtractorEngine.fromDirectory(config, indexDir, indexSearcher)
+  private val extractorEngine : ExtractorEngine = newEngine()
+
+  def newEngine(): ExtractorEngine = ExtractorEngine.fromConfig(config)
 
   // format: off
   val docsDir              = config.apply[File]  ("odinson.docsDir")
@@ -129,7 +126,7 @@ class OdinsonController @Inject() (
 
   def numDocs = Action {
     val extractorEngine: ExtractorEngine = newEngine()
-    Ok(extractorEngine.indexReader.numDocs.toString).as(ContentTypes.JSON)
+    Ok(extractorEngine.numDocs.toString).as(ContentTypes.JSON)
   }
 
   class FrequencyTable(minIdx: Int, maxIdx: Int, reverse: Boolean) {

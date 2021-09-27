@@ -12,7 +12,7 @@ class TestJsonSerialization extends OdinsonTest {
   val engine = mkExtractorEngine(doc)
   val storedFields = util.Arrays.asList("raw", "lemma", "tag")
 
-  val verboseEngine = mkExtractorEngine(
+  val verboseEngine = mkMemoryExtractorEngine(
     defaultConfig.withValue(
       "odinson.index.storedFields",
       ConfigValueFactory.fromIterable(storedFields)
