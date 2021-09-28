@@ -1,35 +1,32 @@
 package controllers
 
-import java.io.File
-import java.nio.file.Path
-import javax.inject._
-import scala.math._
-import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
+import ai.lum.common.ConfigFactory
+import ai.lum.common.ConfigUtils._
+import ai.lum.odinson.digraph.Vocabulary
+import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
+import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonIndexWriter, OdinsonMatch, Document => OdinsonDocument}
+import com.typesafe.config.{Config, ConfigRenderOptions}
+import org.apache.commons.lang3.exception.ExceptionUtils
+import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.index.TermsEnum
+import org.apache.lucene.store.FSDirectory
+import org.apache.lucene.util.automaton.{CompiledAutomaton, RegExp}
 import play.api.Configuration
+import play.api.cache._
 import play.api.http.ContentTypes
 import play.api.libs.json._
 import play.api.mvc._
-import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.lucene.document.{Document => LuceneDocument}
-import org.apache.lucene.index.{DirectoryReader, MultiFields}
-import org.apache.lucene.util.automaton.{CompiledAutomaton, RegExp}
-import com.typesafe.config.ConfigRenderOptions
-import ai.lum.common.ConfigFactory
-import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonIndexWriter, OdinsonMatch, Document => OdinsonDocument}
-import ai.lum.odinson.digraph.Vocabulary
-import org.apache.lucene.store.FSDirectory
-import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.index.OdinsonIndex
-import ai.lum.odinson.lucene.search.{OdinsonIndexSearcher, OdinsonQuery, OdinsonScoreDoc}
-import com.typesafe.config.Config
-import org.apache.lucene.index.TermsEnum
-import play.api.cache._
 
+import java.io.File
+import java.nio.file.Path
+import javax.inject._
 import scala.annotation.tailrec
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.math._
+import scala.util.control.NonFatal
 
 @Singleton
 class OdinsonController @Inject() (
@@ -40,15 +37,6 @@ class OdinsonController @Inject() (
 )(
   implicit ec: ExecutionContext
 ) extends AbstractController(cc) {
-
-  // before testing, we would create configs to pass to the constructor? write test for build like ghp's example
-  private val indexPath = config.apply[File]("odinson.indexDir").toPath
-  private val indexDir = FSDirectory.open(indexPath)
-  private val indexReader = DirectoryReader.open(indexDir)
-  private val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
-  private val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-
-  private val extractorEngine : ExtractorEngine = newEngine()
 
   def newEngine(): ExtractorEngine = ExtractorEngine.fromConfig(config)
 
@@ -188,6 +176,7 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      var extractorEngine : ExtractorEngine = null
       try {
         // cutoff the results to the requested ranks
         val defaultMin = 0
@@ -196,9 +185,9 @@ class OdinsonController @Inject() (
         val minIdx = min.getOrElse(defaultMin)
         val maxIdx = max.getOrElse(defaultMax)
 
-        val extractorEngine: ExtractorEngine = newEngine()
+        extractorEngine = newEngine()
         // ensure that the requested field exists in the index
-        val fields = MultiFields.getFields(extractorEngine.indexReader)
+        val fields = extractorEngine.index.listFields()
         val fieldNames = fields.iterator.asScala.toList
         // if the field exists, find the frequencies of each term
         if (fieldNames contains field) {
@@ -330,6 +319,7 @@ class OdinsonController @Inject() (
           Json.obj().format(pretty)
         }
       } catch handleNonFatal
+      finally extractorEngine.close()
     }
   }
 
@@ -451,6 +441,7 @@ class OdinsonController @Inject() (
 
       Json.arr(jsonObjs).format(pretty)
     } catch handleNonFatal
+    finally extractorEngine.close()
   }
 
   /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
@@ -600,7 +591,9 @@ class OdinsonController @Inject() (
     Future {
       val extractorEngine: ExtractorEngine = newEngine()
       // ensure that the requested field exists in the index
-      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fields = extractorEngine.index.listFields()
+      extractorEngine.close()
+
       val fieldNames = fields.iterator.asScala.toList
       // if the field exists, find the frequencies of each term
       if (fieldNames contains field) {
@@ -680,6 +673,7 @@ class OdinsonController @Inject() (
 
       Json.arr(jsonObjs).format(pretty)
     } catch handleNonFatal
+    finally extractorEngine.close()
   }
 
   /** Information about the current corpus. <br>
@@ -688,12 +682,12 @@ class OdinsonController @Inject() (
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
       val extractorEngine: ExtractorEngine = newEngine()
-      val numDocs = extractorEngine.indexReader.numDocs
+      val numDocs = extractorEngine.numDocs()
       val corpusDir = config.apply[File]("odinson.indexDir").getName
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
-      val fields = MultiFields.getFields(extractorEngine.indexReader)
+      val fields = extractorEngine.index.listFields()
       val fieldNames = fields.iterator.asScala.toList
       val storedFields =
         if (extractorEngine.numDocs < 1) {
@@ -703,9 +697,10 @@ class OdinsonController @Inject() (
           firstDoc.iterator.asScala.map(_.name).toList
         }
       val tokenFields = extractorEngine.dataGatherer.storedFields
-      val allFields = MultiFields.getFields(extractorEngine.indexReader)
+      val allFields = extractorEngine.index.listFields()
       val allFieldNames = allFields.iterator.asScala.toList
       val docFields = allFieldNames diff tokenFields
+      extractorEngine.close()
 
       val json = Json.obj(
         "numDocs" -> numDocs,
@@ -721,13 +716,16 @@ class OdinsonController @Inject() (
 
   def getDocId(luceneDocId: Int): String = {
     val extractorEngine: ExtractorEngine = newEngine()
-    val doc: LuceneDocument = extractorEngine.indexReader.document(luceneDocId)
+    val doc: LuceneDocument = extractorEngine.doc(luceneDocId)
+    extractorEngine.close()
     doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
     val extractorEngine: ExtractorEngine = newEngine()
-    val doc = extractorEngine.indexReader.document(luceneDocId)
+    val doc = extractorEngine.doc(luceneDocId)
+    extractorEngine.close()
+
     // FIXME: this isn't safe
     doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
   }
@@ -757,8 +755,9 @@ class OdinsonController @Inject() (
   private def fieldVocabulary(field: String): List[String] = {
     // get terms from the requested field (error if it doesn't exist)
     val extractorEngine: ExtractorEngine = newEngine()
-    val fields = MultiFields.getFields(extractorEngine.indexReader)
+    val fields = extractorEngine.index.listFields()
     val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
+    extractorEngine.close()
 
     terms
   }
@@ -802,7 +801,7 @@ class OdinsonController @Inject() (
     metadataQuery: Option[String],
     label: String = "Mention"
   ): Unit = {
-    val results = metadataQuery match {
+    metadataQuery match {
       case None =>
         val q = extractorEngine.compiler.mkQuery(odinsonQuery)
         extractorEngine.query(q)
@@ -814,23 +813,24 @@ class OdinsonController @Inject() (
 
   /** Queries the index.
     *
+    * @param - extractorEngine - an open instance of ExtractorEngine
     * @param odinsonQuery An OdinsonQuery
     * @param prevDoc The last Document ID seen on the previous page of results (required if retrieving page 2+).
     * @param prevScore The score of the last Document see on the previous page (required if retrieving page 2+).
     * @return JSON of matches
     */
   def retrieveResults(
+    extractorEngine : ExtractorEngine,
     odinsonQuery: OdinsonQuery,
     prevDoc: Option[Int],
     prevScore: Option[Float]
   ): OdinResults = {
-    val extractorEngine: ExtractorEngine = newEngine()
     (prevDoc, prevScore) match {
       case (Some(doc), Some(score)) =>
         val osd = new OdinsonScoreDoc(doc, score)
         extractorEngine.query(odinsonQuery, pageSize, osd)
-      case _ =>
-        extractorEngine.query(odinsonQuery, pageSize)
+
+      case _ => extractorEngine.query(odinsonQuery, pageSize)
     }
   }
 
@@ -891,6 +891,7 @@ class OdinsonController @Inject() (
       val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
       json.format(pretty)
     } catch handleNonFatal
+    finally extractorEngine.close()
   }
 
   /** @param odinsonQuery An Odinson pattern
@@ -912,9 +913,8 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = newEngine()
       try {
-        val extractorEngine: ExtractorEngine = newEngine()
-
         val oq = metadataQuery match {
           case Some(pq) =>
             extractorEngine.compiler.mkQuery(odinsonQuery, pq)
@@ -922,7 +922,7 @@ class OdinsonController @Inject() (
             extractorEngine.compiler.mkQuery(odinsonQuery)
         }
         val start = System.currentTimeMillis()
-        val results: OdinResults = retrieveResults(oq, prevDoc, prevScore)
+        val results: OdinResults = retrieveResults(extractorEngine,oq, prevDoc, prevScore)
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
         // should the results be added to the state?
@@ -939,6 +939,7 @@ class OdinsonController @Inject() (
         val json = Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
         json.format(pretty)
       } catch handleNonFatal
+      finally extractorEngine.close()
     }
   }
 
@@ -963,18 +964,15 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = newEngine()
       try {
-        val extractorEngine: ExtractorEngine = newEngine()
-
         val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
         val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      )
-        .orElse(handleNonFatal)
+      } catch mkHandleNullPointer( "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved." ).orElse(handleNonFatal)
+      finally extractorEngine.close()
     }
   }
 
@@ -983,17 +981,15 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
+      val extractorEngine: ExtractorEngine = newEngine()
       try {
-        val extractorEngine: ExtractorEngine = newEngine()
         val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
         val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      )
-        .orElse(handleNonFatal)
+      } catch mkHandleNullPointer( "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved." ).orElse(handleNonFatal)
+      finally extractorEngine.close()
     }
   }
 
@@ -1063,6 +1059,9 @@ class OdinsonController @Inject() (
     // We want **all** tokens for the sentence
     val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
     // odinsonMatch: OdinsonMatch,
+
+    extractorEngine.close()
+
     Json.obj(
       // format: off
       "sentenceId"    -> mention.luceneDocId,
@@ -1082,6 +1081,8 @@ class OdinsonController @Inject() (
     //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
     // we want **all** tokens for the sentence
     val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
+    extractorEngine.close()
+
     Json.obj(
       // format: off
       "sentenceId"    -> odinsonScoreDoc.doc,
@@ -1122,6 +1123,8 @@ class OdinsonController @Inject() (
     val extractorEngine: ExtractorEngine = newEngine()
     // lucene doc containing metadata
     val parentDoc: LuceneDocument = extractorEngine.getMetadataDoc(documentId)
+    extractorEngine.close()
+
     val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
     OdinsonDocument.fromJson(odinsonDocFile)
   }

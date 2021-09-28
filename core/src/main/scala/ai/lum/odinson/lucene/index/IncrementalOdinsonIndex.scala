@@ -9,7 +9,7 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute
 import org.apache.lucene.analysis.{Analyzer, TokenStream}
 import org.apache.lucene.document.{Document => LuceneDocument}
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
-import org.apache.lucene.index.{DirectoryReader, Fields, IndexReader, IndexWriter, IndexWriterConfig}
+import org.apache.lucene.index.{DirectoryReader, Fields, IndexReader, IndexWriter, IndexWriterConfig, MultiFields}
 import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.search.{Collector, CollectorManager, IndexSearcher, Query, SearcherManager, TopDocs}
 import org.apache.lucene.store.Directory
@@ -208,7 +208,16 @@ class IncrementalOdinsonIndex( override val directory : Directory,
     }
 
     override def listFields( ) : Fields = {
-        ???
+        var searcher : IndexSearcher = null
+        try {
+            searcher = acquireSearcher()
+            MultiFields.getFields( searcher.getIndexReader )
+        } catch {
+            case e : Throwable => {
+                e.printStackTrace()
+                throw e
+            }
+        } finally releaseSearcher( searcher )
     }
 
     private def acquireSearcher( ) : IndexSearcher = manager.acquire()

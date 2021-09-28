@@ -18,7 +18,7 @@ import play.api.test._
 
 import scala.reflect.io.Directory
 
-class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
+class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Injecting {
   // for testing `term-freq` endpoint
   case class SingletonRow(term: String, frequency: Double)
   type SingletonRows = Seq[SingletonRow]
@@ -96,9 +96,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     )
     .build()
 
-  implicit override def newAppForTest(testData: TestData): Application = fakeApplication()
-
-  val fakeApp: Application = fakeApplication()
+  lazy val fakeApp: Application = fakeApplication()
 
   val controller =
     new OdinsonController(
