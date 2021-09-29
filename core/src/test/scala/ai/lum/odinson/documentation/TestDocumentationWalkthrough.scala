@@ -1,7 +1,7 @@
 package ai.lum.odinson.documentation
 
 import ai.lum.odinson.Document
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestDocumentationWalkthrough extends OdinsonTest {
 

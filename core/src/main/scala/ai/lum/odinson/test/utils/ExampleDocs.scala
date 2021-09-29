@@ -1,4 +1,4 @@
-package ai.lum.odinson.utils.TestUtils
+package ai.lum.odinson.test.utils
 
 object ExampleDocs {
 

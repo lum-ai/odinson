@@ -1,7 +1,7 @@
 package ai.lum.odinson.foundations
 
 import ai.lum.common.StringUtils._
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestUnicodeNormalization extends OdinsonTest {
 

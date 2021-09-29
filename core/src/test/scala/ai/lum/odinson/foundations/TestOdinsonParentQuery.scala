@@ -4,7 +4,7 @@ import ai.lum.odinson.{ Document => OdinsonDocument }
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestOdinsonParentQuery extends OdinsonTest {
 
@@ -45,7 +45,7 @@ class TestOdinsonParentQuery extends OdinsonTest {
   it should "match metadata document" in {
     val pattern = "character == 'Special Agent Dale Cooper'"
     val query = ee.compiler.mkParentQuery(pattern)
-    val res = ee.indexSearcher.search(query, 10)
+    val res = ee.index.search(query, 10)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1
   }
