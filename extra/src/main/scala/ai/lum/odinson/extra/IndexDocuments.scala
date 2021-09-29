@@ -1,14 +1,14 @@
 package ai.lum.odinson.extra
 
 import java.io._
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import com.typesafe.scalalogging.LazyLogging
 import ai.lum.common.ConfigFactory
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
 import ai.lum.odinson.lucene.index.OdinsonIndex
-import ai.lum.odinson.{Document, OdinsonIndexWriter, StringField}
+import ai.lum.odinson.{ Document, OdinsonIndexWriter, StringField }
 
 import scala.collection.GenIterable
 
@@ -79,7 +79,7 @@ object IndexDocuments extends App with LazyLogging {
 
   // fin
   // Note that documentFiles may or may not be parallel, hence the GenIterable
-  def indexDocuments( documentFiles: GenIterable[File] ): Unit = {
+  def indexDocuments(documentFiles: GenIterable[File]): Unit = {
     // index documents
     for (f <- documentFiles) {
       Try {

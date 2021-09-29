@@ -1,8 +1,8 @@
 package ai.lum.odinson.foundations
 
 import ai.lum.odinson.test.utils.OdinsonTest
-import ai.lum.odinson.{Document, Sentence, TokensField}
-import com.typesafe.config.{Config, ConfigValueFactory}
+import ai.lum.odinson.{ Document, Sentence, TokensField }
+import com.typesafe.config.{ Config, ConfigValueFactory }
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 
@@ -62,7 +62,7 @@ class TestFields extends OdinsonTest {
       ConfigValueFactory.fromAnyRef(Seq("raw", "fizzbuzz").asJava)
     )
 
-  val ee2 = mkMemoryExtractorEngine( customConfig, doc2 )
+  val ee2 = mkMemoryExtractorEngine(customConfig, doc2)
 
   it should "be able to index arbitrary fields" in {
     ee2.getTokensForSpan(0, "fizzbuzz", 2, 3) should contain only ("fizz")

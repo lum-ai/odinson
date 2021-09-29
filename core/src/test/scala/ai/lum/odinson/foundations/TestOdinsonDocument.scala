@@ -5,7 +5,7 @@ import java.io.File
 import scala.io.Source
 import ai.lum.odinson.Document
 import ai.lum.odinson.test.utils.OdinsonTest
-import ai.lum.odinson.{DateField, Field, GraphField, Sentence, StringField, TokensField}
+import ai.lum.odinson.{ DateField, Field, GraphField, Sentence, StringField, TokensField }
 
 class TestOdinsonDocument extends OdinsonTest {
   "OdinsonDocument Document" should "handle a json File correctly" in {

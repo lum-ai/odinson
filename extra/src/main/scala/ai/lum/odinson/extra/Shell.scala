@@ -231,7 +231,7 @@ object Shell extends App {
         field = displayField,
         spans = spans,
         captures = captures
-        )
+      )
       println(res)
       println()
     }

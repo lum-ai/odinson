@@ -1,6 +1,6 @@
 package ai.lum.odinson.lucene.search.highlight
 
-import org.apache.lucene.analysis.{Analyzer, TokenStream}
+import org.apache.lucene.analysis.{ Analyzer, TokenStream }
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.IndexReader
 import org.apache.lucene.search.highlight.TokenSources
@@ -29,8 +29,8 @@ trait OdinsonHighlighter {
   ): String = {
 
     // term vectors are computed on-the-fly if not already stored
-    val tvs = index.getTermVectors( docId )
-    val doc = index.doc( docId )
+    val tvs = index.getTermVectors(docId)
+    val doc = index.doc(docId)
     val sentenceText = doc.getField(field).stringValue
     val ts: TokenStream = TokenSources.getTokenStream(field, tvs, sentenceText, analyzer, -1)
     val tokens: Array[String] = TokenStreamUtils.getTokens(ts)

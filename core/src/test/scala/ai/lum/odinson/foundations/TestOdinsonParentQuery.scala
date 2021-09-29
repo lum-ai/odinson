@@ -1,6 +1,6 @@
 package ai.lum.odinson.foundations
 
-import ai.lum.odinson.{Document => OdinsonDocument}
+import ai.lum.odinson.{ Document => OdinsonDocument }
 import ai.lum.odinson.ExtractorEngine
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery

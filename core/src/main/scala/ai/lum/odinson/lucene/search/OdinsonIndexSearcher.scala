@@ -73,7 +73,6 @@ class OdinsonIndexSearcher(
     val cappedNumHits = math.min(numHits, limit)
     val manager = new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
 
-
     search(query, manager)
   }
 

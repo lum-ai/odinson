@@ -2,9 +2,17 @@ package ai.lum.odinson.foundations
 
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.state.{MemoryState, SqlState}
+import ai.lum.odinson.state.{ MemoryState, SqlState }
 import ai.lum.odinson.test.utils.OdinsonTest
-import ai.lum.odinson.{ArgumentMetadata, EventMatch, Mention, NGramMatch, NamedCapture, NamedMatch, OdinsonMatch}
+import ai.lum.odinson.{
+  ArgumentMetadata,
+  EventMatch,
+  Mention,
+  NGramMatch,
+  NamedCapture,
+  NamedMatch,
+  OdinsonMatch
+}
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
 

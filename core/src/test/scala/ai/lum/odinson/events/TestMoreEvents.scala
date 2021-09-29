@@ -2,7 +2,6 @@ package ai.lum.odinson.events
 
 import ai.lum.odinson.test.utils.OdinsonTest
 
-
 class TestMoreEvents extends OdinsonTest {
 
   def ee = mkExtractorEngine("chopsticks-spoon")

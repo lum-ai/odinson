@@ -1,10 +1,10 @@
 package ai.lum.odinson.events
 
 import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
+import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import ai.lum.odinson.{EventMatch, MentionsIterator}
+import ai.lum.odinson.{ EventMatch, MentionsIterator }
 
 class TestEvents extends OdinsonTest {
 

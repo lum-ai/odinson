@@ -4,14 +4,22 @@ import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.search.{OdinsonQuery, OdinsonScoreDoc}
-import ai.lum.odinson.{BuildInfo, ExtractorEngine, Mention, NamedCapture, OdinsonIndexWriter, OdinsonMatch, Document => OdinsonDocument}
-import com.typesafe.config.{Config, ConfigRenderOptions}
+import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
+import ai.lum.odinson.{
+  BuildInfo,
+  ExtractorEngine,
+  Mention,
+  NamedCapture,
+  OdinsonIndexWriter,
+  OdinsonMatch,
+  Document => OdinsonDocument
+}
+import com.typesafe.config.{ Config, ConfigRenderOptions }
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.lucene.document.{Document => LuceneDocument}
+import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.index.TermsEnum
 import org.apache.lucene.store.FSDirectory
-import org.apache.lucene.util.automaton.{CompiledAutomaton, RegExp}
+import org.apache.lucene.util.automaton.{ CompiledAutomaton, RegExp }
 import play.api.Configuration
 import play.api.cache._
 import play.api.http.ContentTypes
@@ -24,7 +32,7 @@ import javax.inject._
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.math._
 import scala.util.control.NonFatal
 
@@ -176,7 +184,7 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      var extractorEngine : ExtractorEngine = null
+      var extractorEngine: ExtractorEngine = null
       try {
         // cutoff the results to the requested ranks
         val defaultMin = 0
@@ -820,7 +828,7 @@ class OdinsonController @Inject() (
     * @return JSON of matches
     */
   def retrieveResults(
-    extractorEngine : ExtractorEngine,
+    extractorEngine: ExtractorEngine,
     odinsonQuery: OdinsonQuery,
     prevDoc: Option[Int],
     prevScore: Option[Float]
@@ -922,7 +930,7 @@ class OdinsonController @Inject() (
             extractorEngine.compiler.mkQuery(odinsonQuery)
         }
         val start = System.currentTimeMillis()
-        val results: OdinResults = retrieveResults(extractorEngine,oq, prevDoc, prevScore)
+        val results: OdinResults = retrieveResults(extractorEngine, oq, prevDoc, prevScore)
         val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
         // should the results be added to the state?
@@ -971,7 +979,9 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
         json.format(pretty)
-      } catch mkHandleNullPointer( "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved." ).orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      ).orElse(handleNonFatal)
       finally extractorEngine.close()
     }
   }
@@ -988,7 +998,9 @@ class OdinsonController @Inject() (
         val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
         val json: JsValue = Json.parse(odinsonDocument.toJson)
         json.format(pretty)
-      } catch mkHandleNullPointer( "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved." ).orElse(handleNonFatal)
+      } catch mkHandleNullPointer(
+        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+      ).orElse(handleNonFatal)
       finally extractorEngine.close()
     }
   }

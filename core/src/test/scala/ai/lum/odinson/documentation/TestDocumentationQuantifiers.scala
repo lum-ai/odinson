@@ -1,7 +1,7 @@
 package ai.lum.odison.documentation
 
 import ai.lum.odinson.test.utils.OdinsonTest
-import ai.lum.odinson.{Document, OdinsonMatch}
+import ai.lum.odinson.{ Document, OdinsonMatch }
 
 class TestDocumentationQuantifiers extends OdinsonTest {
 
