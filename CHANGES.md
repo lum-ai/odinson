@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `parentQuery` -> `metadataQuery` in REST API docs
 - Added documentation about supported types of fields for metadata (and info warnings for unsupported types). ([#329](https://github.com/lum-ai/odinson/pull/329))
 ### Changed
+- Fixed issue where the metadata stored fields caused Mention.populate to crash ([#333](https://github.com/lum-ai/odinson/pull/333))
 
 ## [0.5.0] - 2021-08-07
 ### Added

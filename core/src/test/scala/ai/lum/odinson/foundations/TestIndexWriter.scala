@@ -100,7 +100,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
         // re-compute the index and docs path's
         .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
         .withValue(
-          "odinson.index.storedFields",
+          "odinson.index.sentenceStoredFields",
           ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi", "raw").asJava)
         )
     }
@@ -121,18 +121,13 @@ class TestOdinsonIndexWriter extends OdinsonTest {
   it should "store stored fields and not others" in {
 
     val doc = getDocument("rainbows")
-    val customConfig: Config = defaultConfig
-      .withValue(
-        "odinson.index.storedFields",
-        ConfigValueFactory.fromAnyRef(Seq("tag", "raw").asJava)
-      )
-    def ee = mkExtractorEngine(customConfig, doc)
+    def ee = extractorEngineWithSentenceStoredFields(doc, Seq("tag", "raw"))
 
     // we asked it to store `tag` so the extractor engine should be able to access the content
-    ee.getTokensForSpan(0, "tag", 0, 1) should contain only "NNS"
+    ee.dataGatherer.getTokensForSpan(0, "tag", 0, 1) should contain only "NNS"
     // though `entity` is a field in the Document, it wasn't stored, so the extractor engine shouldn't
     // be able to retrieve the content
-    an[OdinsonException] should be thrownBy ee.getTokensForSpan(0, "entity", 0, 1)
+    an[OdinsonException] should be thrownBy ee.dataGatherer.getTokensForSpan(0, "entity", 0, 1)
 
   }
 
@@ -143,7 +138,7 @@ class TestOdinsonIndexWriter extends OdinsonTest {
         // re-compute the index and docs path's
         .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(indexFile.getAbsolutePath))
         .withValue(
-          "odinson.index.storedFields",
+          "odinson.index.sentenceStoredFields",
           ConfigValueFactory.fromAnyRef(Seq("apple", "banana", "kiwi").asJava)
         )
     }

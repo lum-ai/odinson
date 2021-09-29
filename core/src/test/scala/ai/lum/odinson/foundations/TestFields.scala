@@ -54,7 +54,7 @@ class TestFields extends OdinsonTest {
 
   val customConfig: Config = defaultConfig
     .withValue(
-      "odinson.index.storedFields",
+      "odinson.index.sentenceStoredFields",
       ConfigValueFactory.fromAnyRef(Seq("raw", "fizzbuzz").asJava)
     )
     .withValue(

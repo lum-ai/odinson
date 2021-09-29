@@ -72,6 +72,13 @@ class OdinsonTest extends FlatSpec with Matchers {
     mkExtractorEngine(newConfig, doc)
   }
 
+  def extractorEngineWithSentenceStoredFields(
+    doc: Document,
+    fields: Seq[String]
+  ): ExtractorEngine = {
+    extractorEngineWithConfigValue(doc, "odinson.index.sentenceStoredFields", fields)
+  }
+
   /** Constructs an `ai.lum.odinson.ExtractorEngine`` from a single-doc
     * using an in-memory index (`org.apache.lucene.store.RAMDirectory`)
     * @param docID the string key for the document from ai.lum.odinson.utils.TestUtils.ExampleDocs

@@ -20,7 +20,7 @@ class DataGatherer(
 
   val analyzer = new WhitespaceAnalyzer()
 
-  val storedFields: Seq[String] = indexSettings.storedFields
+  val storedFields: Seq[String] = indexSettings.sentenceStoredFields
 
   def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
     getTokensForSpan(docID, m).mkString(" ")
