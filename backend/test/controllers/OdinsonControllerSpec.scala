@@ -307,7 +307,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inject
     }
 
     "retrieve metadata using the /metadata/by-sentence-id endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/metadata/by-sentence-id?sentenceId=4")).get
+      val response = route(app, FakeRequest(GET, "/api/metadata/by-sentence-id?sentenceId=2")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
