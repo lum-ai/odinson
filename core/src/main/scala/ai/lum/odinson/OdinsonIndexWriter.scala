@@ -23,6 +23,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint, StoredField }
+
 import java.nio.file.Paths
 import java.util
 
