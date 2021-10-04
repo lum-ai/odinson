@@ -2,7 +2,7 @@ package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.lucene.analysis.TokenStreamUtils
-import ai.lum.odinson.lucene.search.{ OdinsonIndexSearcher, OdinsonScoreDoc }
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.IndexSettings
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.index.IndexReader
