@@ -1,5 +1,6 @@
 package ai.lum.odinson.foundations
 
+import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.{ Document, ExtractorEngine, Sentence, TokensField, utils }
@@ -64,20 +65,24 @@ class TestExtractorEngine extends OdinsonTest {
   it should "getTokensFromSpan with OdinsonException from non-existing Field" in {
     // Becky ate gummy bears.
     val doc = getDocument("becky-gummy-bears-v2")
-    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
     val rules =
       """
-              |rules:
-              |  - name: testrule
-              |    type: event
-              |    label: Test
-              |    pattern: |
-              |      trigger = [lemma=eat]
-              |      subject: ^NP = >nsubj []
-              |      object: ^NP = >dobj []
-    """.stripMargin
-    val extractors = ee.ruleReader.compileRuleString(rules)
-    val mentions = getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+        |rules:
+        |  - name: testrule
+        |    type: event
+        |    label: Test
+        |    pattern: |
+        |      trigger = [lemma=eat]
+        |      subject: ^NP = >nsubj []
+        |      object: ^NP = >dobj []
+      """.stripMargin
+
+    val ee = extractorEngineWithConfigValue(doc, "odinson.index.storedFields", Seq("raw", "lemma"))
+    val mentions = using(ee) { ee =>
+      val extractors = ee.ruleReader.compileRuleString(rules)
+      getMentionsWithLabel(ee.extractMentions(extractors).toSeq, "Test")
+    }
+
     mentions should have size (1)
 
     val mention = mentions.head
@@ -89,28 +94,24 @@ class TestExtractorEngine extends OdinsonTest {
         fieldName = "notAField"
       )
     }
-    ee.close()
   }
 
   // @michael @marco - moved out of TestOdinsonIndexWriter to extractor engine tests...
   it should "replace invalid characters prior to indexing to prevent off-by-one errors" in {
     val doc = getDocument("bad-character")
-    val extractorEngine = ExtractorEngine.inMemory(Seq(doc))
-
     val pattern = "complex <nsubj phosphorylate >dobj []"
     val expectedMatches = Array("AKT1")
+    val foundStrings = using(ExtractorEngine.inMemory(Seq(doc))) { extractorEngine =>
+      val query = extractorEngine.mkQuery(pattern)
+      val results = extractorEngine.query(query, 1)
+      results.totalHits should equal(1)
 
-    val query = extractorEngine.mkQuery(pattern)
-    val results = extractorEngine.query(query, 1)
-    results.totalHits should equal(1)
+      val matches = results.scoreDocs.head.matches
+      val docId = results.scoreDocs.head.doc
 
-    val matches = results.scoreDocs.head.matches
-    val docId = results.scoreDocs.head.doc
-    val foundStrings = matches.map(m => extractorEngine.dataGatherer.getStringForSpan(docId, m))
-
+      matches.map(m => extractorEngine.dataGatherer.getStringForSpan(docId, m))
+    }
     foundStrings shouldEqual expectedMatches
-
-    extractorEngine.close()
   }
 
   // TODO: implement index fixture to test the features bellow
