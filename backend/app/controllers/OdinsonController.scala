@@ -49,6 +49,8 @@ class OdinsonController @Inject() (
 
   def newEngine(): ExtractorEngine = ExtractorEngine.fromConfig(config)
 
+  def usingNewEngine[T](f: ExtractorEngine => T) = using(newEngine())(f)
+
   // format: off
   val docsDir              = config.apply[File]  ("odinson.docsDir")
   val parentDocFileName    = config.apply[String]("odinson.index.parentDocFieldFileName")
@@ -192,7 +194,7 @@ class OdinsonController @Inject() (
       val minIdx = min.getOrElse(defaultMin)
       val maxIdx = max.getOrElse(defaultMax)
       try {
-        using(newEngine()) { extractorEngine =>
+        usingNewEngine { extractorEngine =>
           // ensure that the requested field exists in the index
           val fields = extractorEngine.index.listFields()
           val fieldNames = fields.iterator.asScala.toList
@@ -384,7 +386,7 @@ class OdinsonController @Inject() (
     val reverse = ruleFreqRequest.reverse
     val pretty = ruleFreqRequest.pretty
     try {
-      using(newEngine()) { extractorEngine =>
+      usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
@@ -597,7 +599,7 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val fields = using(newEngine()) { extractorEngine =>
+      val fields = usingNewEngine { extractorEngine =>
         // ensure that the requested field exists in the index
         extractorEngine.index.listFields()
       }
@@ -653,7 +655,7 @@ class OdinsonController @Inject() (
     val xLogScale = ruleHistRequest.xLogScale
     val pretty = ruleHistRequest.pretty
     try {
-      val mentions = using(newEngine()) { extractorEngine =>
+      val mentions = usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
         val iterator = extractorEngine.extractMentions(
@@ -691,7 +693,7 @@ class OdinsonController @Inject() (
       val depsVocabSize = {
         loadVocabulary.terms.toSet.size
       }
-      val json = using(newEngine()) { extractorEngine =>
+      val json = usingNewEngine { extractorEngine =>
         val numDocs = extractorEngine.numDocs()
         //val fields = extractorEngine.index.listFields()
         //val fieldNames = fields.iterator.asScala.toList
@@ -720,14 +722,14 @@ class OdinsonController @Inject() (
   }
 
   def getDocId(luceneDocId: Int): String = {
-    val doc = using(newEngine()) { extractorEngine =>
+    val doc = usingNewEngine { extractorEngine =>
       extractorEngine.doc(luceneDocId)
     }
     doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
-    val doc = using(newEngine()) { extractorEngine =>
+    val doc = usingNewEngine { extractorEngine =>
       extractorEngine.doc(luceneDocId)
     }
     // FIXME: this isn't safe
@@ -758,7 +760,7 @@ class OdinsonController @Inject() (
     */
   private def fieldVocabulary(field: String): List[String] = {
     // get terms from the requested field (error if it doesn't exist)
-    using(newEngine()) { extractorEngine =>
+    usingNewEngine { extractorEngine =>
       val fields = extractorEngine.index.listFields()
       TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
     }
@@ -867,7 +869,7 @@ class OdinsonController @Inject() (
     val pretty = gr.pretty
     try {
       val start = System.currentTimeMillis()
-      val mentions = using(newEngine()) { extractorEngine =>
+      val mentions = usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
@@ -913,7 +915,7 @@ class OdinsonController @Inject() (
   ) = Action.async {
     Future {
       try {
-        val json = using(newEngine()) { extractorEngine =>
+        val json = usingNewEngine { extractorEngine =>
           val oq = metadataQuery match {
             case Some(pq) =>
               extractorEngine.compiler.mkQuery(odinsonQuery, pq)
@@ -963,7 +965,7 @@ class OdinsonController @Inject() (
   ) = Action.async {
     Future {
       try {
-        using(newEngine()) { extractorEngine =>
+        usingNewEngine { extractorEngine =>
           val extractorEngine: ExtractorEngine = newEngine()
           val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
           val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
@@ -1056,7 +1058,7 @@ class OdinsonController @Inject() (
   }
 
   def mkJson(mention: Mention): Json.JsValueWrapper = {
-    val tokens = using(newEngine()) { extractorEngine =>
+    val tokens = usingNewEngine { extractorEngine =>
       //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
       // We want **all** tokens for the sentence
       extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
@@ -1078,7 +1080,7 @@ class OdinsonController @Inject() (
   }
 
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val tokens = using(newEngine()) { extractorEngine =>
+    val tokens = usingNewEngine { extractorEngine =>
       //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
       // we want **all** tokens for the sentence
       extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
@@ -1121,7 +1123,7 @@ class OdinsonController @Inject() (
   }
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
-    val parentDoc = using(newEngine()) { extractorEngine =>
+    val parentDoc = usingNewEngine { extractorEngine =>
       // lucene doc containing metadata
       extractorEngine.getMetadataDoc(documentId)
     }
@@ -1144,5 +1146,4 @@ class OdinsonController @Inject() (
     //unabridgedJson.as[JsObject] - "startOffsets" - "endOffsets" - "raw"
   }
 
-  def usingTmpEngine[T](f: (ExtractorEngine => T)) = using(newEngine())(f)
 }
