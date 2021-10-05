@@ -418,10 +418,7 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    val dataGathererOpt = {
-      if (indexDirOpt.isDefined) Some(DataGatherer(index))
-      else None
-    }
+    val dataGathererOpt = indexDirOpt.map(_ => DataGatherer(index))
 
     new SqlState(
       dataSource.getConnection,
