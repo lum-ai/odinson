@@ -187,13 +187,14 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      // cutoff the results to the requested ranks
-      val defaultMin = 0
-      val defaultMax = 9
-
-      val minIdx = min.getOrElse(defaultMin)
-      val maxIdx = max.getOrElse(defaultMax)
       try {
+        // cutoff the results to the requested ranks
+        val defaultMin = 0
+        val defaultMax = 9
+
+        val minIdx = min.getOrElse(defaultMin)
+        val maxIdx = max.getOrElse(defaultMax)
+
         usingNewEngine { extractorEngine =>
           // ensure that the requested field exists in the index
           val fields = extractorEngine.index.listFields()
@@ -372,20 +373,21 @@ class OdinsonController @Inject() (
     * @return JSON frequency table as an array of objects.
     */
   def ruleFreq() = Action { request =>
-    val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
-    //println(s"GrammarRequest: ${gr}")
-    val grammar = ruleFreqRequest.grammar
-    val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
-    // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
-    // val group = gr.group
-    val filter = ruleFreqRequest.filter
-    val order = ruleFreqRequest.order
-    val min = ruleFreqRequest.min
-    val max = ruleFreqRequest.max
-    val scale = ruleFreqRequest.scale
-    val reverse = ruleFreqRequest.reverse
-    val pretty = ruleFreqRequest.pretty
     try {
+      val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
+      //println(s"GrammarRequest: ${gr}")
+      val grammar = ruleFreqRequest.grammar
+      val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
+      // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
+      // val group = gr.group
+      val filter = ruleFreqRequest.filter
+      val order = ruleFreqRequest.order
+      val min = ruleFreqRequest.min
+      val max = ruleFreqRequest.max
+      val scale = ruleFreqRequest.scale
+      val reverse = ruleFreqRequest.reverse
+      val pretty = ruleFreqRequest.pretty
+
       usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
@@ -599,26 +601,28 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val fields = usingNewEngine { extractorEngine =>
-        // ensure that the requested field exists in the index
-        extractorEngine.index.listFields()
-      }
+      try {
+        val fields = usingNewEngine { extractorEngine =>
+          // ensure that the requested field exists in the index
+          extractorEngine.index.listFields()
+        }
 
-      val fieldNames = fields.iterator.asScala.toList
-      // if the field exists, find the frequencies of each term
-      if (fieldNames contains field) {
-        // find the frequency of all terms in this field
-        val termsEnum = fields.terms(field).iterator()
-        val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
-          termAndFreq.freq.toDouble
-        }.toList
-        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+        val fieldNames = fields.iterator.asScala.toList
+        // if the field exists, find the frequencies of each term
+        if (fieldNames contains field) {
+          // find the frequency of all terms in this field
+          val termsEnum = fields.terms(field).iterator()
+          val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
+            termAndFreq.freq.toDouble
+          }.toList
+          val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
-        Json.arr(jsonObjs).format(pretty)
-      } else {
-        // the requested field isn't in this index
-        Json.obj().format(pretty)
-      }
+          Json.arr(jsonObjs).format(pretty)
+        } else {
+          // the requested field isn't in this index
+          Json.obj().format(pretty)
+        }
+      } catch handleNonFatal
     }
   }
 
@@ -646,15 +650,15 @@ class OdinsonController @Inject() (
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
   def ruleHist() = Action { request =>
-    val extractorEngine: ExtractorEngine = newEngine()
-    val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
-    val grammar = ruleHistRequest.grammar
-    val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
-    val bins = ruleHistRequest.bins
-    val equalProbability = ruleHistRequest.equalProbability
-    val xLogScale = ruleHistRequest.xLogScale
-    val pretty = ruleHistRequest.pretty
     try {
+      val extractorEngine: ExtractorEngine = newEngine()
+      val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
+      val grammar = ruleHistRequest.grammar
+      val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
+      val bins = ruleHistRequest.bins
+      val equalProbability = ruleHistRequest.equalProbability
+      val xLogScale = ruleHistRequest.xLogScale
+      val pretty = ruleHistRequest.pretty
       val mentions = usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
@@ -689,35 +693,37 @@ class OdinsonController @Inject() (
     */
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
-      val corpusDir = config.apply[File]("odinson.indexDir").getName
-      val depsVocabSize = {
-        loadVocabulary.terms.toSet.size
-      }
-      val json = usingNewEngine { extractorEngine =>
-        val numDocs = extractorEngine.numDocs()
-        //val fields = extractorEngine.index.listFields()
-        //val fieldNames = fields.iterator.asScala.toList
-        val storedFields =
-          if (extractorEngine.numDocs < 1) {
-            Nil
-          } else {
-            val firstDoc = extractorEngine.doc(0)
-            firstDoc.iterator.asScala.map(_.name).toList
-          }
-        val tokenFields = extractorEngine.dataGatherer.storedFields
-        val allFields = extractorEngine.index.listFields()
-        val allFieldNames = allFields.iterator.asScala.toList
-        val docFields = allFieldNames diff tokenFields
-        Json.obj(
-          "numDocs" -> numDocs,
-          "corpus" -> corpusDir,
-          "distinctDependencyRelations" -> depsVocabSize,
-          "tokenFields" -> tokenFields,
-          "docFields" -> docFields,
-          "storedFields" -> storedFields
-        )
-      }
-      json.format(pretty)
+      try {
+        val corpusDir = config.apply[File]("odinson.indexDir").getName
+        val depsVocabSize = {
+          loadVocabulary.terms.toSet.size
+        }
+        val json = usingNewEngine { extractorEngine =>
+          val numDocs = extractorEngine.numDocs()
+          //val fields = extractorEngine.index.listFields()
+          //val fieldNames = fields.iterator.asScala.toList
+          val storedFields =
+            if (extractorEngine.numDocs < 1) {
+              Nil
+            } else {
+              val firstDoc = extractorEngine.doc(0)
+              firstDoc.iterator.asScala.map(_.name).toList
+            }
+          val tokenFields = extractorEngine.dataGatherer.storedFields
+          val allFields = extractorEngine.index.listFields()
+          val allFieldNames = allFields.iterator.asScala.toList
+          val docFields = allFieldNames diff tokenFields
+          Json.obj(
+            "numDocs" -> numDocs,
+            "corpus" -> corpusDir,
+            "distinctDependencyRelations" -> depsVocabSize,
+            "tokenFields" -> tokenFields,
+            "docFields" -> docFields,
+            "storedFields" -> storedFields
+          )
+        }
+        json.format(pretty)
+      } catch handleNonFatal
     }
   }
 
@@ -860,14 +866,15 @@ class OdinsonController @Inject() (
   def executeGrammar() = Action { request =>
     //println(s"body: ${request.body}")
     //val json: JsValue = request.body.asJson.get
-    // FIXME: replace .get with validation check
-    val gr = request.body.asJson.get.as[GrammarRequest]
-    //println(s"GrammarRequest: ${gr}")
-    val grammar = gr.grammar
-    val pageSize = gr.pageSize
-    val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
-    val pretty = gr.pretty
     try {
+      // FIXME: replace .get with validation check
+      val gr = request.body.asJson.get.as[GrammarRequest]
+      //println(s"GrammarRequest: ${gr}")
+      val grammar = gr.grammar
+      val pageSize = gr.pageSize
+      val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
+      val pretty = gr.pretty
+
       val start = System.currentTimeMillis()
       val mentions = usingNewEngine { extractorEngine =>
         // rules -> OdinsonQuery
