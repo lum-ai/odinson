@@ -373,7 +373,7 @@ class OdinsonController @Inject() (
     * @return JSON frequency table as an array of objects.
     */
   def ruleFreq() = Action { request =>
-    try {
+    usingNewEngine { extractorEngine =>
       val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
       //println(s"GrammarRequest: ${gr}")
       val grammar = ruleFreqRequest.grammar
@@ -387,8 +387,7 @@ class OdinsonController @Inject() (
       val scale = ruleFreqRequest.scale
       val reverse = ruleFreqRequest.reverse
       val pretty = ruleFreqRequest.pretty
-
-      usingNewEngine { extractorEngine =>
+      try {
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
@@ -452,8 +451,8 @@ class OdinsonController @Inject() (
         }
 
         Json.arr(jsonObjs).format(pretty)
-      }
-    } catch handleNonFatal
+      } catch handleNonFatal
+    }
   }
 
   /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
@@ -601,11 +600,9 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      try {
-        val fields = usingNewEngine { extractorEngine =>
-          // ensure that the requested field exists in the index
-          extractorEngine.index.listFields()
-        }
+      usingNewEngine { extractorEngine =>
+        // ensure that the requested field exists in the index
+        val fields = extractorEngine.index.listFields()
 
         val fieldNames = fields.iterator.asScala.toList
         // if the field exists, find the frequencies of each term
@@ -622,7 +619,7 @@ class OdinsonController @Inject() (
           // the requested field isn't in this index
           Json.obj().format(pretty)
         }
-      } catch handleNonFatal
+      }
     }
   }
 
@@ -650,7 +647,7 @@ class OdinsonController @Inject() (
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
   def ruleHist() = Action { request =>
-    try {
+    usingNewEngine { extractorEngine =>
       val extractorEngine: ExtractorEngine = newEngine()
       val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
       val grammar = ruleHistRequest.grammar
@@ -659,33 +656,36 @@ class OdinsonController @Inject() (
       val equalProbability = ruleHistRequest.equalProbability
       val xLogScale = ruleHistRequest.xLogScale
       val pretty = ruleHistRequest.pretty
-      val mentions = usingNewEngine { extractorEngine =>
+      try {
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
-        val iterator = extractorEngine.extractMentions(
-          extractors,
-          numSentences = extractorEngine.numDocs(),
-          allowTriggerOverlaps = allowTriggerOverlaps,
-          disableMatchSelector = false
-        )
-        iterator.toVector
-      }
 
-      val frequencies = mentions
-        // rule name is all that matters
-        .map(_.foundBy)
-        // collect the instances of each rule's results
-        .groupBy(identity)
-        // filter the rules by name, if a filter was passed
-        // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
-        // count how many matches for each rule
-        .map { case (k, v) => v.length.toDouble }
-        .toList
+        val mentions: Seq[Mention] = {
+          val iterator = extractorEngine.extractMentions(
+            extractors,
+            numSentences = extractorEngine.numDocs(),
+            allowTriggerOverlaps = allowTriggerOverlaps,
+            disableMatchSelector = false
+          )
+          iterator.toVector
+        }
 
-      val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+        val frequencies = mentions
+          // rule name is all that matters
+          .map(_.foundBy)
+          // collect the instances of each rule's results
+          .groupBy(identity)
+          // filter the rules by name, if a filter was passed
+          // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+          // count how many matches for each rule
+          .map { case (k, v) => v.length.toDouble }
+          .toList
 
-      Json.arr(jsonObjs).format(pretty)
-    } catch handleNonFatal
+        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+
+        Json.arr(jsonObjs).format(pretty)
+      } catch handleNonFatal
+    }
   }
 
   /** Information about the current corpus. <br>
@@ -693,53 +693,52 @@ class OdinsonController @Inject() (
     */
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
-      try {
+      usingNewEngine { extractorEngine =>
+        val numDocs = extractorEngine.numDocs()
         val corpusDir = config.apply[File]("odinson.indexDir").getName
         val depsVocabSize = {
           loadVocabulary.terms.toSet.size
         }
-        val json = usingNewEngine { extractorEngine =>
-          val numDocs = extractorEngine.numDocs()
-          //val fields = extractorEngine.index.listFields()
-          //val fieldNames = fields.iterator.asScala.toList
-          val storedFields =
-            if (extractorEngine.numDocs < 1) {
-              Nil
-            } else {
-              val firstDoc = extractorEngine.doc(0)
-              firstDoc.iterator.asScala.map(_.name).toList
-            }
-          val tokenFields = extractorEngine.dataGatherer.storedFields
-          val allFields = extractorEngine.index.listFields()
-          val allFieldNames = allFields.iterator.asScala.toList
-          val docFields = allFieldNames diff tokenFields
-          Json.obj(
-            "numDocs" -> numDocs,
-            "corpus" -> corpusDir,
-            "distinctDependencyRelations" -> depsVocabSize,
-            "tokenFields" -> tokenFields,
-            "docFields" -> docFields,
-            "storedFields" -> storedFields
-          )
-        }
+        val fields = extractorEngine.index.listFields()
+        val fieldNames = fields.iterator.asScala.toList
+        val storedFields =
+          if (extractorEngine.numDocs < 1) {
+            Nil
+          } else {
+            val firstDoc = extractorEngine.doc(0)
+            firstDoc.iterator.asScala.map(_.name).toList
+          }
+        val tokenFields = extractorEngine.dataGatherer.storedFields
+        val allFields = extractorEngine.index.listFields()
+        val allFieldNames = allFields.iterator.asScala.toList
+        val docFields = allFieldNames diff tokenFields
+
+        val json = Json.obj(
+          "numDocs" -> numDocs,
+          "corpus" -> corpusDir,
+          "distinctDependencyRelations" -> depsVocabSize,
+          "tokenFields" -> tokenFields,
+          "docFields" -> docFields,
+          "storedFields" -> storedFields
+        )
         json.format(pretty)
-      } catch handleNonFatal
+      }
     }
   }
 
   def getDocId(luceneDocId: Int): String = {
-    val doc = usingNewEngine { extractorEngine =>
-      extractorEngine.doc(luceneDocId)
+    usingNewEngine { extractorEngine =>
+      val doc: LuceneDocument = extractorEngine.doc(luceneDocId)
+      doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
     }
-    doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
-    val doc = usingNewEngine { extractorEngine =>
-      extractorEngine.doc(luceneDocId)
+    usingNewEngine { extractorEngine =>
+      val doc = extractorEngine.doc(luceneDocId)
+      // FIXME: this isn't safe
+      doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
     }
-    // FIXME: this isn't safe
-    doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
   }
 
   def loadVocabulary: Vocabulary = {
@@ -768,7 +767,9 @@ class OdinsonController @Inject() (
     // get terms from the requested field (error if it doesn't exist)
     usingNewEngine { extractorEngine =>
       val fields = extractorEngine.index.listFields()
-      TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
+      val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
+
+      terms
     }
   }
 
@@ -866,7 +867,7 @@ class OdinsonController @Inject() (
   def executeGrammar() = Action { request =>
     //println(s"body: ${request.body}")
     //val json: JsValue = request.body.asJson.get
-    try {
+    usingNewEngine { extractorEngine =>
       // FIXME: replace .get with validation check
       val gr = request.body.asJson.get.as[GrammarRequest]
       //println(s"GrammarRequest: ${gr}")
@@ -874,32 +875,34 @@ class OdinsonController @Inject() (
       val pageSize = gr.pageSize
       val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
       val pretty = gr.pretty
-
-      val start = System.currentTimeMillis()
-      val mentions = usingNewEngine { extractorEngine =>
+      try {
         // rules -> OdinsonQuery
         val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
+
+        val start = System.currentTimeMillis()
 
         val maxSentences: Int = pageSize match {
           case Some(ps) => ps
           case None     => extractorEngine.numDocs()
         }
 
-        // FIXME: should deal in iterators to allow for, e.g., pagination...?
-        val iterator = extractorEngine.extractMentions(
-          extractors,
-          numSentences = maxSentences,
-          allowTriggerOverlaps = allowTriggerOverlaps,
-          disableMatchSelector = false
-        )
-        iterator.toVector
-      }
+        val mentions: Seq[Mention] = {
+          // FIXME: should deal in iterators to allow for, e.g., pagination...?
+          val iterator = extractorEngine.extractMentions(
+            extractors,
+            numSentences = maxSentences,
+            allowTriggerOverlaps = allowTriggerOverlaps,
+            disableMatchSelector = false
+          )
+          iterator.toVector
+        }
 
-      val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+        val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-      val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
-      json.format(pretty)
-    } catch handleNonFatal
+        val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
+        json.format(pretty)
+      } catch handleNonFatal
+    }
   }
 
   /** @param odinsonQuery An Odinson pattern
@@ -921,8 +924,8 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      try {
-        val json = usingNewEngine { extractorEngine =>
+      usingNewEngine { extractorEngine =>
+        try {
           val oq = metadataQuery match {
             case Some(pq) =>
               extractorEngine.compiler.mkQuery(odinsonQuery, pq)
@@ -944,10 +947,10 @@ class OdinsonController @Inject() (
             )
           }
 
-          Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
-        }
-        json.format(pretty)
-      } catch handleNonFatal
+          val json = Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
+          json.format(pretty)
+        } catch handleNonFatal
+      }
     }
   }
 
@@ -971,18 +974,17 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      try {
-        usingNewEngine { extractorEngine =>
-          val extractorEngine: ExtractorEngine = newEngine()
+      usingNewEngine { extractorEngine =>
+        try {
           val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
           val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
           val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
           val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
           json.format(pretty)
-        }
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      ).orElse(handleNonFatal)
+        } catch mkHandleNullPointer(
+          "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+        ).orElse(handleNonFatal)
+      }
     }
   }
 
@@ -991,17 +993,17 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      try {
-        using(newEngine) { extractorEngine =>
+      using(newEngine) { extractorEngine =>
+        try {
           val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
           val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
           val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
           val json: JsValue = Json.parse(odinsonDocument.toJson)
           json.format(pretty)
-        }
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      ).orElse(handleNonFatal)
+        } catch mkHandleNullPointer(
+          "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+        ).orElse(handleNonFatal)
+      }
     }
   }
 
@@ -1065,44 +1067,44 @@ class OdinsonController @Inject() (
   }
 
   def mkJson(mention: Mention): Json.JsValueWrapper = {
-    val tokens = usingNewEngine { extractorEngine =>
+    usingNewEngine { extractorEngine =>
       //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
       // We want **all** tokens for the sentence
-      extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
+      val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
       // odinsonMatch: OdinsonMatch,
-    }
 
-    Json.obj(
-      // format: off
-      "sentenceId"    -> mention.luceneDocId,
-      // "score"         -> odinsonScoreDoc.score,
-      "label"         -> mention.label,
-      "documentId"    -> getDocId(mention.luceneDocId),
-      "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "foundBy"       -> mention.foundBy,
-      "match"         -> Json.arr(mkJson(mention.odinsonMatch))
-      // format: on
-    )
+      Json.obj(
+        // format: off
+        "sentenceId"    -> mention.luceneDocId,
+        // "score"         -> odinsonScoreDoc.score,
+        "label"         -> mention.label,
+        "documentId"    -> getDocId(mention.luceneDocId),
+        "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
+        "words"         -> JsArray(tokens.map(JsString)),
+        "foundBy"       -> mention.foundBy,
+        "match"         -> Json.arr(mkJson(mention.odinsonMatch))
+        // format: on
+      )
+    }
   }
 
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val tokens = usingNewEngine { extractorEngine =>
+    usingNewEngine { extractorEngine =>
       //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
       // we want **all** tokens for the sentence
-      extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
-    }
+      val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
 
-    Json.obj(
-      // format: off
-      "sentenceId"    -> odinsonScoreDoc.doc,
-      "score"         -> odinsonScoreDoc.score,
-      "documentId"    -> getDocId(odinsonScoreDoc.doc),
-      "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
-      // format: on
-    )
+      Json.obj(
+        // format: off
+        "sentenceId"    -> odinsonScoreDoc.doc,
+        "score"         -> odinsonScoreDoc.score,
+        "documentId"    -> getDocId(odinsonScoreDoc.doc),
+        "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
+        "words"         -> JsArray(tokens.map(JsString)),
+        "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+        // format: on
+      )
+    }
   }
 
   def mkJson(m: OdinsonMatch): Json.JsValueWrapper = {
@@ -1130,13 +1132,13 @@ class OdinsonController @Inject() (
   }
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
-    val parentDoc = usingNewEngine { extractorEngine =>
+    usingNewEngine { extractorEngine =>
       // lucene doc containing metadata
-      extractorEngine.getMetadataDoc(documentId)
-    }
+      val parentDoc: LuceneDocument = extractorEngine.getMetadataDoc(documentId)
 
-    val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
-    OdinsonDocument.fromJson(odinsonDocFile)
+      val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
+      OdinsonDocument.fromJson(odinsonDocFile)
+    }
   }
 
   def retrieveSentenceJson(documentId: String, sentenceIndex: Int): JsValue = {
