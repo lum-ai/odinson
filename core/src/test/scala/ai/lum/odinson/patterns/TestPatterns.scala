@@ -17,7 +17,7 @@ class TestPatterns extends OdinsonTest {
       val ee = mkExtractorEngineFromText(string)
       val q = ee.mkQuery(pattern)
       val results = ee.query(q)
-      val actual = mkStrings(results, ee)
+      val actual = mkStrings(results, ee.dataGatherer)
 
       actual should equal(expected)
     }

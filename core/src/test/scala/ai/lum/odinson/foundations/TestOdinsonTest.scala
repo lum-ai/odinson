@@ -34,7 +34,7 @@ class TestOdinsonTest extends OdinsonTest {
       Array(new NGramMatch(2, 3), new NGramMatch(4, 5), new NGramMatch(7, 8))
     val scoreDoc = new OdinsonScoreDoc(doc = 0, score = 0.1f, matches = odinsonMatches)
     val results = new OdinResults(totalHits = 1, Array(scoreDoc))
-    mkStrings(results, ee) should contain theSameElementsInOrderAs Seq(
+    mkStrings(results, ee.dataGatherer) should contain theSameElementsInOrderAs Seq(
       "ramen",
       "chopsticks",
       "spoon"
