@@ -1,10 +1,9 @@
 package ai.lum.odinson.metadata
 
 import ai.lum.odinson.lucene.search.OdinsonFilteredQuery
-import ai.lum.odinson.{ Document, ExtractorEngine }
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.metadata.MetadataCompiler.mkQuery
-import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.test.utils.OdinsonTest
+import ai.lum.odinson.{ Document, ExtractorEngine }
 
 class TestMetadataFilter extends OdinsonTest {
 

@@ -1,33 +1,25 @@
 package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.lucene.analysis.TokenStreamUtils
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
-import ai.lum.odinson.utils.IndexSettings
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
-import org.apache.lucene.index.IndexReader
-import org.apache.lucene.store.Directory
+import ai.lum.odinson.lucene.index.OdinsonIndex
 
 // TODO: From Documents
 // TODO: Deps
 // TODO: Parent MetaData
 
-class DataGatherer(
-  val indexReader: IndexReader,
-  val displayField: String,
-  indexSettings: IndexSettings
-) {
+class DataGatherer(index: OdinsonIndex) {
 
-  val analyzer = new WhitespaceAnalyzer()
+  val displayField = index.displayField
 
-  val storedFields: Seq[String] = indexSettings.storedFields
+  val storedFields: Seq[String] = index.settings.storedFields
 
   def getStringForSpan(docID: Int, m: OdinsonMatch): String = {
     getTokensForSpan(docID, m).mkString(" ")
   }
 
   def getTokensForSpan(docID: Int, m: OdinsonMatch): Array[String] = {
-    getTokensForSpan(docID, displayField, m.start, m.end)
+    getTokensForSpan(docID, index.displayField, m.start, m.end)
   }
 
   def getTokensForSpan(docID: Int, m: OdinsonMatch, fieldName: String): Array[String] = {
@@ -35,7 +27,7 @@ class DataGatherer(
   }
 
   def getTokensForSpan(docID: Int, start: Int, end: Int): Array[String] = {
-    getTokensForSpan(docID, displayField, start, end)
+    getTokensForSpan(docID, index.displayField, start, end)
   }
 
   def getTokensForSpan(docID: Int, fieldName: String, start: Int, end: Int): Array[String] = {
@@ -43,7 +35,7 @@ class DataGatherer(
   }
 
   def getTokens(scoreDoc: OdinsonScoreDoc): Array[String] = {
-    getTokens(scoreDoc.doc, displayField)
+    getTokens(scoreDoc.doc, index.displayField)
   }
 
   def getTokens(scoreDoc: OdinsonScoreDoc, fieldName: String): Array[String] = {
@@ -51,12 +43,11 @@ class DataGatherer(
   }
 
   def getTokens(docID: Int, fieldName: String): Array[String] = {
-    TokenStreamUtils
-      .getTokensFromMultipleFields(docID, Set(fieldName), indexReader, analyzer)(fieldName)
+    index.getTokensFromMultipleFields(docID, Set(fieldName))(fieldName)
   }
 
   def getTokens(docID: Int, fieldNames: Set[String]): Map[String, Array[String]] = {
-    TokenStreamUtils.getTokensFromMultipleFields(docID, fieldNames, indexReader, analyzer)
+    index.getTokensFromMultipleFields(docID, fieldNames)
   }
 
   def fieldsToInclude(level: VerboseLevels.Verbosity = VerboseLevels.Display): Seq[String] = {
@@ -65,7 +56,7 @@ class DataGatherer(
     // calling `get` here on the engine should not be a problem.
     level match {
       case VerboseLevels.Minimal => Seq.empty
-      case VerboseLevels.Display => Seq(displayField)
+      case VerboseLevels.Display => Seq(index.displayField)
       case VerboseLevels.All     => storedFields
     }
   }
@@ -88,7 +79,7 @@ class DataGatherer(
     since = "0.3.2"
   )
   def getTokensForSpan(m: Mention): Array[String] = {
-    getTokensForSpan(m.luceneDocId, m.odinsonMatch, displayField)
+    getTokensForSpan(m.luceneDocId, m.odinsonMatch, index.displayField)
   }
 
   @deprecated(
@@ -103,13 +94,7 @@ class DataGatherer(
 
 object DataGatherer {
 
-  def apply(
-    indexReader: IndexReader,
-    displayField: String,
-    indexDir: Directory
-  ): DataGatherer = {
-    new DataGatherer(indexReader, displayField, IndexSettings.fromDirectory(indexDir))
-  }
+  def apply(index: OdinsonIndex): DataGatherer = new DataGatherer(index)
 
   // Enum to handle the supported levels of verbosity of Mentions.
   //  - Minimal:  No additional text included

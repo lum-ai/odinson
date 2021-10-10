@@ -1,16 +1,8 @@
 package ai.lum.odinson.state
 
-import java.io.File
-import java.io.StringReader
-import java.sql.Connection
-import java.sql.DriverManager
-import java.util.concurrent.atomic.AtomicLong
-
-import scala.collection.mutable.ArrayBuffer
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
-import ai.lum.odinson.utils.IndexSettings
+import ai.lum.odinson.lucene.index.OdinsonIndex
 import ai.lum.odinson.{
   DataGatherer,
   IdGetter,
@@ -22,8 +14,12 @@ import ai.lum.odinson.{
 }
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
-import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.store.Directory
+
+import java.io.File
+import java.sql.Connection
+import java.util.concurrent.atomic.AtomicLong
+import scala.collection.mutable.ArrayBuffer
 
 class IdProvider(protected var id: Int = 0) {
 
@@ -47,7 +43,9 @@ abstract class WriteNode(val odinsonMatch: OdinsonMatch, idProvider: IdProvider)
   val id: Int = idProvider.next
 
   def label: String
+
   def name: String
+
   def parentNodeOpt: Option[WriteNode]
 
   def flatten(writeNodes: ArrayBuffer[WriteNode]): Unit = {
@@ -161,7 +159,7 @@ class SqlState protected (
   protected val stateIndex: Long,
   val persistOnClose: Boolean = false,
   val persistFile: Option[File] = None,
-  indexSearcher: OdinsonIndexSearcher,
+  index: OdinsonIndex,
   dataGathererOpt: Option[DataGatherer]
 ) extends State {
 
@@ -179,7 +177,8 @@ class SqlState protected (
   }
 
   def createTable(): Unit = {
-    val sql = s"""
+    val sql =
+      s"""
       CREATE TABLE IF NOT EXISTS $mentionsTable (
         doc_base INT NOT NULL,            -- offset corresponding to lucene segment
         doc_id INT NOT NULL,              -- relative to lucene segment (not global)
@@ -228,7 +227,8 @@ class SqlState protected (
   // TODO Also pass in the number of items, perhaps how many of each kind?
   // TODO Make this a single transaction.
   override def addMentions(mentions: Iterator[Mention]): Unit = {
-    val sql = s"""
+    val sql =
+      s"""
       INSERT INTO $mentionsTable
         (doc_base, doc_id, doc_index, label, name, id, parent_id, child_count, child_label, start_token, end_token)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -241,9 +241,9 @@ class SqlState protected (
       mentions.foreach { mention =>
         val stateNodes = SqlResultItem.toWriteNodes(mention, idProvider)
 
-//        println(resultItem) // debugging
+        //        println(resultItem) // debugging
         stateNodes.foreach { stateNode =>
-//          println(stateNode) // debugging
+          //          println(stateNode) // debugging
           dbSetter
             .setNext(mention.luceneSegmentDocBase)
             .setNext(mention.luceneSegmentDocId)
@@ -268,11 +268,12 @@ class SqlState protected (
   // See MemoryState for guidance.
 
   /** Returns the segment-specific doc-ids that correspond
-    *  to lucene documents that contain a mention with the
-    *  specified label
+    * to lucene documents that contain a mention with the
+    * specified label
     */
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
-    val sql = s"""
+    val sql =
+      s"""
       SELECT DISTINCT doc_id
       FROM $mentionsTable
       WHERE doc_base=? AND label=?
@@ -293,7 +294,8 @@ class SqlState protected (
   }
 
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
-    val sql = s"""
+    val sql =
+      s"""
       SELECT doc_index, name, id, parent_id, child_count, child_label, start_token, end_token
       FROM $mentionsTable
       WHERE doc_base=? AND doc_id=? AND label=?
@@ -322,7 +324,7 @@ class SqlState protected (
 
         readNodes += ReadNode(docIndex, name, id, parentId, childCount, childLabel, start, end)
         if (parentId == -1) {
-          val idGetter = LazyIdGetter(indexSearcher, docId)
+          val idGetter = LazyIdGetter(index, docId)
           mentions += SqlResultItem.fromReadNodes(
             docBase,
             docId,
@@ -350,7 +352,8 @@ class SqlState protected (
 
   def persist(file: File): Unit = {
     val path = file.getPath
-    val sql = s"""
+    val sql =
+      s"""
       SCRIPT TO '$path'
       ;
     """
@@ -378,7 +381,8 @@ class SqlState protected (
   // fire any delete triggers."  There's also no need to update indexes.
   // However, DROP is what we want.  The tables and indexes should completely disappear.
   protected def drop(): Unit = {
-    val sql = s"""
+    val sql =
+      s"""
       DROP TABLE $mentionsTable
       ;
     """
@@ -394,7 +398,7 @@ object SqlState {
 
   def apply(
     config: Config,
-    indexSearcher: OdinsonIndexSearcher,
+    index: OdinsonIndex,
     indexDirOpt: Option[Directory]
   ): SqlState = {
     val persistOnClose = config.apply[Boolean]("odinson.state.sql.persistOnClose")
@@ -414,11 +418,10 @@ object SqlState {
       new HikariDataSource(config)
     }
 
-    val displayField = config.apply[String]("odinson.displayField")
-    val dataGathererOpt =
-      indexDirOpt.map(indexDir =>
-        DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
-      )
+    val dataGathererOpt = {
+      if (indexDirOpt.isDefined) Some(DataGatherer(index))
+      else None
+    }
 
     new SqlState(
       dataSource.getConnection,
@@ -426,7 +429,7 @@ object SqlState {
       count.getAndIncrement,
       persistOnClose,
       stateFile,
-      indexSearcher,
+      index,
       dataGathererOpt
     )
   }

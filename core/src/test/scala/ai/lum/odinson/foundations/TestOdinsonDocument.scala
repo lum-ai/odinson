@@ -2,10 +2,9 @@ package ai.lum.odinson.foundations
 
 import java.text.SimpleDateFormat
 import java.io.File
-
 import scala.io.Source
 import ai.lum.odinson.Document
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.{ DateField, Field, GraphField, Sentence, StringField, TokensField }
 
 class TestOdinsonDocument extends OdinsonTest {

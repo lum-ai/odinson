@@ -1,41 +1,35 @@
 package ai.lum.odinson
 
-import java.io.File
-
-import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.search.{
-  Query,
-  TermQuery,
-  BooleanClause => LuceneBooleanClause,
-  BooleanQuery => LuceneBooleanQuery
-}
-import org.apache.lucene.store.{ Directory, FSDirectory }
-import org.apache.lucene.index.{ DirectoryReader, Term }
-import com.typesafe.config.Config
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
+import ai.lum.odinson.lucene.index.OdinsonIndex
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
-import ai.lum.odinson.digraph.Vocabulary
 import ai.lum.odinson.utils.MostRecentlyUsed
+import ai.lum.odinson.{ Document => OdinsonDocument }
+import com.typesafe.config.{ Config, ConfigValueFactory }
+import org.apache.lucene.document.{ Document => LuceneDocument }
+import org.apache.lucene.index.Term
+import org.apache.lucene.search.{
+  Query,
+  TermQuery,
+  BooleanClause => LuceneBooleanClause,
+  BooleanQuery => LuceneBooleanQuery
+}
 
+import java.io.File
 import scala.collection.mutable.ArrayBuffer
 
 class ExtractorEngine private (
-  val indexSearcher: OdinsonIndexSearcher,
+  val index: OdinsonIndex,
   val compiler: QueryCompiler,
   val dataGatherer: DataGatherer,
-  val state: State // todo: should this be private?
+  val state: State
 ) {
-
-  /** Analyzer for parent queries.  Don't skip any stopwords. */
-  val analyzer = dataGatherer.analyzer
-
-  val indexReader = indexSearcher.getIndexReader()
 
   val ruleReader = new RuleReader(compiler)
 
@@ -64,7 +58,7 @@ class ExtractorEngine private (
     * @return a lucene document
     */
   def doc(docID: Int): LuceneDocument = {
-    indexSearcher.doc(docID)
+    index.doc(docID)
   }
 
   /** Returns the number of lucene documents in the index.
@@ -74,7 +68,7 @@ class ExtractorEngine private (
     * @return number of lucene documents in the index
     */
   def numDocs(): Int = {
-    indexReader.numDocs()
+    index.numDocs()
   }
 
   /** ***********
@@ -109,7 +103,7 @@ class ExtractorEngine private (
     * @return
     */
   def query(odinsonQuery: OdinsonQuery, disableMatchSelector: Boolean): OdinResults = {
-    query(odinsonQuery, indexReader.numDocs(), disableMatchSelector)
+    query(odinsonQuery, index.numDocs(), disableMatchSelector)
   }
 
   /** Executes an OdinsonQuery and returns an OdinResult
@@ -149,7 +143,7 @@ class ExtractorEngine private (
     * starting after the last lucene document in the OdinResults `after`.
     *
     * @param odinsonQuery
-    * @param n number of desired lucene documents
+    * @param n     number of desired lucene documents
     * @param after an OdinResults with a set of lucene documents
     * @return
     */
@@ -162,7 +156,7 @@ class ExtractorEngine private (
     * starting after the lucene document `after`.
     *
     * @param odinsonQuery
-    * @param n number of desired lucene documents
+    * @param n     number of desired lucene documents
     * @param after the last lucene document to ignore
     * @return
     */
@@ -198,13 +192,29 @@ class ExtractorEngine private (
         // we may need to read from the state as part of executing the query
         odinsonQuery.setState(Some(state))
         // actually execute the query
-        indexSearcher.odinSearch(after, odinsonQuery, n, disableMatchSelector)
+        odinSearch(after, odinsonQuery, n, disableMatchSelector)
       } finally {
         // clean up after ourselves
         odinsonQuery.setState(None)
       }
     // return results
     odinResults
+  }
+
+  private def odinSearch(
+    after: OdinsonScoreDoc,
+    query: OdinsonQuery,
+    numHits: Int,
+    disableMatchSelector: Boolean
+  ): OdinResults = {
+
+    val limit = math.max(1, index.maxDoc())
+    require(
+      after == null || after.doc < limit,
+      s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
+    )
+    val cappedNumHits = math.min(numHits, limit)
+    index.search(after, query, cappedNumHits, disableMatchSelector)
   }
 
   /** Retrieves the metadata Lucene Document by docId */
@@ -224,7 +234,7 @@ class ExtractorEngine private (
       )
     )
     val query = metadataDocQueryBuilder.build()
-    val docs = indexSearcher.search(query, 10).scoreDocs.map(sd => indexReader.document(sd.doc))
+    val docs = index.search(query, 10).scoreDocs.map(sd => index.doc(sd.doc))
     docs.head
   }
 
@@ -386,7 +396,7 @@ class ExtractorEngine private (
     allowTriggerOverlaps: Boolean,
     disableMatchSelector: Boolean
   ): Iterator[Mention] = {
-    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(index, _))
 
     // Apply each extractor, concatenate results
     val resultsIterators =
@@ -440,7 +450,7 @@ class ExtractorEngine private (
     }
 
     val minIterations = extractors.map(_.priority.minIterations).max
-    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](LazyIdGetter(indexSearcher, _))
+    val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](index.lazyIdGetter(_))
 
     var finished = false
     var epoch = 1
@@ -595,6 +605,7 @@ class ExtractorEngine private (
   /** Close the open resources.
     */
   def close(): Unit = {
+    index.close()
     state.close()
   }
 
@@ -609,6 +620,7 @@ class ExtractorEngine private (
   }
 
   /** Save the current state to the path provided.
+    *
     * @param path
     */
   def saveStateTo(path: String): Unit = {
@@ -616,6 +628,7 @@ class ExtractorEngine private (
   }
 
   /** Save the current state to the File provided
+    *
     * @param file
     */
   def saveStateTo(file: File): Unit = {
@@ -716,63 +729,44 @@ class ExtractorEngine private (
 object ExtractorEngine {
   lazy val defaultConfig: Config = ConfigFactory.load()
 
-  def fromConfig(): ExtractorEngine = {
-    fromConfig(defaultConfig)
+  def fromConfig(config: Config = defaultConfig): ExtractorEngine = {
+    val index = OdinsonIndex.fromConfig(config)
+    val compiler = QueryCompiler(config, index.vocabulary)
+    val state = State(config, index)
+
+    newExtractorEngine(index, compiler, state)
   }
 
-  def fromConfig(config: Config): ExtractorEngine = {
-    val indexPath = config.apply[File]("odinson.indexDir").toPath
-    val indexDir = FSDirectory.open(indexPath)
-    fromDirectory(config, indexDir)
-  }
-
-  def fromDirectory(config: Config, indexDir: Directory): ExtractorEngine = {
-    val indexReader = DirectoryReader.open(indexDir)
-    val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")
-    val indexSearcher = new OdinsonIndexSearcher(indexReader, computeTotalHits)
-    fromDirectory(config, indexDir, indexSearcher)
-  }
-
-  def fromDirectory(
-    config: Config,
-    indexDir: Directory,
-    indexSearcher: OdinsonIndexSearcher
-  ): ExtractorEngine = {
-    val displayField = config.apply[String]("odinson.displayField")
-    val dataGatherer = DataGatherer(indexSearcher.getIndexReader, displayField, indexDir)
-    val vocabulary = Vocabulary.fromDirectory(indexDir)
-    val compiler = QueryCompiler(config, vocabulary)
-    val state = State(config, indexSearcher, indexDir)
-    new ExtractorEngine(
-      indexSearcher,
-      compiler,
-      dataGatherer,
-      state
-    )
-  }
-
-  def inMemory(doc: Document): ExtractorEngine = {
+  def inMemory(doc: OdinsonDocument): ExtractorEngine = {
     inMemory(Seq(doc))
   }
 
-  def inMemory(docs: Seq[Document]): ExtractorEngine = {
+  def inMemory(docs: Seq[OdinsonDocument]): ExtractorEngine = {
     inMemory(ConfigFactory.load(), docs)
   }
 
-  // Expecting a config that is already inside the `odinson` namespace
-  def inMemory(config: Config, docs: Seq[Document]): ExtractorEngine = {
-    // make a memory index
-    val memWriter = OdinsonIndexWriter.inMemory(config)
-    // add documents to index
-    for (doc <- docs) {
-      val block = memWriter.mkDocumentBlock(doc)
-      memWriter.addDocuments(block)
+  def inMemory(config: Config, docs: Seq[OdinsonDocument] = Seq()): ExtractorEngine = {
+    val memConf = {
+      config
+        .withValue("odinson.indexDir", ConfigValueFactory.fromAnyRef(":memory:"))
+        .withValue("odinson.index.incremental", ConfigValueFactory.fromAnyRef(false))
     }
-    // finalize index writer
-    memWriter.commit()
-    memWriter.close()
-    // return extractor engine
-    ExtractorEngine.fromDirectory(config, memWriter.directory)
+    val memIndex = OdinsonIndex.fromConfig(memConf)
+    docs.foreach(memIndex.indexOdinsonDoc)
+    memIndex.refresh()
+
+    val compiler = QueryCompiler(config, memIndex.vocabulary)
+    val state = State(config, memIndex)
+
+    newExtractorEngine(memIndex, compiler, state)
+  }
+
+  private def newExtractorEngine(
+    index: OdinsonIndex,
+    compiler: QueryCompiler,
+    state: State
+  ): ExtractorEngine = {
+    new ExtractorEngine(index, compiler, DataGatherer(index), state)
   }
 
 }

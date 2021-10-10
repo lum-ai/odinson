@@ -1,7 +1,6 @@
-package ai.lum.odison.documentation
+package ai.lum.odinson.documentation
 
-import ai.lum.odinson.documentation.DocumentationDocs
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestDocumentationGraphTraversals extends OdinsonTest {
   val doc = getDocument("becky-gummy-bears")
