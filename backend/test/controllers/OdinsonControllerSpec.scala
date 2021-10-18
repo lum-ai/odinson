@@ -184,7 +184,18 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Injec
       status(result) mustBe OK
       contentType(result) mustBe Some("application/json")
       Helpers.contentAsString(result) must include("core")
+    }
 
+    "preserve original tokenization in the /pattern endpoint" in {
+      // the pattern used in this test: "[lemma=be] []"
+      val result = route(
+        app,
+        FakeRequest(GET, "/api/execute/pattern?odinsonQuery=%5Braw%3D%22Figure%20S3%22%5D")
+      ).get
+
+      status(result) mustBe OK
+      contentType(result) mustBe Some("application/json")
+      Helpers.contentAsString(result) must include("Figure S3")
     }
 
     "execute a grammar using the executeGrammar method" in {
@@ -297,7 +308,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Injec
     }
 
     "retrieve metadata using the /metadata/by-sentence-id endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/metadata/by-sentence-id?sentenceId=2")).get
+      val response = route(app, FakeRequest(GET, "/api/metadata/by-sentence-id?sentenceId=4")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")
@@ -318,7 +329,7 @@ class OdinsonControllerSpec extends PlaySpec with GuiceOneAppPerSuite with Injec
     }
 
     "retrieve the parent doc using the /parent/by-sentence-id endpoint" in {
-      val response = route(app, FakeRequest(GET, "/api/parent/by-sentence-id?sentenceId=2")).get
+      val response = route(app, FakeRequest(GET, "/api/parent/by-sentence-id?sentenceId=4")).get
 
       status(response) mustBe OK
       contentType(response) mustBe Some("application/json")

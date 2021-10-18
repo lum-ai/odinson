@@ -6,7 +6,7 @@ import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
 import org.apache.lucene.{ document => lucenedoc }
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+import org.apache.lucene.analysis.core.KeywordAnalyzer
 import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
@@ -23,6 +23,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint, StoredField }
+
 import java.nio.file.Paths
 import java.util
 
@@ -41,7 +42,7 @@ class OdinsonIndexWriter(
 
   import OdinsonIndexWriter._
 
-  val analyzer = new WhitespaceAnalyzer()
+  val analyzer = new KeywordAnalyzer()
   val writerConfig = new IndexWriterConfig(analyzer)
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
