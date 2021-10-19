@@ -55,20 +55,6 @@ trait State {
 
 object State {
 
-  def apply(config: Config, index: OdinsonIndex, indexDir: Directory): State = {
-    val provider = config.apply[String]("odinson.state.provider")
-    val state = provider match {
-      // The SQL state needs an IndexSearcher to get the docIds from the
-      case "sql"    => SqlState(config, index, Some(index.directory))
-      case "file"   => FileState(config)
-      case "memory" => MemoryState(config)
-      case "mock"   => MockState
-      case _        => throw new Exception(s"Unknown state provider: $provider")
-    }
-
-    state
-  }
-
   def apply(config: Config, index: OdinsonIndex): State = {
     val provider = config.apply[String]("odinson.state.provider")
     val state = provider match {
