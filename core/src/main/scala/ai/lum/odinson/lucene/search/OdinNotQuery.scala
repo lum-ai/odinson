@@ -92,20 +92,20 @@ class OdinNotQuery(
             lastApproxDoc = doc
             lastApproxResult = excludeTwoPhase.matches()
           }
-          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)) {
+          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && !lastApproxResult)) {
             return AcceptStatus.YES
           }
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed
             excludeSpans.nextStartPosition()
           }
-          while (excludeSpans.endPosition() < candidate.startPosition()) {
+          while (excludeSpans.endPosition() <= candidate.startPosition()) {
             // exclude end position is before a possible exclusion
             if (excludeSpans.nextStartPosition() == NO_MORE_POSITIONS) {
               return AcceptStatus.YES // no more exclude at current doc.
             }
           }
           // exclude end position far enough in current doc, check start position:
-          if (candidate.endPosition() < excludeSpans.startPosition()) {
+          if (candidate.endPosition() <= excludeSpans.startPosition()) {
             AcceptStatus.YES
           } else {
             AcceptStatus.NO
