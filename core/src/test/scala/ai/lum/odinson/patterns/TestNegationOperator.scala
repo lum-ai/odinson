@@ -25,13 +25,13 @@ class TestNegationOperator extends OdinsonTest {
     val q = ee.mkQuery("[lemma!=bear]")
     val results = ee.query(q)
     val actual = mkStrings(results, ee.dataGatherer)
-    actual should have size (4)
+    actual shouldEqual (Array("Becky", "ate", "gummy", "."))
   }
 
   it should "work for [!tag=/NN.*/]" in {
     val q = ee.mkQuery("[!tag=/NN.*/]")
     val results = ee.query(q)
     val actual = mkStrings(results, ee.dataGatherer)
-    actual should have size (3)
+    actual shouldEqual (Array("ate", "gummy", "."))
   }
 }
