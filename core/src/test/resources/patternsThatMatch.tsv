@@ -58,3 +58,4 @@ a (?!b)	a b a c	a
 (?<!a) []	a b a c	a;a
 a (x x | x)	a x x	a x x
 a (x | x x)	a x x	a x
+[!raw=b]	a b a c	a;a;c
