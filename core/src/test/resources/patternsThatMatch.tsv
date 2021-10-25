@@ -52,6 +52,8 @@ a []+ c	a c b c a b c	a c b c a b c
 a	a b a c	a;a
 a (?=b)	a b a c	a
 a (?=c)	a b a c	a
+[] (?!a)	a b a c	a;a;c
+a (?!b)	a b a c	a
 (?<=a) []	a b a c	b;c
 (?<!a) []	a b a c	a;a
 a (x x | x)	a x x	a x x
