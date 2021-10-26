@@ -1,5 +1,4 @@
-import ReleaseTransformations._
-import com.typesafe.sbt.packager.docker.DockerChmodType
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 organization in ThisBuild := "ai.lum"
 
@@ -11,7 +10,7 @@ lazy val commonSettings = Seq(
   // show test duration
   testOptions in Test += Tests.Argument("-oD"),
   excludeDependencies += "commons-logging" % "commons-logging"
-)
+  )
 
 lazy val core = project
   .enablePlugins(BuildInfoPlugin)
@@ -33,8 +32,8 @@ lazy val core = project
       "gitHeadCommit" -> { git.gitHeadCommit.value.getOrElse("") },
       "gitHeadCommitDate" -> { git.gitHeadCommitDate.value.getOrElse("") },
       "gitUncommittedChanges" -> { git.gitUncommittedChanges.value }
+      )
     )
-  )
 
 lazy val extra = project
   .aggregate(core)
@@ -49,8 +48,8 @@ lazy val extra = project
     //dockerChmodType := DockerChmodType.UserGroupWriteExecute
     javaOptions in Universal ++= Seq(
       "-J-Xmx6G"
+      )
     )
-  )
 
 // Docker settings
 val gitDockerTag = settingKey[String]("Git commit-based tag for docker")
@@ -70,14 +69,14 @@ lazy val generalDockerSettings = {
     dockerAliases ++= Seq(
       dockerAlias.value.withTag(Option("latest")),
       dockerAlias.value.withTag(Option(gitDockerTag.value))
-    ),
+      ),
     maintainer in Docker := "Gus Hahn-Powell <ghp@lum.ai>",
     // "openjdk:11-jre-alpine"
     dockerBaseImage := "openjdk:11",
     javaOptions in Universal ++= Seq(
       "-Dodinson.dataDir=/app/data/odinson"
+      )
     )
-  )
 }
 
 // REST API
@@ -102,7 +101,7 @@ lazy val backend = project
         "com.typesafe.akka"      %% "akka-slf4j"         % akkaV,
         "com.typesafe.akka"      %% "akka-remote"        % akkaV,
         "com.typesafe.akka"      %% "akka-stream"        % akkaV
-      )
+        )
     },
     //-Dpidfile.path=/dev/null
     // Dev settings which are read prior to loading of config.
@@ -110,7 +109,7 @@ lazy val backend = project
     PlayKeys.devSettings += "play.server.http.port" -> "9000",
     PlayKeys.devSettings += "play.server.http.address" -> "0.0.0.0",
     PlayKeys.devSettings += "play.server.http.idleTimeout" -> "infinite"
-  )
+    )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(generalDockerSettings)
   .settings(
@@ -124,8 +123,8 @@ lazy val backend = project
       "-Dplay.server.pidfile.path=/dev/null",
       //"-Dplay.server.akka.requestTimeout=20s"
       "-Dlogger.resource=odinson-rest-logger.xml"
+      )
     )
-  )
 
 // Release steps
 releaseProcess := Seq[ReleaseStep](
@@ -141,7 +140,7 @@ releaseProcess := Seq[ReleaseStep](
   setNextVersion,
   commitNextVersion,
   pushChanges
-)
+  )
 
 // Publishing settings
 
@@ -159,8 +158,8 @@ scmInfo in ThisBuild := Some(
   ScmInfo(
     url("https://github.com/lum-ai/odinson"),
     "scm:git@github.com:lum-ai/odinson.git"
+    )
   )
-)
 
 developers in ThisBuild := List(
   Developer(
@@ -168,8 +167,8 @@ developers in ThisBuild := List(
     name = "Marco Antonio Valenzuela Escárcega",
     email = "marco@lum.ai",
     url = url("https://lum.ai")
+    )
   )
-)
 
 // tasks
 addCommandAlias("dockerize", ";clean;compile;test;docker:publishLocal")

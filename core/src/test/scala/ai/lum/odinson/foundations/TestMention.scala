@@ -1,7 +1,7 @@
 package ai.lum.odinson.foundations
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 
 class TestMention extends OdinsonTest {

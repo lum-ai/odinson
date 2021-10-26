@@ -1,9 +1,8 @@
 package ai.lum.odinson.serialization
 
 import java.util
-
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
 
@@ -13,7 +12,7 @@ class TestJsonSerialization extends OdinsonTest {
   val engine = mkExtractorEngine(doc)
   val storedFields = util.Arrays.asList("raw", "lemma", "tag")
 
-  val verboseEngine = mkExtractorEngine(
+  val verboseEngine = mkMemoryExtractorEngine(
     defaultConfig.withValue(
       "odinson.index.storedFields",
       ConfigValueFactory.fromIterable(storedFields)
