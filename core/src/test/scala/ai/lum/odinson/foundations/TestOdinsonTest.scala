@@ -3,6 +3,7 @@ package ai.lum.odinson.foundations
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.state.{ MemoryState, SqlState }
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.{
   ArgumentMetadata,
   EventMatch,
@@ -12,7 +13,6 @@ import ai.lum.odinson.{
   NamedMatch,
   OdinsonMatch
 }
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.config.ConfigValueFactory
 
@@ -51,7 +51,7 @@ class TestOdinsonTest extends OdinsonTest {
     eeSQL.state shouldBe a[SqlState]
 
     //def extractorEngineWithConfigValue(doc: Document, key: String, value: String): ExtractorEngine = {
-    val eeFoobar = mkExtractorEngine(
+    val eeFoobar = mkMemoryExtractorEngine(
       defaultConfig
         .withValue("odinson.displayField", ConfigValueFactory.fromAnyRef("foobar"))
         // The displayField is required to be in the storedFields

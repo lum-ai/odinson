@@ -71,9 +71,11 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     // There are two files, one with 150 sentences + 1 parent doc, and one
     // with 100 sentences + 1 parent doc = 252 docs
     ee.numDocs shouldEqual (252)
+    ee.close()
   }
 
   it should "contain the appropriate meta files" in {
+    IndexDocuments.main(Array(tmpFolder.getAbsolutePath))
 
     val buildInfoFileName = "buildinfo.json"
     val buildInfoJsonFile = new File(indexDir, buildInfoFileName)
@@ -93,7 +95,6 @@ class TestIndexDocuments extends FlatSpec with Matchers {
 
     val buildInfoJson = jsonToMap(indexDir, buildInfoFileName)
     buildInfoJson.keys should contain("version")
-
   }
 
 }

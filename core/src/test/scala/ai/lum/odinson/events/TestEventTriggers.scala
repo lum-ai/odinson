@@ -1,47 +1,48 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.EventMatch
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestEventTriggers extends OdinsonTest {
 
   /** Returns a rule with a template
     *
-    *  @param varsResult what to put in vars -> result -> <?>
-    *  @param rulesPattern what to put in rules -> pattern <?>
+    * @param varsResult   what to put in vars -> result -> <?>
+    * @param rulesPattern what to put in rules -> pattern <?>
     */
-  def applyRuleTemplate(varsResult: String, rulesPattern: String): String = s"""
-      |vars:
-      |  result: $varsResult
-      |rules:
-      |  - name: example-rule
-      |    type: basic
-      |    label: MainEvent
-      |    pattern: |
-      |      $rulesPattern
-      |""".stripMargin
+  def applyRuleTemplate(varsResult: String, rulesPattern: String): String =
+    s"""
+           |vars:
+           |  result: $varsResult
+           |rules:
+           |  - name: example-rule
+           |    type: basic
+           |    label: MainEvent
+           |    pattern: |
+           |      $rulesPattern
+           |""".stripMargin
 
   /** Returns a rule with a template
     *
-    *  @param varsResult what to put in vars -> result -> <?>
-    *  @param rulesPatternTrigger what to put in rules -> pattern -> trigger <?>
-    *  @param rulesPatternResult what to put in rules -> pattern -> result <?>
+    * @param varsResult          what to put in vars -> result -> <?>
+    * @param rulesPatternTrigger what to put in rules -> pattern -> trigger <?>
+    * @param rulesPatternResult  what to put in rules -> pattern -> result <?>
     */
   def applyRuleTemplate(
     varsResult: String,
     rulesPatternTrigger: String,
     rulesPatternResult: String
-  ) = s"""
-      |vars:
-      |  result: $varsResult
-      |rules:
-      |  - name: example-rule
-      |    type: event
-      |    label: MainEvent
-      |    pattern: |
-      |      trigger = $rulesPatternTrigger 
-      |      result = $rulesPatternResult
-      |""".stripMargin
+  ) =
+    s"""
+           |vars:
+           |  result: $varsResult
+           |rules:
+           |  - name: example-rule
+           |    type: event
+           |    label: MainEvent
+           |    pattern: |
+           |      trigger = $rulesPatternTrigger
+           |      result = $rulesPatternResult
+           |""".stripMargin
 
   "Odinson" should "match events for all trigger mentions using a basic pattern" in {
     val ee = mkExtractorEngine("hedgehogs-coypy")
@@ -172,7 +173,7 @@ class TestEventTriggers extends OdinsonTest {
       "Some wild animals such as hedgehogs , coypu , and any wild cloven-footed animals such as deer and zoo animals"
     )
     val expectedResults = List("elephants")
-//    triggers should contain theSameElementsInOrderAs expectedTriggers
+    //    triggers should contain theSameElementsInOrderAs expectedTriggers
     animals should contain theSameElementsInOrderAs expectedResults
 
     ee.close()

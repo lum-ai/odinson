@@ -1,4 +1,4 @@
-package utils
+package ai.lum.odinson.test.utils
 
 import javax.inject._
 

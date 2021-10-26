@@ -2,7 +2,7 @@ package ai.lum.odinson.patterns
 
 import scala.io.Source
 import ai.lum.common.DisplayUtils._
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestPatterns extends OdinsonTest {
   //

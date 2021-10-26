@@ -1,13 +1,11 @@
-package ai.lum.odinson.utils.TestUtils
+package ai.lum.odinson.test.utils
 
-import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson._
 import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.utils.MostRecentlyUsed
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{ Config, ConfigValueFactory }
+import ai.lum.odinson.{ Document => OdinsonDocument, _ }
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.scalatest._
 
 import scala.collection.JavaConverters.asJavaIterableConverter
@@ -18,13 +16,16 @@ class OdinsonTest extends FlatSpec with Matchers {
   lazy val nullIdGetter = new NullIdGetter()
   lazy val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](NullIdGetter.apply)
 
-  val defaultConfig = ConfigFactory.load()
+  val defaultConfig = ConfigFactory.load("test.conf")
+  println(defaultConfig)
   val rawTokenField = defaultConfig.apply[String]("odinson.index.rawTokenField")
 
-  def getDocumentFromJson(json: String): Document = Document.fromJson(json)
-  def getDocument(id: String): Document = getDocumentFromJson(ExampleDocs.json(id))
+  def getDocumentFromJson(json: String): OdinsonDocument = OdinsonDocument.fromJson(json)
+
+  def getDocument(id: String): OdinsonDocument = getDocumentFromJson(ExampleDocs.json(id))
 
   /** Get a list of strings, one for each match in the results.
+    *
     * @param results
     * @param dataGatherer
     * @return
@@ -63,37 +64,48 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Construct an ExtractorEngine with an in-memory index containing the provided Document,
     * and using the default config EXCEPT overriding the state to use the provided state
-    * @param doc OdinsonDocument
+    *
+    * @param doc      OdinsonDocument
     * @param provider the config value corresponding to the desired state
     * @return
     */
-  def extractorEngineWithSpecificState(doc: Document, provider: String): ExtractorEngine = {
+  def extractorEngineWithSpecificState(doc: OdinsonDocument, provider: String): ExtractorEngine = {
     extractorEngineWithConfigValue(doc, "odinson.state.provider", provider)
+  }
+
+  def mkExtractorEngine(config: Config): ExtractorEngine = {
+    ExtractorEngine.fromConfig(config)
   }
 
   /** Constructs an ExtractorEngine with an in-memory index, and the default config, BUT with
     * the provided (key, value) override for the config (the key can be novel).
-    * @param doc OdinsonDocument to include in the index
-    * @param key config key to override or add
+    *
+    * @param doc   OdinsonOdinsonDocument to include in the index
+    * @param key   config key to override or add
     * @param value config value to replace the default value or serve as value to new key
     * @return
     */
-  def extractorEngineWithConfigValue(doc: Document, key: String, value: Any): ExtractorEngine = {
+  def extractorEngineWithConfigValue(
+    doc: OdinsonDocument,
+    key: String,
+    value: Any
+  ): ExtractorEngine = {
     val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value))
-    mkExtractorEngine(newConfig, doc)
+    mkMemoryExtractorEngine(newConfig, doc)
   }
 
   def extractorEngineWithConfigValue(
-    doc: Document,
+    doc: OdinsonDocument,
     key: String,
     value: Seq[String]
   ): ExtractorEngine = {
     val newConfig = defaultConfig.withValue(key, ConfigValueFactory.fromAnyRef(value.asJava))
-    mkExtractorEngine(newConfig, doc)
+    mkMemoryExtractorEngine(newConfig, doc)
   }
 
   /** Constructs an `ai.lum.odinson.ExtractorEngine`` from a single-doc
     * using an in-memory index (`org.apache.lucene.store.RAMDirectory`)
+    *
     * @param docID the string key for the document from ai.lum.odinson.utils.TestUtils.ExampleDocs
     * @return
     */
@@ -105,22 +117,28 @@ class OdinsonTest extends FlatSpec with Matchers {
   /** Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc
     * using an in-memory index ([[org.apache.lucene.store.RAMDirectory]]) and
     * the default config.
+    *
     * @param doc
     * @return ExtractorEngine
     */
-  def mkExtractorEngine(doc: Document): ExtractorEngine = {
+  def mkExtractorEngine(doc: OdinsonDocument): ExtractorEngine = {
     ExtractorEngine.inMemory(doc)
   }
 
   /** Constructs an [[ai.lum.odinson.ExtractorEngine]] from a single-doc
     * using an in-memory index ([[org.apache.lucene.store.RAMDirectory]]) and
     * the provided config.
+    *
     * @param config
     * @param doc Odinson Document
     * @return ExtractorEngine
     */
-  def mkExtractorEngine(config: Config, doc: Document): ExtractorEngine = {
-    ExtractorEngine.inMemory(config, Seq(doc))
+  def mkMemoryExtractorEngine(config: Config, doc: OdinsonDocument): ExtractorEngine = {
+    if (config.apply[String]("odinson.indexDir") == ":memory:")
+      ExtractorEngine.inMemory(config, Seq(doc))
+    else {
+      ExtractorEngine.fromConfig(config)
+    }
   }
 
   /** Converts the provided text to a minimal Document (with only a single field),
@@ -128,13 +146,14 @@ class OdinsonTest extends FlatSpec with Matchers {
     * Then constructs an [[ai.lum.odinson.ExtractorEngine]] from this doc
     * using an in-memory index ([[org.apache.lucene.store.RAMDirectory]]) and
     * the default config.
+    *
     * @param text the String text to be used
     * @return ExtractorEngine
     */
   def mkExtractorEngineFromText(text: String): ExtractorEngine = {
     val tokens = TokensField(rawTokenField, text.split("\\s+"))
     val sentence = Sentence(tokens.tokens.length, Seq(tokens))
-    val document = Document("<TEST-ID>", Nil, Seq(sentence))
+    val document = OdinsonDocument("<TEST-ID>", Nil, Seq(sentence))
     mkExtractorEngine(document)
   }
 
@@ -208,6 +227,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Checks if the provided mentions are equivalent -- they have the same
     * document, span, internal OdinsonMatch, arguments, and label.
+    *
     * @param a
     * @param b
     * @return
@@ -233,6 +253,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Checks if the provided OdinsonMatches are equivalent -- they are the same type, and depending on the
     * type, they have the same internal attributes.
+    *
     * @param a
     * @param b
     * @return
@@ -294,6 +315,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Tests that the provided Arrays of OdinsonMatches contain the same OdinsonMatches.
     * The Arrays need to be in the same order.
+    *
     * @param a
     * @param b
     */
@@ -304,6 +326,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   }
 
   /** Tests that the provided Arrays of NamedCaptures contain the same NamedCaptures.
+    *
     * @param a
     * @param b
     */
@@ -313,12 +336,14 @@ class OdinsonTest extends FlatSpec with Matchers {
       b1.name should be(a1.name)
       matchesShouldBeEqual(a1.capturedMatch, b1.capturedMatch)
     }
+
     for (i <- a.indices) {
       ncEqual(a(i), b(i))
     }
   }
 
   /** Tests that the provided Arrays of ArgumentMetadata contain the same ArgumentMetadata.
+    *
     * @param a
     * @param b
     */
@@ -331,6 +356,7 @@ class OdinsonTest extends FlatSpec with Matchers {
       // If it didn't find an error above we're good!
       true
     }
+
     for (i <- a.indices) {
       mdEqual(a(i), b(i))
     }
@@ -341,9 +367,10 @@ class OdinsonTest extends FlatSpec with Matchers {
   /** Tests that the provided OdinsonMatch has the provided desired text (potentially trigger text) and
     * arguments (by string value), and only those desired arguments.
     * This is specifically designed for testing extraction rules developed in downstream systems.
+    *
     * @param m
     * @param desiredMentionText the text that the Mention should consist of (for events, this is the trigger)
-    * @param desiredArgs  the Arguments that should be found in the event
+    * @param desiredArgs        the Arguments that should be found in the event
     */
   def testMention(
     m: Mention,
@@ -382,9 +409,10 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Tests that the OdinsonMatch (which is assumed to be an Event) has the provided
     * start and end.  Note that for an Event, the OdinsonMatch attribute is the trigger.
+    *
     * @param m
     * @param start token offset of the start of trigger (inclusive)
-    * @param end  token offset of the end of the trigger (exclusive)
+    * @param end   token offset of the end of the trigger (exclusive)
     */
   def testEventTrigger(m: OdinsonMatch, start: Int, end: Int): Unit = {
     val trigger = m match {
@@ -398,6 +426,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Tests that the OdinsonMatch (which is assumed to be an Event) has the provided
     * text.  Note that for an Event, the OdinsonMatch attribute is the trigger.
+    *
     * @param docID  the lucene doc id of the sentence containing the match
     * @param m      the OdinsonMatch
     * @param engine ExtractorEngine
@@ -414,6 +443,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Tests that the provided OdinsonMatch has the provided desired arguments, and only the desired
     * arguments.
+    *
     * @param m
     * @param desiredArgs
     */
@@ -452,7 +482,8 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Tests that the provided OdinsonMatch has the provided desired arguments (by string value),
     * and only the desired arguments.
-    * @param docId the lucene document id of the sentence containing the match
+    *
+    * @param docId  the lucene document id of the sentence containing the match
     * @param m
     * @param desiredArgs
     * @param engine ExtractorEngine
@@ -499,9 +530,10 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Specifies a desired argument for testing, where the argument is defined by its name and offsets.
     * Note that the produced object has utility only with the testing utils.
-    * @param name Name of the argument
+    *
+    * @param name  Name of the argument
     * @param start the token offset of the start (inclusive)
-    * @param end the token offset of the end (exclusive)
+    * @param end   the token offset of the end (exclusive)
     */
   case class ArgumentOffsets(name: String, start: Int, end: Int) {
 
@@ -513,6 +545,7 @@ class OdinsonTest extends FlatSpec with Matchers {
 
   /** Specifies a desired Argument for testing, where the Argument is essentially defined by its
     * name and string value. Note that the produced object has utility only with the testing utils.
+    *
     * @param name Name of the argument
     * @param text the text the argument should contain
     */
@@ -531,7 +564,9 @@ class NullIdGetter() extends LazyIdGetter(null, 0) {
   override lazy val document = ???
   override lazy val docId: String = "NULL"
   override lazy val sentId: String = "NULL"
+
   override def getDocId: String = "NULL"
+
   override def getSentId: String = "NULL"
 }
 

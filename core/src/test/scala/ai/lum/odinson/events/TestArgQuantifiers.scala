@@ -1,16 +1,18 @@
 package ai.lum.odinson.events
 
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestArgQuantifiers extends OdinsonTest {
 
   def ee = mkExtractorEngine("gummy-bears-consumption")
 
   def desiredArgs35: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 3, 5))
+
   def desiredArgs67: Seq[ArgumentOffsets] = Seq(ArgumentOffsets("theme", 6, 7))
 
   "Odinson" should "find two events with one required theme each" in {
-    val pattern = """
+    val pattern =
+      """
       trigger = consumption
       theme: ^dessert = >nmod_of >conj? [entity=B-dessert][entity=I-dessert]*
     """
@@ -28,7 +30,8 @@ class TestArgQuantifiers extends OdinsonTest {
   }
 
   it should "find two events with one optional theme each" in {
-    val pattern = """
+    val pattern =
+      """
       trigger = consumption
       theme: ^dessert? = >nmod_of >conj? [entity=B-dessert][entity=I-dessert]*
     """
@@ -46,7 +49,8 @@ class TestArgQuantifiers extends OdinsonTest {
   }
 
   it should "find one event with two required themes" in {
-    val pattern = """
+    val pattern =
+      """
       trigger = consumption
       theme: ^dessert+ = >nmod_of >conj? [entity=B-dessert][entity=I-dessert]*
     """
@@ -66,7 +70,8 @@ class TestArgQuantifiers extends OdinsonTest {
   }
 
   it should "find one event with two optional themes" in {
-    val pattern = """
+    val pattern =
+      """
       trigger = consumption
       theme: ^dessert* = >nmod_of >conj? [entity=B-dessert][entity=I-dessert]*
     """

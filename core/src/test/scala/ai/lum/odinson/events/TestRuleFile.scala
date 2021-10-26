@@ -1,11 +1,11 @@
 package ai.lum.odinson.events
 
 import ai.lum.common.FileUtils._
-import java.io.File
-import java.nio.file.{ Files, Path }
-
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
+
+import java.io.File
+import java.nio.file.Files
 
 class TestRuleFile extends OdinsonTest {
   // extractor engine persists across tests (hacky way)
