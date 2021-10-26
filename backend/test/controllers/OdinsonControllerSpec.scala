@@ -1,14 +1,14 @@
 package controllers
 
-import java.io.{File, IOException}
+import java.io.{ File, IOException }
 import java.nio.file.Files
 import ai.lum.odinson.extra.IndexDocuments
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.scalatestplus.play.guice._
 import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
-import org.scalatest.{Ignore, TestData}
+import org.scalatest.{ Ignore, TestData }
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
