@@ -98,15 +98,16 @@ class OdinNotQuery(
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed
             excludeSpans.nextStartPosition()
           }
-          val cmp = if (candidate.startPosition == candidate.endPosition) {
-            // if candidate is empty then use less-than
-            // this is a special case for zero-width assertions (lookarounds)
-            (x: Int, y: Int) => x < y
-          } else {
-            // if candidate is not empty then use less-than-or-equal
-            // because spans are inclusive at the start and exclusive at the end
-            (x: Int, y: Int) => x <= y
-          }
+          val cmp =
+            if (candidate.startPosition == candidate.endPosition) {
+              // if candidate is empty then use less-than
+              // this is a special case for zero-width assertions (lookarounds)
+              (x: Int, y: Int) => x < y
+            } else {
+              // if candidate is not empty then use less-than-or-equal
+              // because spans are inclusive at the start and exclusive at the end
+              (x: Int, y: Int) => x <= y
+            }
           while (cmp(excludeSpans.endPosition, candidate.startPosition)) {
             // exclude end position is before a possible exclusion
             if (excludeSpans.nextStartPosition() == NO_MORE_POSITIONS) {
