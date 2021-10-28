@@ -1,12 +1,12 @@
 package ai.lum.odinson.state
 
-import java.io.File
-
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.Mention
-import ai.lum.odinson.lucene.search.OdinsonIndexSearcher
+import ai.lum.odinson.lucene.index.OdinsonIndex
 import com.typesafe.config.Config
 import org.apache.lucene.store.Directory
+
+import java.io.File
 
 trait State {
 
@@ -24,6 +24,7 @@ trait State {
 
   /** Writes json lines representation of the ResultItems.  State retains its contents.
     * // TODO: should these be Mentions
+    *
     * @param file
     */
   def dump(file: File): Unit = {
@@ -33,6 +34,7 @@ trait State {
   }
 
   /** Loads json lines representation of the ResultItems, adds them to the current state.
+    *
     * @param file
     */
   def load(file: File): Unit = {
@@ -53,11 +55,11 @@ trait State {
 
 object State {
 
-  def apply(config: Config, indexSearcher: OdinsonIndexSearcher, indexDir: Directory): State = {
+  def apply(config: Config, index: OdinsonIndex): State = {
     val provider = config.apply[String]("odinson.state.provider")
     val state = provider match {
       // The SQL state needs an IndexSearcher to get the docIds from the
-      case "sql"    => SqlState(config, indexSearcher, Some(indexDir))
+      case "sql"    => SqlState(config, index, Some(index.directory))
       case "file"   => FileState(config)
       case "memory" => MemoryState(config)
       case "mock"   => MockState

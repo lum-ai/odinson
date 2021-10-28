@@ -6,7 +6,7 @@ import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
 import org.apache.lucene.{ document => lucenedoc }
 import org.apache.lucene.document.Field.Store
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+import org.apache.lucene.analysis.core.KeywordAnalyzer
 import org.apache.lucene.index.{ IndexWriter, IndexWriterConfig }
 import org.apache.lucene.index.IndexWriterConfig.OpenMode
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
@@ -23,6 +23,7 @@ import ai.lum.odinson.serialization.UnsafeSerializer
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.document.{ BinaryDocValuesField, DoublePoint, StoredField }
+
 import java.nio.file.Paths
 import java.util
 
@@ -41,7 +42,7 @@ class OdinsonIndexWriter(
 
   import OdinsonIndexWriter._
 
-  val analyzer = new WhitespaceAnalyzer()
+  val analyzer = new KeywordAnalyzer()
   val writerConfig = new IndexWriterConfig(analyzer)
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
@@ -80,19 +81,7 @@ class OdinsonIndexWriter(
 
   def commit(): Unit = writer.commit()
 
-  def close(): Unit = {
-    // FIXME: is this the correct instantiation of IOContext?
-    using(directory.createOutput(VOCABULARY_FILENAME, new IOContext)) { stream =>
-      stream.writeString(vocabulary.dump)
-    }
-    using(directory.createOutput(BUILDINFO_FILENAME, new IOContext)) { stream =>
-      stream.writeString(BuildInfo.toJson)
-    }
-    using(directory.createOutput(SETTINGSINFO_FILENAME, new IOContext)) { stream =>
-      stream.writeString(settings.dump)
-    }
-    writer.close()
-  }
+  def close(): Unit = writer.close()
 
   /** generates a lucenedoc document per sentence */
   def mkDocumentBlock(d: Document): Seq[lucenedoc.Document] = {
@@ -211,6 +200,8 @@ class OdinsonIndexWriter(
         }
 
       case f: StringField =>
+        if (isMetadata && !STRING_FIELD_EXCEPTIONS.contains(f.name))
+          logger.info(STRING_FIELD_WARNING(f.name))
         val store = if (mustStore) Store.YES else Store.NO
         val string = f.string.normalizeUnicode
         val stringField = new lucenedoc.StringField(f.name, string, store)
@@ -320,6 +311,13 @@ object OdinsonIndexWriter {
   // Special start and end tokens for metadata exact match queries
   val START_TOKEN = "[[XX_START]]"
   val END_TOKEN = "[[XX_END]]"
+
+  // User-defined metadata cannot currently be a StringField.  That said, there are StringFields in the
+  // metadata (the filename, etc.)
+  val STRING_FIELD_EXCEPTIONS = Set(DOC_ID_FIELD, OdinsonIndexWriter.TYPE)
+
+  def STRING_FIELD_WARNING(name: String) =
+    s"Metadata StringField <${name}> will not be queryable using the metadata query language"
 
   def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())

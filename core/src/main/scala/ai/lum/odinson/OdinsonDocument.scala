@@ -6,16 +6,25 @@ import java.time.{ LocalDate, ZoneId }
 import scala.collection.mutable.ArrayBuilder
 import upickle.default._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.utils.exceptions.OdinsonException
+import com.typesafe.scalalogging.LazyLogging
 
 case class Document(
   id: String,
   metadata: Seq[Field],
   sentences: Seq[Sentence]
-) {
+) extends LazyLogging {
   def toJson: String = write(this)
   def toPrettyJson: String = write(this, indent = 4)
 
   def addMetadata(metadataIn: Seq[Field], append: Boolean): Document = {
+    // Warn about not-queryable StringFields
+    metadataIn
+      .collect {
+        case sf: StringField if !OdinsonIndexWriter.STRING_FIELD_EXCEPTIONS.contains(sf.name) => sf
+      }
+      .foreach { sf => logger.info(OdinsonIndexWriter.STRING_FIELD_WARNING(sf.name)) }
+
     if (append) {
       this.copy(metadata = metadata ++ metadataIn)
     } else {

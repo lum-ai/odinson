@@ -1,6 +1,6 @@
 package ai.lum.odinson.compiler
 
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestParser extends OdinsonTest {
 

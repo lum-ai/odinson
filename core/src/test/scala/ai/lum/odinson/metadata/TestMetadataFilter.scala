@@ -1,9 +1,9 @@
 package ai.lum.odinson.metadata
 
 import ai.lum.odinson.lucene.search.OdinsonFilteredQuery
-import ai.lum.odinson.{ Document, ExtractorEngine }
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
 import ai.lum.odinson.metadata.MetadataCompiler.mkQuery
+import ai.lum.odinson.test.utils.OdinsonTest
+import ai.lum.odinson.{ Document, ExtractorEngine }
 
 class TestMetadataFilter extends OdinsonTest {
 
@@ -322,8 +322,6 @@ class TestMetadataFilter extends OdinsonTest {
     var filter = "author{first=='/a.*/'}"
     var filteredQuery = ee.mkFilteredQuery(yummyQuery, filter)
     val f = filteredQuery.asInstanceOf[OdinsonFilteredQuery].filter
-    println(filteredQuery)
-    println(f)
     ee.query(filteredQuery).scoreDocs.length shouldBe (2)
 
     // Should be ok with capitalization too
@@ -414,4 +412,36 @@ class TestMetadataFilter extends OdinsonTest {
     mentions should have size (2)
 
   }
+
+  "Metadata" should "does not work with StringFields but does with Tokens Fields" in {
+    // based on issue #328
+    val docJson =
+      """{"id":"56842e05-1628-447a-b440-6be78f669bf2","metadata":[
+        |  {
+        |    "$type": "ai.lum.odinson.StringField",
+        |    "name": "file",
+        |    "string": "AAT"
+        |  },
+        |  {
+        |    "$type": "ai.lum.odinson.TokensField",
+        |    "name": "corpus",
+        |    "tokens": ["BNC"]
+        |  }
+        |],"sentences":[{"numTokens":5,"fields":[{"$type":"ai.lum.odinson.TokensField","name":"raw","tokens":["Becky","ate","chummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"word","tokens":["Becky","ate","chummy","bears","."]},{"$type":"ai.lum.odinson.TokensField","name":"tag","tokens":["NNP","VBD","JJ","NNS","."]},{"$type":"ai.lum.odinson.TokensField","name":"lemma","tokens":["becky","eat","chummy","bear","."]},{"$type":"ai.lum.odinson.TokensField","name":"entity","tokens":["I-PER","O","O","O","O"]},{"$type":"ai.lum.odinson.TokensField","name":"chunk","tokens":["B-NP","B-VP","B-NP","I-NP","O"]},{"$type":"ai.lum.odinson.GraphField","name":"dependencies","edges":[[1,0,"nsubj"],[1,3,"dobj"],[1,4,"punct"],[3,2,"amod"]],"roots":[1]}]}]}""".stripMargin
+
+    val localEe = ExtractorEngine.inMemory(Document.fromJson(docJson))
+    val localQuery = localEe.mkQuery("[word=chummy]")
+    localEe.query(localQuery).scoreDocs.length shouldBe (1)
+
+    // TokensField metadata is supported
+    val filter = "corpus=='BNC'"
+    val filteredQuery = localEe.mkFilteredQuery(localQuery, filter)
+    localEe.query(filteredQuery).scoreDocs.length shouldBe (1)
+
+    // The StringField metadata isn't queryable (at this time)
+    val filterInvalid = "file=='AAT'"
+    val filteredQueryInvalid = localEe.mkFilteredQuery(localQuery, filterInvalid)
+    localEe.query(filteredQueryInvalid).scoreDocs.length shouldBe (0)
+  }
+
 }

@@ -1,7 +1,7 @@
 package ai.lum.odinson.serialization
 
 import ai.lum.odinson.digraph.DirectedGraph
-import ai.lum.odinson.utils.TestUtils.OdinsonTest
+import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestUnsafeSerializer extends OdinsonTest {
 

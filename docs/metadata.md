@@ -18,6 +18,8 @@ Numeric metadata can be compared using the common comparison operators used in m
 One of the elements being compared must be an indexed _metadata field_, and the other must be a _numeric value_, e.g., `citations > 5`.
 These comparisons can be chained together, allowing us to express ranges in a more concise way, e.g., `1 < citations < 10`.
 
+- Field type to use: ai.lum.odinson.NumberField
+
 ### Textual Metadata
 From those comparison operators, textual metadata only supports the equals (`==`) and not equals (`!=`) operators. Equals checks for exact matching, e.g., `publisher == 'mit press'`.
 Note that the textual content is wrapped in quotation marks.
@@ -32,6 +34,9 @@ To make textual comparison more robust, we perform some normalization of the tex
  - some unicode characters are transformed into ASCII equivalents (e.g., arrows, ligatures, etc.)
  - removal of diacritics
 
+- Field type to use: ai.lum.odinson.TokensField (Note, assumes the text is tokenized.)
+
+
 ### Combining Filters 
 The metadata query language supports the and (`&&`), or (`||`), and not (`!`) operators to combine individual field constraints into a more complex filter, e.g., `1 < citations < 10 && venue contains 'language'`.
 
@@ -43,6 +48,8 @@ This provides a lot of flexibility when checking for specific dates, but since c
 The query presented above can also be expressed as `pub_date.year == 2020`.
 Months can be expressed as their full names, common abbreviations, or number (i.e., "August", "Aug", or 8).
 
+- Field type to use: ai.lum.odinson.DateField
+
 ### Nested Fields
 Another capability of the metadata query language is its support for nested metadata fields.
 For example, authors are usually indexed as nested fields so that their first and last name are associated with each other, and _not_ with other authors.
@@ -50,7 +57,18 @@ To query nested fields, we need to specify the name of the field and the query t
 For example, if we had a document with two authors named _Jane Smith_ and _John Doe_, then we could match this document with the queries `author{first=='jane' && last=='smith'}` or `author{first=='john' && last =='doe'}`, but not `author{first=='jane' && last=='doe'}`.
 Not all attributes of a nested field must be specified.  For example, given the authors above, this would also match: `author{first=='jane'}`
 
+- Field type to use: ai.lum.odinson.NestedField
+
+
 ### Regular Expressions
 The metadata query language also supports Lucene regular expressions, such as:
 - `author{first=='/j.*/' && last=='/d.*/'}`
 - `keywords contains '/bio.*/'`
+
+
+### Adding Metadata to Existing Odinson Documents
+
+As of [PR #319](https://github.com/lum-ai/odinson/pull/319), there are some utilities and an app to help you add metadata to an Odinson document.
+- there is an `addMetadata` method in `ai.lum.odinson.Document` that take a sequence of Fields and adds them as metadata.
+- there is now a `MetadataWrapper` case class that can serialize itself in a compatible json format
+- in the `extra/` subproject, there is an app (`ai.lum.odinson.extra.AddMetadataToDocuments`) that will load a set of metadata json files and a set of Document json files, and add any found metadata to the corresponding Document (as indicated by the docID in the metadata file).
