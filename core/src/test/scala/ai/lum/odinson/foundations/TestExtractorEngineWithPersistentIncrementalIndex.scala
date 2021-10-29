@@ -10,6 +10,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.BeforeAndAfterEach
 
 import java.io.File
+import java.io.IOException
 
 class TestExtractorEngineWithPersistentIncrementalIndex
     extends OdinsonTest
@@ -44,7 +45,7 @@ class TestExtractorEngineWithPersistentIncrementalIndex
     } catch {
       // Some files may still be open at this time and some operating systems will refuse to
       // delete them.  This can lead to exceptions which prevent the tests from running.
-      case _: Throwable =>
+      case _: IOException =>
     }
   }
 
@@ -54,7 +55,7 @@ class TestExtractorEngineWithPersistentIncrementalIndex
     } catch {
       // Some files may still be open at this time and some operating systems will refuse to
       // delete them.  This can lead to exceptions which prevent the tests from running.
-      case _: Throwable =>
+      case _: IOException =>
     }
   }
 
