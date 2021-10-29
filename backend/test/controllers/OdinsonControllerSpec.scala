@@ -8,7 +8,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatestplus.play.guice._
 import play.api.test.Helpers._
 import org.apache.commons.io.FileUtils
-import org.scalatest.{Ignore, TestData}
+import org.scalatest.{ Ignore, TestData }
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._

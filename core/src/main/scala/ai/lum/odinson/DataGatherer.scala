@@ -1,8 +1,8 @@
 package ai.lum.odinson
 
 import ai.lum.odinson.DataGatherer.VerboseLevels
-import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 import ai.lum.odinson.lucene.index.OdinsonIndex
+import ai.lum.odinson.lucene.search.OdinsonScoreDoc
 
 // TODO: From Documents
 // TODO: Deps
