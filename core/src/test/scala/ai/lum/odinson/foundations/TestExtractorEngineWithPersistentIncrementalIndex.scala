@@ -44,7 +44,7 @@ class TestExtractorEngineWithPersistentIncrementalIndex
     } catch {
       // Some files may still be open at this time and some operating systems will refuse to
       // delete them.  This can lead to exceptions which prevent the tests from running.
-      case _ =>
+      case _: Throwable =>
     }
   }
 
@@ -54,7 +54,7 @@ class TestExtractorEngineWithPersistentIncrementalIndex
     } catch {
       // Some files may still be open at this time and some operating systems will refuse to
       // delete them.  This can lead to exceptions which prevent the tests from running.
-      case _ =>
+      case _: Throwable =>
     }
   }
 
