@@ -92,20 +92,30 @@ class OdinNotQuery(
             lastApproxDoc = doc
             lastApproxResult = excludeTwoPhase.matches()
           }
-          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && lastApproxResult == false)) {
+          if (doc != excludeSpans.docID() || (doc == lastApproxDoc && !lastApproxResult)) {
             return AcceptStatus.YES
           }
           if (excludeSpans.startPosition() == -1) { // init exclude start position if needed
             excludeSpans.nextStartPosition()
           }
-          while (excludeSpans.endPosition() < candidate.startPosition()) {
+          val cmp =
+            if (candidate.startPosition == candidate.endPosition) {
+              // if candidate is empty then use less-than
+              // this is a special case for zero-width assertions (lookarounds)
+              (x: Int, y: Int) => x < y
+            } else {
+              // if candidate is not empty then use less-than-or-equal
+              // because spans are inclusive at the start and exclusive at the end
+              (x: Int, y: Int) => x <= y
+            }
+          while (cmp(excludeSpans.endPosition, candidate.startPosition)) {
             // exclude end position is before a possible exclusion
             if (excludeSpans.nextStartPosition() == NO_MORE_POSITIONS) {
               return AcceptStatus.YES // no more exclude at current doc.
             }
           }
           // exclude end position far enough in current doc, check start position:
-          if (candidate.endPosition() < excludeSpans.startPosition()) {
+          if (cmp(candidate.endPosition, excludeSpans.startPosition)) {
             AcceptStatus.YES
           } else {
             AcceptStatus.NO
