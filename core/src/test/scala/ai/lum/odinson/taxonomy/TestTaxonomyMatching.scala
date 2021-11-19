@@ -2,10 +2,9 @@ package ai.lum.odinson.taxonomy
 
 import ai.lum.odinson.state.State.TAXONOMY_CONFIG_PATH
 import ai.lum.odinson.test.utils.OdinsonTest
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.{ Config, ConfigValueFactory }
 
 class TestTaxonomyMatching extends OdinsonTest {
-
 
   behavior of "TaxonomyAware Engine"
 
@@ -35,9 +34,8 @@ class TestTaxonomyMatching extends OdinsonTest {
     val ee = mkMemoryExtractorEngine(customConfig, getDocument("becky-gummy-bears-v2"))
 
     val mentions = ee.extractMentions(ee.compileRuleString(rules)).toArray
-    getMentionsWithLabel(mentions, "Eat") should have length(1)
+    getMentionsWithLabel(mentions, "Eat") should have length (1)
 
   }
-
 
 }

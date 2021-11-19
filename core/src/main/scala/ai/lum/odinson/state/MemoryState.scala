@@ -103,10 +103,10 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
   }
 
   private def maybeExpand(label: String): Array[String] = taxonomy match {
-      case None => Array(label)
-      case Some(tax) if hyponymCache.contains(label) => hyponymCache(label)
-      case Some(tax) => tax.hyponymsFor(label).toArray
-      case _ => Array(label)
+    case None                                      => Array(label)
+    case Some(tax) if hyponymCache.contains(label) => hyponymCache(label)
+    case Some(tax)                                 => tax.hyponymsFor(label).toArray
+    case _                                         => Array(label)
   }
 
   override def clear(): Unit = {

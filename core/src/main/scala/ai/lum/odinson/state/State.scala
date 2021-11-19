@@ -12,7 +12,9 @@ import java.io.File
 trait State {
 
   def addTaxonomy(taxonomy: Taxonomy): Unit = {
-    throw new UnsupportedOperationException("This type of state does not support usage of a taxonomy")
+    throw new UnsupportedOperationException(
+      "This type of state does not support usage of a taxonomy"
+    )
   }
 
   // todo: accessor method in extractor engine
@@ -78,7 +80,6 @@ object State {
       val taxonomy = loadTaxonomy(taxonomyPath)
       state.addTaxonomy(taxonomy)
     }
-
 
     state
   }

@@ -6,7 +6,7 @@ import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 
 import java.util
-import java.util.{Collection, Map => JMap}
+import java.util.{ Collection, Map => JMap }
 import scala.collection.JavaConverters._
 
 // Taken from Odin
@@ -24,9 +24,9 @@ class Taxonomy(parents: Map[String, String]) {
 
   // builds a sequence of hypernyms lazily
   def lazyHypernymsFor(term: String): Stream[String] = term match {
-    case ROOT => Stream.empty
+    case ROOT                        => Stream.empty
     case node if this.contains(node) => node #:: lazyHypernymsFor(parents(node))
-    case node => throw new OdinsonException(s"term '$node' not in taxonomy")
+    case node                        => throw new OdinsonException(s"term '$node' not in taxonomy")
   }
 
   /** returns the term and all its hypernyms */
@@ -66,10 +66,10 @@ object Taxonomy {
     mkParents(nodes.asScala.toSeq, ROOT, Map.empty)
 
   def mkParents(
-                 nodes: Seq[Any],
-                 parent: String,
-                 table: Map[String,String]
-               ): Map[String, String] = nodes match {
+    nodes: Seq[Any],
+    parent: String,
+    table: Map[String, String]
+  ): Map[String, String] = nodes match {
     case Nil =>
       // we are done parsing, return the parents table
       table
@@ -98,7 +98,11 @@ object Taxonomy {
           // 1. add term to parents table
           // 2. parse children
           // 3. parse siblings
-          mkParents(tail, parent, mkParents(children.asScala.toSeq, term, table.updated(term, parent)))
+          mkParents(
+            tail,
+            parent,
+            mkParents(children.asScala.toSeq, term, table.updated(term, parent))
+          )
       }
   }
 
