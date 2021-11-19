@@ -16,12 +16,19 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
 
   if (persistOnClose) require(outfile.isDefined)
 
+  protected var taxonomy: Option[Taxonomy] = None
+  private val hyponymCache = new scala.collection.mutable.HashMap[String, Array[String]]()
+
   implicit val resultItemOrdering: MemoryState.MentionOrdering.type = MemoryState.MentionOrdering
 
   protected val baseIdLabelToMentions: mutable.Map[BaseIdLabel, mutable.SortedSet[Mention]] =
     mutable.Map.empty
 
   protected val baseLabelToIds: mutable.Map[BaseLabel, mutable.SortedSet[Int]] = mutable.Map.empty
+
+  override def addTaxonomy(tax: Taxonomy): Unit = {
+    taxonomy = Some(tax)
+  }
 
   protected def addMention(mention: Mention): Unit = {
     val baseIdLabel = BaseIdLabel(
@@ -45,11 +52,12 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
   }
 
   override def getDocIds(docBase: Int, label: String): Array[Int] = {
-    val baseLabel = BaseLabel(docBase, label)
-    val idsOpt: Option[mutable.SortedSet[Int]] = baseLabelToIds.get(baseLabel)
-    val ids: Array[Int] = idsOpt.map(_.toArray).getOrElse(Array.empty)
-
-    ids
+    for {
+      label <- maybeExpand(label)
+      baseLabel = BaseLabel(docBase, label)
+      idsOpt: Option[mutable.SortedSet[Int]] = baseLabelToIds.get(baseLabel)
+      id <- idsOpt.map(_.toArray).getOrElse(Array.empty)
+    } yield id
   }
 
   def getMention(
@@ -80,15 +88,25 @@ class MemoryState(val persistOnClose: Boolean, val outfile: Option[File] = None)
   }
 
   override def getMentions(docBase: Int, docId: Int, label: String): Array[Mention] = {
-    val baseIdLabel = BaseIdLabel(docBase, docId, label)
-    val mentionsOpt = baseIdLabelToMentions.get(baseIdLabel)
-    mentionsOpt.map(_.toArray).getOrElse(Array.empty)
+    for {
+      label <- maybeExpand(label)
+      baseIdLabel = BaseIdLabel(docBase, docId, label)
+      mentionsOpt = baseIdLabelToMentions.get(baseIdLabel)
+      mention <- mentionsOpt.map(_.toArray).getOrElse(Array.empty)
+    } yield mention
   }
 
   override def getAllMentions(): Iterator[Mention] = {
     baseIdLabelToMentions
       .toIterator
       .flatMap { case (_, mentionSet) => mentionSet.toIterator }
+  }
+
+  private def maybeExpand(label: String): Array[String] = taxonomy match {
+      case None => Array(label)
+      case Some(tax) if hyponymCache.contains(label) => hyponymCache(label)
+      case Some(tax) => tax.hyponymsFor(label).toArray
+      case _ => Array(label)
   }
 
   override def clear(): Unit = {

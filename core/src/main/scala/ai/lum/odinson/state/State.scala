@@ -3,12 +3,17 @@ package ai.lum.odinson.state
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.Mention
 import ai.lum.odinson.lucene.index.OdinsonIndex
+import ai.lum.odinson.state.Taxonomy.loadTaxonomy
 import com.typesafe.config.Config
 import org.apache.lucene.store.Directory
 
 import java.io.File
 
 trait State {
+
+  def addTaxonomy(taxonomy: Taxonomy): Unit = {
+    throw new UnsupportedOperationException("This type of state does not support usage of a taxonomy")
+  }
 
   // todo: accessor method in extractor engine
   def addMentions(mentions: Iterator[Mention]): Unit
@@ -55,8 +60,11 @@ trait State {
 
 object State {
 
+  def TAXONOMY_CONFIG_PATH = "odinson.state.taxonomy"
+
   def apply(config: Config, index: OdinsonIndex): State = {
     val provider = config.apply[String]("odinson.state.provider")
+
     val state = provider match {
       // The SQL state needs an IndexSearcher to get the docIds from the
       case "sql"    => SqlState(config, index, Some(index.directory))
@@ -65,6 +73,12 @@ object State {
       case "mock"   => MockState
       case _        => throw new Exception(s"Unknown state provider: $provider")
     }
+
+    config.get[String](TAXONOMY_CONFIG_PATH).foreach { taxonomyPath =>
+      val taxonomy = loadTaxonomy(taxonomyPath)
+      state.addTaxonomy(taxonomy)
+    }
+
 
     state
   }
