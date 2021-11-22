@@ -5,7 +5,7 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.12")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
 
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.2")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7")
 
 // code coverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
