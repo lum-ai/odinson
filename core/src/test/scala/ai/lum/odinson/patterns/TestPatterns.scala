@@ -13,11 +13,11 @@ class TestPatterns extends OdinsonTest {
   for (line <- lines.drop(1)) { // skip header
     val Array(pattern, string, allExpected) = line.trim.split("\t")
     val expected = allExpected.split(";", -1)
-    pattern should s"find all expected results for ${string.display}" in {
+    pattern should s"find ${allExpected.display} for ${string.display}" in {
       val ee = mkExtractorEngineFromText(string)
       val q = ee.mkQuery(pattern)
       val results = ee.query(q)
-      val actual = mkStrings(results, ee)
+      val actual = mkStrings(results, ee.dataGatherer)
 
       actual should equal(expected)
     }

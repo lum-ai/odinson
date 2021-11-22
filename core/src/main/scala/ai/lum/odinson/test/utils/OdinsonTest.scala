@@ -27,9 +27,29 @@ class OdinsonTest extends FlatSpec with Matchers {
   /** Get a list of strings, one for each match in the results.
     *
     * @param results
+    * @param dataGatherer
+    * @return
+    */
+  def mkStrings(results: OdinResults, dataGatherer: DataGatherer): Array[String] = {
+    for {
+      scoreDoc <- results.scoreDocs
+      doc = scoreDoc.doc
+      m <- scoreDoc.matches
+    } yield {
+      dataGatherer.getStringForSpan(doc, m)
+    }
+  }
+
+  /** Get a list of strings, one for each match in the results.
+    * @param results
     * @param engine
     * @return
     */
+  @deprecated(
+    message =
+      "This method is deprecated, please use mkStrings(results: OdinResults, dataGatherer: DataGatherer)",
+    since = "0.3.2"
+  )
   def mkStrings(results: OdinResults, engine: ExtractorEngine): Array[String] = {
     for {
       scoreDoc <- results.scoreDocs
