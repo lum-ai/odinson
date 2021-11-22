@@ -10,6 +10,7 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.BeforeAndAfterEach
 
 import java.io.File
+import java.io.IOException
 
 class TestExtractorEngineWithPersistentIncrementalIndex
     extends OdinsonTest
@@ -39,11 +40,23 @@ class TestExtractorEngineWithPersistentIncrementalIndex
   }
 
   override def beforeEach(): Unit = {
-    FileUtils.deleteDirectory(new File(testConfig.getString("odinson.indexDir")))
+    try {
+      FileUtils.deleteDirectory(new File(testConfig.getString("odinson.indexDir")))
+    } catch {
+      // Some files may still be open at this time and some operating systems will refuse to
+      // delete them.  This can lead to exceptions which prevent the tests from running.
+      case _: IOException =>
+    }
   }
 
   override def afterEach(): Unit = {
-    FileUtils.deleteDirectory(new File(testConfig.getString("odinson.indexDir")))
+    try {
+      FileUtils.deleteDirectory(new File(testConfig.getString("odinson.indexDir")))
+    } catch {
+      // Some files may still be open at this time and some operating systems will refuse to
+      // delete them.  This can lead to exceptions which prevent the tests from running.
+      case _: IOException =>
+    }
   }
 
   private def writeTestIndex(docs: Seq[OdinsonDocument]): Unit = {
