@@ -79,53 +79,6 @@ lazy val generalDockerSettings = {
     )
 }
 
-// REST API
-lazy val backend = project
-  .aggregate(core)
-  .dependsOn(core % "test->test;compile->compile", extra % "test->compile;test->test")
-  .settings(commonSettings)
-  .enablePlugins(PlayScala)
-  .settings(
-    name := "odinson-rest-api",
-    libraryDependencies ++= {
-      val akkaV = "2.6.6"
-      Seq(
-        guice,
-        jdbc,
-        caffeine,
-        ws,
-        "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test,
-        "com.typesafe.akka"      %% "akka-actor-typed"   % akkaV,
-        "com.typesafe.akka"      %% "akka-protobuf"      % akkaV,
-        "com.typesafe.akka"      %% "akka-actor"         % akkaV,
-        "com.typesafe.akka"      %% "akka-slf4j"         % akkaV,
-        "com.typesafe.akka"      %% "akka-remote"        % akkaV,
-        "com.typesafe.akka"      %% "akka-stream"        % akkaV
-        )
-    },
-    //-Dpidfile.path=/dev/null
-    // Dev settings which are read prior to loading of config.
-    // See https://www.playframework.com/documentation/2.7.x/ConfigFile#Using-with-the-run-command
-    PlayKeys.devSettings += "play.server.http.port" -> "9000",
-    PlayKeys.devSettings += "play.server.http.address" -> "0.0.0.0",
-    PlayKeys.devSettings += "play.server.http.idleTimeout" -> "infinite"
-    )
-  .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(generalDockerSettings)
-  .settings(
-    packageName in Docker := "odinson-rest-api",
-    mainClass in Compile := Some("play.core.server.ProdServerStart"),
-    //dockerRepository := Some("index.docker.io"),
-    dockerExposedPorts in Docker := Seq(9000),
-    javaOptions in Universal ++= Seq(
-      "-J-Xmx4G",
-      // avoid writing a PID file
-      "-Dplay.server.pidfile.path=/dev/null",
-      //"-Dplay.server.akka.requestTimeout=20s"
-      "-Dlogger.resource=odinson-rest-logger.xml"
-      )
-    )
-
 // Release steps
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,

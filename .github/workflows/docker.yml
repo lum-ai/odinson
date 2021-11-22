@@ -80,19 +80,8 @@ jobs:
       # --output=type=docker 
       run: |
         docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
-    # build, tag, and publish multiarch odinson-rest-api
-    - name: "build, tag, and publish `lumai/odinson-rest-api` image"
-      working-directory: ./backend/target/docker/stage
-      env:
-        IMAGE_NAME: "odinson-rest-api"
-      run: |
-        docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
     # # publish
     # - name: "Publish docker `lumai/odinson-extras` image"
     #   env:
     #     IMAGE_NAME: "odinson-extras"
-    #   run: docker push --all-tags "${{ env.ORG }}/${IMAGE_NAME}"
-    # - name: "Publish docker `lumai/odinson-rest-api` image"
-    #   env:
-    #     IMAGE_NAME: "odinson-rest-api"
     #   run: docker push --all-tags "${{ env.ORG }}/${IMAGE_NAME}"
