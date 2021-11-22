@@ -1,5 +1,6 @@
 package ai.lum.odinson.lucene.index
 
+import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
 import ai.lum.odinson.utils.IndexSettings
@@ -81,6 +82,25 @@ class IncrementalOdinsonIndex(
 
   if (refreshMs > 1) refreshPeriodically()
 
+  private class CloseableSearcherHolder() {
+    val searcher: IndexSearcher = manager.acquire()
+
+    def close(): Unit = manager.release(searcher)
+  }
+
+  private def usingSearcher[T](f: IndexSearcher => T) = {
+    try {
+      using(new CloseableSearcherHolder()) { closeableSearcherHolder =>
+        f(closeableSearcherHolder.searcher)
+      }
+    } catch {
+      case _: Throwable => throw new RuntimeException("what is the best way to deal with this?")
+//      case e: Throwable => {
+//        e.printStackTrace()
+//        throw e
+    }
+  }
+
   override def indexOdinsonDoc(doc: OdinsonDocument): Unit = {
     write(odinsonWriter.mkDocumentBlock(doc).asJava)
   }
@@ -90,26 +110,18 @@ class IncrementalOdinsonIndex(
   }
 
   override def search(query: Query, limit: Int): TopDocs = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.search(query, limit)
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def search[CollectorType <: Collector, ResultType](
     query: Query,
     manager: CollectorManager[CollectorType, ResultType]
   ): ResultType = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.search[CollectorType, ResultType](query, manager)
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def write(block: java.util.Collection[LuceneDocument]): Unit = {
@@ -118,33 +130,21 @@ class IncrementalOdinsonIndex(
   }
 
   override def doc(docId: Int): LuceneDocument = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.getIndexReader.document(docId)
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   def doc(docId: Int, fieldNames: Set[String]): LuceneDocument = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.getIndexReader.document(docId, fieldNames.asJava)
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def getTermVectors(docId: Int): Fields = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.getIndexReader.getTermVectors(docId)
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def getTokens(
@@ -212,41 +212,22 @@ class IncrementalOdinsonIndex(
   }
 
   override def numDocs(): Int = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.getIndexReader.numDocs()
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def maxDoc(): Int = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       searcher.getIndexReader.maxDoc()
-    } catch {
-      case e: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-    } finally releaseSearcher(searcher)
+    }
   }
 
   override def listFields(): Fields = {
-    var searcher: IndexSearcher = null
-    try {
-      searcher = acquireSearcher()
+    usingSearcher { searcher =>
       MultiFields.getFields(searcher.getIndexReader)
-    } catch {
-      case e: Throwable => {
-        e.printStackTrace()
-        throw e
-      }
-    } finally releaseSearcher(searcher)
+    }
   }
-
-  private def acquireSearcher(): IndexSearcher = manager.acquire()
-
-  private def releaseSearcher(searcher: IndexSearcher): Unit = manager.release(searcher)
 
   private def refreshPeriodically(): Unit = {
     Future {

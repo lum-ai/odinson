@@ -1,19 +1,21 @@
 package ai.lum.odinson.extra
 
-import java.nio.file.{ Files, Paths }
 import ai.lum.odinson.Document
 import ai.lum.odinson.utils.exceptions.OdinsonException
-import org.scalatest._
-import java.io.IOException
 import org.apache.commons.io.FileUtils
+import org.scalatest._
+
+import java.io.File
+import java.io.IOException
+import java.nio.file.{ Files, Paths }
 
 import scala.reflect.io.Directory
 
 class TestAnnotateDocuments extends FlatSpec with Matchers {
 
   // get the resources directory and the text directory where the text to annotate is stored
-  private val resourcesFolder = getClass.getResource("/").getFile
-  private val srcTextDir = Paths.get(resourcesFolder, "text")
+  private val resourcesFolder = getClass.getResource("/").getFile // This ends in /.
+  private val srcTextDir = resourcesFolder + "text"
 
   // create the temporary test directory
   private val tmpFolder = Files.createTempDirectory("odinson-test").toFile.getAbsolutePath
@@ -30,7 +32,7 @@ class TestAnnotateDocuments extends FlatSpec with Matchers {
 
   // copy the text to annotate into the temporary test directory
   try {
-    FileUtils.copyDirectory(srcTextDir.toFile, textDir.toFile)
+    FileUtils.copyDirectory(new File(srcTextDir), textDir.toFile)
   } catch {
     case e: IOException =>
       throw new OdinsonException(s"Can't copy text directory $srcTextDir")

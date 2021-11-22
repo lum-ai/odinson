@@ -14,6 +14,7 @@ import ai.lum.odinson.{
   OdinsonMatch,
   Document => OdinsonDocument
 }
+import ai.lum.common.TryWithResources.using
 import com.typesafe.config.{ Config, ConfigRenderOptions }
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.lucene.document.{ Document => LuceneDocument }
@@ -47,6 +48,8 @@ class OdinsonController @Inject() (
 ) extends AbstractController(cc) {
 
   def newEngine(): ExtractorEngine = ExtractorEngine.fromConfig(config)
+
+  def usingNewEngine[T](f: ExtractorEngine => T) = using(newEngine())(f)
 
   // format: off
   val docsDir              = config.apply[File]  ("odinson.docsDir")
@@ -184,7 +187,6 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      var extractorEngine: ExtractorEngine = null
       try {
         // cutoff the results to the requested ranks
         val defaultMin = 0
@@ -193,141 +195,142 @@ class OdinsonController @Inject() (
         val minIdx = min.getOrElse(defaultMin)
         val maxIdx = max.getOrElse(defaultMax)
 
-        extractorEngine = newEngine()
-        // ensure that the requested field exists in the index
-        val fields = extractorEngine.index.listFields()
-        val fieldNames = fields.iterator.asScala.toList
-        // if the field exists, find the frequencies of each term
-        if (fieldNames contains field) {
-          // find the frequency of all terms in this field
-          val terms = fields.terms(field)
-          val termsEnum = filter match {
+        usingNewEngine { extractorEngine =>
+          // ensure that the requested field exists in the index
+          val fields = extractorEngine.index.listFields()
+          val fieldNames = fields.iterator.asScala.toList
+          // if the field exists, find the frequencies of each term
+          if (fieldNames contains field) {
+            // find the frequency of all terms in this field
+            val terms = fields.terms(field)
+            val termsEnum = filter match {
 
-            // get filtered terms only
-            case Some(filterString) =>
-              // check for proper regex
-              val valid = {
-                filterString.r // throws exception if invalid Scala regex (superset of Lucene regex)
-                true
-              }
+              // get filtered terms only
+              case Some(filterString) =>
+                // check for proper regex
+                val valid = {
+                  filterString.r // throws exception if invalid Scala regex (superset of Lucene regex)
+                  true
+                }
 
-              if (valid) {
-                // NB: This is Lucene regex, *not* Perl-compatible
-                // see https://www.elastic.co/guide/en/elasticsearch/reference/5.6/query-dsl-regexp-query.html#regexp-syntax
-                // TODO: unify regex type with ruleFreq filter
-                val automaton = new RegExp(filter.get).toAutomaton
-                new CompiledAutomaton(automaton).getTermsEnum(terms)
-              } else terms.iterator
+                if (valid) {
+                  // NB: This is Lucene regex, *not* Perl-compatible
+                  // see https://www.elastic.co/guide/en/elasticsearch/reference/5.6/query-dsl-regexp-query.html#regexp-syntax
+                  // TODO: unify regex type with ruleFreq filter
+                  val automaton = new RegExp(filter.get).toAutomaton
+                  new CompiledAutomaton(automaton).getTermsEnum(terms)
+                } else terms.iterator
 
-            case _ =>
-              // just go through all terms
-              terms.iterator
+              case _ =>
+                // just go through all terms
+                terms.iterator
 
-          }
-
-          val firstLevel = order match {
-            // alphanumeric order as defined by Lucene's term order
-            case Some("alpha") =>
-              reverse match {
-                // we must cycle through the whole set of terms and just keep the tail
-                case Some(true) =>
-                  // we don't know where the end is in advance, so we queue each freq as we go
-                  val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
-
-                  TermsAndFreqs(termsEnum).foreach { termAndFreq =>
-                    termFreqs.enqueue((termAndFreq.term, termAndFreq.freq))
-                    // if we exceed the size we need, just throw the oldest away
-                    if (termFreqs.size > maxIdx) termFreqs.dequeue()
-                  }
-                  termFreqs
-                    .toIndexedSeq
-                    .reverse
-                    .slice(minIdx, maxIdx + 1)
-
-                // just take the first (max + 1) items, since they are stored in that order
-                case _ =>
-                  val termFreqs = new FrequencyTable(
-                    minIdx,
-                    maxIdx,
-                    reverse.getOrElse(false)
-                  )
-
-                  TermsAndFreqs(termsEnum).take(maxIdx + 1).foreach { termAndFreq =>
-                    termFreqs.update(termAndFreq.term, termAndFreq.freq)
-                  }
-                  termFreqs.get
-              }
-            // if not alphanumeric (hence frequency), we go through all terms and compare frequencies
-            case _ =>
-              val termFreqs = new FrequencyTable(
-                minIdx,
-                maxIdx,
-                reverse.getOrElse(false)
-              )
-
-              TermsAndFreqs(termsEnum).foreach { termAndFreq =>
-                termFreqs.update(termAndFreq.term, termAndFreq.freq)
-              }
-              termFreqs.get
-          }
-
-          // count instances of each pairing of `field` and `group` terms
-          val groupedTerms =
-            if (group.nonEmpty && fieldNames.contains(group.get)) {
-              // this is O(awful) but will only be costly when (max - min) is large
-              val pairs = for {
-                (term1, _) <- firstLevel
-                odinsonQuery = extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
-                results = extractorEngine.query(odinsonQuery)
-                scoreDoc <- results.scoreDocs
-                eachMatch <- scoreDoc.matches
-                term2 = extractorEngine.dataGatherer.getTokensForSpan(
-                  scoreDoc.doc,
-                  eachMatch,
-                  group.get
-                ).head
-              } yield (term1, term2)
-              // count instances of this pair of terms from `field` and `group`, respectively
-              pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
-            } else firstLevel
-
-          // order again if there's a secondary grouping variable
-          val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
-            ser match {
-              case singleTerm: String =>
-                (firstLevel.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
-              case (term1: String, _: String) =>
-                // find the total frequency of the term (ignoring group condition)
-                val totalFreq = firstLevel.find(_._1 == term1).get._2
-                (firstLevel.indexOf((term1, totalFreq)), -conditionedFreq)
             }
-          }
 
-          // transform the frequencies as requested, preserving order
-          val scaled = scale match {
-            case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
-            case Some("percent") =>
-              val countTotal = terms.getSumTotalTermFreq
-              reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
-            case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
-          }
+            val firstLevel = order match {
+              // alphanumeric order as defined by Lucene's term order
+              case Some("alpha") =>
+                reverse match {
+                  // we must cycle through the whole set of terms and just keep the tail
+                  case Some(true) =>
+                    // we don't know where the end is in advance, so we queue each freq as we go
+                    val termFreqs = new scala.collection.mutable.Queue[(String, Long)]()
 
-          // rearrange data into a Seq of Maps for Jsonization
-          val jsonObjs = scaled.map { case (termGroup, freq) =>
-            termGroup match {
-              case singleTerm: String =>
-                Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
-              case (term1: String, term2: String) =>
-                Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
+                    TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                      termFreqs.enqueue((termAndFreq.term, termAndFreq.freq))
+                      // if we exceed the size we need, just throw the oldest away
+                      if (termFreqs.size > maxIdx) termFreqs.dequeue()
+                    }
+                    termFreqs
+                      .toIndexedSeq
+                      .reverse
+                      .slice(minIdx, maxIdx + 1)
+
+                  // just take the first (max + 1) items, since they are stored in that order
+                  case _ =>
+                    val termFreqs = new FrequencyTable(
+                      minIdx,
+                      maxIdx,
+                      reverse.getOrElse(false)
+                    )
+
+                    TermsAndFreqs(termsEnum).take(maxIdx + 1).foreach { termAndFreq =>
+                      termFreqs.update(termAndFreq.term, termAndFreq.freq)
+                    }
+                    termFreqs.get
+                }
+              // if not alphanumeric (hence frequency), we go through all terms and compare frequencies
+              case _ =>
+                val termFreqs = new FrequencyTable(
+                  minIdx,
+                  maxIdx,
+                  reverse.getOrElse(false)
+                )
+
+                TermsAndFreqs(termsEnum).foreach { termAndFreq =>
+                  termFreqs.update(termAndFreq.term, termAndFreq.freq)
+                }
+                termFreqs.get
             }
+
+            // count instances of each pairing of `field` and `group` terms
+            val groupedTerms =
+              if (group.nonEmpty && fieldNames.contains(group.get)) {
+                // this is O(awful) but will only be costly when (max - min) is large
+                val pairs = for {
+                  (term1, _) <- firstLevel
+                  odinsonQuery =
+                    extractorEngine.compiler.mkQuery(s"""(?<term> [$field="$term1"])""")
+                  results = extractorEngine.query(odinsonQuery)
+                  scoreDoc <- results.scoreDocs
+                  eachMatch <- scoreDoc.matches
+                  term2 = extractorEngine.dataGatherer.getTokensForSpan(
+                    scoreDoc.doc,
+                    eachMatch,
+                    group.get
+                  ).head
+                } yield (term1, term2)
+                // count instances of this pair of terms from `field` and `group`, respectively
+                pairs.groupBy(identity).mapValues(_.size.toLong).toIndexedSeq
+              } else firstLevel
+
+            // order again if there's a secondary grouping variable
+            val reordered = groupedTerms.sortBy { case (ser, conditionedFreq) =>
+              ser match {
+                case singleTerm: String =>
+                  (firstLevel.indexOf((singleTerm, conditionedFreq)), -conditionedFreq)
+                case (term1: String, _: String) =>
+                  // find the total frequency of the term (ignoring group condition)
+                  val totalFreq = firstLevel.find(_._1 == term1).get._2
+                  (firstLevel.indexOf((term1, totalFreq)), -conditionedFreq)
+              }
+            }
+
+            // transform the frequencies as requested, preserving order
+            val scaled = scale match {
+              case Some("log10") => reordered map { case (term, freq) => (term, log10(freq)) }
+              case Some("percent") =>
+                val countTotal = terms.getSumTotalTermFreq
+                reordered map { case (term, freq) => (term, freq.toDouble / countTotal) }
+              case _ => reordered.map { case (term, freq) => (term, freq.toDouble) }
+            }
+
+            // rearrange data into a Seq of Maps for Jsonization
+            val jsonObjs = scaled.map { case (termGroup, freq) =>
+              termGroup match {
+                case singleTerm: String =>
+                  Json.obj("term" -> singleTerm.asInstanceOf[String], "frequency" -> freq)
+                case (term1: String, term2: String) =>
+                  Json.obj("term" -> term1, "group" -> term2, "frequency" -> freq)
+              }
+            }
+            Json.toJson(jsonObjs).format(pretty)
+          } else {
+            // the requested field isn't in this index
+            Json.obj().format(pretty)
           }
-          Json.toJson(jsonObjs).format(pretty)
-        } else {
-          // the requested field isn't in this index
-          Json.obj().format(pretty)
         }
       } catch handleNonFatal
-      finally extractorEngine.close()
     }
   }
 
@@ -370,86 +373,86 @@ class OdinsonController @Inject() (
     * @return JSON frequency table as an array of objects.
     */
   def ruleFreq() = Action { request =>
-    val extractorEngine: ExtractorEngine = newEngine()
-    val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
-    //println(s"GrammarRequest: ${gr}")
-    val grammar = ruleFreqRequest.grammar
-    val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
-    // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
-    // val group = gr.group
-    val filter = ruleFreqRequest.filter
-    val order = ruleFreqRequest.order
-    val min = ruleFreqRequest.min
-    val max = ruleFreqRequest.max
-    val scale = ruleFreqRequest.scale
-    val reverse = ruleFreqRequest.reverse
-    val pretty = ruleFreqRequest.pretty
-    try {
-      // rules -> OdinsonQuery
-      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
+    usingNewEngine { extractorEngine =>
+      val ruleFreqRequest = request.body.asJson.get.as[RuleFreqRequest]
+      //println(s"GrammarRequest: ${gr}")
+      val grammar = ruleFreqRequest.grammar
+      val allowTriggerOverlaps = ruleFreqRequest.allowTriggerOverlaps.getOrElse(false)
+      // TODO: Allow grouping factor: "ruleType" (basic or event), "accuracy" (wrong or right), others?
+      // val group = gr.group
+      val filter = ruleFreqRequest.filter
+      val order = ruleFreqRequest.order
+      val min = ruleFreqRequest.min
+      val max = ruleFreqRequest.max
+      val scale = ruleFreqRequest.scale
+      val reverse = ruleFreqRequest.reverse
+      val pretty = ruleFreqRequest.pretty
+      try {
+        // rules -> OdinsonQuery
+        val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
-      val mentions: Seq[Mention] = {
-        val iterator = extractorEngine.extractMentions(
-          extractors,
-          numSentences = extractorEngine.numDocs(),
-          allowTriggerOverlaps = allowTriggerOverlaps,
-          disableMatchSelector = false
-        )
-        iterator.toVector
-      }
+        val mentions: Seq[Mention] = {
+          val iterator = extractorEngine.extractMentions(
+            extractors,
+            numSentences = extractorEngine.numDocs(),
+            allowTriggerOverlaps = allowTriggerOverlaps,
+            disableMatchSelector = false
+          )
+          iterator.toVector
+        }
 
-      val ruleFreqs = mentions
-        // rule name is all that matters
-        .map(_.foundBy)
-        // collect the instances of each rule's results
-        .groupBy(identity)
-        // filter the rules by name, if a filter was passed
-        // NB: this is Scala style anchored regex, *not* Lucene's RegExp
-        // TODO: unify regex style with that of termFreq's filter
-        .filter { case (ruleName, ms) => isMatch(ruleName, filter) }
-        // count how many matches for each rule
-        .map { case (k, v) => k -> v.length }
-        .toSeq
+        val ruleFreqs = mentions
+          // rule name is all that matters
+          .map(_.foundBy)
+          // collect the instances of each rule's results
+          .groupBy(identity)
+          // filter the rules by name, if a filter was passed
+          // NB: this is Scala style anchored regex, *not* Lucene's RegExp
+          // TODO: unify regex style with that of termFreq's filter
+          .filter { case (ruleName, ms) => isMatch(ruleName, filter) }
+          // count how many matches for each rule
+          .map { case (k, v) => k -> v.length }
+          .toSeq
 
-      // order the resulting frequencies as requested
-      val ordered = order match {
-        // alphabetical
-        case Some("alpha") => ruleFreqs.sortBy { case (ruleName, _) => ruleName }
-        // frequency (default)
-        case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
-      }
+        // order the resulting frequencies as requested
+        val ordered = order match {
+          // alphabetical
+          case Some("alpha") => ruleFreqs.sortBy { case (ruleName, _) => ruleName }
+          // frequency (default)
+          case _ => ruleFreqs.sortBy { case (ruleName, freq) => (-freq, ruleName) }
+        }
 
-      // reverse if necessary
-      val reversed = reverse match {
-        case Some(true) => ordered.reverse
-        case _          => ordered
-      }
+        // reverse if necessary
+        val reversed = reverse match {
+          case Some(true) => ordered.reverse
+          case _          => ordered
+        }
 
-      // Count instances of every rule
-      val countTotal = reversed.map(_._2).sum
+        // Count instances of every rule
+        val countTotal = reversed.map(_._2).sum
 
-      // cutoff the results to the requested ranks
-      val defaultMin = 0
-      val defaultMax = 9
-      val sliced =
-        reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
+        // cutoff the results to the requested ranks
+        val defaultMin = 0
+        val defaultMax = 9
+        val sliced =
+          reversed.slice(min.getOrElse(defaultMin), max.getOrElse(defaultMax) + 1).toIndexedSeq
 
-      // transform the frequencies as requested, preserving order
-      val scaled = scale match {
-        case Some("log10") => sliced map { case (rule, freq) => (rule, log10(freq)) }
-        case Some("percent") =>
-          sliced map { case (rule, freq) => (rule, freq.toDouble / countTotal) }
-        case _ => sliced.map { case (rule, freq) => (rule, freq.toDouble) }
-      }
+        // transform the frequencies as requested, preserving order
+        val scaled = scale match {
+          case Some("log10") => sliced map { case (rule, freq) => (rule, log10(freq)) }
+          case Some("percent") =>
+            sliced map { case (rule, freq) => (rule, freq.toDouble / countTotal) }
+          case _ => sliced.map { case (rule, freq) => (rule, freq.toDouble) }
+        }
 
-      // rearrange data into a Seq of Maps for Jsonization
-      val jsonObjs = scaled.map { case (ruleName, freq) =>
-        Json.obj("term" -> ruleName, "frequency" -> freq)
-      }
+        // rearrange data into a Seq of Maps for Jsonization
+        val jsonObjs = scaled.map { case (ruleName, freq) =>
+          Json.obj("term" -> ruleName, "frequency" -> freq)
+        }
 
-      Json.arr(jsonObjs).format(pretty)
-    } catch handleNonFatal
-    finally extractorEngine.close()
+        Json.arr(jsonObjs).format(pretty)
+      } catch handleNonFatal
+    }
   }
 
   /** Return `nBins` quantile boundaries for `data`. Each bin will have equal probability.
@@ -597,25 +600,25 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val extractorEngine: ExtractorEngine = newEngine()
-      // ensure that the requested field exists in the index
-      val fields = extractorEngine.index.listFields()
-      extractorEngine.close()
+      usingNewEngine { extractorEngine =>
+        // ensure that the requested field exists in the index
+        val fields = extractorEngine.index.listFields()
 
-      val fieldNames = fields.iterator.asScala.toList
-      // if the field exists, find the frequencies of each term
-      if (fieldNames contains field) {
-        // find the frequency of all terms in this field
-        val termsEnum = fields.terms(field).iterator()
-        val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
-          termAndFreq.freq.toDouble
-        }.toList
-        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+        val fieldNames = fields.iterator.asScala.toList
+        // if the field exists, find the frequencies of each term
+        if (fieldNames contains field) {
+          // find the frequency of all terms in this field
+          val termsEnum = fields.terms(field).iterator()
+          val frequencies = TermsAndFreqs(termsEnum).map { termAndFreq =>
+            termAndFreq.freq.toDouble
+          }.toList
+          val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
-        Json.arr(jsonObjs).format(pretty)
-      } else {
-        // the requested field isn't in this index
-        Json.obj().format(pretty)
+          Json.arr(jsonObjs).format(pretty)
+        } else {
+          // the requested field isn't in this index
+          Json.obj().format(pretty)
+        }
       }
     }
   }
@@ -644,44 +647,45 @@ class OdinsonController @Inject() (
     * @return A JSON array of each bin, defined by width, lower bound (inclusive), and frequency.
     */
   def ruleHist() = Action { request =>
-    val extractorEngine: ExtractorEngine = newEngine()
-    val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
-    val grammar = ruleHistRequest.grammar
-    val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
-    val bins = ruleHistRequest.bins
-    val equalProbability = ruleHistRequest.equalProbability
-    val xLogScale = ruleHistRequest.xLogScale
-    val pretty = ruleHistRequest.pretty
-    try {
-      // rules -> OdinsonQuery
-      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
+    usingNewEngine { extractorEngine =>
+      val extractorEngine: ExtractorEngine = newEngine()
+      val ruleHistRequest = request.body.asJson.get.as[RuleHistRequest]
+      val grammar = ruleHistRequest.grammar
+      val allowTriggerOverlaps = ruleHistRequest.allowTriggerOverlaps.getOrElse(false)
+      val bins = ruleHistRequest.bins
+      val equalProbability = ruleHistRequest.equalProbability
+      val xLogScale = ruleHistRequest.xLogScale
+      val pretty = ruleHistRequest.pretty
+      try {
+        // rules -> OdinsonQuery
+        val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
-      val mentions: Seq[Mention] = {
-        val iterator = extractorEngine.extractMentions(
-          extractors,
-          numSentences = extractorEngine.numDocs(),
-          allowTriggerOverlaps = allowTriggerOverlaps,
-          disableMatchSelector = false
-        )
-        iterator.toVector
-      }
+        val mentions: Seq[Mention] = {
+          val iterator = extractorEngine.extractMentions(
+            extractors,
+            numSentences = extractorEngine.numDocs(),
+            allowTriggerOverlaps = allowTriggerOverlaps,
+            disableMatchSelector = false
+          )
+          iterator.toVector
+        }
 
-      val frequencies = mentions
-        // rule name is all that matters
-        .map(_.foundBy)
-        // collect the instances of each rule's results
-        .groupBy(identity)
-        // filter the rules by name, if a filter was passed
-        // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
-        // count how many matches for each rule
-        .map { case (k, v) => v.length.toDouble }
-        .toList
+        val frequencies = mentions
+          // rule name is all that matters
+          .map(_.foundBy)
+          // collect the instances of each rule's results
+          .groupBy(identity)
+          // filter the rules by name, if a filter was passed
+          // .filter{ case (ruleName, ms) => isMatch(ruleName, filter) }
+          // count how many matches for each rule
+          .map { case (k, v) => v.length.toDouble }
+          .toList
 
-      val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
+        val jsonObjs = processCounts(frequencies, bins, equalProbability, xLogScale)
 
-      Json.arr(jsonObjs).format(pretty)
-    } catch handleNonFatal
-    finally extractorEngine.close()
+        Json.arr(jsonObjs).format(pretty)
+      } catch handleNonFatal
+    }
   }
 
   /** Information about the current corpus. <br>
@@ -689,53 +693,52 @@ class OdinsonController @Inject() (
     */
   def corpusInfo(pretty: Option[Boolean]) = Action.async {
     Future {
-      val extractorEngine: ExtractorEngine = newEngine()
-      val numDocs = extractorEngine.numDocs()
-      val corpusDir = config.apply[File]("odinson.indexDir").getName
-      val depsVocabSize = {
-        loadVocabulary.terms.toSet.size
-      }
-      val fields = extractorEngine.index.listFields()
-      val fieldNames = fields.iterator.asScala.toList
-      val storedFields =
-        if (extractorEngine.numDocs < 1) {
-          Nil
-        } else {
-          val firstDoc = extractorEngine.doc(0)
-          firstDoc.iterator.asScala.map(_.name).toList
+      usingNewEngine { extractorEngine =>
+        val numDocs = extractorEngine.numDocs()
+        val corpusDir = config.apply[File]("odinson.indexDir").getName
+        val depsVocabSize = {
+          loadVocabulary.terms.toSet.size
         }
-      val tokenFields = extractorEngine.dataGatherer.storedFields
-      val allFields = extractorEngine.index.listFields()
-      val allFieldNames = allFields.iterator.asScala.toList
-      val docFields = allFieldNames diff tokenFields
-      extractorEngine.close()
+        val fields = extractorEngine.index.listFields()
+        val fieldNames = fields.iterator.asScala.toList
+        val storedFields =
+          if (extractorEngine.numDocs < 1) {
+            Nil
+          } else {
+            val firstDoc = extractorEngine.doc(0)
+            firstDoc.iterator.asScala.map(_.name).toList
+          }
+        val tokenFields = extractorEngine.dataGatherer.storedFields
+        val allFields = extractorEngine.index.listFields()
+        val allFieldNames = allFields.iterator.asScala.toList
+        val docFields = allFieldNames diff tokenFields
 
-      val json = Json.obj(
-        "numDocs" -> numDocs,
-        "corpus" -> corpusDir,
-        "distinctDependencyRelations" -> depsVocabSize,
-        "tokenFields" -> tokenFields,
-        "docFields" -> docFields,
-        "storedFields" -> storedFields
-      )
-      json.format(pretty)
+        val json = Json.obj(
+          "numDocs" -> numDocs,
+          "corpus" -> corpusDir,
+          "distinctDependencyRelations" -> depsVocabSize,
+          "tokenFields" -> tokenFields,
+          "docFields" -> docFields,
+          "storedFields" -> storedFields
+        )
+        json.format(pretty)
+      }
     }
   }
 
   def getDocId(luceneDocId: Int): String = {
-    val extractorEngine: ExtractorEngine = newEngine()
-    val doc: LuceneDocument = extractorEngine.doc(luceneDocId)
-    extractorEngine.close()
-    doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
+    usingNewEngine { extractorEngine =>
+      val doc: LuceneDocument = extractorEngine.doc(luceneDocId)
+      doc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
+    }
   }
 
   def getSentenceIndex(luceneDocId: Int): Int = {
-    val extractorEngine: ExtractorEngine = newEngine()
-    val doc = extractorEngine.doc(luceneDocId)
-    extractorEngine.close()
-
-    // FIXME: this isn't safe
-    doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
+    usingNewEngine { extractorEngine =>
+      val doc = extractorEngine.doc(luceneDocId)
+      // FIXME: this isn't safe
+      doc.getValues(OdinsonIndexWriter.SENT_ID_FIELD).head.toInt
+    }
   }
 
   def loadVocabulary: Vocabulary = {
@@ -762,12 +765,12 @@ class OdinsonController @Inject() (
     */
   private def fieldVocabulary(field: String): List[String] = {
     // get terms from the requested field (error if it doesn't exist)
-    val extractorEngine: ExtractorEngine = newEngine()
-    val fields = extractorEngine.index.listFields()
-    val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
-    extractorEngine.close()
+    usingNewEngine { extractorEngine =>
+      val fields = extractorEngine.index.listFields()
+      val terms = TermsAndFreqs(fields.terms(field).iterator()).map(_.term).toList
 
-    terms
+      terms
+    }
   }
 
   /** Retrieves the POS tags for the current index (limited to extant tags).
@@ -864,42 +867,42 @@ class OdinsonController @Inject() (
   def executeGrammar() = Action { request =>
     //println(s"body: ${request.body}")
     //val json: JsValue = request.body.asJson.get
-    val extractorEngine: ExtractorEngine = newEngine()
-    // FIXME: replace .get with validation check
-    val gr = request.body.asJson.get.as[GrammarRequest]
-    //println(s"GrammarRequest: ${gr}")
-    val grammar = gr.grammar
-    val pageSize = gr.pageSize
-    val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
-    val pretty = gr.pretty
-    try {
-      // rules -> OdinsonQuery
-      val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
+    usingNewEngine { extractorEngine =>
+      // FIXME: replace .get with validation check
+      val gr = request.body.asJson.get.as[GrammarRequest]
+      //println(s"GrammarRequest: ${gr}")
+      val grammar = gr.grammar
+      val pageSize = gr.pageSize
+      val allowTriggerOverlaps = gr.allowTriggerOverlaps.getOrElse(false)
+      val pretty = gr.pretty
+      try {
+        // rules -> OdinsonQuery
+        val extractors = extractorEngine.ruleReader.compileRuleString(grammar)
 
-      val start = System.currentTimeMillis()
+        val start = System.currentTimeMillis()
 
-      val maxSentences: Int = pageSize match {
-        case Some(ps) => ps
-        case None     => extractorEngine.numDocs()
-      }
+        val maxSentences: Int = pageSize match {
+          case Some(ps) => ps
+          case None     => extractorEngine.numDocs()
+        }
 
-      val mentions: Seq[Mention] = {
-        // FIXME: should deal in iterators to allow for, e.g., pagination...?
-        val iterator = extractorEngine.extractMentions(
-          extractors,
-          numSentences = maxSentences,
-          allowTriggerOverlaps = allowTriggerOverlaps,
-          disableMatchSelector = false
-        )
-        iterator.toVector
-      }
+        val mentions: Seq[Mention] = {
+          // FIXME: should deal in iterators to allow for, e.g., pagination...?
+          val iterator = extractorEngine.extractMentions(
+            extractors,
+            numSentences = maxSentences,
+            allowTriggerOverlaps = allowTriggerOverlaps,
+            disableMatchSelector = false
+          )
+          iterator.toVector
+        }
 
-      val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+        val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-      val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
-      json.format(pretty)
-    } catch handleNonFatal
-    finally extractorEngine.close()
+        val json = Json.toJson(mkJson(None, duration, allowTriggerOverlaps, mentions))
+        json.format(pretty)
+      } catch handleNonFatal
+    }
   }
 
   /** @param odinsonQuery An Odinson pattern
@@ -921,33 +924,33 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val extractorEngine: ExtractorEngine = newEngine()
-      try {
-        val oq = metadataQuery match {
-          case Some(pq) =>
-            extractorEngine.compiler.mkQuery(odinsonQuery, pq)
-          case None =>
-            extractorEngine.compiler.mkQuery(odinsonQuery)
-        }
-        val start = System.currentTimeMillis()
-        val results: OdinResults = retrieveResults(extractorEngine, oq, prevDoc, prevScore)
-        val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
+      usingNewEngine { extractorEngine =>
+        try {
+          val oq = metadataQuery match {
+            case Some(pq) =>
+              extractorEngine.compiler.mkQuery(odinsonQuery, pq)
+            case None =>
+              extractorEngine.compiler.mkQuery(odinsonQuery)
+          }
+          val start = System.currentTimeMillis()
+          val results: OdinResults = retrieveResults(extractorEngine, oq, prevDoc, prevScore)
+          val duration = (System.currentTimeMillis() - start) / 1000f // duration in seconds
 
-        // should the results be added to the state?
-        if (commit.getOrElse(false)) {
-          // FIXME: can this be processed in the background?
-          commitResults(
-            extractorEngine = extractorEngine,
-            odinsonQuery = odinsonQuery,
-            metadataQuery = metadataQuery,
-            label = label.getOrElse("Mention")
-          )
-        }
+          // should the results be added to the state?
+          if (commit.getOrElse(false)) {
+            // FIXME: can this be processed in the background?
+            commitResults(
+              extractorEngine = extractorEngine,
+              odinsonQuery = odinsonQuery,
+              metadataQuery = metadataQuery,
+              label = label.getOrElse("Mention")
+            )
+          }
 
-        val json = Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
-        json.format(pretty)
-      } catch handleNonFatal
-      finally extractorEngine.close()
+          val json = Json.toJson(mkJson(odinsonQuery, metadataQuery, duration, results, enriched))
+          json.format(pretty)
+        } catch handleNonFatal
+      }
     }
   }
 
@@ -962,8 +965,7 @@ class OdinsonController @Inject() (
         json.format(pretty)
       } catch mkHandleNullPointer(
         "This search index does not have document filenames saved as stored fields, so metadata cannot be retrieved."
-      )
-        .orElse(handleNonFatal)
+      ).orElse(handleNonFatal)
     }
   }
 
@@ -972,17 +974,17 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val extractorEngine: ExtractorEngine = newEngine()
-      try {
-        val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
-        val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
-        val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
-        val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
-        json.format(pretty)
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      ).orElse(handleNonFatal)
-      finally extractorEngine.close()
+      usingNewEngine { extractorEngine =>
+        try {
+          val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
+          val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
+          val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
+          val json: JsValue = Json.parse(odinsonDocument.toJson)("metadata")
+          json.format(pretty)
+        } catch mkHandleNullPointer(
+          "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+        ).orElse(handleNonFatal)
+      }
     }
   }
 
@@ -991,17 +993,17 @@ class OdinsonController @Inject() (
     pretty: Option[Boolean]
   ) = Action.async {
     Future {
-      val extractorEngine: ExtractorEngine = newEngine()
-      try {
-        val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
-        val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
-        val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
-        val json: JsValue = Json.parse(odinsonDocument.toJson)
-        json.format(pretty)
-      } catch mkHandleNullPointer(
-        "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      ).orElse(handleNonFatal)
-      finally extractorEngine.close()
+      using(newEngine) { extractorEngine =>
+        try {
+          val luceneDoc: LuceneDocument = extractorEngine.doc(sentenceId)
+          val documentId = luceneDoc.getValues(OdinsonIndexWriter.DOC_ID_FIELD).head
+          val odinsonDocument: OdinsonDocument = loadParentDocByDocumentId(documentId)
+          val json: JsValue = Json.parse(odinsonDocument.toJson)
+          json.format(pretty)
+        } catch mkHandleNullPointer(
+          "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
+        ).orElse(handleNonFatal)
+      }
     }
   }
 
@@ -1016,8 +1018,7 @@ class OdinsonController @Inject() (
         json.format(pretty)
       } catch mkHandleNullPointer(
         "This search index does not have document filenames saved as stored fields, so the parent document cannot be retrieved."
-      )
-        .orElse(handleNonFatal)
+      ).orElse(handleNonFatal)
     }
   }
 
@@ -1066,45 +1067,44 @@ class OdinsonController @Inject() (
   }
 
   def mkJson(mention: Mention): Json.JsValueWrapper = {
-    val extractorEngine: ExtractorEngine = newEngine()
-    //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
-    // We want **all** tokens for the sentence
-    val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
-    // odinsonMatch: OdinsonMatch,
+    usingNewEngine { extractorEngine =>
+      //val doc: LuceneDocument = extractorEngine.indexSearcher.doc(mention.luceneDocId)
+      // We want **all** tokens for the sentence
+      val tokens = extractorEngine.dataGatherer.getTokens(mention.luceneDocId, wordTokenField)
+      // odinsonMatch: OdinsonMatch,
 
-    extractorEngine.close()
-
-    Json.obj(
-      // format: off
-      "sentenceId"    -> mention.luceneDocId,
-      // "score"         -> odinsonScoreDoc.score,
-      "label"         -> mention.label,
-      "documentId"    -> getDocId(mention.luceneDocId),
-      "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "foundBy"       -> mention.foundBy,
-      "match"         -> Json.arr(mkJson(mention.odinsonMatch))
-      // format: on
-    )
+      Json.obj(
+        // format: off
+        "sentenceId"    -> mention.luceneDocId,
+        // "score"         -> odinsonScoreDoc.score,
+        "label"         -> mention.label,
+        "documentId"    -> getDocId(mention.luceneDocId),
+        "sentenceIndex" -> getSentenceIndex(mention.luceneDocId),
+        "words"         -> JsArray(tokens.map(JsString)),
+        "foundBy"       -> mention.foundBy,
+        "match"         -> Json.arr(mkJson(mention.odinsonMatch))
+        // format: on
+      )
+    }
   }
 
   def mkJson(odinsonScoreDoc: OdinsonScoreDoc): Json.JsValueWrapper = {
-    val extractorEngine: ExtractorEngine = newEngine()
-    //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
-    // we want **all** tokens for the sentence
-    val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
-    extractorEngine.close()
+    usingNewEngine { extractorEngine =>
+      //val doc = extractorEngine.indexSearcher.doc(odinsonScoreDoc.doc)
+      // we want **all** tokens for the sentence
+      val tokens = extractorEngine.dataGatherer.getTokens(odinsonScoreDoc.doc, wordTokenField)
 
-    Json.obj(
-      // format: off
-      "sentenceId"    -> odinsonScoreDoc.doc,
-      "score"         -> odinsonScoreDoc.score,
-      "documentId"    -> getDocId(odinsonScoreDoc.doc),
-      "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
-      "words"         -> JsArray(tokens.map(JsString)),
-      "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
-      // format: on
-    )
+      Json.obj(
+        // format: off
+        "sentenceId"    -> odinsonScoreDoc.doc,
+        "score"         -> odinsonScoreDoc.score,
+        "documentId"    -> getDocId(odinsonScoreDoc.doc),
+        "sentenceIndex" -> getSentenceIndex(odinsonScoreDoc.doc),
+        "words"         -> JsArray(tokens.map(JsString)),
+        "matches"       -> Json.arr(odinsonScoreDoc.matches.map(mkJson): _*)
+        // format: on
+      )
+    }
   }
 
   def mkJson(m: OdinsonMatch): Json.JsValueWrapper = {
@@ -1132,13 +1132,13 @@ class OdinsonController @Inject() (
   }
 
   def loadParentDocByDocumentId(documentId: String): OdinsonDocument = {
-    val extractorEngine: ExtractorEngine = newEngine()
-    // lucene doc containing metadata
-    val parentDoc: LuceneDocument = extractorEngine.getMetadataDoc(documentId)
-    extractorEngine.close()
+    usingNewEngine { extractorEngine =>
+      // lucene doc containing metadata
+      val parentDoc: LuceneDocument = extractorEngine.getMetadataDoc(documentId)
 
-    val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
-    OdinsonDocument.fromJson(odinsonDocFile)
+      val odinsonDocFile = new File(docsDir, parentDoc.getField(parentDocFileName).stringValue)
+      OdinsonDocument.fromJson(odinsonDocFile)
+    }
   }
 
   def retrieveSentenceJson(documentId: String, sentenceIndex: Int): JsValue = {
