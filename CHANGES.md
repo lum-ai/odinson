@@ -5,13 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [0.6.0] - 2021-11-22
 ### Added
-- `parentQuery` -> `metadataQuery` in REST API docs
 - Added documentation about supported types of fields for metadata (and info warnings for unsupported types). ([#329](https://github.com/lum-ai/odinson/pull/329))
+- Added support for live indexing ([#341](https://github.com/lum-ai/odinson/pull/341))
 ### Changed
 - Use lucene's `KeywordAnalyzer` for parsed documents rather than `WhitespaceAnalyzer`.
+- Refactored code related to Lucene ([#341](https://github.com/lum-ai/odinson/pull/341))
 ### Fixed
 - Negated lookaround queries return the correct spans (not off-by-one).
+### Removed
+- Rest API moved to lum-ai/odinson-rest repo ([#357](https://github.com/lum-ai/odinson/pull/357))
 
 ## [0.5.0] - 2021-08-07
 ### Added
