@@ -143,7 +143,12 @@ releaseProcess := Seq[ReleaseStep](
 
 // Publishing settings
 
-publishTo in ThisBuild := sonatypePublishToBundle.value
+//publishTo in ThisBuild := sonatypePublishToBundle.value
+publishTo in ThisBuild := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
 
 publishMavenStyle in ThisBuild := true
 
