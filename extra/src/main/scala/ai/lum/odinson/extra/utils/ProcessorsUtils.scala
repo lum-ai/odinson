@@ -5,7 +5,7 @@ import java.util.UUID
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
 import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence, _ }
-import org.clulab.dynet.Utils.initializeDyNet
+import org.clulab.dynet
 import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
 import org.clulab.processors.{
@@ -35,11 +35,11 @@ object ProcessorsUtils {
   def getProcessor(processorType: String): Processor = {
     processorType match {
       case "FastNLPProcessor" => {
-        initializeDyNet()
+        dynet.Utils.initializeDyNet(autoBatch = false, mem = "1024,1024,1024,1024")
         new FastNLPProcessor
       }
       case "CluProcessor" => {
-        initializeDyNet()
+        dynet.Utils.initializeDyNet(autoBatch = false, mem = "1024,1024,1024,1024")
         new CluProcessor
       }
     }
@@ -73,6 +73,7 @@ object ProcessorsUtils {
     val maybeEntity = s.entities.map(entities => TokensField(entityTokenField, entities))
     val maybeChunk = s.chunks.map(chunks => TokensField(chunkTokenField, chunks))
     // graph that merges ENHANCED_SEMANTIC_ROLES and UNIVERSAL_ENHANCED, if available
+    // FIXME: specify preference via .conf
     val maybeDeps = {
       val graphs = s.graphs match {
         case hybridCollapsed if hybridCollapsed.contains(GraphMap.HYBRID_DEPENDENCIES) =>

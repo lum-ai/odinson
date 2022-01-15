@@ -71,8 +71,7 @@ lazy val generalDockerSettings = {
       dockerAlias.value.withTag(Option(gitDockerTag.value))
       ),
     maintainer in Docker := "Gus Hahn-Powell <ghp@lum.ai>",
-    // "openjdk:11-jre-alpine"
-    dockerBaseImage := "openjdk:11",
+    dockerBaseImage := "adoptopenjdk/openjdk11",
     javaOptions in Universal ++= Seq(
       "-Dodinson.dataDir=/app/data/odinson"
       )

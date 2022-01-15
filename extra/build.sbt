@@ -1,10 +1,10 @@
 name := "odinson-extra"
 
-resolvers += "Artifactory" at "http://artifactory.cs.arizona.edu:8081/artifactory/sbt-release"
+resolvers += ("Artifactory" at "http://artifactory.cs.arizona.edu:8081/artifactory/sbt-release").withAllowInsecureProtocol(true)
 
 libraryDependencies ++= {
 
-  val procVersion = "8.4.2"
+  val procVersion = "8.4.6"
 
   Seq(
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
