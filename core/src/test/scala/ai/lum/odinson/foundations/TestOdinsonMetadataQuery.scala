@@ -61,7 +61,8 @@ class TestOdinsonMetadataQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds and a two-field exact string match parent query succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val metadataQuery: String = """character == "Special Agent Dale Cooper" && show == "Twin Peaks""""
+    val metadataQuery: String =
+      """character == "Special Agent Dale Cooper" && show == "Twin Peaks""""
     val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1
