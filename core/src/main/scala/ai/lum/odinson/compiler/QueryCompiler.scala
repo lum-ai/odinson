@@ -7,7 +7,7 @@ import org.apache.lucene.search.spans._
 import com.typesafe.config.Config
 import ai.lum.common.StringUtils._
 import ai.lum.common.ConfigUtils._
-import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.lucene.search.spans._
 import ai.lum.odinson.digraph._

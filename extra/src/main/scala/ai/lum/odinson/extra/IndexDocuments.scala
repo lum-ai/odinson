@@ -7,8 +7,8 @@ import ai.lum.common.ConfigFactory
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import ai.lum.common.ConfigUtils._
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.lucene.index.OdinsonIndex
-import ai.lum.odinson.{ Document, OdinsonIndexWriter, StringField }
+import ai.lum.odinson.lucene.index.{ OdinsonIndex, OdinsonIndexWriter }
+import ai.lum.odinson.{ Document, StringField }
 
 import scala.collection.GenIterable
 

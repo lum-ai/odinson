@@ -6,6 +6,7 @@ import java.time.{ LocalDate, ZoneId }
 import scala.collection.mutable.ArrayBuilder
 import upickle.default._
 import ai.lum.common.FileUtils._
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import com.typesafe.scalalogging.LazyLogging
 

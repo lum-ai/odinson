@@ -8,6 +8,7 @@ import org.apache.lucene.store.FSDirectory
 import org.scalatest.BeforeAndAfterEach
 
 import java.io.File
+import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.reflect.io.Directory
 
@@ -15,9 +16,9 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   type Fixture = IncrementalOdinsonIndex
 
   val testIndexDir: File = {
-    val file = new File("./target/incremental_index_test")
-    file.mkdirs()
-    file
+    val tmpDir: File = Files.createTempDirectory("odinson-test").toFile
+    tmpDir.mkdirs()
+    tmpDir
   }
 
   val testConfig: Config = {
