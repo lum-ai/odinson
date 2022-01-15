@@ -1,16 +1,24 @@
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-organization in ThisBuild := "ai.lum"
+ThisBuild / organization := "ai.lum"
 
-scalaVersion in ThisBuild := "2.12.10"
+ThisBuild / scalaVersion := "2.12.10"
 
-fork in ThisBuild := true
+ThisBuild / fork := true
+
+/* You can print computed classpath by `show compile:fullClassPath`.
+ * From that list you can check jar name (that is not so obvious with play dependencies etc).
+ */
+lazy val documentationSettings = Seq(
+  // see https://www.scala-sbt.org/1.x/docs/Howto-Scaladoc.html#Enable+automatic+linking+to+the+external+Scaladoc+of+managed+dependencies
+  autoAPIMappings := true,
+)
 
 lazy val commonSettings = Seq(
   // show test duration
-  testOptions in Test += Tests.Argument("-oD"),
-  excludeDependencies += "commons-logging" % "commons-logging"
-  )
+  Test / testOptions += Tests.Argument("-oD"),
+  excludeDependencies += "commons-logging" % "commons-logging",
+)
 
 lazy val core = project
   .enablePlugins(BuildInfoPlugin)
@@ -42,11 +50,11 @@ lazy val extra = project
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(generalDockerSettings)
   .settings(
-    packageName in Docker := "odinson-extras",
+    Docker / packageName := "odinson-extras",
     //mainClass in Compile := Some("ai.lum.odinson.extra.IndexDocuments"),
     //dockerRepository := Some("index.docker.io"),
     //dockerChmodType := DockerChmodType.UserGroupWriteExecute
-    javaOptions in Universal ++= Seq(
+    Universal / javaOptions ++= Seq(
       "-J-Xmx6G"
       )
     )
@@ -61,18 +69,18 @@ ThisBuild / gitDockerTag := {
 
 lazy val generalDockerSettings = {
   Seq(
-    parallelExecution in ThisBuild := false,
+    ThisBuild / parallelExecution := false,
     // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
-    daemonUserUid in Docker := None,
-    daemonUser in Docker    := "root",
+    Docker / daemonUserUid := None,
+    Docker / daemonUser := "root",
     dockerUsername := Some("lumai"),
     dockerAliases ++= Seq(
       dockerAlias.value.withTag(Option("latest")),
       dockerAlias.value.withTag(Option(gitDockerTag.value))
       ),
-    maintainer in Docker := "Gus Hahn-Powell <ghp@lum.ai>",
+    Docker / maintainer := "Gus Hahn-Powell <ghp@lum.ai>",
     dockerBaseImage := "adoptopenjdk/openjdk11",
-    javaOptions in Universal ++= Seq(
+    Universal / javaOptions ++= Seq(
       "-Dodinson.dataDir=/app/data/odinson"
       )
     )
@@ -96,24 +104,24 @@ releaseProcess := Seq[ReleaseStep](
 
 // Publishing settings
 
-publishTo in ThisBuild := sonatypePublishToBundle.value
+ThisBuild / publishTo := sonatypePublishToBundle.value
 
-publishMavenStyle in ThisBuild := true
+ThisBuild / publishMavenStyle := true
 
-publishArtifact in Test := false
+Test / publishArtifact := false
 
-licenses in ThisBuild := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+ThisBuild / licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
-homepage in ThisBuild := Some(url("https://github.com/lum-ai/odinson"))
+ThisBuild / homepage := Some(url("https://github.com/lum-ai/odinson"))
 
-scmInfo in ThisBuild := Some(
+ThisBuild / scmInfo := Some(
   ScmInfo(
     url("https://github.com/lum-ai/odinson"),
     "scm:git@github.com:lum-ai/odinson.git"
     )
   )
 
-developers in ThisBuild := List(
+ThisBuild / developers := List(
   Developer(
     id = "marcovzla",
     name = "Marco Antonio Valenzuela Escárcega",
