@@ -106,7 +106,20 @@ class OdinsonIndexWriter(
     writer.close()
   }
 
-  /** generates a lucenedoc document per sentence */
+  /** Convenience method to create an indexed ([[org.apache.lucene.document.StringField]]) for the ID of an [[org.apache.lucene.document.Document]].  Optionally store the field.
+    *
+    * @param odinsonDocId ID for some Odinson Document.
+    * @param store Whether or not the field should be stored.
+    */
+  def mkOdinsonDocIdField(odinsonDocId: String, store: Boolean = false): LuceneStringField = {
+    val storeField: LuceneField.Store = if (store) Store.YES else Store.NO
+    new LuceneStringField(DOC_ID_FIELD, odinsonDocId, storeField)
+  }
+
+  /** Generates a sequence of [[org.apache.lucene.document.Document]] that represent an [[ai.lum.odinson.Document]] (metadata and sentences).
+    *
+    * @param d An Odinson Document.
+    */
   def mkDocumentBlock(d: OdinsonDocument): Seq[LuceneDocument] = {
     val block = ArrayBuffer.empty[LuceneDocument]
     for ((s, i) <- d.sentences.zipWithIndex) {
@@ -120,11 +133,19 @@ class OdinsonIndexWriter(
     block ++ mkMetadataDocs(d)
   }
 
+  /** Creates a sequence of [[org.apache.lucene.document.Document]] for the metadata of an [[ai.lum.odinson.Document]].
+    *
+    * @param s         An Odinson Sentence
+    * @param docId The ID of the Odinson Document containing this Sentence.
+    * @param sentId The ID for this Sentence.  Unique at the Odinson Document level.
+    */
   def mkMetadataDocs(d: OdinsonDocument): Seq[LuceneDocument] = {
     val (nested, other) = d.metadata.partition(_.isInstanceOf[OdinsonNestedField])
 
     // convert the nested fields into a document
-    val nestedMetadata = nested.collect { case n: OdinsonNestedField => n }.map(mkNestedDocument)
+    val nestedMetadata = nested.collect { case n: OdinsonNestedField => n }.map { nf =>
+      mkNestedDocument(nf, d.id)
+    }
 
     // Metadata for parent document
     val metadata = new LuceneDocument
@@ -133,7 +154,7 @@ class OdinsonIndexWriter(
       OdinsonIndexWriter.PARENT_TYPE,
       Store.NO
     ))
-    metadata.add(new LuceneStringField(DOC_ID_FIELD, d.id, Store.YES))
+    metadata.add(mkOdinsonDocIdField(d.id, store = true))
 
     for {
       odinsonField <- other
@@ -143,10 +164,16 @@ class OdinsonIndexWriter(
     nestedMetadata ++ Seq(metadata)
   }
 
+  /** Creates an [[org.apache.lucene.document.Document]] for an [[ai.lum.odinson.Sentence]].
+    *
+    * @param s         An Odinson Sentence
+    * @param docId The ID of the Odinson Document containing this Sentence.
+    * @param sentId The ID for this Sentence.  Unique at the Odinson Document level.
+    */
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): LuceneDocument = {
     val sent = new LuceneDocument
-    // add sentence metadata
-    sent.add(new LuceneStoredField(DOC_ID_FIELD, docId))
+    // add sentence metadata (odinson doc ID, etc)
+    sent.add(mkOdinsonDocIdField(docId, store = true))
     sent.add(new LuceneStoredField(SENT_ID_FIELD, sentId)) // FIXME should this be a number?
     sent.add(new LuceneNumericDocValuesField(SENT_LENGTH_FIELD, s.numTokens))
     // add fields
@@ -250,9 +277,12 @@ class OdinsonIndexWriter(
     }
   }
 
-  def mkNestedDocument(nested: OdinsonNestedField): LuceneDocument = {
+  def mkNestedDocument(nested: OdinsonNestedField, odinsonDocId: String): LuceneDocument = {
     val nestedMetadata = new LuceneDocument
     nestedMetadata.add(new LuceneStringField(OdinsonIndexWriter.NAME, nested.name, Store.NO))
+    // remember the odinson doc for this nested field, so that it can be easily deleted or gathered
+    nestedMetadata.add(mkOdinsonDocIdField(odinsonDocId, store = false))
+
     nestedMetadata.add(new LuceneStringField(
       OdinsonIndexWriter.TYPE,
       OdinsonIndexWriter.NESTED_TYPE,
