@@ -122,4 +122,46 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
     index.close()
   }
 
+  it should "incrementally delete Odinson Documents from an open index" in {
+    var index = OdinsonIndex.fromConfig(testConfig)
+
+    // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
+    val pies = getDocument("tp-pies")
+    index.indexOdinsonDoc(pies)
+
+    val odinsonDocId = pies.id
+    index.numDocs() shouldBe 4 // # of lucene docs
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+
+    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+    index.deleteOdinsonDoc(odinsonDocId)
+
+    index.numDocs() shouldBe 0
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
+    index.close()
+  }
+
+  it should "incrementally delete Odinson Documents from a previously closed index" in {
+    var index = OdinsonIndex.fromConfig(testConfig)
+
+    // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
+    val pies = getDocument("tp-pies")
+    index.indexOdinsonDoc(pies)
+
+    val odinsonDocId = pies.id
+    index.numDocs() shouldBe 4 // # of lucene docs
+    index.close()
+
+    index = OdinsonIndex.fromConfig(testConfig)
+    index.numDocs() shouldBe 4 // # of lucene docs
+
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+
+    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+    index.deleteOdinsonDoc(odinsonDocId)
+
+    index.numDocs() shouldBe 0
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
+    index.close()
+  }
 }

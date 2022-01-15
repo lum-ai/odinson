@@ -12,8 +12,16 @@ import com.typesafe.config.Config
 import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
-import org.apache.lucene.index.{ Fields, IndexReader }
-import org.apache.lucene.search.{ Collector, CollectorManager, Query, TopDocs }
+import org.apache.lucene.index.{ Fields, IndexReader, Term }
+import org.apache.lucene.search.{
+  Collector,
+  CollectorManager,
+  TopDocs,
+  TermQuery,
+  BooleanClause,
+  BooleanQuery,
+  Query
+}
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 
 import java.nio.file.Paths
@@ -42,8 +50,36 @@ trait OdinsonIndex {
 
   def indexOdinsonDoc(doc: OdinsonDocument): Unit
 
+  /** Removes all `org.apache.lucene.document.Document`s representing an [[ai.lum.odinson.Document]] (including metadata).
+    * @param odinsonDocId The ID of the Odinson Document to remove from the index.
+    */
+  def deleteOdinsonDoc(odinsonDocId: String): Unit
+
+  /** Creates an `org.apache.lucene.search.Query` to collect all `org.apache.lucene.document.Document`s associated with some [[ai.lum.odinson.Document]].
+    * @param odinsonDocId The ID of the Odinson Document for which to collect all of its component `org.apache.lucene.document.Document`s.
+    */
+  def mkAllLuceneDocsForQuery(odinsonDocId: String): Query = {
+    val queryBuilder = new BooleanQuery.Builder()
+    queryBuilder.add(
+      new BooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, odinsonDocId)),
+        BooleanClause.Occur.MUST
+      )
+    )
+    queryBuilder.build()
+  }
+
+  /** Collects IDs for all `org.apache.lucene.document.Document`s representing some [[ai.lum.odinson.Document]] in the index.
+    * @param odinsonDocId The ID of the Odinson Document for which to collect all of its component `org.apache.lucene.document.Document` IDs.
+    */
+  def luceneDocIdsFor(odinsonDocId: String): Seq[Int] = {
+    val query = mkAllLuceneDocsForQuery(odinsonDocId)
+    search(query).scoreDocs.map(_.doc)
+  }
+
   def write(block: java.util.Collection[LuceneDocument]): Unit
 
+  // FIXME: use a constant value for default value of `limit` that represents largest possible value
   def search(query: Query, limit: Int = 1000000000): TopDocs
 
   def search[CollectorType <: Collector, ResultType](

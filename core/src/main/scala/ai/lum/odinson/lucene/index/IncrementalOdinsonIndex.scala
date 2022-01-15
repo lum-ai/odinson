@@ -20,12 +20,15 @@ import org.apache.lucene.index.{
 }
 import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.search.{
+  BooleanClause,
+  BooleanQuery,
   Collector,
   CollectorManager,
   IndexSearcher,
-  Query,
   SearcherManager,
-  TopDocs
+  TopDocs,
+  TermQuery,
+  Query
 }
 import org.apache.lucene.store.Directory
 import org.slf4j.{ Logger, LoggerFactory }
@@ -94,15 +97,18 @@ class IncrementalOdinsonIndex(
         f(closeableSearcherHolder.searcher)
       }
     } catch {
-      case _: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-//      case e: Throwable => {
-//        e.printStackTrace()
-//        throw e
+      case e: Throwable => throw new RuntimeException(s"Error using searcher: ${e.getStackTrace}")
     }
   }
 
   override def indexOdinsonDoc(doc: OdinsonDocument): Unit = {
     write(odinsonWriter.mkDocumentBlock(doc).asJava)
+  }
+
+  override def deleteOdinsonDoc(odinsonDocId: String): Unit = {
+    val query = mkAllLuceneDocsForQuery(odinsonDocId)
+    odinsonWriter.writer.deleteDocuments(query)
+    refresh()
   }
 
   override def lazyIdGetter(luceneDocId: Int): LazyIdGetter = {
@@ -208,6 +214,7 @@ class IncrementalOdinsonIndex(
 
   override def refresh(): Unit = {
     odinsonWriter.flush()
+    // FIXME: do we need to odinsonWriter.commit()?
     manager.maybeRefresh()
   }
 
