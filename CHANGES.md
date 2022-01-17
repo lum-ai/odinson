@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Support for deleting Odinson Documents (and all associated lucene documents capturing metadata, etc.) from an index via `OdinsonIndex.deleteOdinsonDoc(odinsonDocId)`.
 - `OdinsonIndex.usingIndex(conf: Config)` context manager (ensure an index gets closed)
+- `ExtractorEngine.usingEngine(conf: Config)` context manager (ensure an engine's index and state get closed)
  
 ## [0.6.0] - 2021-11-22
 ### Added
