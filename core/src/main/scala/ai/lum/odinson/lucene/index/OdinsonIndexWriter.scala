@@ -154,13 +154,16 @@ class OdinsonIndexWriter(
       OdinsonIndexWriter.PARENT_TYPE,
       Store.NO
     ))
-    metadata.add(mkOdinsonDocIdField(d.id, store = true))
+    metadata.add(new LuceneStoredField(DOC_ID_FIELD, d.id))
+    // FIXME: remove
+    //metadata.add(mkOdinsonDocIdField(d.id, store = true))
 
     for {
       odinsonField <- other
       luceneField <- mkLuceneFields(odinsonField, isMetadata = true)
     } metadata.add(luceneField)
-
+    // NOTE: metadata must come last in the block 
+    // for our block join query to match
     nestedMetadata ++ Seq(metadata)
   }
 
@@ -173,7 +176,9 @@ class OdinsonIndexWriter(
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): LuceneDocument = {
     val sent = new LuceneDocument
     // add sentence metadata (odinson doc ID, etc)
-    sent.add(mkOdinsonDocIdField(docId, store = true))
+    sent.add(new LuceneStoredField(DOC_ID_FIELD, docId))
+    // FIXME: remove
+    // sent.add(mkOdinsonDocIdField(docId, store = true))
     sent.add(new LuceneStoredField(SENT_ID_FIELD, sentId)) // FIXME should this be a number?
     sent.add(new LuceneNumericDocValuesField(SENT_LENGTH_FIELD, s.numTokens))
     // add fields
@@ -281,7 +286,8 @@ class OdinsonIndexWriter(
     val nestedMetadata = new LuceneDocument
     nestedMetadata.add(new LuceneStringField(OdinsonIndexWriter.NAME, nested.name, Store.NO))
     // remember the odinson doc for this nested field, so that it can be easily deleted or gathered
-    nestedMetadata.add(mkOdinsonDocIdField(odinsonDocId, store = false))
+    // FIXME: remove
+    // nestedMetadata.add(mkOdinsonDocIdField(odinsonDocId, store = false))
 
     nestedMetadata.add(new LuceneStringField(
       OdinsonIndexWriter.TYPE,

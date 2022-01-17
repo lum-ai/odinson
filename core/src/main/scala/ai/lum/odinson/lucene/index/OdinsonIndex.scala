@@ -13,6 +13,10 @@ import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.index.{ Fields, IndexReader, Term }
+import  org.apache.lucene.search.join.{ 
+  QueryBitSetProducer,
+  ToChildBlockJoinQuery
+}
 import org.apache.lucene.search.{
   Collector,
   CollectorManager,
@@ -59,14 +63,18 @@ trait OdinsonIndex {
     * @param odinsonDocId The ID of the Odinson Document for which to collect all of its component `org.apache.lucene.document.Document`s.
     */
   def mkAllLuceneDocsForQuery(odinsonDocId: String): Query = {
-    val queryBuilder = new BooleanQuery.Builder()
-    queryBuilder.add(
-      new BooleanClause(
-        new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, odinsonDocId)),
-        BooleanClause.Occur.MUST
+    val query = {
+      val queryBuilder = new BooleanQuery.Builder()
+      queryBuilder.add(
+        new BooleanClause(
+          new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, odinsonDocId)),
+          BooleanClause.Occur.MUST
+        )
       )
-    )
-    queryBuilder.build()
+      queryBuilder.build()
+    }
+
+    new ToChildBlockJoinQuery(query, new QueryBitSetProducer(query))
   }
 
   /** Collects IDs for all `org.apache.lucene.document.Document`s representing some [[ai.lum.odinson.Document]] in the index.
