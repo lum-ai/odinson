@@ -106,8 +106,12 @@ class IncrementalOdinsonIndex(
   }
 
   override def deleteOdinsonDoc(odinsonDocId: String): Unit = {
-    val query = mkAllLuceneDocsForQuery(odinsonDocId)
-    odinsonWriter.writer.deleteDocuments(query)
+    val q1 = mkDocIdQueryFor(odinsonDocId)
+    val q2 = mkChildrenQueryFor(odinsonDocId)
+    // delete children
+    odinsonWriter.writer.deleteDocuments(q2)
+    // delete final doc in block
+    odinsonWriter.writer.deleteDocuments(q1)
     refresh()
   }
 

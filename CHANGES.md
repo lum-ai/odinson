@@ -6,12 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [0.7.0] - 2022-01-17
+## [0.6.1] - 2022-01-18
 
 ### Added
 - Support for deleting Odinson Documents (and all associated lucene documents capturing metadata, etc.) from an index via `OdinsonIndex.deleteOdinsonDoc(odinsonDocId)`.
-### Changed
-- Lucene Documents for `ai.lum.odinson.Sentence`s and nested metadata fields now include indexed doc IDs, so that all Lucene docs used to represent an Odinson Document are easily retrievable.  **This is a breaking index change**. 
  
 ## [0.6.0] - 2021-11-22
 ### Added

@@ -154,7 +154,6 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
 
     index = OdinsonIndex.fromConfig(testConfig)
     index.numDocs() shouldBe 4 // # of lucene docs
-
     index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
 
     // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
@@ -162,6 +161,46 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
 
     index.numDocs() shouldBe 0
     index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
+    index.close()
+  }
+
+  it should "incrementally delete an Odinson Document from a previously closed index containing multiple documents" in {
+    var index = OdinsonIndex.fromConfig(testConfig)
+
+    // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
+    val pies = getDocument("tp-pies")
+    index.indexOdinsonDoc(pies)
+
+    val odinsonDocId = pies.id
+    index.numDocs() shouldBe 4 // # of lucene docs
+
+    val briggs = getDocument("tp-briggs")
+    index.indexOdinsonDoc(briggs)
+    val totalDocs = index.numDocs()
+    totalDocs should be > 4
+    index.close()
+
+    index = OdinsonIndex.fromConfig(testConfig)
+    index.numDocs() should be > 4
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+
+    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+    index.deleteOdinsonDoc(odinsonDocId)
+
+    val remaining = totalDocs - 4
+    index.numDocs() shouldBe remaining
+    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
+    index.close()
+  }
+
+  it should "not crash if asked to incrementally delete a non-existent Odinson Document" in {
+    var index = OdinsonIndex.fromConfig(testConfig)
+
+    // the index is empty
+    index.numDocs() shouldBe 0
+    // while no such doc exists,
+    // this should not cause an error
+    noException should be thrownBy index.deleteOdinsonDoc("tp-pies")
     index.close()
   }
 }

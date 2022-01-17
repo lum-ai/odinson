@@ -62,31 +62,42 @@ trait OdinsonIndex {
     */
   def deleteOdinsonDoc(odinsonDocId: String): Unit
 
-  /** Creates an `org.apache.lucene.search.Query` to collect all `org.apache.lucene.document.Document`s associated with some [[ai.lum.odinson.Document]].
-    * @param odinsonDocId The ID of the Odinson Document for which to collect all of its component `org.apache.lucene.document.Document`s.
+  /** Creates an `org.apache.lucene.search.Query` matching the final document in a block representing some [[ai.lum.odinson.Document]].  The match is based on the `ai.lum.odinson.Document.id` field.
+    * @param odinsonDocId The ID of the Odinson Document associated with a block of Lucene documents.
     */
-  def mkAllLuceneDocsForQuery(odinsonDocId: String): Query = {
-    val query = {
-      val queryBuilder = new BooleanQuery.Builder()
-      queryBuilder.add(
-        new BooleanClause(
-          new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, odinsonDocId)),
-          BooleanClause.Occur.MUST
-        )
+  def mkDocIdQueryFor(odinsonDocId: String): Query = {
+    // query to identify the last lucene doc in the block
+    val queryBuilder = new BooleanQuery.Builder()
+    queryBuilder.add(
+      new BooleanClause(
+        new TermQuery(new Term(OdinsonIndexWriter.DOC_ID_FIELD, odinsonDocId)),
+        BooleanClause.Occur.MUST
       )
-      queryBuilder.build()
-    }
-    // child q, parent filter, score mode
-    new ToParentBlockJoinQuery(new MatchAllDocsQuery(), new QueryBitSetProducer(query), ScoreMode.Max)
-    //new ToChildBlockJoinQuery(query, new QueryBitSetProducer(new MatchAllDocsQuery()))
+    )
+    queryBuilder.build()
+  }
+
+  /** Creates an `org.apache.lucene.search.Query` matching all but the final document in a block representing some [[ai.lum.odinson.Document]] (i.e., the children of that block).  The match is based on the `ai.lum.odinson.Document.id` field.
+    * @param odinsonDocId The ID of the Odinson Document associated with a block of Lucene documents.
+    */
+  def mkChildrenQueryFor(odinsonDocId: String): Query = {
+    val parentQuery = mkDocIdQueryFor(odinsonDocId)
+    val parentsFilter = new QueryBitSetProducer(parentQuery)
+    // identify all children in a doc based on a field in the final doc
+    new ToChildBlockJoinQuery(parentQuery, parentsFilter)
   }
 
   /** Collects IDs for all `org.apache.lucene.document.Document`s representing some [[ai.lum.odinson.Document]] in the index.
     * @param odinsonDocId The ID of the Odinson Document for which to collect all of its component `org.apache.lucene.document.Document` IDs.
     */
   def luceneDocIdsFor(odinsonDocId: String): Seq[Int] = {
-    val query = mkAllLuceneDocsForQuery(odinsonDocId)
-    search(query).scoreDocs.map(_.doc)
+    // final lucene doc in block
+    val parentQuery = mkDocIdQueryFor(odinsonDocId)
+    // all but final lucene doc in block
+    val childrenQuery = mkChildrenQueryFor(odinsonDocId)
+    val res = search(childrenQuery).scoreDocs ++ search(parentQuery).scoreDocs
+    // get IDs
+    res.map(_.doc)
   }
 
   def write(block: java.util.Collection[LuceneDocument]): Unit
@@ -112,7 +123,7 @@ trait OdinsonIndex {
 
   def doc(docId: Int): LuceneDocument
 
-  def doc(docID: Int, fieldNames: Set[String]): LuceneDocument
+  def doc(docId: Int, fieldNames: Set[String]): LuceneDocument
 
   def lazyIdGetter(luceneDocId: Int): LazyIdGetter
 
