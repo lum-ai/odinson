@@ -91,116 +91,108 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "incrementally add Odinson Documents to an open index" in {
-    val index = OdinsonIndex.fromConfig(testConfig)
+    OdinsonIndex.usingIndex(testConfig) { index => 
 
-    val aliens = getDocument("alien-species")
-    index.indexOdinsonDoc(aliens)
+      val aliens = getDocument("alien-species")
+      index.indexOdinsonDoc(aliens)
 
-    index.numDocs() shouldBe 2 // # of lucenen docs
+      index.numDocs() shouldBe 2 // # of lucenen docs
 
-    val gummyBears = getDocument("gummy-bears-consumption")
-    index.indexOdinsonDoc(gummyBears)
+      val gummyBears = getDocument("gummy-bears-consumption")
+      index.indexOdinsonDoc(gummyBears)
 
-    index.numDocs() shouldBe 4 // # number of lucene docs
-    index.close()
+      index.numDocs() shouldBe 4 // # number of lucene docs
+    }
   }
 
   it should "incrementally write Odinson Documents to a previously closed index" in {
-    var index = OdinsonIndex.fromConfig(testConfig)
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      val aliens = getDocument("alien-species")
+      index.indexOdinsonDoc(aliens)
 
-    val aliens = getDocument("alien-species")
-    index.indexOdinsonDoc(aliens)
+      index.numDocs() shouldBe 2 // # of lucene docs
+    }
 
-    index.numDocs() shouldBe 2 // # of lucene docs
-    index.close()
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      val gummyBears = getDocument("gummy-bears-consumption")
+      index.indexOdinsonDoc(gummyBears)
 
-    index = OdinsonIndex.fromConfig(testConfig)
-    val gummyBears = getDocument("gummy-bears-consumption")
-    index.indexOdinsonDoc(gummyBears)
-
-    index.numDocs() shouldBe 4 // # number of lucene docs
-    index.close()
+      index.numDocs() shouldBe 4 // # number of lucene docs
+    }
   }
 
   it should "incrementally delete Odinson Documents from an open index" in {
-    var index = OdinsonIndex.fromConfig(testConfig)
-
     // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
     val pies = getDocument("tp-pies")
-    index.indexOdinsonDoc(pies)
+    OdinsonIndex.usingIndex(testConfig) { index => 
 
-    val odinsonDocId = pies.id
-    index.numDocs() shouldBe 4 // # of lucene docs
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+      index.indexOdinsonDoc(pies)
 
-    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
-    index.deleteOdinsonDoc(odinsonDocId)
+      val odinsonDocId = pies.id
+      index.numDocs() shouldBe 4 // # of lucene docs
+      index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
 
-    index.numDocs() shouldBe 0
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
-    index.close()
+      // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+      index.deleteOdinsonDoc(odinsonDocId)
+
+      index.numDocs() shouldBe 0
+      index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
+    }
   }
 
   it should "incrementally delete Odinson Documents from a previously closed index" in {
-    var index = OdinsonIndex.fromConfig(testConfig)
-
     // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
     val pies = getDocument("tp-pies")
-    index.indexOdinsonDoc(pies)
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      index.indexOdinsonDoc(pies)
 
-    val odinsonDocId = pies.id
-    index.numDocs() shouldBe 4 // # of lucene docs
-    index.close()
+      index.numDocs() shouldBe 4 // # of lucene docs
+    }
+    OdinsonIndex.usingIndex(testConfig) { index =>
+      index.numDocs() shouldBe 4 // # of lucene docs
+      index.luceneDocIdsFor(pies.id).size shouldBe 4
 
-    index = OdinsonIndex.fromConfig(testConfig)
-    index.numDocs() shouldBe 4 // # of lucene docs
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+      // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+      index.deleteOdinsonDoc(pies.id)
 
-    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
-    index.deleteOdinsonDoc(odinsonDocId)
-
-    index.numDocs() shouldBe 0
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
-    index.close()
+      index.numDocs() shouldBe 0
+      index.luceneDocIdsFor(pies.id).size shouldBe 0
+    }
   }
 
   it should "incrementally delete an Odinson Document from a previously closed index containing multiple documents" in {
-    var index = OdinsonIndex.fromConfig(testConfig)
-
     // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
+    // we'll index and delete this one
     val pies = getDocument("tp-pies")
-    index.indexOdinsonDoc(pies)
-
-    val odinsonDocId = pies.id
-    index.numDocs() shouldBe 4 // # of lucene docs
-
+    // we'll index this one, but not delete it
     val briggs = getDocument("tp-briggs")
-    index.indexOdinsonDoc(briggs)
-    val totalDocs = index.numDocs()
-    totalDocs should be > 4
-    index.close()
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      index.indexOdinsonDoc(pies)
+      index.numDocs() shouldBe 4 // # of lucene docs
+      index.indexOdinsonDoc(briggs)
+      index.numDocs() should be > 4
+    }
 
-    index = OdinsonIndex.fromConfig(testConfig)
-    index.numDocs() should be > 4
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 4
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      val totalDocs = index.numDocs()
+      totalDocs should be > 4
+      index.luceneDocIdsFor(pies.id).size shouldBe 4
+      // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
+      index.deleteOdinsonDoc(pies.id)
 
-    // Deleting an Odinson document should delete all of its sentences, as well as its metadata (including any nested fields)
-    index.deleteOdinsonDoc(odinsonDocId)
-
-    val remaining = totalDocs - 4
-    index.numDocs() shouldBe remaining
-    index.luceneDocIdsFor(odinsonDocId).size shouldBe 0
-    index.close()
+      val remaining = totalDocs - 4
+      index.numDocs() shouldBe remaining
+      index.luceneDocIdsFor(pies.id).size shouldBe 0
+    }
   }
 
   it should "not crash if asked to incrementally delete a non-existent Odinson Document" in {
-    var index = OdinsonIndex.fromConfig(testConfig)
-
-    // the index is empty
-    index.numDocs() shouldBe 0
-    // while no such doc exists,
-    // this should not cause an error
-    noException should be thrownBy index.deleteOdinsonDoc("tp-pies")
-    index.close()
+    OdinsonIndex.usingIndex(testConfig) { index => 
+      // the index is empty
+      index.numDocs() shouldBe 0
+      // while no such doc exists,
+      // this should not cause an error
+      noException should be thrownBy index.deleteOdinsonDoc("tp-pies")
+    }
   }
 }

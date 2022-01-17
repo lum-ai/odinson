@@ -226,4 +226,8 @@ object OdinsonIndex {
 
   }
 
+  /** Context manager to ensure index gets closed.
+    */
+  def usingIndex[T](config: Config)(f: OdinsonIndex => T): T = using(fromConfig(config))(f)
+
 }
