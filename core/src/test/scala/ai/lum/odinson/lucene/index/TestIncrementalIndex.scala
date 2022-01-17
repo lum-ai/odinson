@@ -1,8 +1,10 @@
 package ai.lum.odinson.lucene.index
 
+import ai.lum.odinson.metadata.MetadataCompiler
 import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.IndexSettings
 import ai.lum.odinson.utils.exceptions.OdinsonException
+import ai.lum.odinson.{ ExtractorEngine, TokensField }
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import org.apache.lucene.store.FSDirectory
 import org.scalatest.BeforeAndAfterEach
@@ -193,6 +195,42 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
       // while no such doc exists,
       // this should not cause an error
       noException should be thrownBy index.deleteOdinsonDoc("tp-pies")
+    }
+  }
+
+  it should "update an index with a new version of an Odinson Document" in {
+    ExtractorEngine.usingEngine(testConfig) { engine =>
+      // "This must be where pies go to die."
+      // we'll index this doc and later update
+      val pies = getDocument("tp-pies")
+      val metadataFilter = MetadataCompiler.mkQuery("flavor contains 'cherry'")
+      val query = engine.mkFilteredQuery("[lemma=pie]", metadataFilter)
+      val index = engine.index
+      // the index is empty
+      index.numDocs() shouldBe 0
+      index.indexOdinsonDoc(pies)
+      // the query shouldn't match
+      engine.query(query).scoreDocs.length shouldBe 0
+
+      // let's replace that doc with one that will match the query
+      val flavorField = TokensField(name = "flavor", tokens = Seq("cherry"))
+      val cherryPies = pies.copy(metadata = pies.metadata ++ Seq(flavorField))
+      index.updateOdinsonDoc(cherryPies)
+      // the query should now match
+      val res = engine.query(query)
+      res.scoreDocs.length shouldBe 1
+    }
+  }
+
+  it should "not crash if asked to update a non-existent Odinson Document" in {
+    ExtractorEngine.usingEngine(testConfig) { engine =>
+      val pies = getDocument("tp-pies")
+      val index = engine.index
+      // the index is empty
+      index.numDocs() shouldBe 0
+      // while no such doc exists,
+      // this should not cause an error
+      noException should be thrownBy index.updateOdinsonDoc(pies)
     }
   }
 }

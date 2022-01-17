@@ -115,6 +115,11 @@ class IncrementalOdinsonIndex(
     refresh()
   }
 
+  override def updateOdinsonDoc(doc: OdinsonDocument): Unit = {
+    deleteOdinsonDoc(doc.id)
+    indexOdinsonDoc(doc)
+  }
+
   override def lazyIdGetter(luceneDocId: Int): LazyIdGetter = {
     new LazyIdGetter(this, luceneDocId)
   }

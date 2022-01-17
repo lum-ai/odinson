@@ -62,6 +62,11 @@ trait OdinsonIndex {
     */
   def deleteOdinsonDoc(odinsonDocId: String): Unit
 
+  /** Updates index entries for an [[ai.lum.odinson.Document]] by first removing all `org.apache.lucene.document.Document`s representing an [[ai.lum.odinson.Document]] (including metadata) with the same ID.
+    * @param odinsonDocId The ID of the Odinson Document to update from the index.
+    */
+  def updateOdinsonDoc(doc: OdinsonDocument): Unit
+
   /** Creates an `org.apache.lucene.search.Query` matching the final document in a block representing some [[ai.lum.odinson.Document]].  The match is based on the `ai.lum.odinson.Document.id` field.
     * @param odinsonDocId The ID of the Odinson Document associated with a block of Lucene documents.
     */
