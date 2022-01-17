@@ -154,9 +154,9 @@ class OdinsonIndexWriter(
       OdinsonIndexWriter.PARENT_TYPE,
       Store.NO
     ))
-    metadata.add(new LuceneStoredField(DOC_ID_FIELD, d.id))
+    //metadata.add(new LuceneStoredField(DOC_ID_FIELD, d.id))
     // FIXME: remove
-    //metadata.add(mkOdinsonDocIdField(d.id, store = true))
+    metadata.add(mkOdinsonDocIdField(d.id, store = true))
 
     for {
       odinsonField <- other

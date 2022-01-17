@@ -15,16 +15,19 @@ import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.index.{ Fields, IndexReader, Term }
 import  org.apache.lucene.search.join.{ 
   QueryBitSetProducer,
-  ToChildBlockJoinQuery
+  ScoreMode,
+  ToChildBlockJoinQuery,
+  ToParentBlockJoinQuery
 }
 import org.apache.lucene.search.{
-  Collector,
-  CollectorManager,
-  TopDocs,
-  TermQuery,
   BooleanClause,
   BooleanQuery,
-  Query
+  Collector,
+  CollectorManager,
+  MatchAllDocsQuery,
+  Query,
+  TermQuery,
+  TopDocs,
 }
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 
@@ -73,8 +76,9 @@ trait OdinsonIndex {
       )
       queryBuilder.build()
     }
-
-    new ToChildBlockJoinQuery(query, new QueryBitSetProducer(query))
+    // child q, parent filter, score mode
+    new ToParentBlockJoinQuery(new MatchAllDocsQuery(), new QueryBitSetProducer(query), ScoreMode.Max)
+    //new ToChildBlockJoinQuery(query, new QueryBitSetProducer(new MatchAllDocsQuery()))
   }
 
   /** Collects IDs for all `org.apache.lucene.document.Document`s representing some [[ai.lum.odinson.Document]] in the index.
