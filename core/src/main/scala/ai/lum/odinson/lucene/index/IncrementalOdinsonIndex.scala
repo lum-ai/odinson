@@ -97,7 +97,7 @@ class IncrementalOdinsonIndex(
         f(closeableSearcherHolder.searcher)
       }
     } catch {
-      case e: Throwable => throw new RuntimeException(s"Error using searcher: ${e.getStackTrace}")
+      case e: Throwable => throw OdinsonException(s"Error using searcher", e)
     }
   }
 
