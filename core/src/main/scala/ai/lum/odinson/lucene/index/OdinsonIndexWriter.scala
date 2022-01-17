@@ -86,7 +86,7 @@ class OdinsonIndexWriter(
         // With large document collections, it may be necessary to split documents across many subdirectories
         // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
         val fileField: OdinsonField =
-          OdinsonStringField(name = "fileName", string = f.getName)
+          OdinsonStringField(name = FILENAME_FIELD, string = f.getName)
         val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
         mkDocumentBlock(doc)
       } else {
@@ -338,6 +338,7 @@ object OdinsonIndexWriter {
   val DOC_ID_FIELD = "docId"
   val SENT_ID_FIELD = "sentId"
   val SENT_LENGTH_FIELD = "numWords"
+  val FILENAME_FIELD = "fileName"
 
   // Constants for building the queries for metadata documents -- both the parent as well as the
   // nested metadata
