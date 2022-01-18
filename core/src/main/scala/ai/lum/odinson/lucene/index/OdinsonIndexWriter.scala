@@ -148,7 +148,7 @@ class OdinsonIndexWriter(
       odinsonField <- other
       luceneField <- mkLuceneFields(odinsonField, isMetadata = true)
     } metadata.add(luceneField)
-    // NOTE: metadata must come last in the block 
+    // NOTE: metadata must come last in the block
     // for our block join query to match
     nestedMetadata ++ Seq(metadata)
   }

@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer
 import org.apache.lucene.document.{ Document => LuceneDocument }
 import org.apache.lucene.index.{ Fields, IndexReader, Term }
-import  org.apache.lucene.search.join.{ 
+import org.apache.lucene.search.join.{
   QueryBitSetProducer,
   ScoreMode,
   ToChildBlockJoinQuery,
@@ -27,7 +27,7 @@ import org.apache.lucene.search.{
   MatchAllDocsQuery,
   Query,
   TermQuery,
-  TopDocs,
+  TopDocs
 }
 import org.apache.lucene.store.{ Directory, FSDirectory, IOContext, RAMDirectory }
 

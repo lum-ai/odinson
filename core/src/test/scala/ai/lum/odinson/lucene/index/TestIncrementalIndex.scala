@@ -93,8 +93,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "incrementally add Odinson Documents to an open index" in {
-    OdinsonIndex.usingIndex(testConfig) { index => 
-
+    OdinsonIndex.usingIndex(testConfig) { index =>
       val aliens = getDocument("alien-species")
       index.indexOdinsonDoc(aliens)
 
@@ -108,14 +107,14 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "incrementally write Odinson Documents to a previously closed index" in {
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       val aliens = getDocument("alien-species")
       index.indexOdinsonDoc(aliens)
 
       index.numDocs() shouldBe 2 // # of lucene docs
     }
 
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       val gummyBears = getDocument("gummy-bears-consumption")
       index.indexOdinsonDoc(gummyBears)
 
@@ -126,8 +125,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   it should "incrementally delete Odinson Documents from an open index" in {
     // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
     val pies = getDocument("tp-pies")
-    OdinsonIndex.usingIndex(testConfig) { index => 
-
+    OdinsonIndex.usingIndex(testConfig) { index =>
       index.indexOdinsonDoc(pies)
 
       val odinsonDocId = pies.id
@@ -145,7 +143,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   it should "incrementally delete Odinson Documents from a previously closed index" in {
     // doc w/ 1 sentence & metadata w/ 2 sets of nested fields
     val pies = getDocument("tp-pies")
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       index.indexOdinsonDoc(pies)
 
       index.numDocs() shouldBe 4 // # of lucene docs
@@ -168,14 +166,14 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
     val pies = getDocument("tp-pies")
     // we'll index this one, but not delete it
     val briggs = getDocument("tp-briggs")
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       index.indexOdinsonDoc(pies)
       index.numDocs() shouldBe 4 // # of lucene docs
       index.indexOdinsonDoc(briggs)
       index.numDocs() should be > 4
     }
 
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       val totalDocs = index.numDocs()
       totalDocs should be > 4
       index.luceneDocIdsFor(pies.id).size shouldBe 4
@@ -189,7 +187,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "not crash if asked to incrementally delete a non-existent Odinson Document" in {
-    OdinsonIndex.usingIndex(testConfig) { index => 
+    OdinsonIndex.usingIndex(testConfig) { index =>
       // the index is empty
       index.numDocs() shouldBe 0
       // while no such doc exists,
@@ -209,7 +207,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
       index.indexOdinsonDoc(majorBriggs)
       val oldCount = index.numDocs()
       // let's remove some sentences and update the index
-      val minorBriggs = majorBriggs.copy(sentences=Seq(majorBriggs.sentences.head))
+      val minorBriggs = majorBriggs.copy(sentences = Seq(majorBriggs.sentences.head))
       index.updateOdinsonDoc(minorBriggs)
       index.numDocs() should be < oldCount
     }

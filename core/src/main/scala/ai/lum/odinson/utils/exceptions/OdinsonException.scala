@@ -11,7 +11,9 @@ class OdinsonException(message: String, cause: Throwable) extends RuntimeExcepti
 }
 
 object OdinsonException {
+
   def apply(message: String, cause: Throwable): OdinsonException = {
     new OdinsonException(message, cause)
   }
+
 }
