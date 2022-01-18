@@ -71,7 +71,7 @@ class Mention(
   def mentionFields: Map[String, Array[String]] = _mentionFields
 
   def text: String = _text match {
-    case noTxt if noTxt.isEmpty => throw new OdinsonException("Mention has not yet been populated")
+    case noTxt if noTxt.isEmpty => throw OdinsonException("Mention has not yet been populated")
     case txt                    => txt.get
   }
 
@@ -94,7 +94,7 @@ class Mention(
 
     // The user asked for a higher level of population, but there is no DataGatherer to do it.
     if (localDG.isEmpty) {
-      throw new OdinsonException("Unable to populate Mention fields, no DataGatherer provided.")
+      throw OdinsonException("Unable to populate Mention fields, no DataGatherer provided.")
     }
 
     // The fields are determined by the verbosity level and what's available in the index

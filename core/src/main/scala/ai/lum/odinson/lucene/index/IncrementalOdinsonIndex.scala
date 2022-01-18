@@ -169,7 +169,7 @@ class IncrementalOdinsonIndex(
   ): Array[String] = {
 
     val field = doc.getField(fieldName)
-    if (field == null) throw new OdinsonException(
+    if (field == null) throw OdinsonException(
       s"Attempted to getTokens from field that was not stored: $fieldName"
     )
     val text = field.stringValue
@@ -212,7 +212,7 @@ class IncrementalOdinsonIndex(
     analyzer: Analyzer
   ): Array[String] = {
     val field = doc.getField(fieldName)
-    if (field == null) throw new OdinsonException(
+    if (field == null) throw OdinsonException(
       s"Attempted to getTokens from field that was not stored: $fieldName"
     )
     val text = field.stringValue

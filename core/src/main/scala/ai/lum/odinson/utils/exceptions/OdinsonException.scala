@@ -5,15 +5,14 @@ package ai.lum.odinson.utils.exceptions
   * @param message
   * @param cause
   */
-class OdinsonException(message: String, cause: Throwable) extends RuntimeException(message) {
-  if (cause != null) { initCause(cause) }
-  def this(message: String) = this(message, null)
+class OdinsonException(message: String, cause: Option[Throwable])
+    extends RuntimeException(message) {
+  cause.map(initCause)
 }
 
 object OdinsonException {
 
-  def apply(message: String, cause: Throwable): OdinsonException = {
-    new OdinsonException(message, cause)
-  }
+  def apply(message: String) = new OdinsonException(message, None)
+  def apply(message: String, cause: Throwable) = new OdinsonException(message, Some(cause))
 
 }

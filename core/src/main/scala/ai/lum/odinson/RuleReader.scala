@@ -290,7 +290,7 @@ class RuleReader(val compiler: QueryCompiler) {
     val query = ruleType match {
       case "basic" => compiler.compile(pattern)
       case "event" => compiler.compileEventQuery(pattern)
-      case t       => throw new OdinsonException(s"invalid rule type '$t'")
+      case t       => throw OdinsonException(s"invalid rule type '$t'")
     }
     // add the metadata filter if applicable, and return an extractor
     if (metadataFilterOpt.isEmpty) {
@@ -364,7 +364,7 @@ class RuleReader(val compiler: QueryCompiler) {
           .asScala
           .map { case (k, v) => k.toString -> processVar(v) }
           .toMap
-      case _ => throw new OdinsonException(s"invalid variables data: ${data}")
+      case _ => throw OdinsonException(s"invalid variables data: ${data}")
     }
   }
 
@@ -401,7 +401,7 @@ class RuleReader(val compiler: QueryCompiler) {
         rules.asScala.toSeq.flatMap { r =>
           makeOrImportRules(r, source, vars, metadataFilterOpt)
         }
-      case _ => throw new OdinsonException("invalid rules data")
+      case _ => throw OdinsonException("invalid rules data")
     }
   }
 
@@ -454,7 +454,7 @@ class RuleReader(val compiler: QueryCompiler) {
           fields.get(name).map(_.toString)
         // helper function to retrieve a required field
         def getRequiredField(name: String) =
-          getField(name).getOrElse(throw new OdinsonException(s"'$name' is required"))
+          getField(name).getOrElse(throw OdinsonException(s"'$name' is required"))
         // read fields
         val name = getRequiredField("name")
         val label = getField("label")
@@ -463,7 +463,7 @@ class RuleReader(val compiler: QueryCompiler) {
         val pattern = getRequiredField("pattern")
         // return rule
         Rule(name, label, ruleType, priority, pattern)
-      case _ => throw new OdinsonException("invalid rule data")
+      case _ => throw OdinsonException("invalid rule data")
     }
   }
 
@@ -480,7 +480,7 @@ class RuleReader(val compiler: QueryCompiler) {
 
   private def verifyImport(source: SituatedStream): Unit = {
     if (source.from == RuleSources.string) {
-      throw new OdinsonException("Imports are not supported for string-only rules")
+      throw OdinsonException("Imports are not supported for string-only rules")
     }
   }
 

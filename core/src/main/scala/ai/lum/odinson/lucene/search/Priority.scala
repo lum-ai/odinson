@@ -42,7 +42,7 @@ object Priority {
     case interval(n, m) => IntervalPriority(n.toInt, m.toInt)
     case lower(n)       => LowerBoundPriority(n.toInt)
     case sparse(ns)     => SparsePriority(ns.split(",").map(_.trim.toInt).toSet)
-    case p              => throw new OdinsonException(s"invalid priority '$p'")
+    case p              => throw OdinsonException(s"invalid priority '$p'")
   }
 
 }

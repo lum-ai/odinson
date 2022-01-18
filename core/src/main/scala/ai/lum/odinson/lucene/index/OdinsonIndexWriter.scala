@@ -262,7 +262,7 @@ class OdinsonIndexWriter(
           Seq(tokensField)
         }
 
-      case _ => throw new OdinsonException(s"Unsupported Field: ${f.getClass}")
+      case _ => throw OdinsonException(s"Unsupported Field: ${f.getClass}")
     }
   }
 
@@ -382,7 +382,7 @@ object OdinsonIndexWriter {
     val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
     if (!storedFields.contains(displayField)) {
-      throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
+      throw OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
     // see https://github.com/lum-ai/odinson/pull/337
     val writerConf = new IndexWriterConfig(new KeywordAnalyzer)

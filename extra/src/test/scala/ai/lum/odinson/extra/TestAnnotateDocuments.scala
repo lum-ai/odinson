@@ -35,7 +35,7 @@ class TestAnnotateDocuments extends FlatSpec with Matchers {
     FileUtils.copyDirectory(new File(srcTextDir), textDir.toFile)
   } catch {
     case e: IOException =>
-      throw new OdinsonException(s"Can't copy text directory $srcTextDir")
+      throw OdinsonException(s"Can't copy text directory $srcTextDir")
   }
 
   private def deleteDocs() = {

@@ -206,7 +206,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   def getSingleMentionFromRule(ms: Seq[Mention], rulename: String): Mention = {
     val opt = getMentionsFromRule(ms, rulename).headOption
     if (opt.isDefined) opt.get
-    else throw new OdinsonException(s"No rules found with rulename: $rulename")
+    else throw OdinsonException(s"No rules found with rulename: $rulename")
   }
 
   def getMentionsFromRule(ms: Seq[Mention], rulename: String): Seq[Mention] = {
@@ -418,7 +418,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     val trigger = m match {
       case e: EventMatch => e.trigger
       case s: StateMatch => s
-      case _             => throw new OdinsonException("Method only compatible with events")
+      case _             => throw OdinsonException("Method only compatible with events")
     }
     trigger.start shouldEqual start
     trigger.end shouldEqual end
@@ -436,7 +436,7 @@ class OdinsonTest extends FlatSpec with Matchers {
     val trigger = m match {
       case e: EventMatch => e.trigger
       case s: StateMatch => s
-      case _             => throw new OdinsonException("Method only compatible with events")
+      case _             => throw OdinsonException("Method only compatible with events")
     }
     engine.getStringForSpan(docID, trigger) shouldEqual (text)
   }

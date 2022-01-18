@@ -194,7 +194,7 @@ object OdinsonIndex {
     val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
     if (!storedFields.contains(displayField)) {
-      throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
+      throw OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
 
     val computeTotalHits = config.apply[Boolean]("odinson.computeTotalHits")

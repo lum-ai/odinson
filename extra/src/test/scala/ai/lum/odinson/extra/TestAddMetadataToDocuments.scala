@@ -31,7 +31,7 @@ class TestAddMetadataToDocuments extends OdinsonTest {
       FileUtils.copyDirectory(srcDir, tmpFolder);
     } catch {
       case e: IOException =>
-        throw new OdinsonException("Can't copy resources directory")
+        throw OdinsonException("Can't copy resources directory")
     }
 
     // verify that the documents do not have metadata
