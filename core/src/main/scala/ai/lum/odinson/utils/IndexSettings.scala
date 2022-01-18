@@ -3,7 +3,7 @@ package ai.lum.odinson.utils
 import java.io.IOException
 
 import ai.lum.common.TryWithResources.using
-import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 import org.apache.lucene.store.{ Directory, IOContext }
 import ujson.Value
 

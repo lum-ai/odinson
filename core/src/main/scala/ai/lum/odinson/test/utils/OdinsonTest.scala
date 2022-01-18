@@ -17,7 +17,7 @@ class OdinsonTest extends FlatSpec with Matchers {
   lazy val mruIdGetter = MostRecentlyUsed[Int, LazyIdGetter](NullIdGetter.apply)
 
   val defaultConfig = ConfigFactory.load("test.conf")
-  println(defaultConfig)
+
   val rawTokenField = defaultConfig.apply[String]("odinson.index.rawTokenField")
 
   def getDocumentFromJson(json: String): OdinsonDocument = OdinsonDocument.fromJson(json)

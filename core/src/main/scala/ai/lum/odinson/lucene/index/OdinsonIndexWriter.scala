@@ -22,7 +22,7 @@ import ai.lum.odinson.{
 }
 import com.typesafe.config.{ Config, ConfigValueFactory }
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer
+import org.apache.lucene.analysis.core.KeywordAnalyzer
 import org.apache.lucene.document.Field.Store
 import org.apache.lucene.document.{
   BinaryDocValuesField => LuceneBinaryDocValuesField,
@@ -59,7 +59,7 @@ class OdinsonIndexWriter(
   val displayField: String
 ) extends LazyLogging {
 
-  import ai.lum.odinson.OdinsonIndexWriter._
+  import ai.lum.odinson.lucene.index.OdinsonIndexWriter._
 
   def reader(): IndexReader = DirectoryReader.open(writer)
 
@@ -335,6 +335,13 @@ object OdinsonIndexWriter {
   val START_TOKEN = "[[XX_START]]"
   val END_TOKEN = "[[XX_END]]"
 
+  // User-defined metadata cannot currently be a StringField.  That said, there are StringFields in the
+  // metadata (the filename, etc.)
+  val STRING_FIELD_EXCEPTIONS = Set(DOC_ID_FIELD, OdinsonIndexWriter.TYPE)
+
+  def STRING_FIELD_WARNING(name: String) =
+    s"Metadata StringField <${name}> will not be queryable using the metadata query language"
+
   protected[index] def fromConfig(): OdinsonIndexWriter = {
     fromConfig(ConfigFactory.load())
   }
@@ -360,8 +367,8 @@ object OdinsonIndexWriter {
     if (!storedFields.contains(displayField)) {
       throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
-
-    val writerConf = new IndexWriterConfig(new WhitespaceAnalyzer)
+    // see https://github.com/lum-ai/odinson/pull/337
+    val writerConf = new IndexWriterConfig(new KeywordAnalyzer)
     writerConf.setOpenMode(OpenMode.CREATE_OR_APPEND)
     val writer = new IndexWriter(directory, writerConf)
 

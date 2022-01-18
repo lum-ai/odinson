@@ -6,7 +6,7 @@ import ai.lum.common.TryWithResources.using
 
 import scala.collection.mutable
 import org.apache.lucene.store.{ Directory, IOContext }
-import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 
 /** This vocabulary is meant for the labels of the edges of the dependency graph.
   *  This object maps a term_id (int) to a symbol (string).

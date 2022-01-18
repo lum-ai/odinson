@@ -4,7 +4,7 @@ import java.time.ZoneId
 import java.util.GregorianCalendar
 
 import ai.lum.common.RegexUtils._
-import ai.lum.odinson.OdinsonIndexWriter
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 import ai.lum.odinson.metadata.Ast.StringValue
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import org.apache.lucene.index.Term

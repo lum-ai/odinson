@@ -6,7 +6,7 @@ import ai.lum.odinson.lucene.OdinResults
 import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.test.utils.OdinsonTest
 
-class TestOdinsonParentQuery extends OdinsonTest {
+class TestOdinsonMetadataQuery extends OdinsonTest {
 
   // keys in ai.lum.odinson.utils.TestUtils.ExampleDocs.json
   val docNames: Seq[String] = Seq("tp-briggs", "tp-pies")
@@ -18,8 +18,8 @@ class TestOdinsonParentQuery extends OdinsonTest {
     // a simple Odinson pattern
     val pattern = "[lemma=pie]"
     // a query (using Lucene query syntax) that is executed against the document metadata
-    val parentQuery: String = "character contains 'NotAWord'"
-    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
+    val metadataQuery: String = "character contains 'NotAWord'"
+    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
     res.scoreDocs should have length 0
@@ -35,8 +35,8 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds and parent query succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String = "character contains '/S.*/ Agent'"
-    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
+    val metadataQuery: String = "character contains '/S.*/ Agent'"
+    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1
@@ -52,8 +52,8 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds and exact string match parent query succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String = """character == "Special Agent Dale Cooper""""
-    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
+    val metadataQuery: String = """character == "Special Agent Dale Cooper""""
+    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1
@@ -61,8 +61,9 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "return results when pattern succeeds and a two-field exact string match parent query succeeds" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String = """character == "Special Agent Dale Cooper" && show == "Twin Peaks""""
-    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
+    val metadataQuery: String =
+      """character == "Special Agent Dale Cooper" && show == "Twin Peaks""""
+    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 1
     res.scoreDocs should have length 1
@@ -70,9 +71,9 @@ class TestOdinsonParentQuery extends OdinsonTest {
 
   it should "not return results when pattern succeeds and one field of a two-field exact string match parent query fails (making the full parent query fail)" in {
     val pattern: String = "[lemma=pie]"
-    val parentQuery: String =
+    val metadataQuery: String =
       """character == "Special Agent Dale Cooper" && show == "Fire Walk With Me""""
-    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, parentQuery)
+    val odinsonQuery: OdinsonQuery = ee.mkFilteredQuery(pattern, metadataQuery)
     val res: OdinResults = ee.query(odinsonQuery)
     res.totalHits shouldBe 0
     res.scoreDocs should have length 0

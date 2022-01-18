@@ -6,7 +6,7 @@ import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
 import ai.lum.odinson.lucene._
-import ai.lum.odinson.lucene.index.OdinsonIndex
+import ai.lum.odinson.lucene.index.{ OdinsonIndex, OdinsonIndexWriter }
 import ai.lum.odinson.lucene.search._
 import ai.lum.odinson.state.{ MockState, State }
 import ai.lum.odinson.utils.MostRecentlyUsed
