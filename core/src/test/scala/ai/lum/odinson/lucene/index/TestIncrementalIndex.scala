@@ -196,7 +196,7 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
     }
   }
 
-  it should "update an index with a new version of an Odinson Document" in {
+  it should "update an index with a new version of an Odinson Document (respecting changes to sentences)" in {
     // index doc and then update with an abbreviated version
     ExtractorEngine.usingEngine(testConfig) { engine =>
       // we'll index this doc and later update
@@ -211,6 +211,9 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
       index.updateOdinsonDoc(minorBriggs)
       index.numDocs() should be < oldCount
     }
+  }
+
+  it should "update an index with a new version of an Odinson Document (respecting changes to metadata)" in {
     // index doc and then update with additional metadata
     ExtractorEngine.usingEngine(testConfig) { engine =>
       // "This must be where pies go to die."
