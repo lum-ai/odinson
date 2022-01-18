@@ -199,6 +199,21 @@ class TestIncrementalIndex extends OdinsonTest with BeforeAndAfterEach {
   }
 
   it should "update an index with a new version of an Odinson Document" in {
+    // index doc and then update with an abbreviated version
+    ExtractorEngine.usingEngine(testConfig) { engine =>
+      // we'll index this doc and later update
+      val majorBriggs = getDocument("tp-briggs")
+      val index = engine.index
+      // the index is empty
+      index.numDocs() shouldBe 0
+      index.indexOdinsonDoc(majorBriggs)
+      val oldCount = index.numDocs()
+      // let's remove some sentences and update the index
+      val minorBriggs = majorBriggs.copy(sentences=Seq(majorBriggs.sentences.head))
+      index.updateOdinsonDoc(minorBriggs)
+      index.numDocs() should be < oldCount
+    }
+    // index doc and then update with additional metadata
     ExtractorEngine.usingEngine(testConfig) { engine =>
       // "This must be where pies go to die."
       // we'll index this doc and later update
