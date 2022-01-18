@@ -9,7 +9,7 @@ class TestExceptions extends OdinsonTest {
 
     def exceptionThrower(bool: Boolean) = {
       bool match {
-        case true  => throw new OdinsonException("we threw an odinson exception!")
+        case true  => throw OdinsonException("we threw an odinson exception!")
         case false => ()
       }
     }

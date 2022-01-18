@@ -52,7 +52,7 @@ object Ast {
     def argCheck(): Unit = {
       val argNames = arguments.map(_.name)
       if (argNames.toSet.size < argNames.length) {
-        throw new OdinsonException(
+        throw OdinsonException(
           "There are multiple arguments with the same name in EventPattern."
         )
       }

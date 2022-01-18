@@ -32,7 +32,7 @@ class TestIndexDocuments extends FlatSpec with Matchers {
     FileUtils.copyDirectory(srcDir, tmpFolder);
   } catch {
     case e: IOException =>
-      throw new OdinsonException("Can't copy resources directory")
+      throw OdinsonException("Can't copy resources directory")
   }
 
   val dataDir = tmpFolder.getAbsolutePath

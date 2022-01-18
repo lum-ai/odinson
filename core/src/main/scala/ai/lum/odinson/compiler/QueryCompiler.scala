@@ -438,14 +438,14 @@ class QueryCompiler(
 
     case Ast.DisjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
-        case Seq()       => throw new OdinsonException("OR without clauses")
+        case Seq()       => throw OdinsonException("OR without clauses")
         case Seq(clause) => clause
         case clauses     => new OdinOrQuery(clauses, defaultTokenField)
       }
 
     case Ast.ConjunctiveConstraint(constraints) =>
       constraints.map(mkConstraintQuery).distinct match {
-        case Seq()       => throw new OdinsonException("AND without clauses")
+        case Seq()       => throw OdinsonException("AND without clauses")
         case Seq(clause) => clause
         case clauses     => new OdinTermAndQuery(clauses, defaultTokenField)
       }
@@ -491,7 +491,7 @@ class QueryCompiler(
 
     case Ast.DisjunctiveTraversal(traversals) =>
       traversals.map(mkGraphTraversal).distinct.partition(_ == NoTraversal) match {
-        case (Seq(), Seq()) => throw new OdinsonException("OR without clauses")
+        case (Seq(), Seq()) => throw OdinsonException("OR without clauses")
         case (Seq(), gts) =>
           gts.filter(_ != FailTraversal) match {
             case Seq()   => FailTraversal

@@ -60,7 +60,7 @@ class OdinsonCollector(
 
     override def setScorer(scorer: Scorer): Unit = scorer match {
       case s: OdinsonScorer => this.scorer = s
-      case _                => throw new OdinsonException("unsupported scorer")
+      case _                => throw OdinsonException("unsupported scorer")
     }
 
   }

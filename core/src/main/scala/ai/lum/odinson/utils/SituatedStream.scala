@@ -36,7 +36,7 @@ case class SituatedStream(stream: InputStream, canonicalPath: String, from: Rule
         val parent = new File(canonicalPath).getParentFile.getCanonicalPath
         new File(parent, path).getCanonicalPath
       case RuleSources.string =>
-        throw new OdinsonException("Strings don't support imports and relative paths")
+        throw OdinsonException("Strings don't support imports and relative paths")
     }
   }
 

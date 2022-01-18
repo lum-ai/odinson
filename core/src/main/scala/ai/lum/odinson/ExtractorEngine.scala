@@ -2,6 +2,7 @@ package ai.lum.odinson
 
 import ai.lum.common.ConfigFactory
 import ai.lum.common.ConfigUtils._
+import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.DataGatherer.VerboseLevels
 import ai.lum.odinson.DataGatherer.VerboseLevels.Verbosity
 import ai.lum.odinson.compiler.QueryCompiler
@@ -736,6 +737,10 @@ object ExtractorEngine {
 
     newExtractorEngine(index, compiler, state)
   }
+
+  /** Context manager to ensure index and state closed.
+    */
+  def usingEngine[T](config: Config)(f: ExtractorEngine => T): T = using(fromConfig(config))(f)
 
   def inMemory(doc: OdinsonDocument): ExtractorEngine = {
     inMemory(Seq(doc))

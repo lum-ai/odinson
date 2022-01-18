@@ -20,12 +20,15 @@ import org.apache.lucene.index.{
 }
 import org.apache.lucene.search.highlight.TokenSources
 import org.apache.lucene.search.{
+  BooleanClause,
+  BooleanQuery,
   Collector,
   CollectorManager,
   IndexSearcher,
-  Query,
   SearcherManager,
-  TopDocs
+  TopDocs,
+  TermQuery,
+  Query
 }
 import org.apache.lucene.store.Directory
 import org.slf4j.{ Logger, LoggerFactory }
@@ -94,15 +97,27 @@ class IncrementalOdinsonIndex(
         f(closeableSearcherHolder.searcher)
       }
     } catch {
-      case _: Throwable => throw new RuntimeException("what is the best way to deal with this?")
-//      case e: Throwable => {
-//        e.printStackTrace()
-//        throw e
+      case e: Throwable => throw OdinsonException(s"Error using searcher", e)
     }
   }
 
   override def indexOdinsonDoc(doc: OdinsonDocument): Unit = {
     write(odinsonWriter.mkDocumentBlock(doc).asJava)
+  }
+
+  override def deleteOdinsonDoc(odinsonDocId: String): Unit = {
+    val q1 = mkDocIdQueryFor(odinsonDocId)
+    val q2 = mkChildrenQueryFor(odinsonDocId)
+    // delete children
+    odinsonWriter.writer.deleteDocuments(q2)
+    // delete final doc in block
+    odinsonWriter.writer.deleteDocuments(q1)
+    refresh()
+  }
+
+  override def updateOdinsonDoc(doc: OdinsonDocument): Unit = {
+    deleteOdinsonDoc(doc.id)
+    indexOdinsonDoc(doc)
   }
 
   override def lazyIdGetter(luceneDocId: Int): LazyIdGetter = {
@@ -154,7 +169,7 @@ class IncrementalOdinsonIndex(
   ): Array[String] = {
 
     val field = doc.getField(fieldName)
-    if (field == null) throw new OdinsonException(
+    if (field == null) throw OdinsonException(
       s"Attempted to getTokens from field that was not stored: $fieldName"
     )
     val text = field.stringValue
@@ -197,7 +212,7 @@ class IncrementalOdinsonIndex(
     analyzer: Analyzer
   ): Array[String] = {
     val field = doc.getField(fieldName)
-    if (field == null) throw new OdinsonException(
+    if (field == null) throw OdinsonException(
       s"Attempted to getTokens from field that was not stored: $fieldName"
     )
     val text = field.stringValue
@@ -208,6 +223,7 @@ class IncrementalOdinsonIndex(
 
   override def refresh(): Unit = {
     odinsonWriter.flush()
+    // FIXME: do we need to odinsonWriter.commit()?
     manager.maybeRefresh()
   }
 

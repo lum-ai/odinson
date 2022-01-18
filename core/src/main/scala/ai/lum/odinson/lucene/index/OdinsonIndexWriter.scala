@@ -86,7 +86,7 @@ class OdinsonIndexWriter(
         // With large document collections, it may be necessary to split documents across many subdirectories
         // To avoid performance issues and limitations of certain file systems (ex. FAT32, ext2, etc.)
         val fileField: OdinsonField =
-          OdinsonStringField(name = "fileName", string = f.getName)
+          OdinsonStringField(name = FILENAME_FIELD, string = f.getName)
         val doc = origDoc.copy(metadata = origDoc.metadata ++ Seq(fileField))
         mkDocumentBlock(doc)
       } else {
@@ -106,7 +106,10 @@ class OdinsonIndexWriter(
     writer.close()
   }
 
-  /** generates a lucenedoc document per sentence */
+  /** Generates a sequence of [[org.apache.lucene.document.Document]] that represent an [[ai.lum.odinson.Document]] (metadata and sentences).
+    *
+    * @param d An Odinson Document.
+    */
   def mkDocumentBlock(d: OdinsonDocument): Seq[LuceneDocument] = {
     val block = ArrayBuffer.empty[LuceneDocument]
     for ((s, i) <- d.sentences.zipWithIndex) {
@@ -120,6 +123,12 @@ class OdinsonIndexWriter(
     block ++ mkMetadataDocs(d)
   }
 
+  /** Creates a sequence of [[org.apache.lucene.document.Document]] for the metadata of an [[ai.lum.odinson.Document]].
+    *
+    * @param s         An Odinson Sentence
+    * @param docId The ID of the Odinson Document containing this Sentence.
+    * @param sentId The ID for this Sentence.  Unique at the Odinson Document level.
+    */
   def mkMetadataDocs(d: OdinsonDocument): Seq[LuceneDocument] = {
     val (nested, other) = d.metadata.partition(_.isInstanceOf[OdinsonNestedField])
 
@@ -139,13 +148,20 @@ class OdinsonIndexWriter(
       odinsonField <- other
       luceneField <- mkLuceneFields(odinsonField, isMetadata = true)
     } metadata.add(luceneField)
-
+    // NOTE: metadata must come last in the block
+    // for our block join query to match
     nestedMetadata ++ Seq(metadata)
   }
 
+  /** Creates an [[org.apache.lucene.document.Document]] for an [[ai.lum.odinson.Sentence]].
+    *
+    * @param s         An Odinson Sentence
+    * @param docId The ID of the Odinson Document containing this Sentence.
+    * @param sentId The ID for this Sentence.  Unique at the Odinson Document level.
+    */
   def mkSentenceDoc(s: Sentence, docId: String, sentId: String): LuceneDocument = {
     val sent = new LuceneDocument
-    // add sentence metadata
+    // add sentence metadata (odinson doc ID, etc)
     sent.add(new LuceneStoredField(DOC_ID_FIELD, docId))
     sent.add(new LuceneStoredField(SENT_ID_FIELD, sentId)) // FIXME should this be a number?
     sent.add(new LuceneNumericDocValuesField(SENT_LENGTH_FIELD, s.numTokens))
@@ -246,7 +262,7 @@ class OdinsonIndexWriter(
           Seq(tokensField)
         }
 
-      case _ => throw new OdinsonException(s"Unsupported Field: ${f.getClass}")
+      case _ => throw OdinsonException(s"Unsupported Field: ${f.getClass}")
     }
   }
 
@@ -322,6 +338,7 @@ object OdinsonIndexWriter {
   val DOC_ID_FIELD = "docId"
   val SENT_ID_FIELD = "sentId"
   val SENT_LENGTH_FIELD = "numWords"
+  val FILENAME_FIELD = "fileName"
 
   // Constants for building the queries for metadata documents -- both the parent as well as the
   // nested metadata
@@ -365,7 +382,7 @@ object OdinsonIndexWriter {
     val displayField = config.apply[String]("odinson.displayField")
     // Always store the display field, also store these additional fields
     if (!storedFields.contains(displayField)) {
-      throw new OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
+      throw OdinsonException("`odinson.index.storedFields` must contain `odinson.displayField`")
     }
     // see https://github.com/lum-ai/odinson/pull/337
     val writerConf = new IndexWriterConfig(new KeywordAnalyzer)

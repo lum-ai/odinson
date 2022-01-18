@@ -400,7 +400,7 @@ class JsonSerializer(
     dataGathererOpt: Option[DataGatherer]
   ): Unit = {
     if (verbose != VerboseLevels.Minimal && dataGathererOpt.isEmpty) {
-      throw new OdinsonException(
+      throw OdinsonException(
         "Cannot request verbose serialization without providing an ExtractorEngine."
       )
     }

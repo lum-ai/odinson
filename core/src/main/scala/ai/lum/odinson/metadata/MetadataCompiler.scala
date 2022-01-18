@@ -108,7 +108,7 @@ object MetadataCompiler {
             val tokens = mkTokens(value, exactSpan = true)
             mkQueryFromTokens(field.name, tokens)
           case _ =>
-            throw new OdinsonException(
+            throw OdinsonException(
               s"The equal comparison is only valid with NumberValues and StringValues (passed: ${value.getClass})"
             )
         }
@@ -195,10 +195,10 @@ object MetadataCompiler {
     val r = evalValue(rhs)
     (l, r) match {
       // format: off
-      case (l: Ast.FieldValue, r: Ast.FieldValue) => throw new OdinsonException("Cannot compare two Fields")
+      case (l: Ast.FieldValue, r: Ast.FieldValue) => throw OdinsonException("Cannot compare two Fields")
       case (l: Ast.FieldValue, r: Ast.Value) => (l, r, false)
       case (l: Ast.Value, r: Ast.FieldValue) => (r, l, true)
-      case (l: Ast.Value, r: Ast.Value)      => throw new OdinsonException("Cannot compare two Values")
+      case (l: Ast.Value, r: Ast.Value)      => throw OdinsonException("Cannot compare two Values")
       // format: on
     }
   }

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2022-01-18
+
+### Added
+- Support for deleting Odinson Documents (and all associated lucene documents capturing metadata, etc.) from an index via `OdinsonIndex.deleteOdinsonDoc(odinsonDocId)`.
+- Support for updating Odinson Documents (and all associated lucene documents capturing metadata, etc.) in an index via `OdinsonIndex.updateOdinsonDoc(doc)`.
+- `OdinsonIndex.usingIndex(conf: Config)` context manager (ensure an index gets closed)
+- `ExtractorEngine.usingEngine(conf: Config)` context manager (ensure an engine's index and state get closed)
+ 
 ## [0.6.0] - 2021-11-22
 ### Added
 - Added documentation about supported types of fields for metadata (and info warnings for unsupported types). ([#329](https://github.com/lum-ai/odinson/pull/329))

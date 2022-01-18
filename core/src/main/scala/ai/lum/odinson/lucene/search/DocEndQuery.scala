@@ -88,7 +88,7 @@ class DocEndSpans(
     } else if (matchStart == NO_MORE_POSITIONS) {
       // nothing
     } else {
-      throw new OdinsonException("DocEndSpans.nextStartPosition")
+      throw OdinsonException("DocEndSpans.nextStartPosition")
     }
     matchStart
   }
