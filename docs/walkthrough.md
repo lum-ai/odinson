@@ -45,7 +45,8 @@ Or, if customization is needed, you can use these steps in your own code:
 
 ```scala
 import ai.lum.common.FileUtils._
-import ai.lum.odinson.{Document, OdinsonIndexWriter}
+import ai.lum.odinson.Document
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
 
 // Initialize the index writer
 val writer = OdinsonIndexWriter.fromConfig()
