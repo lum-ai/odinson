@@ -13,7 +13,8 @@ jobs:
       # see https://github.com/actions/setup-java#testing-against-different-java-versions
       matrix:
         distribution: [ 'zulu', 'temurin' ]
-        java: [ '8', '11', '17' ]
+        # NOTE: extra (processors v8.4.6) does not work with Java 17
+        java: [ '8', '11' ]
     name: Java ${{ matrix.java }} (${{ matrix.distribution }})
     steps:
     - uses: actions/checkout@v2
