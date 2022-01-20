@@ -20,9 +20,9 @@ Odinson consists of the following subprojects:
 
 - **core**: the core odinson library
 - **extra**: these are a few apps that we need but don't really belong in `core`, due to things like licensing issues
-- **backend**: this is a REST API for odinson
     
-  
+A REST API is also available in [`odinson-rest`](https://github.com/lum-ai/odinson-rest)
+
 ## License  
 
 Odinson is Apache License Version 2.0. 
