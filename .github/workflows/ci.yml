@@ -13,7 +13,7 @@ jobs:
       # see https://github.com/actions/setup-java#testing-against-different-java-versions
       matrix:
         distribution: [ 'zulu', 'temurin' ]
-        java: [ '8', '11' ]
+        java: [ '8', '11', '17' ]
     name: Java ${{ matrix.java }} (${{ matrix.distribution }})
     steps:
     - uses: actions/checkout@v2
@@ -22,7 +22,6 @@ jobs:
       with:
         distribution: ${{ matrix.distribution }}
         java-version: ${{ matrix.java }}
-        cache: 'maven'
     - name: Run tests
       run: sbt coverage test
     - name: Lint check via scalafmt
