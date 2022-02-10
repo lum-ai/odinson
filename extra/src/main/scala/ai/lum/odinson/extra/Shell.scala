@@ -173,7 +173,7 @@ object Shell extends App {
 
   def getLastDocId(scoreDocs: Array[OdinsonScoreDoc]): Int = scoreDocs.lastOption match {
     case Some(sd) => sd.doc
-    case _ => -1
+    case _        => -1
   }
 
   /** searches for pattern and prints the first n matches */
