@@ -1,7 +1,7 @@
 package ai.lum.odinson.events
 
 import ai.lum.odinson.lucene.OdinResults
-import ai.lum.odinson.lucene.search.{ OdinsonQuery, OdinsonScoreDoc }
+import ai.lum.odinson.lucene.search.OdinsonQuery
 import ai.lum.odinson.test.utils.OdinsonTest
 import ai.lum.odinson.utils.exceptions.OdinsonException
 import ai.lum.odinson.{ EventMatch, MentionsIterator }
@@ -197,7 +197,7 @@ class TestEvents extends OdinsonTest {
       labelOpt: Option[String] = None,
       nameOpt: Option[String] = None,
       n: Int,
-      after: OdinsonScoreDoc,
+      after: Int,
       disableMatchSelector: Boolean
     ): OdinResults = {
       val odinResults = ee.query(odinsonQuery, n, after, disableMatchSelector)
@@ -214,14 +214,14 @@ class TestEvents extends OdinsonTest {
       labelOpt = Some("NP"),
       nameOpt = None,
       1,
-      after = null,
+      after = -1,
       disableMatchSelector = false
     )
     results1.totalHits should equal(1)
     results1.scoreDocs.head.matches should have size 2
 
     // This query only needs to read from the state.
-    val results2 = ee.query(q2, 1, after = null, disableMatchSelector = false)
+    val results2 = ee.query(q2, 1, after = -1, disableMatchSelector = false)
     results2.totalHits should equal(1)
     results2.scoreDocs.head.matches should have size 1
 
