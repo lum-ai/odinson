@@ -78,7 +78,7 @@ object Shell extends App {
   val matchTextToParse = """^:mkDoc\s+(.*)""".r
 
   var query: String = null
-  var after: OdinsonScoreDoc = null
+  var after: Int = -1
   var shownHits: Int = 0
   var totalHits: Int = 0
 
@@ -171,13 +171,18 @@ object Shell extends App {
     println(json)
   }
 
+  def getLastDocId(scoreDocs: Array[OdinsonScoreDoc]): Int = scoreDocs.lastOption match {
+    case Some(sd) => sd.doc
+    case _ => -1
+  }
+
   /** searches for pattern and prints the first n matches */
   def search(n: Int): Unit = {
     val start = System.currentTimeMillis()
     val q = extractorEngine.compiler.mkQuery(query)
     val results = extractorEngine.query(q, n)
     val duration = (System.currentTimeMillis() - start) / 1000f
-    after = results.scoreDocs.lastOption.getOrElse(null)
+    after = getLastDocId(results.scoreDocs)
     totalHits = results.totalHits
     shownHits = math.min(n, totalHits)
     printResultsPage(results, 1, totalHits, duration)
@@ -185,7 +190,7 @@ object Shell extends App {
 
   /** prints the next n matches */
   def printMore(n: Int): Unit = {
-    if (after == null) {
+    if (after == -1) {
       println("there is no active query")
       return
     }
@@ -197,8 +202,8 @@ object Shell extends App {
     val q = extractorEngine.compiler.mkQuery(query)
     val results = extractorEngine.query(q, n, after)
     val duration = (System.currentTimeMillis() - start) / 1000f
-    after = results.scoreDocs.lastOption.getOrElse(null)
-    if (after == null) {
+    after = getLastDocId(results.scoreDocs)
+    if (after == -1) {
       println("no more results")
       return
     }

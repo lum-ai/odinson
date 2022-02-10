@@ -265,13 +265,13 @@ class IncrementalOdinsonIndex(
   }
 
   override def search(
-    scoreDoc: OdinsonScoreDoc,
+    luceneDocId: Int,
     query: OdinsonQuery,
     cappedHits: Int,
     disableMatchSelector: Boolean
   ): OdinResults = {
     val manager =
-      new OdinsonCollectorManager(scoreDoc, cappedHits, computeTotalHits, disableMatchSelector)
+      new OdinsonCollectorManager(luceneDocId, cappedHits, computeTotalHits, disableMatchSelector)
     this.search(query, manager)
   }
 

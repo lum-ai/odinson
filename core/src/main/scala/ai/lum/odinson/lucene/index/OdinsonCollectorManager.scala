@@ -8,7 +8,7 @@ import java.util.Collection
 import scala.collection.JavaConverters._
 
 class OdinsonCollectorManager(
-  after: OdinsonScoreDoc,
+  after: Int,
   cappedNumHits: Int,
   computeTotalHits: Boolean,
   disableMatchSelector: Boolean

@@ -34,15 +34,15 @@ class OdinsonIndexSearcher(
   }
 
   def odinSearch(query: OdinsonQuery, n: Int): OdinResults = {
-    odinSearch(null, query, n)
+    odinSearch(-1, query, n)
   }
 
-  def odinSearch(after: OdinsonScoreDoc, query: OdinsonQuery, numHits: Int): OdinResults = {
+  def odinSearch(after: Int, query: OdinsonQuery, numHits: Int): OdinResults = {
     odinSearch(after, query, numHits, false)
   }
 
   class StandardCollectorManager(
-    after: OdinsonScoreDoc,
+    after: Int,
     cappedNumHits: Int,
     disableMatchSelector: Boolean
   ) extends CollectorManager[OdinsonCollector, OdinResults] {
@@ -60,15 +60,15 @@ class OdinsonIndexSearcher(
   }
 
   def odinSearch(
-    after: OdinsonScoreDoc,
+    after: Int,
     query: OdinsonQuery,
     numHits: Int,
     disableMatchSelector: Boolean
   ): OdinResults = {
     val limit = math.max(1, readerContext.reader().maxDoc())
     require(
-      after == null || after.doc < limit,
-      s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
+      after < limit,
+      s"after exceeds the number of documents in the reader: after=${after} limit=${limit}"
     )
     val cappedNumHits = math.min(numHits, limit)
     val manager = new StandardCollectorManager(after, cappedNumHits, disableMatchSelector)
