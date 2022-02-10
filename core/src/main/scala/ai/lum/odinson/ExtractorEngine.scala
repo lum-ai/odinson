@@ -136,20 +136,7 @@ class ExtractorEngine private (
     * @return
     */
   def query(odinsonQuery: OdinsonQuery, n: Int, disableMatchSelector: Boolean): OdinResults = {
-    query(odinsonQuery, n, null, disableMatchSelector)
-  }
-
-  /** Executes an OdinsonQuery and returns an OdinResult
-    * with the next `n` matched lucene documents and their corresponding matches,
-    * starting after the last lucene document in the OdinResults `after`.
-    *
-    * @param odinsonQuery
-    * @param n     number of desired lucene documents
-    * @param after an OdinResults with a set of lucene documents
-    * @return
-    */
-  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinResults): OdinResults = {
-    query(odinsonQuery, n, after.scoreDocs.last)
+    query(odinsonQuery, n, -1, disableMatchSelector)
   }
 
   /** Executes an OdinsonQuery and returns an OdinResult
@@ -158,10 +145,10 @@ class ExtractorEngine private (
     *
     * @param odinsonQuery
     * @param n     number of desired lucene documents
-    * @param after the last lucene document to ignore
+    * @param after the ID of the last lucene document to ignore
     * @return
     */
-  def query(odinsonQuery: OdinsonQuery, n: Int, after: OdinsonScoreDoc): OdinResults = {
+  def query(odinsonQuery: OdinsonQuery, n: Int, after: Int): OdinResults = {
     query(odinsonQuery, n, after, false)
   }
 
@@ -185,7 +172,7 @@ class ExtractorEngine private (
   def query(
     odinsonQuery: OdinsonQuery,
     n: Int,
-    after: OdinsonScoreDoc,
+    after: Int,
     disableMatchSelector: Boolean
   ): OdinResults = {
     val odinResults =
@@ -203,7 +190,7 @@ class ExtractorEngine private (
   }
 
   private def odinSearch(
-    after: OdinsonScoreDoc,
+    after: Int,
     query: OdinsonQuery,
     numHits: Int,
     disableMatchSelector: Boolean
@@ -211,8 +198,8 @@ class ExtractorEngine private (
 
     val limit = math.max(1, index.maxDoc())
     require(
-      after == null || after.doc < limit,
-      s"after.doc exceeds the number of documents in the reader: after.doc=${after.doc} limit=${limit}"
+      after < limit,
+      s"after exceeds the number of documents in the reader: after=${after} limit=${limit}"
     )
     val cappedNumHits = math.min(numHits, limit)
     index.search(after, query, cappedNumHits, disableMatchSelector)
@@ -350,7 +337,7 @@ class ExtractorEngine private (
     disableMatchSelector: Boolean,
     mruIdGetter: MostRecentlyUsed[Int, LazyIdGetter]
   ): Iterator[Mention] = {
-    val odinResults = query(extractor.query, numSentences, null, disableMatchSelector)
+    val odinResults = query(extractor.query, numSentences, -1, disableMatchSelector)
     new MentionsIterator(
       extractor.label,
       Some(extractor.name),

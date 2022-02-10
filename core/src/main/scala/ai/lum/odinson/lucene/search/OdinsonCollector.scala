@@ -23,20 +23,6 @@ class OdinsonCollector(
     this(numHits, -1, computeTotalHits, disableMatchSelector)
   }
 
-  def this(
-    numHits: Int,
-    afterDoc: OdinsonScoreDoc,
-    computeTotalHits: Boolean,
-    disableMatchSelector: Boolean
-  ) = {
-    this(
-      numHits,
-      if (afterDoc == null) -1 else afterDoc.doc,
-      computeTotalHits,
-      disableMatchSelector
-    )
-  }
-
   private var totalHits: Int = 0
   private var collectedHits: Int = 0
 

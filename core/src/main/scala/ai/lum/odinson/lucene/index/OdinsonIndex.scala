@@ -116,7 +116,7 @@ trait OdinsonIndex {
   ): ResultType
 
   def search(
-    scoreDoc: OdinsonScoreDoc,
+    luceneDocId: Int,
     query: OdinsonQuery,
     cappedHits: Int,
     disableMatchSelector: Boolean
