@@ -75,8 +75,8 @@ lazy val generalDockerSettings = {
   Seq(
     ThisBuild / parallelExecution := false,
     // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
-    Docker / daemonUserUid := None,
-    Docker / daemonUser  := "odinson",
+    Docker / daemonUserUid := Some("1002"),
+    Docker / daemonUser := "odinson",
     Docker / packageName := "odinson-rest-api",
     dockerBaseImage := "eclipse-temurin:11-jre-focal", // arm46 and amd64 compat
     dockerUsername := Some("lumai"),
@@ -137,4 +137,5 @@ ThisBuild / developers := List(
 
 // tasks
 addCommandAlias("dockerize", ";clean;compile;test;docker:publishLocal")
+addCommandAlias("dockerfile", ";clean;compile;docker:stage")
 addCommandAlias("dockerizeAndPublish", ";clean;compile;test;docker:publish")

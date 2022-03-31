@@ -78,8 +78,10 @@ jobs:
       env:
         IMAGE_NAME: "odinson-extras"
       # --output=type=docker 
+      # FIXME: temporary disable ARM64 publishing until next version of processors is released (see https://github.com/clulab/processors/pull/598)
       run: |
-        docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
+        docker buildx build --platform=linux/amd64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
+  #docker buildx build --platform=linux/amd64,linux/arm64 -f ${{ env.DOCKERFILE }} --push -t "${{ env.ORG }}/$IMAGE_NAME:latest" -t "${{ env.ORG }}/$IMAGE_NAME:${{ needs.setup.outputs.sha_short }}" .
     # # publish
     # - name: "Publish docker `lumai/odinson-extras` image"
     #   env:

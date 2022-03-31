@@ -27,13 +27,13 @@ See [our repository](https://hub.docker.com/r/lumai/odinson-extras) for other ta
 ### Annotating text using the docker image
 
 ```bash
-docker run \
+docker run --platform linux/amd64 \
   --name="odinson-extras" \
   -it \
   --rm \
   -e "HOME=/app" \
-  -e "JAVA_OPTS=-Dodinson.extra.processorType=CluProcessor" \
-  -v "/path/to/data/odinson:/app/data/odinson" \
+  -e "JAVA_OPTS=-Xmx4G -Dodinson.extra.processorType=CluProcessor" \
+  -v "${PWD}/extra/src/test/resources:/app/data/odinson" \
   --entrypoint "bin/annotate-text" \
   "lumai/odinson-extras:latest"
 ```
