@@ -62,9 +62,13 @@ lazy val extra = project
 // Docker settings
 val gitDockerTag = settingKey[String]("Git commit-based tag for docker")
 ThisBuild / gitDockerTag := {
-  val shortHash: String = git.gitHeadCommit.value.get.take(7)
-  val uncommittedChanges: Boolean = (git.gitUncommittedChanges).value
-  s"""${shortHash}${if (uncommittedChanges) "-DIRTY" else ""}"""
+  git.gitHeadCommit.value match {
+    case Some(commit) => 
+      val shortHash: String = commit.take(7)
+      val uncommittedChanges: Boolean = (git.gitUncommittedChanges).value
+      s"""${shortHash}${if (uncommittedChanges) "-DIRTY" else ""}"""
+    case None => "latest"
+  }
 }
 
 lazy val generalDockerSettings = {
@@ -72,14 +76,15 @@ lazy val generalDockerSettings = {
     ThisBuild / parallelExecution := false,
     // see https://www.scala-sbt.org/sbt-native-packager/formats/docker.html
     Docker / daemonUserUid := None,
-    Docker / daemonUser := "root",
+    Docker / daemonUser  := "odinson",
+    Docker / packageName := "odinson-rest-api",
+    dockerBaseImage := "eclipse-temurin:11-jre-focal", // arm46 and amd64 compat
     dockerUsername := Some("lumai"),
     dockerAliases ++= Seq(
       dockerAlias.value.withTag(Option("latest")),
       dockerAlias.value.withTag(Option(gitDockerTag.value))
       ),
     Docker / maintainer := "Gus Hahn-Powell <ghp@lum.ai>",
-    dockerBaseImage := "adoptopenjdk/openjdk11",
     Universal / javaOptions ++= Seq(
       "-Dodinson.dataDir=/app/data/odinson"
       )
