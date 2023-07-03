@@ -1,0 +1,44 @@
+name: Project documentation
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  docs:
+    name: "Generate project documenation"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] 
+    steps:
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Cache deps
+      uses: actions/cache@v2
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
+    # - name: Build site
+    #   uses: actions/jekyll-build-pages@v1
+    #   with:
+    #     source: "./docs"
+    #     destination: "./site"
+    - name: Build and Publish docs
+      if: github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        enable_jekyll: true
+        # see https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site
+        destination_dir: "odinson"
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: ${{ github.event.head_commit.message }}
+        cname: docs.lum.ai
