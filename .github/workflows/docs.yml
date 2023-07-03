@@ -24,18 +24,19 @@ jobs:
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile') }}
         restore-keys: |
           ${{ runner.os }}-gems-
-    # - name: Build site
-    #   uses: actions/jekyll-build-pages@v1
-    #   with:
-    #     source: "./docs"
-    #     destination: "./site"
-    - name: Build and Publish docs
+    - name: Build site
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: "./docs"
+        destination: "./site"
+    - name: Publish docs
       if: github.ref == 'refs/heads/master'
       uses: peaceiris/actions-gh-pages@v3
       with:
-        enable_jekyll: true
+        #enable_jekyll: true
         # see https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        #publish_dir: ./docs
         publish_dir: ./site
         destination_dir: "odinson"
         user_name: 'github-actions[bot]'
