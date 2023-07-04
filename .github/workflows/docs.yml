@@ -36,9 +36,8 @@ jobs:
         #enable_jekyll: true
         # see https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        #publish_dir: ./docs
         publish_dir: ./site
-        destination_dir: "odinson"
+        #destination_dir: "odinson"
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         commit_message: ${{ github.event.head_commit.message }}

@@ -1,4 +1,5 @@
 title: "odinson"
+baseurl: /odinson
 remote_theme: pmarsceill/just-the-docs
 color_scheme: odinson
 search_enabled: true
