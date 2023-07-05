@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/queries/metadata/">
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Metadata Query Language - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Metadata Query Language";
+    var mkdocs_page_input_path = "queries/metadata.md";
+    var mkdocs_page_url = "/odinson/queries/metadata/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Metadata Query Language</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#numeric-metadata">Numeric Metadata</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#textual-metadata">Textual Metadata</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#combining-filters">Combining Filters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#dates">Dates</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nested-fields">Nested Fields</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#regular-expressions">Regular Expressions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adding-metadata-to-existing-odinson-documents">Adding Metadata to Existing Odinson Documents</a>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Queries &raquo;</li>
+        
+      
+    
+    <li>Metadata Query Language</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/queries/metadata.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="metadata-query-language">Metadata Query Language<a class="headerlink" href="#metadata-query-language" title="Permanent link"></a></h1>
+<p>Sometimes when we perform queries in Odinson we are only interested in a subset of the results.
+Maybe we are only interested in extractions from documents written by a particular author, or published in a specific venue, or maybe we only care about documents published recently.
+Odinson can index metadata associated to each document, which can be used to filter the results of a query through a metadata filter query.</p>
+<p>Odinson supports two main types of metadata: <strong>numeric</strong> and <strong>textual</strong>.</p>
+<h3 id="numeric-metadata">Numeric Metadata<a class="headerlink" href="#numeric-metadata" title="Permanent link"></a></h3>
+<p>Numeric metadata can be compared using the common comparison operators used in most programming languages: equals (<code>==</code>), not equals (<code>!=</code>), less than (<code>&lt;</code>), greater than (<code>&gt;</code>), less than or equals (<code>&lt;=</code>), and greater than or equals (<code>&gt;=</code>).
+One of the elements being compared must be an indexed <em>metadata field</em>, and the other must be a <em>numeric value</em>, e.g., <code>citations &gt; 5</code>.
+These comparisons can be chained together, allowing us to express ranges in a more concise way, e.g., <code>1 &lt; citations &lt; 10</code>.</p>
+<ul>
+<li>Field type to use: ai.lum.odinson.NumberField</li>
+</ul>
+<h3 id="textual-metadata">Textual Metadata<a class="headerlink" href="#textual-metadata" title="Permanent link"></a></h3>
+<p>From those comparison operators, textual metadata only supports the equals (<code>==</code>) and not equals (<code>!=</code>) operators. Equals checks for exact matching, e.g., <code>publisher == 'mit press'</code>.
+Note that the textual content is wrapped in quotation marks.</p>
+<p>Sometimes exact textual matching can be too stringent, and a containment check can be more appropriate.
+This can be accomplished with the <code>contains</code> operator, e.g., <code>venue contains 'language'</code>.
+To specify that a metadata field should <em>not</em> contain a given text, you can use: <code>venue not contains 'language'</code></p>
+<p>To make textual comparison more robust, we perform some normalization of the textual metadata fields.
+ - unicode-aware case folding
+ - NFKC unicode normalization
+ - some unicode characters are transformed into ASCII equivalents (e.g., arrows, ligatures, etc.)
+ - removal of diacritics</p>
+<ul>
+<li>Field type to use: ai.lum.odinson.TokensField (Note, assumes the text is tokenized.)</li>
+</ul>
+<h3 id="combining-filters">Combining Filters<a class="headerlink" href="#combining-filters" title="Permanent link"></a></h3>
+<p>The metadata query language supports the and (<code>&amp;&amp;</code>), or (<code>||</code>), and not (<code>!</code>) operators to combine individual field constraints into a more complex filter, e.g., <code>1 &lt; citations &lt; 10 &amp;&amp; venue contains 'language'</code>.</p>
+<h3 id="dates">Dates<a class="headerlink" href="#dates" title="Permanent link"></a></h3>
+<p>The metadata query language offers special support for dates using the <code>date</code> function, which returns a numeric representation of the date.
+As such, you can write queries against dates as you would with other numeric metadata.
+For example, <code>date(2020, 'Jan', 1) &lt; pub_date &lt;= date(2020, 'Dec', 31)</code> would return documents published in 2020.
+This provides a lot of flexibility when checking for specific dates, but since checking for years is a common use case, we provide a shortcut.
+The query presented above can also be expressed as <code>pub_date.year == 2020</code>.
+Months can be expressed as their full names, common abbreviations, or number (i.e., "August", "Aug", or 8).</p>
+<ul>
+<li>Field type to use: ai.lum.odinson.DateField</li>
+</ul>
+<h3 id="nested-fields">Nested Fields<a class="headerlink" href="#nested-fields" title="Permanent link"></a></h3>
+<p>Another capability of the metadata query language is its support for nested metadata fields.
+For example, authors are usually indexed as nested fields so that their first and last name are associated with each other, and <em>not</em> with other authors.
+To query nested fields, we need to specify the name of the field and the query to be performed on it.
+For example, if we had a document with two authors named <em>Jane Smith</em> and <em>John Doe</em>, then we could match this document with the queries <code>author{first=='jane' &amp;&amp; last=='smith'}</code> or <code>author{first=='john' &amp;&amp; last =='doe'}</code>, but not <code>author{first=='jane' &amp;&amp; last=='doe'}</code>.
+Not all attributes of a nested field must be specified.  For example, given the authors above, this would also match: <code>author{first=='jane'}</code></p>
+<ul>
+<li>Field type to use: ai.lum.odinson.NestedField</li>
+</ul>
+<h3 id="regular-expressions">Regular Expressions<a class="headerlink" href="#regular-expressions" title="Permanent link"></a></h3>
+<p>The metadata query language also supports Lucene regular expressions, such as:
+- <code>author{first=='/j.*/' &amp;&amp; last=='/d.*/'}</code>
+- <code>keywords contains '/bio.*/'</code></p>
+<h3 id="adding-metadata-to-existing-odinson-documents">Adding Metadata to Existing Odinson Documents<a class="headerlink" href="#adding-metadata-to-existing-odinson-documents" title="Permanent link"></a></h3>
+<p>As of <a href="https://github.com/lum-ai/odinson/pull/319">PR #319</a>, there are some utilities and an app to help you add metadata to an Odinson document.
+- there is an <code>addMetadata</code> method in <code>ai.lum.odinson.Document</code> that take a sequence of Fields and adds them as metadata.
+- there is now a <code>MetadataWrapper</code> case class that can serialize itself in a compatible json format
+- in the <code>extra/</code> subproject, there is an app (<code>ai.lum.odinson.extra.AddMetadataToDocuments</code>) that will load a set of metadata json files and a set of Document json files, and add any found metadata to the corresponding Document (as indicated by the docID in the metadata file).</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../strings/" class="btn btn-neutral float-right" title="Strings">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../event_queries/" class="btn btn-neutral" title="Event Queries"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../event_queries/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../strings/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

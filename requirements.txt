@@ -1,0 +1,7 @@
+mkdocs==1.2.3
+pdoc3==0.10.0
+mkdocs-git-snippet==0.1.1
+mkdocs-git-revision-date-localized-plugin==0.11.1
+mkdocs-git-authors-plugin==0.6.3
+mkdocs-rtd-dropdown==1.0.2
+jinja2<3.1.0

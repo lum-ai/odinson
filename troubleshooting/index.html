@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/troubleshooting/">
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Troubleshooting - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Troubleshooting";
+    var mkdocs_page_input_path = "troubleshooting.md";
+    var mkdocs_page_url = "/odinson/troubleshooting/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Troubleshooting</a>
+    <ul class="current">
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Troubleshooting</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/troubleshooting.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="index-not-found-exception-whitelock-error-while-using-a-docker-image">Index Not Found Exception / white.lock error while using a docker image<a class="headerlink" href="#index-not-found-exception-whitelock-error-while-using-a-docker-image" title="Permanent link"></a></h1>
+<p>Error message:</p>
+<blockquote>
+<p>Error in custom provider, org.apache.lucene.index.IndexNotFoundException: no segments* file found in MMapDirectory@/app/data/odinson/index lockFactory=org.apache.lucene.store.NativeFSLockFactory@68e2d03e: files: [write.lock]</p>
+</blockquote>
+<p>Run the following command and index the documents using a docker image as described <a href="../docker/">here</a></p>
+<pre><code class="language-bash">rm -rf /path/to/data/odinson/index/
+</code></pre>
+<p><strong>NOTE</strong>: Replace <code>/path/to/data/odinson</code> with the path to the directory containing <code>index</code>.</p>
+<h1 id="no-such-method-error-while-using-a-docker-image">No such method error while using a docker image<a class="headerlink" href="#no-such-method-error-while-using-a-docker-image" title="Permanent link"></a></h1>
+<p>Error message:</p>
+<blockquote>
+<p>'void sun.misc.Unsafe.putInt(java.lang.Object, int, int)'</p>
+</blockquote>
+<p>Make sure you have java 11 installed (e.g., OpenJDK 11).</p>
+<h1 id="access-denied-exception-while-indexing-with-a-docker-image">Access Denied Exception while indexing with a docker image<a class="headerlink" href="#access-denied-exception-while-indexing-with-a-docker-image" title="Permanent link"></a></h1>
+<p>Error message:</p>
+<blockquote>
+<p>Exception in thread "main" java.nio.file.AccessDeniedException: /app/data/odinson/index/write.lock</p>
+</blockquote>
+<pre><code class="language-bash">chmod -R 777 /path/to/data/odinson
+</code></pre>
+<p><strong>NOTE</strong>: Replace <code>/path/to/data/odinson</code> with the path to the directory containing <code>docs</code>. You may need to use <code>sudo</code> at the beginning of this command.</p>
+<h1 id="no-repo-found-while-running-offline-documentation-with-a-docker-image">No repo found while running offline documentation with a docker image<a class="headerlink" href="#no-repo-found-while-running-offline-documentation-with-a-docker-image" title="Permanent link"></a></h1>
+<p>Error message:</p>
+<blockquote>
+<p>Liquid Exception: No repo name found. Specify using PAGES_REPO_NWO environment variables, 'repository' in your configuration, or set up an 'origin' git remote pointing to your github.com repository. in <code>/_layouts/default.html</code></p>
+</blockquote>
+<p>Add the following line in the <code>docs/_config.yml</code>:</p>
+<pre><code class="language-bash">repository:         'lum-ai/odinson.git'
+</code></pre>
+<h1 id="faviconico-not-found-while-running-offline-documentation-via-docker">`/favicon.ico' not found while running offline documentation via docker<a class="headerlink" href="#faviconico-not-found-while-running-offline-documentation-via-docker" title="Permanent link"></a></h1>
+<p>When running locally, this error can likely be ignored as explained <a href="https://talk.jekyllrb.com/t/favicon-ico-not-found/2571/5">here</a></p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../testing/" class="btn btn-neutral float-right" title="Testing">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../shell/" class="btn btn-neutral" title="Odinson Shell"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../shell/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../testing/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

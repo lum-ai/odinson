@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/queries/event_queries/">
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Event Queries - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Event Queries";
+    var mkdocs_page_input_path = "queries/event_queries.md";
+    var mkdocs_page_url = "/odinson/queries/event_queries/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Event Queries</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#priorities">Priorities</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#argument-promotion">Argument Promotion</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#optional-and-required-arguments">Optional and Required Arguments</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantifying-arguments">Quantifying arguments</a>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Queries &raquo;</li>
+        
+      
+    
+    <li>Event Queries</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/queries/event_queries.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="event-queries">Event queries<a class="headerlink" href="#event-queries" title="Permanent link"></a></h1>
+<p>Odinson also supports <strong>event queries</strong>, which are look for a trigger, and then one or more required (or optional) arguments.
+These arguments are defined in terms of their connection to the found trigger.</p>
+<p>As an example, consider this simple event rule that finds the subject and object of the verb <em>cause</em>:</p>
+<pre><code>  - name: example-event-rule
+    label: Causal
+    type: event
+    priority: 1
+    pattern: |
+      trigger = causes
+      subject = &gt;nsubj []
+      object = &gt;dobj []
+</code></pre>
+<p>The result of applying this rule to a sentence such as "Rain causes puddles" is a Mention, which has a trigger (<em>causes</em>), and two arguments: a <code>subject</code> (<em>Rainfall</em>), and an <code>object</code> (<em>puddles</em>).
+Since we did not specify any labels for the <em>type</em> of the subject and object arguments, they will have the same label as the overall event (<code>Causal</code>).</p>
+<h2 id="priorities">Priorities<a class="headerlink" href="#priorities" title="Permanent link"></a></h2>
+<p>One element of an event query is the <code>priority</code>.  This is the order in which the rule(s) should be applied.  This is useful when you wish to rely on the output of a previous rule in another rule.
+For example, in these two rules, we first find <code>Person</code> Mentions, and then extract <code>Construction</code> events:</p>
+<pre><code>  - name: person-rule
+    label: Person
+    type: basic
+    priority: 1
+    pattern: |
+       [Hamilton]
+
+  - name: construction-rule
+    label: Construction
+    type: event
+    priority: 2
+    pattern: |
+      trigger = [lemma=build]
+      subject: Person = &gt;nsubj []
+</code></pre>
+<p>Here, the engine will first apply <code>person-rule</code>, then <code>construction-rule</code>, due to the order indicated with the priorities.
+By adding the type specification to the <code>subject</code> argument (<code>subject: Person</code>), we indicate that the subject of the trigger <em>must</em> be a previously found <code>Person</code>.
+However, if we instead want to allow the rule to match <em>even if</em> the found subject is <em>not</em> a <code>Person</code>, we can make use of <strong>promotion</strong>.</p>
+<h2 id="argument-promotion">Argument Promotion<a class="headerlink" href="#argument-promotion" title="Permanent link"></a></h2>
+<p>Argument promotion allows us to extract nested events in the moment, without requiring them to have been previously found. 
+This feature must be enabled, using the <code>^</code>, as shown here:</p>
+<pre><code>  - name: construction-rule
+    label: Construction
+    type: event
+    priority: 2
+    pattern: |
+      trigger = [lemma=build]
+      subject: ^Person = &gt;nsubj []
+</code></pre>
+<p>Here, if the subject was not already found as a <code>Person</code>, we will <em>still</em> extract the event, and we will assign the label <code>Person</code> to the found subject.</p>
+<h2 id="optional-and-required-arguments">Optional and Required Arguments<a class="headerlink" href="#optional-and-required-arguments" title="Permanent link"></a></h2>
+<p>Event arguments can either be optional or required, where required is the default.  An optional argument will be extracted if present, but will not prevent the event from succeeding if not.  Required arguments, on the other hand, will cause the event query to fail if they are not found.
+Optional arguments are indicated with a <code>?</code>, as with the second argument below.</p>
+<pre><code>  - name: construction-rule
+    label: Construction
+    type: event
+    priority: 2
+    pattern: |
+      trigger = [lemma=build]
+      subject: Person = &gt;nsubj []
+      structure: Building? = &gt;dobj []
+</code></pre>
+<h2 id="quantifying-arguments">Quantifying arguments<a class="headerlink" href="#quantifying-arguments" title="Permanent link"></a></h2>
+<p>Arguments can be quantified, using the quantifiers described <a href="quantifiers.html">here</a>.
+For example:</p>
+<pre><code>  - name: lots-of-quantifiers
+    label: Eating
+    type: event
+    priority: 2
+    pattern: |
+      trigger = [eats]
+      subject: Person{1,2} = &gt;nsubj []
+      food: ^Dessert+ = &gt;dobj
+      tool: ^Utensil* = &gt;nmod_with
+</code></pre>
+<p>In order to succeed, this query must find an instance of the word <code>eats</code> with one or 2 <code>Person</code> mentions as the subject(s), and one or more <code>Dessert</code> mentions as food arguments.  If available, it will also match 0 or more <code>Utensil</code> mentions as tool arguments.  </p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../metadata/" class="btn btn-neutral float-right" title="Metadata Query Language">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../parent_queries/" class="btn btn-neutral" title="Parent Queries"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../parent_queries/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../metadata/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
