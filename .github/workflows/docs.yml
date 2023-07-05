@@ -1,97 +1,83 @@
-# name: Project documentation
-
-# on:
-#   push:
-#     branches: [master]
-#   pull_request:
-#     branches: [master]
-
-# jobs:
-#   docs:
-#     name: "Generate project documenation"
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       matrix:
-#         os: [ubuntu-latest] 
-#     steps:
-#     # Checkout code
-#     - name: Checkout code
-#       uses: actions/checkout@v3
-#     - name: Cache deps
-#       uses: actions/cache@v2
-#       with:
-#         path: vendor/bundle
-#         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile') }}
-#         restore-keys: |
-#           ${{ runner.os }}-gems-
-#     # - name: Build site
-#     #   uses: actions/jekyll-build-pages@v1
-#     #   with:
-#     #     source: "./docs"
-#     #     destination: "./site"
-#     - name: Publish docs
-#       if: github.ref == 'refs/heads/master'
-#       uses: peaceiris/actions-gh-pages@v3
-#       with:
-#         enable_jekyll: true
-#         # see https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
-#         github_token: ${{ secrets.GITHUB_TOKEN }}
-#         publish_dir: ./public
-#         #destination_dir: "odinson"
-#         user_name: 'github-actions[bot]'
-#         user_email: 'github-actions[bot]@users.noreply.github.com'
-#         commit_message: ${{ github.event.head_commit.message }}
-#         cname: docs.lum.ai
-
-
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+name: Project documentation
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
-
+    branches: [master]
+  pull_request:
+    branches: [master]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+# # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# permissions:
+#   contents: read
+#   pages: write
+#   id-token: write
 
 jobs:
-  # Build job
-  build:
-    runs-on: ubuntu-latest
+  docs:
+    name: "Generate project documenation"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [ '3.9' ]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./docs
-          destination: ./_site
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-  # Deployment job
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        #architecture: x64
+    - name: Display Python version
+      run: |
+        python -c "import sys; print(sys.version)"
+    # - name: Setup JDK
+    #   uses: actions/setup-java@v3
+    #   with:
+    #     distribution: temurin
+    #     java-version: 11
+    # Install dependencies
+    - name: Doc deps
+      working-directory: "./docs"
+      run: |
+        pip install -r requirements.txt
+
+    # docs (API)
+    # generate python docs using pdoc
+    # - name: "Create API docs"
+    #   run: |
+    #     sbt doc
+    #     mkdir -p $GITHUB_WORKSPACE/docs/api/scala
+    #     mv target/doc/* $GITHUB_WORKSPACE/docs/api/scala/
+    # generate Rust docs using cargo doc
+
+    # code coverage (Scala)
+    # FIXME: downloading project deps is far too slow to include this step
+    # - name: "Code coverage reports for Scala components"
+    #   working-directory: ./skema/text_reading/scala
+    #   run: |
+    #     sbt clean coverage test
+    #     sbt coverageReport
+    #     sbt coverageAggregate
+
+    # docs (other)
+    - name: "Create documentation (other)"
+      run: |
+        mkdocs build -c
+    - name: Deploy docs
+      if: github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        # see https://docs.github.com/en/free-pro-team@latest/actions/reference/authentication-in-a-workflow#about-the-github_token-secret
+        enable_jekyll: false
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./site
+        destination_dir: "odinson"
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: ${{ github.event.head_commit.message }}
+        #cname: docs.lum.ai

@@ -1,10 +1,3 @@
----  
-title: Token Constraints
-parent: Queries
-has_children: false 
-nav_order: 1
----  
-
 # Token constraints
 
 The simplest possible Odinson patterns consist of a single token constraint. A token constraint specifies what must be true of a token in order for it to be a valid extraction.  These constraints are limited only by what you include in your index.  For example, we commonly include part of speech tag, named entity information (NER), and chunk.
@@ -39,6 +32,6 @@ Odinson supports wildcards for token constraints.  Specifically,
  
 ## Quantifiers 
 
-Like any other pattern component, token constraints (as well as these wildcards) can be combined with [quantifiers](quantifiers.html), e.g., 
+Like any other pattern component, token constraints (as well as these wildcards) can be combined with [quantifiers](quantifiers.md), e.g., 
     
     [chunk=B-NP] [chunk=I-NP]*     

@@ -7,7 +7,7 @@ nav_order: 3
   
   
 # Indexing Odinson Documents  
-Once you have [created Odinson Documents](documents.html), you can create an Odinson index, the data structure that Odinson uses for executing queries.  
+Once you have [created Odinson Documents](documents.md), you can create an Odinson index, the data structure that Odinson uses for executing queries.  
   
 ## Configuration  
 Once again, you will specify the configurations in `extra/src/main/resources/application.conf`.  

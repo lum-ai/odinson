@@ -1,9 +1,3 @@
----  
-title: Odinson shell
-has_children: false 
-nav_order: 7
----  
-
 # Odinson shell
 
 One way of interacting with Odinson is through the shell.  To launch:

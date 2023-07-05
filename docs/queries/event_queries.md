@@ -1,10 +1,3 @@
----  
-title: Event Queries
-parent: Queries
-has_children: false 
-nav_order: 4
----  
-
 # Event queries
 
 Odinson also supports **event queries**, which are look for a trigger, and then one or more required (or optional) arguments.
@@ -80,7 +73,7 @@ Optional arguments are indicated with a `?`, as with the second argument below.
 
 ## Quantifying arguments
 
-Arguments can be quantified, using the quantifiers described [here](quantifiers.html).
+Arguments can be quantified, using the quantifiers described [here](quantifiers.md).
 For example:
 
       - name: lots-of-quantifiers

@@ -1,10 +1,3 @@
----  
-title: Basic Queries
-parent: Queries
-has_children: false 
-nav_order: 3  
----  
-
 # Basic queries
 
 Odinson basic queries allow for specifying a condition for the start of a "path", a valid end of the path, and the traversals that are licensed for the path itself. These conditions can be specified in terms of _token constraints_ (surface patterns), _path constraints_ (graph traversals), or both.

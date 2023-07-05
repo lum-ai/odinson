@@ -1,10 +1,3 @@
----  
-title: Graph Traversals
-parent: Queries
-has_children: false 
-nav_order: 2
----  
-
 # Graph traversals
 
 Queries can also incorporate graph traversals, most commonly used for traversing the dependency syntax graph.  
@@ -15,7 +8,7 @@ A graph traversal is encoded with two parts:
 
 The direction that the edge (e.g., dependency) is traversed is encoded by placing a `>` (outgoing) or `<` (incoming) in front of the label.  
 
-The edge/dependency labels, as strings, support regular expression notation (i.e., `/nmod_.*/`).  The full string rules are provided [here](strings.html).
+The edge/dependency labels, as strings, support regular expression notation (i.e., `/nmod_.*/`).  The full string rules are provided [here](strings.md).
 
 So, for example, to traverse an incoming `nsubj` edge, you'd use: 
 
@@ -34,7 +27,7 @@ Odinson supports wildcards for graph traversals.  They are:
  
 ## Quantifiers and Expansion
 
-Like any other pattern component, graph traversals (as well as these wildcards) can be combined with [quantifiers](quantifiers.html), e.g., `>>{2,3}`.
+Like any other pattern component, graph traversals (as well as these wildcards) can be combined with [quantifiers](quantifiers.md), e.g., `>>{2,3}`.
 Additionally, groups of graph traversals can be wrapped in parentheses and quantified.  
 For example, to specify traversing an outgoing `nsubj` edge and optionally up to two `conj_and` edges, you can use:
 

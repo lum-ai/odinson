@@ -1,0 +1,84 @@
+site_name: odinson
+site_dir: "site"
+site_url: https://docs.lum.ai/odinson
+site_description: Odinson project documentation.
+site_author: Lum AI
+
+repo_url: https://github.com/lum-ai/odinson/
+edit_uri: "blob/main/docs/"
+
+theme:
+  name: readthedocs
+  logo: images/odinson_with_logo.png
+  highlightjs: true
+  hljs_style: github
+  # list additional languages here
+  hljs_languages:
+    - yaml
+    - scala
+  analytics:
+    gtag: null
+  shortcuts:
+    help: 191    # ?
+    next: 78     # n
+    previous: 80 # p
+    search: 83   # s
+  nav_style: dark
+  locale: en
+
+nav:
+    # NOTE: all relative to docs/
+    - Home: index.md
+    # 1st
+    - Installation: installation.md
+    - Getting Started:
+        - "Walkthrough Example": getting-started/walkthrough.md
+        - "Creating Odinson Documents": getting-started/documents.md
+        - "Creating an Index": getting-started/making_index.md
+    - "Docker": docker.md
+    # 6th
+    - Queries: 
+        - "Overview": queries/queries.md
+        - "Token Constraints": queries/token_constraints.md
+        - "Basic Queries": queries/basic_queries.md
+        - "Graph Traversals": queries/graph_traversals.md
+        - "Parent Queries": queries/parent_queries.md
+        - "Event Queries": queries/event_queries.md
+        - "Metadata Query Language": queries/metadata.md
+        - "Strings": queries/strings.md
+        - "Quantifiers": queries/quantifiers.md
+    - Odinson Shell: shell.md
+    - Troubleshooting: troubleshooting.md
+    - Testing: testing.md
+    - Contributors: "contributors.md"
+    - Contributing: contributing.md        
+
+extra_css:
+    - css/extra.css
+
+# footnotes
+# pymdownx.emoji
+# pymdownx.caret
+# pymdownx.mark
+# pymdownx.tilde
+# pymdownx.details
+# pymdownx.superfences
+# pymdownx.tabbed
+markdown_extensions:
+    - toc:
+        permalink: 
+    - admonition
+    - attr_list
+    - def_list
+
+copyright: "&copy; 2019-present Lum AI"
+
+plugins:
+    - search
+    # # see https://github.com/mercari/mkdocs-git-snippet
+    - git-snippet
+    # see https://github.com/timvink/mkdocs-git-revision-date-localized-plugin
+    - git-revision-date-localized
+    # see https://github.com/timvink/mkdocs-git-authors-plugin
+    - git-authors
+    # TODO: add https://github.com/fralau/mkdocs-mermaid2-plugin

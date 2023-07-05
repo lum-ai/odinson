@@ -1,10 +1,3 @@
----  
-title: Strings
-parent: Queries
-has_children: false 
-nav_order: 6
----  
-
 # String rules and special characters
 
 There are four places where Odinson needs to match a string:
