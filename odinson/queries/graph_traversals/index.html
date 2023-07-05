@@ -163,7 +163,7 @@
  - a <strong>direction</strong>, and 
  - a <strong>label</strong></p>
 <p>The direction that the edge (e.g., dependency) is traversed is encoded by placing a <code>&gt;</code> (outgoing) or <code>&lt;</code> (incoming) in front of the label.  </p>
-<p>The edge/dependency labels, as strings, support regular expression notation (i.e., <code>/nmod_.*/</code>).  The full string rules are provided <a href="strings.html">here</a>.</p>
+<p>The edge/dependency labels, as strings, support regular expression notation (i.e., <code>/nmod_.*/</code>).  The full string rules are provided <a href="../strings/">here</a>.</p>
 <p>So, for example, to traverse an incoming <code>nsubj</code> edge, you'd use: </p>
 <pre><code>&lt;nsubj
 </code></pre>
@@ -175,7 +175,7 @@
  - <code>&lt;&lt;</code> : any incoming edge
  - <code>&gt;&gt;</code> : any outgoing edge</p>
 <h2 id="quantifiers-and-expansion">Quantifiers and Expansion<a class="headerlink" href="#quantifiers-and-expansion" title="Permanent link"></a></h2>
-<p>Like any other pattern component, graph traversals (as well as these wildcards) can be combined with <a href="quantifiers.html">quantifiers</a>, e.g., <code>&gt;&gt;{2,3}</code>.
+<p>Like any other pattern component, graph traversals (as well as these wildcards) can be combined with <a href="../quantifiers/">quantifiers</a>, e.g., <code>&gt;&gt;{2,3}</code>.
 Additionally, groups of graph traversals can be wrapped in parentheses and quantified.<br />
 For example, to specify traversing an outgoing <code>nsubj</code> edge and optionally up to two <code>conj_and</code> edges, you can use:</p>
 <pre><code>She saw &gt;dobj [] (&gt;conj_and []){,2}

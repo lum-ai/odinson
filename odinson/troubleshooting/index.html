@@ -172,16 +172,6 @@
 <pre><code class="language-bash">chmod -R 777 /path/to/data/odinson
 </code></pre>
 <p><strong>NOTE</strong>: Replace <code>/path/to/data/odinson</code> with the path to the directory containing <code>docs</code>. You may need to use <code>sudo</code> at the beginning of this command.</p>
-<h1 id="no-repo-found-while-running-offline-documentation-with-a-docker-image">No repo found while running offline documentation with a docker image<a class="headerlink" href="#no-repo-found-while-running-offline-documentation-with-a-docker-image" title="Permanent link"></a></h1>
-<p>Error message:</p>
-<blockquote>
-<p>Liquid Exception: No repo name found. Specify using PAGES_REPO_NWO environment variables, 'repository' in your configuration, or set up an 'origin' git remote pointing to your github.com repository. in <code>/_layouts/default.html</code></p>
-</blockquote>
-<p>Add the following line in the <code>docs/_config.yml</code>:</p>
-<pre><code class="language-bash">repository:         'lum-ai/odinson.git'
-</code></pre>
-<h1 id="faviconico-not-found-while-running-offline-documentation-via-docker">`/favicon.ico' not found while running offline documentation via docker<a class="headerlink" href="#faviconico-not-found-while-running-offline-documentation-via-docker" title="Permanent link"></a></h1>
-<p>When running locally, this error can likely be ignored as explained <a href="https://talk.jekyllrb.com/t/favicon-ico-not-found/2571/5">here</a></p>
               
             </div>
           </div>

@@ -7,9 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <meta name="author" content="Lum AI">
-  <link rel="canonical" href="https://docs.lum.ai/odinson/getting-started/making_index/">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/queries/token_constraints/">
   <link rel="shortcut icon" href="../../img/favicon.ico">
-  <title>Creating an Index - odinson</title>
+  <title>Token Constraints - odinson</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../../css/theme.css" />
@@ -19,9 +19,9 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Creating an Index";
-    var mkdocs_page_input_path = "getting-started/making_index.md";
-    var mkdocs_page_url = "/odinson/getting-started/making_index/";
+    var mkdocs_page_name = "Token Constraints";
+    var mkdocs_page_input_path = "queries/token_constraints.md";
+    var mkdocs_page_url = "/odinson/queries/token_constraints/";
   </script>
   
   <script src="../../js/jquery-2.1.1.min.js" defer></script>
@@ -58,18 +58,12 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Getting Started</span></p>
-                <ul class="current">
-                    <li class="toctree-l1"><a class="reference internal" href="../walkthrough/">Walkthrough Example</a>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/walkthrough/">Walkthrough Example</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../documents/">Creating Odinson Documents</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/documents/">Creating Odinson Documents</a>
                     </li>
-                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Creating an Index</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#command">Command</a>
-    </li>
-    </ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/making_index/">Creating an Index</a>
                     </li>
                 </ul>
                 <ul>
@@ -77,24 +71,36 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Queries</span></p>
-                <ul>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/queries/">Overview</a>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/">Overview</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/token_constraints/">Token Constraints</a>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Token Constraints</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-the-token-fields">Using the token fields</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#operators-for-token-constraints">Operators for token constraints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#wildcards">Wildcards</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantifiers">Quantifiers</a>
+    </li>
+    </ul>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/basic_queries/">Basic Queries</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../basic_queries/">Basic Queries</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/graph_traversals/">Graph Traversals</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../graph_traversals/">Graph Traversals</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/parent_queries/">Parent Queries</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../parent_queries/">Parent Queries</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/event_queries/">Event Queries</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../event_queries/">Event Queries</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/metadata/">Metadata Query Language</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../metadata/">Metadata Query Language</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/strings/">Strings</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../strings/">Strings</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../../queries/quantifiers/">Quantifiers</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../quantifiers/">Quantifiers</a>
                     </li>
                 </ul>
                 <ul>
@@ -138,14 +144,14 @@
     
       
         
-          <li>Getting Started &raquo;</li>
+          <li>Queries &raquo;</li>
         
       
     
-    <li>Creating an Index</li>
+    <li>Token Constraints</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/lum-ai/odinson/blob/main/docs/getting-started/making_index.md"
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/queries/token_constraints.md"
           class="icon icon-github"> Edit on GitHub</a>
       
     </li>
@@ -157,19 +163,29 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="indexing-odinson-documents">Indexing Odinson Documents<a class="headerlink" href="#indexing-odinson-documents" title="Permanent link"></a></h1>
-<p>Once you have <a href="documents.html">created Odinson Documents</a>, you can create an Odinson index, the data structure that Odinson uses for executing queries.  </p>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h2>
-<p>Once again, you will specify the configurations in <code>extra/src/main/resources/application.conf</code>.  </p>
-<ul>
-<li>Ensure <code>odinson.docDir</code> directory contains annotated <code>ai.lum.odinson.Document</code>s (<code>.json</code> or <code>.json.gz</code>).  </li>
-<li>Ensure <code>odinson.indexDir</code> is pointing to where you want to create the index.  </li>
-<li>Note again, if you are using the typical directory structure (see above), you can simply ensure that <code>odinson.dataDir = path/to/your/dataDir</code> and the other paths will be correct.  </li>
-</ul>
-<h2 id="command">Command<a class="headerlink" href="#command" title="Permanent link"></a></h2>
-<pre><code>sbt "extra/runMain ai.lum.odinson.extra.IndexDocuments"
+                <h1 id="token-constraints">Token constraints<a class="headerlink" href="#token-constraints" title="Permanent link"></a></h1>
+<p>The simplest possible Odinson patterns consist of a single token constraint. A token constraint specifies what must be true of a token in order for it to be a valid extraction.  These constraints are limited only by what you include in your index.  For example, we commonly include part of speech tag, named entity information (NER), and chunk.</p>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link"></a></h2>
+<p>If you write a query such as this:</p>
+<pre><code>dog
 </code></pre>
-<p>While annotating can be time-consuming, the creation of the index should be relatively less so, though again it's dependent on the number and size of the documents.</p>
+<p>Odinson will look for any occurrence of the word <code>dog</code>.  Unless specified otherwise, this will be <em>case-insensitive</em> and will normalize accents and Unicode characters.  That is, this pattern will match: <code>dog</code>, <code>DoG</code>, and <code>dög</code>.</p>
+<h2 id="using-the-token-fields">Using the token fields<a class="headerlink" href="#using-the-token-fields" title="Permanent link"></a></h2>
+<p>If you want to write a token constraint that uses the indexed fields, you can use this format:</p>
+<pre><code>[tag=/N.*/]
+</code></pre>
+<p>This pattern will match any token in a document whose part of speech tag begins with "N".  Here, <code>tag</code> is the specified field of the constraint.  Any token constraint with an unspecified field (e.g., <code>dog</code> in the above example) will be matched against the <code>norm</code> field, which is the default.  That is, <code>dog</code> is equivalent to <code>[norm=dog]</code>.  The field names are specified <a href="https://github.com/lum-ai/odinson/blob/master/core/src/main/resources/reference.conf">here</a>, and for most use cases should not need to be modified.</p>
+<h2 id="operators-for-token-constraints">Operators for token constraints<a class="headerlink" href="#operators-for-token-constraints" title="Permanent link"></a></h2>
+<p>You can combine and nest constraints for a token using operators: <code>&amp;</code> (for AND), <code>|</code> (for OR) and parentheses. For example, the following would match a word whose tag starts with "N" and which is also tagged as an organization using NER or is a proper noun.</p>
+<pre><code>[tag=/N.*/ &amp; (entity=ORGANIZATION | tag=NNP)]
+</code></pre>
+<h2 id="wildcards">Wildcards<a class="headerlink" href="#wildcards" title="Permanent link"></a></h2>
+<p>Odinson supports wildcards for token constraints.  Specifically, 
+ - <code>[]</code> : any token</p>
+<h2 id="quantifiers">Quantifiers<a class="headerlink" href="#quantifiers" title="Permanent link"></a></h2>
+<p>Like any other pattern component, token constraints (as well as these wildcards) can be combined with <a href="../quantifiers/">quantifiers</a>, e.g., </p>
+<pre><code>[chunk=B-NP] [chunk=I-NP]*
+</code></pre>
               
             </div>
           </div>
@@ -177,10 +193,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../../docker/" class="btn btn-neutral float-right" title="Docker">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../basic_queries/" class="btn btn-neutral float-right" title="Basic Queries">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../documents/" class="btn btn-neutral" title="Creating Odinson Documents"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../queries/" class="btn btn-neutral" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -212,10 +228,10 @@
         </span>
     
     
-      <span><a href="../documents/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../queries/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../../docker/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../basic_queries/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
