@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/queries/graph_traversals/">
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Graph Traversals - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Graph Traversals";
+    var mkdocs_page_input_path = "queries/graph_traversals.md";
+    var mkdocs_page_url = "/odinson/queries/graph_traversals/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Graph Traversals</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#wildcards">Wildcards</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantifiers-and-expansion">Quantifiers and Expansion</a>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Queries &raquo;</li>
+        
+      
+    
+    <li>Graph Traversals</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/queries/graph_traversals.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="graph-traversals">Graph traversals<a class="headerlink" href="#graph-traversals" title="Permanent link"></a></h1>
+<p>Queries can also incorporate graph traversals, most commonly used for traversing the dependency syntax graph.  </p>
+<p>A graph traversal is encoded with two parts:
+ - a <strong>direction</strong>, and 
+ - a <strong>label</strong></p>
+<p>The direction that the edge (e.g., dependency) is traversed is encoded by placing a <code>&gt;</code> (outgoing) or <code>&lt;</code> (incoming) in front of the label.  </p>
+<p>The edge/dependency labels, as strings, support regular expression notation (i.e., <code>/nmod_.*/</code>).  The full string rules are provided <a href="../strings/">here</a>.</p>
+<p>So, for example, to traverse an incoming <code>nsubj</code> edge, you'd use: </p>
+<pre><code>&lt;nsubj
+</code></pre>
+<p>and to traverse an outgoing <code>dobj</code> or <code>xcomp</code> you'd use:</p>
+<pre><code>&gt;/dobj|xcomp/
+</code></pre>
+<h2 id="wildcards">Wildcards<a class="headerlink" href="#wildcards" title="Permanent link"></a></h2>
+<p>Odinson supports wildcards for graph traversals.  They are:
+ - <code>&lt;&lt;</code> : any incoming edge
+ - <code>&gt;&gt;</code> : any outgoing edge</p>
+<h2 id="quantifiers-and-expansion">Quantifiers and Expansion<a class="headerlink" href="#quantifiers-and-expansion" title="Permanent link"></a></h2>
+<p>Like any other pattern component, graph traversals (as well as these wildcards) can be combined with <a href="../quantifiers/">quantifiers</a>, e.g., <code>&gt;&gt;{2,3}</code>.
+Additionally, groups of graph traversals can be wrapped in parentheses and quantified.<br />
+For example, to specify traversing an outgoing <code>nsubj</code> edge and optionally up to two <code>conj_and</code> edges, you can use:</p>
+<pre><code>She saw &gt;dobj [] (&gt;conj_and []){,2}
+</code></pre>
+<p>In the sentence "She saw me and Julio," this will traverse the <code>dobj</code> and the following <code>conj_and</code> and extract <code>Julio</code>.
+However, if we want to use the quantified (and here, optional) graph traversals to <strong>expand</strong> the mention, we can indicate it with <code>(?^ ... )</code> as follows:</p>
+<pre><code>She saw &gt;dobj (?^ [] &gt;conj_and []){,2})
+</code></pre>
+<p>The left-hand side, <code>(?^</code>,  indicates where the expanded mention should begin, and the final <code>)</code> indicate where it should stop.
+The above pattern, with the same sentence, would instead match <code>me and Julio</code>.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../parent_queries/" class="btn btn-neutral float-right" title="Parent Queries">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../basic_queries/" class="btn btn-neutral" title="Basic Queries"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../basic_queries/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../parent_queries/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

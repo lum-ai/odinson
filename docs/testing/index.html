@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/testing/">
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Testing - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Testing";
+    var mkdocs_page_input_path = "testing.md";
+    var mkdocs_page_url = "/odinson/testing/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../queries/quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Testing</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#testing-structure">Testing structure</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#core-tests">Core tests</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#documents-for-testing">Documents for testing</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-to-add-a-unit-test">How to add a unit test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#code-coverage">Code coverage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#test-example">Test example</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Testing</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/testing.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="how-does-odinson-testing-work">How does Odinson testing work?<a class="headerlink" href="#how-does-odinson-testing-work" title="Permanent link"></a></h1>
+<p>Odinson uses <a href="https://www.scalatest.org/">ScalaTest</a> 3 as a testing solution,
+and <a href="https://github.com/scoverage/sbt-scoverage">Scoverage</a> for coverage checking.</p>
+<p>To run the entire collection of Odinson tests, run:</p>
+<pre><code>sbt test
+</code></pre>
+<p>You can use <code>sbt 'runOnly *NameOfTheClass'</code> to run a single test.</p>
+<h2 id="testing-structure">Testing structure<a class="headerlink" href="#testing-structure" title="Permanent link"></a></h2>
+<h3 id="core-tests">Core tests<a class="headerlink" href="#core-tests" title="Permanent link"></a></h3>
+<p>Core tests are divided into 6 categories:</p>
+<ol>
+<li>events: for event rules</li>
+<li>foundations: for fundamental aspects of the Odinson system, e.g., the <code>ExtractorEngine</code></li>
+<li>patterns: tests different matching patterns</li>
+<li>serialization</li>
+<li>traversals: for traversing graph fields</li>
+<li>util: utility methods</li>
+</ol>
+<p>When writing a new test,
+try a category that best fits it.</p>
+<h3 id="documents-for-testing">Documents for testing<a class="headerlink" href="#documents-for-testing" title="Permanent link"></a></h3>
+<p>When testing rules or components,
+you will find yourself needed a testing sentence
+to use with one of your tests.
+Inside <code>ai.lum.odinson.documentation.ExampleSentences</code> you will find a collection of sentences
+written for previous tests.
+You can reuse those sentences if you want.
+If you need a visualization of an odinson sentence you can use
+<a href="https://odinson-doc-editor.herokuapp.com/">OdinsonDocEditor</a>.</p>
+<h2 id="how-to-add-a-unit-test">How to add a unit test<a class="headerlink" href="#how-to-add-a-unit-test" title="Permanent link"></a></h2>
+<p>Assuming you are creating a new file,
+make sure you follow these guidelines:</p>
+<ul>
+<li>Your test file should have a unique name and start with <code>Test</code> followed by the rest of the name, camel-cased.</li>
+<li>Follow the <a href="https://www.scalatest.org/">scalatest documentation</a> when writing tests.</li>
+<li>Aim to test a single functionality in each test.</li>
+<li>Be mindful when naming tests and only use <code>it</code> when necessary.</li>
+<li>Every test suite should extend <code>ai.lum.odinson.utils.TestUtils.OdinsonTest</code>.</li>
+<li>It is good practice to structure your tests to avoid unhelpful messages.  For example, if
+you consistently assert that <code>x should be (true)</code>, when a test fails you will only know that "false did not equal true", instead of the real problem!</li>
+</ul>
+<h2 id="code-coverage">Code coverage<a class="headerlink" href="#code-coverage" title="Permanent link"></a></h2>
+<p>We use <a href="https://codecov.io/">Codecov</a> as our code coverage solution.
+The code coverage is calculated whenever you open a PR to the <code>master</code> repository.</p>
+<p>You can check the code coverage locally running:</p>
+<pre><code>sbt coverage test
+sbt CoverageReport
+</code></pre>
+<h2 id="test-example">Test example<a class="headerlink" href="#test-example" title="Permanent link"></a></h2>
+<pre><code class="language-scala">// part of foundations
+package ai.lum.odinson.foundations
+
+ai.lum.odinson.utils.TestUtils.OdinsonTest
+import collection.mutable.Stack
+
+// extend BaseSpec
+class TestSomething extends OdinsonTest {
+  // use a descriptive name
+  &quot;A Stack&quot; should &quot;pop values in last-in-first-out order&quot; in {
+    val stack = new Stack[Int]
+    stack.push(1)
+    stack.push(2)
+    stack.pop() should be (2)
+    stack.pop() should be (1)
+  }
+}
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../contributors/" class="btn btn-neutral float-right" title="Contributors">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../troubleshooting/" class="btn btn-neutral" title="Troubleshooting"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../troubleshooting/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../contributors/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

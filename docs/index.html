@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Odinson project documentation.">
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/">
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <title>odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = "/odinson/";
+  </script>
+  
+  <script src="js/jquery-2.1.1.min.js" defer></script>
+  <script src="js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#project-structure">Project Structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#citation">Citation</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="getting-started/walkthrough/">Walkthrough Example</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="getting-started/documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="getting-started/making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="queries/quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/index.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link"></a></h1>
+<p>This repository contains the code for Odinson, a powerful and highly optimized open-source framework for information extraction.  Odinson is a rule-based information extraction framework, which couples a simple, yet powerful pattern language that can operate over multiple representations of text, with a runtime system that operates in near real time.   </p>
+<p>In the Odinson query language, a single pattern may combine regular expressions over surface tokens with regular expressions over graphs such as (but not limited to) syntactic dependencies.   </p>
+<p>To guarantee the rapid matching of these patterns, the framework indexes most of the necessary information for matching patterns, including directed graphs such as syntactic dependencies, into a custom Lucene index. Indexing minimizes the amount of expensive pattern matching that must take place at runtime.   </p>
+<p>Odinson is designed to facilitate real-time (or near real-time) queries over surface, syntax, or both.  The syntax is based on that of its predecessor language, Odin, but there are some key divergences, detailed here.  </p>
+<h2 id="project-structure">Project Structure<a class="headerlink" href="#project-structure" title="Permanent link"></a></h2>
+<p>Odinson consists of the following subprojects:</p>
+<ul>
+<li><strong>core</strong>: the core odinson library</li>
+<li><strong>extra</strong>: these are a few apps that we need but don't really belong in <code>core</code>, due to things like licensing issues</li>
+</ul>
+<p>In <a href="https://github.com/lum-ai/odinson/pull/357"><code>c4815a8</code></a>, the Odinson REST API was moved to a separate repository. The project is being partially rewritten before it is publicly released.</p>
+<h2 id="license">License<a class="headerlink" href="#license" title="Permanent link"></a></h2>
+<p>Odinson is Apache License Version 2.0. </p>
+<p>There are some supplemental utilities in the <code>extra</code> subproject that depend on GPL, notably <a href="http://stanfordnlp.github.io/CoreNLP/">Stanford's CoreNLP</a>.   </p>
+<h2 id="citation">Citation<a class="headerlink" href="#citation" title="Permanent link"></a></h2>
+<p>If you use Odinson, please cite the following:  </p>
+<p>Valenzuela-Escárcega, M. A., Hahn-Powell, G., &amp; Bell, D. (2020, May).  Odinson: A fast rule-based information extraction framework. In Proceedings of The 12th Language Resources and Evaluation Conference (pp. 2183-2191).   <a href="https://www.aclweb.org/anthology/2020.lrec-1.267.pdf">[pdf]</a></p>
+<p>Bibtex:       </p>
+<pre><code>@InProceedings{Valenzuela:2020,
+  author    = {Valenzuela-Escárcega, Marco A. and Hahn-Powell, Gus and Bell, Dane},
+  title     = {{O}dinson: {A} fast rule-based information extraction framework},
+  booktitle      = {{Proceedings of the 12th Language Resources and Evaluation Conference}},
+  month          = {May},
+  year           = {2020},
+  address        = {Marseille, France},
+  publisher      = {European Language Resources Association},
+  pages     = {2183--2191},
+  abstract  = {We present Odinson, a rule-based information extraction framework, which couples a simple yet powerful pattern language that can operate over multiple representations of text, with a runtime system that operates in near real time. In the Odinson query language, a single pattern may combine regular expressions over surface tokens with regular expressions over graphs such as syntactic dependencies. To guarantee the rapid matching of these patterns, our framework indexes most of the necessary information for matching patterns, including directed graphs such as syntactic dependencies, into a custom Lucene index. Indexing minimizes the amount of expensive pattern matching that must take place at runtime. As a result, the runtime system matches a syntax-based graph traversal in 2.8 seconds in a corpus of over 134 million sentences, nearly 150,000 times faster than its predecessor.},
+  url       = {https://www.aclweb.org/anthology/2020.lrec-1.267}
+}
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '.';</script>
+    <script src="js/theme_extra.js" defer></script>
+    <script src="js/theme.js" defer></script>
+      <script src="search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.2.3
+Build Date UTC : 2023-10-05 03:57:08.029768+00:00
+-->

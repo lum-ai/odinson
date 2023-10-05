@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Lum AI">
+  <link rel="canonical" href="https://docs.lum.ai/odinson/getting-started/walkthrough/">
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Walkthrough Example - odinson</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../../css/extra.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Walkthrough Example";
+    var mkdocs_page_input_path = "getting-started/walkthrough.md";
+    var mkdocs_page_url = "/odinson/getting-started/walkthrough/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/languages/scala.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> odinson</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Getting Started</span></p>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Walkthrough Example</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#step-1-annotate-the-text">Step 1: Annotate the text</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#step-2-create-the-index">Step 2: Create the index</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#step-3-use-the-index-for-queries">Step 3: Use the index for queries</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#additional-example-usage">Additional example usage</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../documents/">Creating Odinson Documents</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../making_index/">Creating an Index</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../docker/">Docker</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Queries</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/queries/">Overview</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/token_constraints/">Token Constraints</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/basic_queries/">Basic Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/graph_traversals/">Graph Traversals</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/parent_queries/">Parent Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/event_queries/">Event Queries</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/metadata/">Metadata Query Language</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/strings/">Strings</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../queries/quantifiers/">Quantifiers</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../shell/">Odinson Shell</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../troubleshooting/">Troubleshooting</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../testing/">Testing</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributors/">Contributors</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">odinson</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Getting Started &raquo;</li>
+        
+      
+    
+    <li>Walkthrough Example</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/lum-ai/odinson/blob/main/docs/getting-started/walkthrough.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="walkthrough-example">Walkthrough Example<a class="headerlink" href="#walkthrough-example" title="Permanent link"></a></h1>
+<p>As an example of a typical usage of Odinson, imagine that you have a collection of text documents, from which you would like to extract mentions of pet adoptions. (A more cheerful example than, say, bombing events!)
+For this example, we'll use a single text file:</p>
+<pre><code class="language-text">Sally loves dogs.  Yesterday, Sally adopted a cat named Ajax. 
+</code></pre>
+<h2 id="step-1-annotate-the-text">Step 1: Annotate the text<a class="headerlink" href="#step-1-annotate-the-text" title="Permanent link"></a></h2>
+<p>which is saved as <code>data/pets/text/text_1.txt</code>.  The next step is to annotate the text and build an Odinson index, both of which are offline steps.
+For this, your config file (<code>extra/src/main/resources/application.conf</code>) should read:</p>
+<pre><code class="language-text"> odinson.textDir = data/pets/text
+ odinson.docDir = data/pets/docs
+ odinson.indexDir = data/pets/index
+</code></pre>
+<p>To create the annotated Odinson documents, run this command from the project root directory:</p>
+<pre><code>sbt "extra/runMain ai.lum.odinson.extra.AnnotateText"
+</code></pre>
+<p>The Odinson Document for the above text, created with one example Processor is here, but keep in mind that the fields you include in an Odinson Document are largely up to you!</p>
+<pre><code class="language-text">Document(6a2b13bf-515f-49fe-a4f3-b3a04aaf3bef,List(),ArraySeq(Sentence(4,List(TokensField(raw,WrappedArray(Sally, loves, dogs, .),true), TokensField(word,WrappedArray(Sally, loves, dogs, .),false), TokensField(tag,WrappedArray(NNP, VBZ, NNS, .),false), TokensField(lemma,WrappedArray(Sally, love, dog, .),false), TokensField(entity,WrappedArray(PERSON, O, O, O),false), TokensField(chunk,WrappedArray(B-NP, B-VP, B-NP, O),false), GraphField(dependencies,List((1,0,nsubj), (1,2,dobj), (1,3,punct)),Set(1),false))), Sentence(9,List(TokensField(raw,WrappedArray(Yesterday, ,, Sally, adopted, a, cat, named, Ajax, .),true), TokensField(word,WrappedArray(Yesterday, ,, Sally, adopted, a, cat, named, Ajax, .),false), TokensField(tag,WrappedArray(NN, ,, NNP, VBD, DT, NN, VBN, NNP, .),false), TokensField(lemma,WrappedArray(yesterday, ,, Sally, adopt, a, cat, name, Ajax, .),false), TokensField(entity,WrappedArray(DATE, O, PERSON, O, O, O, O, ORGANIZATION, O),false), TokensField(chunk,WrappedArray(B-NP, O, B-NP, B-VP, B-NP, I-NP, B-VP, B-NP, O),false), GraphField(dependencies,List((3,2,nsubj), (3,5,dobj), (3,8,punct), (3,0,nmod:tmod), (3,1,punct), (5,4,det), (5,6,acl), (6,7,xcomp)),Set(3),false)))))
+</code></pre>
+<h2 id="step-2-create-the-index">Step 2: Create the index<a class="headerlink" href="#step-2-create-the-index" title="Permanent link"></a></h2>
+<p>Then, to make the index, you can either run the provided app:</p>
+<pre><code>sbt "extra/runMain ai.lum.odinson.extra.IndexDocuments"
+</code></pre>
+<p>Or, if customization is needed, you can use these steps in your own code:</p>
+<pre><code class="language-scala">import ai.lum.common.FileUtils._
+import ai.lum.odinson.Document
+import ai.lum.odinson.lucene.index.OdinsonIndexWriter
+
+// Initialize the index writer
+val writer = OdinsonIndexWriter.fromConfig()
+
+// Gather the Document files to be indexed
+val wildcards = Seq(&quot;*.json&quot;, &quot;*.json.gz&quot;)
+val files = new File(&quot;data/pets/docs&quot;).listFilesByWildcards(wildcards, recursive = true)
+
+// Iterate through the files, and add each to the index
+files.foreach(f =&gt; writer.addFile(f))
+
+// Close the index
+writer.close()
+</code></pre>
+<h2 id="step-3-use-the-index-for-queries">Step 3: Use the index for queries<a class="headerlink" href="#step-3-use-the-index-for-queries" title="Permanent link"></a></h2>
+<p>Once the index is built, we can query it to get the information we are interested in.
+To do this, we first need to make an extractor engine, then pass it queries to apply.</p>
+<pre><code class="language-scala">import ai.lum.odinson.{EventMatch, ExtractorEngine, NamedCapture, OdinsonMatch}
+import ai.lum.odinson.utils.DisplayUtils.displayMention
+
+// Initialize the extractor engine -- ensure that your config still has `odinson.indexDir` pointing
+// to where you wrote your index, here we were using data/pets/index
+val extractorEngine = ExtractorEngine.fromConfig()
+
+// Here we have a set of two rules, which will first find `Pet` mentions, and the find 
+// `Adoption` Mentions.
+val rules = &quot;&quot;&quot;
+    |rules:
+    |  - name: pets_type
+    |    type: basic
+    |    label: Pet  # if found, will have the label &quot;Pet&quot;
+    |    priority: 1 # will run in the first round of extraction
+    |    pattern: |
+    |       [lemma=/cat|dog|bunny|fish/]
+    |
+    |  - name: pets_adoption
+    |    type: event
+    |    label: Adoption
+    |    priority: 2  # will run in the second round of extraction, can reference priority 1 rules
+    |    pattern: |
+    |      trigger = [lemma=adopt]
+    |      adopter = &gt;nsubj []   # note: we didn't specify the label, so any token will work
+    |      pet: Pet = &gt;dobj []
+    &quot;&quot;&quot;.stripMargin
+
+// Compile the rules into Extractors that will be used with the Index
+val extractors = extractorEngine.compileRuleString(rules)
+
+// Extract Mentions
+val mentions = extractorEngine.extractMentions(extractors)
+
+// Display the mentions
+mentions.foreach(displayMention(_, extractorEngine))
+</code></pre>
+<p>The output of the above code is:</p>
+<pre><code class="language-text">------------------------------
+Mention Text: adopted
+Label: Adoption
+Found By: pets_adoption
+  Trigger: adopted
+  Args:
+    * pet [Pet]: cat
+    * adopter [no label]: Sally
+
+------------------------------
+Mention Text: dogs
+Label: Pet
+Found By: pets_type
+
+------------------------------
+Mention Text: cat
+Label: Pet
+Found By: pets_type
+</code></pre>
+<h3 id="additional-example-usage">Additional example usage<a class="headerlink" href="#additional-example-usage" title="Permanent link"></a></h3>
+<p>For an example usage, please see the complete working example <a href="https://github.com/lum-ai/odinson/blob/master/extra/src/main/scala/ai/lum/odinson/extra/Example.scala">here</a>.</p>
+<p>To run it from the command line, use:</p>
+<pre><code>sbt extra/run
+</code></pre>
+<p>and choose <code>Example</code> off the list.</p>
+<p>To use it, you will need to point to an Odinson index by specifying the correct path in <code>application.conf</code>. If you need help making an index, or setting up your config file, there is info <a href="https://github.com/lum-ai/odinson/tree/master/extra">here</a>.</p>
+<p>The file containing the Odinson rules being used in this example is <a href="https://github.com/lum-ai/odinson/blob/master/extra/src/main/resources/example/rules.yml">here</a>, and the output is a json lines file, with one line per extraction.  Please note that this example is meant to be illustrative only, and the output produced is not a true serialization of the extracted Mentions (i.e., only some attributes are included in the output). </p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../documents/" class="btn btn-neutral float-right" title="Creating Odinson Documents">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../../installation/" class="btn btn-neutral" title="Installation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>&copy; 2019-present Lum AI</p>
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/lum-ai/odinson/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../installation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../documents/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
