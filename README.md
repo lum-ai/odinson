@@ -8,7 +8,7 @@ In particular, Odinson has been highly optimized to deliver these results in nea
 Please see our [LREC 2020 paper](https://lum.ai/docs/odinson.pdf) for technical details and evaluation.
 
 ## Documentation
-Please see [http://docs.lum.ai/odinson/](http://docs.lum.ai/odinson/), for documentation, including information about installation, capabilities, and learning how to build queries.
+Please see https://lum.ai/odinson/docs/ for documentation, including information about installation, capabilities, and learning how to build queries.
 
 ## Project overview
 
@@ -23,7 +23,7 @@ Odinson supports a wide range of features, including:
 - Filtering results by document metadata (e.g., authors, publication date)
 - and much, much more!
 
-Again, please see [our documentation](http://docs.lum.ai/odinson/), for more information! 
+Again, please see [our documentation](https://lum.ai/odinson/docs/) for more information! 
 
 We would also love to hear any questions, requests, or suggestions you may have.
 
@@ -31,8 +31,8 @@ We would also love to hear any questions, requests, or suggestions you may have.
 
 If you would like to contribute to this project with code, rule sets, or other repo material, that's awesome!  Please do!  Some of these materials will help you get started:
 
-- There is a [document](http://docs.lum.ai/odinson/contributing.html) covering some of the technical issues related to contributing like the [Pull Request Process](http://docs.lum.ai/odinson/contributing.html#pull-request-process) and [Formatting Tips](http://docs.lum.ai/odinson/contributing.html#formatting-tips).
-- We do ask you to be nice, and we spell that out in a [Covenant Code of Conduct](http://docs.lum.ai/odinson/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us.
+- There is a [document](http://lum.ai/odinson/docs/contributing.html) covering some of the technical issues related to contributing like the [Pull Request Process](http://lum.ai/odinson/docs/contributing.html#pull-request-process) and [Formatting Tips](http://lum.ai/odinson/docs/contributing.html#formatting-tips).
+- We do ask you to be nice, and we spell that out in a [Covenant Code of Conduct](http://lum.ai/odinson/docs/contributing.html#contributor-covenant-code-of-conduct).  Of course you can expect the same behavior of us.
 - Please ensure the contributions you propose are yours to give and you are comfortable with the shared rights.  There is a [Contributor License Agreement (CLA)](https://gist.github.com/lum-ai-devops/66d0aedc3791e4aebd143eb6ed6b16c5) that you will sign before a pull request is accepted so there are no surprises for any of us.  Please take a look at the CLA before you get too far, just in case, as there are legal ramifications.
 
 Thanks for your interest in Odinson!
