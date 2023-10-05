@@ -76,7 +76,7 @@ jobs:
         enable_jekyll: false
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./site
-        destination_dir: "odinson"
+        destination_dir: "docs"
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         commit_message: ${{ github.event.head_commit.message }}
