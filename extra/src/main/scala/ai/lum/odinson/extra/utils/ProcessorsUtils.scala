@@ -8,6 +8,7 @@ import ai.lum.odinson.{ Document => OdinsonDocument, Sentence => OdinsonSentence
 import org.clulab.dynet
 import org.clulab.processors.clu.CluProcessor
 import org.clulab.processors.fastnlp.FastNLPProcessor
+import org.clulab.processors.bionlp.BioNLPProcessor
 import org.clulab.processors.{
   Processor,
   Document => ProcessorsDocument,
@@ -41,6 +42,10 @@ object ProcessorsUtils {
       case "CluProcessor" => {
         dynet.Utils.initializeDyNet(autoBatch = false, mem = "1024,1024,1024,1024")
         new CluProcessor
+      }
+      case "BioNLPProcessor" => {
+        dynet.Utils.initializeDyNet(autoBatch = false, mem = "1024,1024,1024,1024")
+        new BioNLPProcessor
       }
     }
   }
