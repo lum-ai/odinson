@@ -13,6 +13,7 @@ import ai.lum.odinson.Document
 import ai.lum.odinson.extra.utils.{ ExtraFileUtils, ProcessorsUtils }
 import ai.lum.odinson.extra.utils.ProcessorsUtils.getProcessor
 import org.clulab.utils.FileUtils
+import org.clulab.processors.bionlp.BioNLPProcessor
 
 object AnnotateText extends App with LazyLogging {
 
@@ -59,6 +60,10 @@ object AnnotateText extends App with LazyLogging {
   def annotateTextFile(f: File): Document = {
     val text = f.readString()
     val doc = processor.annotate(text)
+    processor match {
+      case p:BioNLPProcessor =>
+        p.recognizeRuleNamedEntities(doc)
+    }
     // use file base name as document id
     doc.id = Some(f.getBaseName())
     ProcessorsUtils.convertDocument(doc)

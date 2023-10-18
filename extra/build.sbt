@@ -11,6 +11,7 @@ libraryDependencies ++= {
     "ai.lum"     %% "nxmlreader"            % "0.1.2",
     "org.clulab" %% "processors-main"       % procVersion,
     "org.clulab" %% "processors-corenlp"    % procVersion,
+    "org.clulab" %% "reach-processors"      % "1.6.3-SNAPSHOT"
   )
 
 }
