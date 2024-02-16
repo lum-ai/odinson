@@ -21,8 +21,8 @@ class StateQuery(
   override def setState(stateOpt: Option[State]): Unit = this.stateOpt = stateOpt
 
   override def hashCode: Int = (field, label).##
-
-  def toString(field: String): String = "StateQuery"
+  
+  def toString(field: String): String = s"StateQuery(field=${field}, label=${label})"
 
   def getField(): String = field
 
