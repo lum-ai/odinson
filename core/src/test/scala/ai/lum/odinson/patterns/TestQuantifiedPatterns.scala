@@ -14,7 +14,7 @@ class TestQuantifiedPatterns extends OdinsonTest {
     val res = ee.query(oq)
 
     numMatches(res) should be (1)
-    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (1)
+    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (true)
   }
 
   it should "match simple patterns with open range quantifiers and a metadata filter" in {
@@ -29,7 +29,7 @@ class TestQuantifiedPatterns extends OdinsonTest {
     val res = ee.query(oq)
 
     numMatches(res) should be (1)
-    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (1)
+    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (true)
   }
 
   it should "match simple patterns with exact range quantifiers (>=2) and a metadata filter" in {
@@ -44,6 +44,6 @@ class TestQuantifiedPatterns extends OdinsonTest {
     val res = ee.query(oq)
 
     numMatches(res) should be (1)
-    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (1)
+    existsMatchWithSpan(odinResults = res, doc = 0, start = 0, end = 3) should be (true)
   }
 }

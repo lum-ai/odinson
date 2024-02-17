@@ -4,7 +4,7 @@ import ai.lum.odinson.test.utils.OdinsonTest
 
 class TestEventsWithState extends OdinsonTest {
 
-  "Odinson" should "match events referencing existing mentions when a in-memory state is used" in {
+  "Odinson" should "match events referencing existing mentions when an in-memory state is used" in {
     val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
 
     val grammar = """
@@ -71,7 +71,7 @@ class TestEventsWithState extends OdinsonTest {
     getMentionsWithLabel(mentions, "EventBasedPersonRule") should have size (0)
   }
 
-  it should "match events referencing existing mentions when a in-memory state is used along with a metadataFilter" in {
+  it should "match events referencing existing mentions when an in-memory state is used along with a metadataFilter" in {
     val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
 
     val grammar = """
