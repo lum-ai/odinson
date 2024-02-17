@@ -107,7 +107,7 @@ class TestEventsWithState extends OdinsonTest {
   }
 
   it should "not match events referencing existing mentions when no in-memory state is used (metadataQuery invariant)" in {
-    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
+    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "mock")
 
     val grammar = """
     metadataFilters: doc_id == 'step-bros'
@@ -138,6 +138,6 @@ class TestEventsWithState extends OdinsonTest {
       disableMatchSelector = false
     ).toVector
 
-    getMentionsWithLabel(mentions, "EventBasedPersonRule") should have size (1)
+    getMentionsWithLabel(mentions, "EventBasedPersonRule") should have size (0)
   }
 }
