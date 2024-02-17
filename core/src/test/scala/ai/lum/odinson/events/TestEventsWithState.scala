@@ -5,7 +5,7 @@ import ai.lum.odinson.test.utils.OdinsonTest
 class TestEventsWithState extends OdinsonTest {
 
   "Odinson" should "match events referencing existing mentions when a in-memory state is used" in {
-    val ee = ot.extractorEngineWithSpecificState(ot.getDocument("step-bros"), "memory")
+    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
 
     val grammar = """
     rules:
@@ -39,7 +39,7 @@ class TestEventsWithState extends OdinsonTest {
   }
 
   it should "not match events referencing existing mentions when no state is used" in {
-    val ee = ot.extractorEngineWithSpecificState(ot.getDocument("step-bros"), "mock")
+    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "mock")
 
     val grammar = """
     rules:
@@ -72,7 +72,7 @@ class TestEventsWithState extends OdinsonTest {
   }
 
   it should "match events referencing existing mentions when a in-memory state is used along with a metadataFilter" in {
-    val ee = ot.extractorEngineWithSpecificState(ot.getDocument("step-bros"), "memory")
+    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
 
     val grammar = """
     metadataFilters: doc_id == 'step-bros'
@@ -107,7 +107,7 @@ class TestEventsWithState extends OdinsonTest {
   }
 
   it should "not match events referencing existing mentions when no in-memory state is used (metadataQuery invariant)" in {
-    val ee = ot.extractorEngineWithSpecificState(ot.getDocument("step-bros"), "memory")
+    val ee = extractorEngineWithSpecificState(getDocument("step-bros"), "memory")
 
     val grammar = """
     metadataFilters: doc_id == 'step-bros'
