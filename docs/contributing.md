@@ -12,7 +12,7 @@ If you're looking for a way to help, please take a look at [our open issues](htt
 
 When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners of this repository before making a change. Open communication helps us to avoid duplication of effort.
 
-Before getting started, be sure to review our [Pull request Process](http://gh.lum.ai/odinson/contributing.html#pull-request-process) for a step-by-step explanation of how to get your changes reviewed and merged promptly.
+Before getting started, be sure to review our [Pull request Process](contributing.md#pull-request-process) for a step-by-step explanation of how to get your changes reviewed and merged promptly.
 
 Finally, please note we have a code of conduct that we expect everyone to follow throughout all interactions with the project and its community.
 

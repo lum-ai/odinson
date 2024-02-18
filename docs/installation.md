@@ -1,9 +1,3 @@
----
-title: Getting Started
-has_children: true
-nav_order: 3
----
-
 # Setup
 
 This software has been tested with Java 1.8 and Scala 2.12.10, and is available through sbt and Maven central.

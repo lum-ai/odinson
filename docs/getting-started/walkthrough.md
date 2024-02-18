@@ -1,10 +1,3 @@
----  
-title: Walkthrough Example
-parent: Getting Started
-has_children: false  
-nav_order: 1  
----  
-
 # Walkthrough Example
 
 As an example of a typical usage of Odinson, imagine that you have a collection of text documents, from which you would like to extract mentions of pet adoptions. (A more cheerful example than, say, bombing events!)
