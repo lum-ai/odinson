@@ -199,7 +199,10 @@ class OdinRepetitionSpans(
       atFirstInCurrentDoc = false
       return matches(startIndex).start
     }
-    if (getNextStretch()) {
+    // added to address lum-ai/odinson#394
+    if (startIndex == -1) {
+      NO_MORE_POSITIONS
+    } else if (getNextStretch()) {
       matches(startIndex).start
     } else {
       matches = emptyMatchArray
